@@ -5,11 +5,12 @@ import { EdgeModifierSlider } from "@/components/workplane/EdgeModifierPanel";
 import { cadModifierUserErrorMessage } from "@/lib/cadModifierRuntime";
 import { t } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
+import { MIN_SHELL_WALL } from "@/lib/shellLimits";
 import type { ShellEdges, ShellOpenings, WorkplaneWorkspaceSettings } from "@/types/layerling";
 
 const SHELL_OPENINGS: readonly ShellOpenings[] = ["top", "none", "bottom", "top-bottom"];
 const SHELL_EDGES: readonly ShellEdges[] = ["round", "sharp"];
-const MIN_WALL = 0.2;
+const MIN_WALL = MIN_SHELL_WALL;
 const WALL_STEP = 0.1;
 
 /**

@@ -40,6 +40,27 @@ describe("hollowing a solid with the real OCCT kernel", () => {
     expect(bounds.zmax - bounds.zmin).toBeCloseTo(30, 4);
   }
 
+  // Fratercula's 1 mm frame: a wall as thick as the part is tall. The height
+  // only limits the wall where a floor or lid is left standing.
+  it("hollows a 1 mm plate into a frame with a 1 mm wall", () => {
+    const plate = yUp(kernel.makeBox(40, 30, 1));
+    const result = shellSolid(kernel, plate, 1, "top-bottom");
+    expect(kernel.isValid(result)).toBe(true);
+    expect(kernel.getVolume(result)).toBeCloseTo(40 * 30 * 1 - 38 * 28 * 1, 3);
+    kernel.release(result);
+    kernel.release(plate);
+  });
+
+  it("leaves a floor thicker than half the height when only the top is open", () => {
+    const plate = yUp(kernel.makeBox(40, 30, 2));
+    const result = shellSolid(kernel, plate, 1.5, "top");
+    expect(kernel.isValid(result)).toBe(true);
+    // Cavity 37 x 27 x 0.5 above a 1.5 mm floor.
+    expect(kernel.getVolume(result)).toBeCloseTo(40 * 30 * 2 - 37 * 27 * 0.5, 3);
+    kernel.release(result);
+    kernel.release(plate);
+  });
+
   it("opens the top of a box like a tray", () => {
     const solid = box();
     const result = shellSolid(kernel, solid, 2, "top");

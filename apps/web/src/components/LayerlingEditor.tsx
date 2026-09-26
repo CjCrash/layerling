@@ -68,6 +68,7 @@ import { SketchWorkspace, type SketchMeasurement, type SketchPrimitive, type Ske
 import { EdgeModifierPanel } from "./workplane/EdgeModifierPanel";
 import { ShellPanel } from "./workplane/ShellPanel";
 import { ArrayPanel } from "./workplane/ArrayPanel";
+import { shellMaxThickness } from "@/lib/shellLimits";
 import { circleStepDegrees, clampArrayCount, rotateAroundVertical, rowOffset, type ArraySettings } from "@/lib/shapeArray";
 import { bedOverhangs, printerPresetById, type BedOverhang } from "@/lib/printBed";
 import { GuideModal } from "./workplane/GuideModal";
@@ -10834,13 +10835,18 @@ export function LayerlingEditor({
         <ShellPanel
           targetName={selectedShape.name}
           thickness={shellTool.thickness}
-          maxThickness={Math.max(0.2, Math.min(shapeWidth(selectedShape), shapeDepth(selectedShape), selectedShape.height) / 2)}
+          maxThickness={shellMaxThickness({ width: shapeWidth(selectedShape), depth: shapeDepth(selectedShape), height: selectedShape.height }, shellTool.openings)}
           openings={shellTool.openings}
           workspace={workspaceSettings}
           busy={shellTool.busy}
           error={shellTool.error}
           onThicknessChange={(value) => setShellTool((current) => current ? { ...current, thickness: value, error: null } : current)}
-          onOpeningsChange={(value) => setShellTool((current) => current ? { ...current, openings: value, error: null } : current)}
+          onOpeningsChange={(value) => setShellTool((current) => {
+            if (!current) return current;
+            // A wall that fitted a frame may be too thick once a floor has to stay.
+            const max = shellMaxThickness({ width: shapeWidth(selectedShape), depth: shapeDepth(selectedShape), height: selectedShape.height }, value);
+            return { ...current, openings: value, thickness: Math.min(current.thickness, max), error: null };
+          })}
           edges={shellTool.edges}
           onEdgesChange={(value) => setShellTool((current) => current ? { ...current, edges: value, error: null } : current)}
           onApply={applyShellTool}
