@@ -103,6 +103,8 @@ export const MESSAGES_EN = {
   "welcome.morePatternBody": "repeat a shape n times in a row or around a circle, for hole grids or toothed rings.",
   "welcome.moreWorkplaneTitle": "Workplane on any face",
   "welcome.moreWorkplaneBody": "place shapes straight onto slanted or side faces.",
+  "welcome.morePlaceTitle": "Place by click",
+  "welcome.morePlaceBody": "switch it on in the settings: a new shape follows the pointer and lands where you click.",
   "welcome.morePivotTitle": "Rotation pivot",
   "welcome.morePivotBody": "turn around the axis of a pipe end or the centre of a face instead of the body's centre.",
   "welcome.moreMeasureTitle": "Measure",

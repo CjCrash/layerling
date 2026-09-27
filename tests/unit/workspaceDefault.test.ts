@@ -27,7 +27,7 @@ describe("workspace default", () => {
       depth: 180,
       showShadows: false,
       showGrid: false,
-      cruiseShapes: false,
+      placeShapesByClick: false,
       selectBeforeMove: true,
       zoomSpeed: 10,
       background: "#101010",

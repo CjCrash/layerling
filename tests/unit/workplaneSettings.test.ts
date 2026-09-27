@@ -32,7 +32,7 @@ describe("workplane settings helpers", () => {
           background: "#123456",
           showShadows: false,
           showGrid: false,
-          cruiseShapes: false,
+          placeShapesByClick: false,
           selectBeforeMove: true,
           zoomSpeed: Infinity,
           units: "Bricks",
@@ -50,7 +50,7 @@ describe("workplane settings helpers", () => {
       background: "#123456",
       showShadows: false,
       showGrid: false,
-      cruiseShapes: false,
+      placeShapesByClick: false,
       selectBeforeMove: true,
       units: "Bricks",
       scale: "1:1 (studs)",
@@ -66,10 +66,12 @@ describe("workplane settings helpers", () => {
     expect(normalizeWorkspaceSettings({}).dimensionsAlwaysVisible).toBe(true);
     expect(normalizeWorkspaceSettings({ dimensionsAlwaysVisible: false }).dimensionsAlwaysVisible).toBe(false);
     expect(normalizeWorkspaceSettings({ dimensionsAlwaysVisible: "yes" }).dimensionsAlwaysVisible).toBe(true);
-    expect(DEFAULT_WORKPLANE_WORKSPACE.cruiseShapes).toBe(false);
-    expect(normalizeWorkspaceSettings({}).cruiseShapes).toBe(false);
-    expect(normalizeWorkspaceSettings({ cruiseShapes: true }).cruiseShapes).toBe(true);
-    expect(normalizeWorkspaceSettings({ cruiseShapes: "yes" }).cruiseShapes).toBe(false);
+    expect(DEFAULT_WORKPLANE_WORKSPACE.placeShapesByClick).toBe(false);
+    expect(normalizeWorkspaceSettings({}).placeShapesByClick).toBe(false);
+    expect(normalizeWorkspaceSettings({ placeShapesByClick: true }).placeShapesByClick).toBe(true);
+    expect(normalizeWorkspaceSettings({ placeShapesByClick: "yes" }).placeShapesByClick).toBe(false);
+    // Projects saved before 1.18.7 carry the old, never-used switch as "on".
+    expect(normalizeWorkspaceSettings({ cruiseShapes: true }).placeShapesByClick).toBe(false);
   });
 
   it("keeps app limits until a shape receives an explicit customization", () => {

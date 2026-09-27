@@ -145,7 +145,7 @@ export type WorkplaneWorkspaceSettings = {
   background: string;
   showShadows: boolean;
   showGrid: boolean;
-  cruiseShapes: boolean;
+  placeShapesByClick: boolean;
   selectBeforeMove: boolean;
   dimensionsAlwaysVisible: boolean;
   zoomSpeed: number;
