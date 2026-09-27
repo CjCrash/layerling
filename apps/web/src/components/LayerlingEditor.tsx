@@ -3820,7 +3820,10 @@ function isAxisAlignedBoxCutter(shape: WorkplaneShape) {
   const straightY = rotation < 0.001 || Math.abs(rotation - 180) < 0.001 || Math.abs(rotation - 360) < 0.001;
   const straightX = rotationX < 0.001 || Math.abs(rotationX - 180) < 0.001 || Math.abs(rotationX - 360) < 0.001;
   const straightZ = rotationZ < 0.001 || Math.abs(rotationZ - 180) < 0.001 || Math.abs(rotationZ - 360) < 0.001;
-  return shape.kind === "box" && straightX && straightY && straightZ;
+  // A tapered, twisted or leaning box is no longer a box: the fast paths that
+  // treat it as one dropped the deformation when grouping (Eichhornkobel,
+  // forum, 27.09.2026).
+  return shape.kind === "box" && straightX && straightY && straightZ && !shapeHasShapeDeform(shape);
 }
 
 type ClipPlane = { axis: 0 | 1 | 2; value: number; keepGreater: boolean };
@@ -4473,6 +4476,11 @@ function transformedPrimitiveManifold(runtime: ManifoldToplevel, primitive: Mani
 }
 
 function primitiveManifoldForShape(runtime: ManifoldToplevel, shape: WorkplaneShape, created: ManifoldSolid[]) {
+  // Taper, twist and lean are not part of the analytic primitives; the mesh
+  // carries them.
+  if (shapeHasShapeDeform(shape)) {
+    return null;
+  }
   const width = shapeWidth(shape);
   const depth = shapeDepth(shape);
   const height = shape.height;
