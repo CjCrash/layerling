@@ -6971,7 +6971,7 @@ export function LayerlingEditor({
     (settings: { workspace: WorkplaneWorkspaceSettings; snap: GridSize }) => {
       const nextWorkspace = normalizeWorkspaceSettings(settings.workspace);
       workspaceSettingsRef.current = nextWorkspace;
-      if (!nextWorkspace.placeShapesByClick && cruiseAssetRef.current) {
+      if (!nextWorkspace.clickToPlaceShapes && cruiseAssetRef.current) {
         setCruiseAsset(null);
         setNotice("");
       }
@@ -10767,7 +10767,7 @@ export function LayerlingEditor({
         onAddShape={(shape) => {
           setTopPanel(null);
           setMenuOpen(false);
-          if (workspaceSettings.placeShapesByClick) {
+          if (workspaceSettings.clickToPlaceShapes) {
             setCruiseAsset(shape);
             return;
           }

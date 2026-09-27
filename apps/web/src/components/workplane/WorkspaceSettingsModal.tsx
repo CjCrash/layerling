@@ -581,8 +581,8 @@ export function WorkspaceSettingsModal({
                   <WorkspaceToggle label={t("workspace.showShadows")} checked={workspace.showShadows} onChange={(showShadows) => patchWorkspace({ showShadows })} />
                   <WorkspaceToggle
                     label={t("workspace.cruise")}
-                    checked={workspace.placeShapesByClick}
-                    onChange={(placeShapesByClick) => patchWorkspace({ placeShapesByClick })}
+                    checked={workspace.clickToPlaceShapes}
+                    onChange={(clickToPlaceShapes) => patchWorkspace({ clickToPlaceShapes })}
                   />
                   <label className="workspace-range">
                     <span>{t("workspace.zoomSpeed")}</span>

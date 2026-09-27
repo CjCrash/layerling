@@ -103,7 +103,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "welcome.moreWorkplaneTitle": "Arbeitsebene auf jeder Fläche",
   "welcome.moreWorkplaneBody": "Formen direkt auf schrägen oder seitlichen Flächen aufsetzen.",
   "welcome.morePlaceTitle": "Formen per Klick absetzen",
-  "welcome.morePlaceBody": "in den Einstellungen einschalten: Eine neue Form hängt am Mauszeiger und landet, wo du klickst.",
+  "welcome.morePlaceBody": "eine neue Form hängt am Mauszeiger und landet, wo du klickst - abschaltbar in den Einstellungen.",
   "welcome.morePivotTitle": "Drehpunkt setzen",
   "welcome.morePivotBody": "um die Achse eines Rohrendes oder die Mitte einer Fläche drehen statt um die Mitte des Körpers.",
   "welcome.moreMeasureTitle": "Messen",

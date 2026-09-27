@@ -104,7 +104,7 @@ export const MESSAGES_EN = {
   "welcome.moreWorkplaneTitle": "Workplane on any face",
   "welcome.moreWorkplaneBody": "place shapes straight onto slanted or side faces.",
   "welcome.morePlaceTitle": "Place by click",
-  "welcome.morePlaceBody": "switch it on in the settings: a new shape follows the pointer and lands where you click.",
+  "welcome.morePlaceBody": "a new shape follows the pointer and lands where you click - can be switched off in the settings.",
   "welcome.morePivotTitle": "Rotation pivot",
   "welcome.morePivotBody": "turn around the axis of a pipe end or the centre of a face instead of the body's centre.",
   "welcome.moreMeasureTitle": "Measure",

@@ -24,7 +24,7 @@ export const DEFAULT_WORKPLANE_WORKSPACE: WorkplaneWorkspaceSettings = {
   background: "#fbf8f0",
   showShadows: true,
   showGrid: true,
-  placeShapesByClick: false,
+  clickToPlaceShapes: true,
   selectBeforeMove: false,
   dimensionsAlwaysVisible: true,
   zoomSpeed: 5,
@@ -291,10 +291,10 @@ export function normalizeWorkspaceSettings(value: unknown, fallback: WorkplaneWo
     background: migratedLegacyColor(stringOrDefault(candidate.background, fallback.background), LEGACY_BACKGROUND, fallback.background),
     showShadows: booleanOrDefault(candidate.showShadows, fallback.showShadows),
     showGrid: booleanOrDefault(candidate.showGrid, fallback.showGrid),
-    // Saved as "cruiseShapes" until 1.18.6, where the switch did nothing and
-    // defaulted to on. That old value is ignored so nobody gets click placement
-    // without choosing it.
-    placeShapesByClick: booleanOrDefault(candidate.placeShapesByClick, fallback.placeShapesByClick),
+    // Earlier names are ignored on purpose: "cruiseShapes" (until 1.18.6) was on
+    // but did nothing, and "placeShapesByClick" (1.18.7) was off by default -
+    // with 1.18.8 click placement is on for everyone unless switched off again.
+    clickToPlaceShapes: booleanOrDefault(candidate.clickToPlaceShapes, fallback.clickToPlaceShapes),
     selectBeforeMove: booleanOrDefault(candidate.selectBeforeMove, fallback.selectBeforeMove),
     dimensionsAlwaysVisible: booleanOrDefault(candidate.dimensionsAlwaysVisible, fallback.dimensionsAlwaysVisible),
     zoomSpeed: numberOrDefault(candidate.zoomSpeed, fallback.zoomSpeed),

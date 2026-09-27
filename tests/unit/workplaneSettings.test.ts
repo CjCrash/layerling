@@ -32,7 +32,7 @@ describe("workplane settings helpers", () => {
           background: "#123456",
           showShadows: false,
           showGrid: false,
-          placeShapesByClick: false,
+          clickToPlaceShapes: false,
           selectBeforeMove: true,
           zoomSpeed: Infinity,
           units: "Bricks",
@@ -50,7 +50,7 @@ describe("workplane settings helpers", () => {
       background: "#123456",
       showShadows: false,
       showGrid: false,
-      placeShapesByClick: false,
+      clickToPlaceShapes: false,
       selectBeforeMove: true,
       units: "Bricks",
       scale: "1:1 (studs)",
@@ -66,12 +66,12 @@ describe("workplane settings helpers", () => {
     expect(normalizeWorkspaceSettings({}).dimensionsAlwaysVisible).toBe(true);
     expect(normalizeWorkspaceSettings({ dimensionsAlwaysVisible: false }).dimensionsAlwaysVisible).toBe(false);
     expect(normalizeWorkspaceSettings({ dimensionsAlwaysVisible: "yes" }).dimensionsAlwaysVisible).toBe(true);
-    expect(DEFAULT_WORKPLANE_WORKSPACE.placeShapesByClick).toBe(false);
-    expect(normalizeWorkspaceSettings({}).placeShapesByClick).toBe(false);
-    expect(normalizeWorkspaceSettings({ placeShapesByClick: true }).placeShapesByClick).toBe(true);
-    expect(normalizeWorkspaceSettings({ placeShapesByClick: "yes" }).placeShapesByClick).toBe(false);
-    // Projects saved before 1.18.7 carry the old, never-used switch as "on".
-    expect(normalizeWorkspaceSettings({ cruiseShapes: true }).placeShapesByClick).toBe(false);
+    expect(DEFAULT_WORKPLANE_WORKSPACE.clickToPlaceShapes).toBe(true);
+    expect(normalizeWorkspaceSettings({}).clickToPlaceShapes).toBe(true);
+    expect(normalizeWorkspaceSettings({ clickToPlaceShapes: false }).clickToPlaceShapes).toBe(false);
+    expect(normalizeWorkspaceSettings({ clickToPlaceShapes: "no" }).clickToPlaceShapes).toBe(true);
+    // Projects saved by 1.18.7 carry click placement as "off" by default.
+    expect(normalizeWorkspaceSettings({ placeShapesByClick: false }).clickToPlaceShapes).toBe(true);
   });
 
   it("keeps app limits until a shape receives an explicit customization", () => {
