@@ -87,7 +87,7 @@ export const MESSAGES_EN = {
   "welcome.step1Title": "Start a design",
   "welcome.step1Body": "“Create a new 3D design” opens an empty workplane. An existing file goes through the tile next to it.",
   "welcome.step2Title": "Place shapes",
-  "welcome.step2Body": "Drag a box, cylinder, text or any other shape from the panel on the right onto the workplane, then set size and position.",
+  "welcome.step2Body": "Drag a box, cylinder, text or any other shape from the panel on the right onto the workplane, then set size and position. Sizes take percentages too: 50% halves them.",
   "welcome.step3Title": "Group in the cut-outs",
   "welcome.step3Body": "Every shape is either a solid or a cut-out. Grouping makes the cut-out remove material - that is how holes, slots and pockets are made.",
   "welcome.step4Title": "Break the edges and export",

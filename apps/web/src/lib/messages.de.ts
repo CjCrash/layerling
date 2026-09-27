@@ -86,7 +86,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "welcome.step1Title": "Entwurf anlegen",
   "welcome.step1Body": "„Neuen 3D-Entwurf anlegen\" startet mit einer leeren Arbeitsebene. Eine vorhandene Datei öffnest du daneben.",
   "welcome.step2Title": "Formen aufsetzen",
-  "welcome.step2Body": "Zieh Quader, Zylinder, Text oder eine der anderen Formen aus der Ablage am rechten Rand auf die Arbeitsebene und stell Maße und Lage ein.",
+  "welcome.step2Body": "Zieh Quader, Zylinder, Text oder eine der anderen Formen aus der Ablage am rechten Rand auf die Arbeitsebene und stell Maße und Lage ein. Maße gehen auch in Prozent: 50 % halbiert.",
   "welcome.step3Title": "Aussparungen gruppieren",
   "welcome.step3Body": "Jede Form ist Körper oder Aussparung. Beim Gruppieren nimmt die Aussparung Material weg - so entstehen Bohrung, Nut und Tasche.",
   "welcome.step4Title": "Kanten brechen und exportieren",
