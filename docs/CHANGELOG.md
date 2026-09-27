@@ -4,6 +4,12 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.18.6
+
+- **Tapered boxes stay tapered when grouped:** Grouping a tapered box with a tapered hole - a funnel or a transition piece between two rectangles - turned the result back into a straight box. Twisted and leaning boxes lost their shape the same way. Grouping now keeps the deformation. Reported by Eichhornkobel in the forum.
+- **Thicker walls when hollowing:** The wall was limited to half the smallest dimension, height included, whatever stayed open. A frame open at top and bottom now ignores the height, and with one side open the floor may take almost the whole height, so a 1 mm frame can be made from a 1 mm plate. Reported by Fratercula in the forum.
+- **Grid in orthographic view:** In a face-on orthographic view, parts of the workplane grid could disappear behind the plate. Contributed by @gogades in #35.
+
 ## 1.18.5
 
 - **Pattern tool:** A new "Pattern" tool next to the rotation pivot repeats the selection n times - in a row along X, Y or Z with a spacing (negative runs the other way), or around a circle over a total angle, with the copies turned along or kept as they are. The circle centre is taken from the rotation pivot when one is set, otherwise the origin. The copies show as a preview while the numbers change; "Create" adds them as one undo step. Also available through MCP as `layerling_array_objects`.
