@@ -4,6 +4,13 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.18.7
+
+- **Exact bodies for fillets, chamfers and hollowing:** Polygon, star, heart, crescent, slot and honeycomb now go into the edge tool and the hollow tool as exact CAD bodies built from their own parameters, instead of being sewn together from the display mesh. Curves stay curves: a star with rounded tips offers 60 edges instead of 510 and takes a 1 mm fillet in well under a second instead of several, and a crescent that could not be filleted before now can be. The display mesh stays as the fallback, so anything that worked before still does. Contributed by @plazmabokor in #37.
+- **Sizes in percent:** Width, depth and height take a percentage - "50%" halves the current size, "120%" enlarges it by a fifth. Works on the dimension labels on the canvas, in the size fields of the inspector and on ruler dimensions. Contributed by @gogades in #38.
+- **Settings dialog:** The checkboxes sit on the same line as their description again. Contributed by @gogades in #39.
+- **Place shapes by click:** The setting "Cruise when adding new shapes" under Display now works. A new shape follows the pointer as a preview and lands where you click; Esc cancels. It is off by default, including for projects saved earlier. Contributed by @gogades in #40.
+
 ## 1.18.6
 
 - **Tapered boxes stay tapered when grouped:** Grouping a tapered box with a tapered hole - a funnel or a transition piece between two rectangles - turned the result back into a straight box. Twisted and leaning boxes lost their shape the same way. Grouping now keeps the deformation. Reported by Eichhornkobel in the forum.
