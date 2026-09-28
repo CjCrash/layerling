@@ -894,7 +894,9 @@ export default function Home() {
         window.localStorage.removeItem(PROJECTS_STORAGE_KEY);
         window.localStorage.setItem(PROJECTS_STORAGE_KEY, serialized);
       } catch {
-        setDashboardNotice(error instanceof Error ? error.message : t("notice.projectListSaveFailed"));
+        // The browser's own text ("QuotaExceededError ... exceeded the quota") helps nobody.
+        void error;
+        setDashboardNotice(t("notice.projectListSaveFailed"));
         return;
       }
     }

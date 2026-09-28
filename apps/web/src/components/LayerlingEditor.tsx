@@ -20,6 +20,7 @@ import { createHeartGeometry } from "@/lib/heartGeometry";
 import { createCrescentGeometry } from "@/lib/crescentGeometry";
 import { createSlotGeometry } from "@/lib/slotGeometry";
 import { createDovetailGeometry } from "@/lib/dovetailGeometry";
+import { decodeClipboardPayload, encodeClipboardPayload, LOCAL_CLIPBOARD_LIMIT, newestClipboard, type ClipboardPayload } from "@/lib/clipboardPayload";
 import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
 import { createRoundedBoxGeometry } from "@/lib/roundedBoxGeometry";
 import { bentTubeNaturalDimensions, createBentTubeGeometry, normalizedBentTubeFields } from "@/lib/bentTubeGeometry";
@@ -720,41 +721,50 @@ function cleanModelDimension(value: number) {
   return Math.max(MIN_SHAPE_DIMENSION, Number(value.toFixed(MODEL_DIMENSION_PRECISION)));
 }
 
-function parseClipboardShapes(serialized: string) {
-  try {
-    const parsed = JSON.parse(serialized);
-    if (!Array.isArray(parsed)) {
+function parseClipboardShapes(serialized: string): ClipboardPayload<WorkplaneShape> | null {
+  const payload = decodeClipboardPayload(serialized);
+  if (!payload) return null;
+  const shapes = payload.shapes.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const shape = entry as Partial<WorkplaneShape>;
+    const { name, kind, color } = shape;
+    if (typeof name !== "string" || typeof kind !== "string" || typeof color !== "string") {
       return [];
     }
-    return parsed.flatMap((shape: Partial<WorkplaneShape>) => {
-      const { name, kind, color } = shape;
-      if (typeof name !== "string" || typeof kind !== "string" || typeof color !== "string") {
-        return [];
-      }
-      return [canonicalizeShape(sceneShape({ ...shape, name, kind, color }))];
-    });
-  } catch {
-    return [];
-  }
+    return [canonicalizeShape(sceneShape({ ...shape, name, kind, color }))];
+  });
+  return { copiedAt: payload.copiedAt, shapes };
 }
 
-function readSharedClipboard() {
+function readSharedClipboard(): ClipboardPayload<WorkplaneShape> | null {
   if (typeof window === "undefined") {
-    return [];
+    return null;
   }
-  return parseClipboardShapes(window.localStorage.getItem(SHARED_CLIPBOARD_STORAGE_KEY) ?? "[]");
+  try {
+    const stored = window.localStorage.getItem(SHARED_CLIPBOARD_STORAGE_KEY);
+    if (!stored) return null;
+    // A large copy from an older layerling may still sit here and crowd out
+    // the project list; the tab and the system clipboard carry large copies.
+    if (stored.length > LOCAL_CLIPBOARD_LIMIT) {
+      window.localStorage.removeItem(SHARED_CLIPBOARD_STORAGE_KEY);
+      return null;
+    }
+    return parseClipboardShapes(stored);
+  } catch {
+    return null;
+  }
 }
 
-async function readSystemClipboard() {
+async function readSystemClipboard(): Promise<ClipboardPayload<WorkplaneShape> | null> {
   if (typeof navigator === "undefined" || !navigator.clipboard?.readText) {
-    return [];
+    return null;
   }
   try {
     const value = await navigator.clipboard.readText();
-    if (!value.startsWith(SYSTEM_CLIPBOARD_PREFIX)) return [];
+    if (!value.startsWith(SYSTEM_CLIPBOARD_PREFIX)) return null;
     return parseClipboardShapes(value.slice(SYSTEM_CLIPBOARD_PREFIX.length));
   } catch {
-    return [];
+    return null;
   }
 }
 
@@ -782,15 +792,25 @@ function copyTextWithSelectionFallback(value: string) {
   previousFocus?.focus({ preventScroll: true });
 }
 
-function writeSharedClipboard(shapes: WorkplaneShape[]) {
+function writeSharedClipboard(shapes: WorkplaneShape[], copiedAt: number) {
   if (typeof window === "undefined") {
     return;
   }
-  const serialized = serializeShapesForSync(shapes);
+  const serialized = encodeClipboardPayload(serializeShapesForSync(shapes), copiedAt);
   try {
-    window.localStorage.setItem(SHARED_CLIPBOARD_STORAGE_KEY, serialized);
+    if (serialized.length > LOCAL_CLIPBOARD_LIMIT) {
+      // Too large for the small local storage: an older copy must not stay
+      // behind there either, or another tab would paste that instead.
+      window.localStorage.removeItem(SHARED_CLIPBOARD_STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(SHARED_CLIPBOARD_STORAGE_KEY, serialized);
+    }
   } catch {
-    // The system clipboard can still carry large models if local storage is full.
+    try {
+      window.localStorage.removeItem(SHARED_CLIPBOARD_STORAGE_KEY);
+    } catch {
+      // storage unavailable - the tab and the system clipboard still hold the copy
+    }
   }
   const systemPayload = `${SYSTEM_CLIPBOARD_PREFIX}${serialized}`;
   copyTextWithSelectionFallback(systemPayload);
@@ -6070,6 +6090,7 @@ export function LayerlingEditor({
   const [projectAssets, setProjectAssets] = useState<ProjectAsset[]>(() => dedupeProjectAssets(initialAssets));
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [clipboard, setClipboard] = useState<WorkplaneShape[]>([]);
+  const clipboardCopiedAtRef = useRef(0);
   const [systemClipboardSupported, setSystemClipboardSupported] = useState(false);
   const [history, setHistory] = useState<EditorHistoryEntry[]>(() => (initialHistoryStateRef.current as EditorHistoryState).entries);
   const [historyIndex, setHistoryIndex] = useState(() => (initialHistoryStateRef.current as EditorHistoryState).index);
@@ -6460,10 +6481,17 @@ export function LayerlingEditor({
 
   useEffect(() => {
     setSystemClipboardSupported(Boolean(navigator.clipboard));
-    setClipboard(readSharedClipboard());
+    const adoptShared = () => {
+      const shared = readSharedClipboard();
+      if (shared && shared.copiedAt >= clipboardCopiedAtRef.current) {
+        clipboardCopiedAtRef.current = shared.copiedAt;
+        setClipboard(shared.shapes);
+      }
+    };
+    adoptShared();
     const onStorage = (event: StorageEvent) => {
       if (event.key === SHARED_CLIPBOARD_STORAGE_KEY) {
-        setClipboard(readSharedClipboard());
+        adoptShared();
       }
     };
     window.addEventListener("storage", onStorage);
@@ -8021,8 +8049,10 @@ export function LayerlingEditor({
       setNotice(t("status.selectShapeFirst"));
       return;
     }
+    const copiedAt = Date.now();
+    clipboardCopiedAtRef.current = copiedAt;
     setClipboard(selectedShapes);
-    writeSharedClipboard(selectedShapes);
+    writeSharedClipboard(selectedShapes, copiedAt);
     setNotice(selectedShapes.length === 1
       ? t("status.copiedOne")
       : t("status.copiedMany", { count: selectedShapes.length }));
@@ -8030,9 +8060,14 @@ export function LayerlingEditor({
 
   const pasteShape = useCallback(async () => {
     const sourceProjectId = projectInfoRef.current.projectId;
-    const systemClipboard = await readSystemClipboard();
-    const sharedClipboard = readSharedClipboard();
-    const sourceClipboard = systemClipboard.length > 0 ? systemClipboard : sharedClipboard.length > 0 ? sharedClipboard : clipboard;
+    // The newest copy wins, wherever it landed: this tab, another tab (local
+    // storage) or another browser (system clipboard).
+    const newest = newestClipboard([
+      { copiedAt: clipboardCopiedAtRef.current, shapes: clipboard },
+      readSharedClipboard(),
+      await readSystemClipboard(),
+    ]);
+    const sourceClipboard = newest?.shapes ?? [];
     if (sourceClipboard.length === 0) {
       setNotice(t("status.clipboardEmpty"));
       return;
@@ -8041,7 +8076,8 @@ export function LayerlingEditor({
       setNotice(t("status.pasteCancelled"));
       return;
     }
-    if (serializeShapesForSync(sourceClipboard) !== serializeShapesForSync(clipboard)) {
+    if (newest && newest.copiedAt !== clipboardCopiedAtRef.current) {
+      clipboardCopiedAtRef.current = newest.copiedAt;
       setClipboard(sourceClipboard);
     }
     const pasted = sourceClipboard.map((shape) => {
@@ -8878,8 +8914,10 @@ export function LayerlingEditor({
       return;
     }
     const selected = new Set(selectedIds);
+    const copiedAt = Date.now();
+    clipboardCopiedAtRef.current = copiedAt;
     setClipboard(selectedShapes);
-    writeSharedClipboard(selectedShapes);
+    writeSharedClipboard(selectedShapes, copiedAt);
     commitShapes(
       shapes.filter((shape) => !selected.has(shape.id)),
       [],
