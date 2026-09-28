@@ -33,6 +33,7 @@ export const MCP_SHAPE_SETTING_KEYS = [
   "heartTipFillet", "heartQuality",
   "crescentThickness", "crescentTipFillet", "crescentQuality",
   "honeycombCellSize", "honeycombWallThickness", "honeycombFrameWidth",
+  "dovetailNeckWidth", "dovetailClearance",
   "cornerFillet", "topBottomFillet", "roundedBoxQuality",
   "bentTubeProfile", "bentTubeInnerProfile", "bentTubeSize", "bentTubeWall", "bentTubeQuality", "bentTubeSegments",
   "text", "font",

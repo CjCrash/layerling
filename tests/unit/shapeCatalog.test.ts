@@ -53,16 +53,18 @@ describe("shape catalog", () => {
     expect(textIndex).toBe(crescentIndex + 1);
   });
 
-  it("exposes honeycomb between gear and ruler in the toolbar catalog", () => {
+  it("exposes honeycomb and dovetail between gear and ruler in the toolbar catalog", () => {
     const kinds = toolbarShapeAssets.map((asset) => asset.kind);
 
     expect(kinds).toContain("honeycomb");
 
     const gearIndex = kinds.indexOf("gear");
     const honeycombIndex = kinds.indexOf("honeycomb");
+    const dovetailIndex = kinds.indexOf("dovetail");
     const rulerIndex = kinds.indexOf("ruler");
     expect(honeycombIndex).toBe(gearIndex + 1);
-    expect(rulerIndex).toBe(honeycombIndex + 1);
+    expect(dovetailIndex).toBe(honeycombIndex + 1);
+    expect(rulerIndex).toBe(dovetailIndex + 1);
   });
 
   it("creates placed shapes from toolbar assets", () => {

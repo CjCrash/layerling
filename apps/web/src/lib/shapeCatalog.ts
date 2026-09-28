@@ -86,6 +86,15 @@ import {
   DEFAULT_SLOT_HEIGHT,
 } from "@/lib/slotGeometry";
 import {
+  DEFAULT_DOVETAIL_CLEARANCE,
+  DEFAULT_DOVETAIL_DEPTH,
+  DEFAULT_DOVETAIL_HEIGHT,
+  DEFAULT_DOVETAIL_NECK_RATIO,
+  DEFAULT_DOVETAIL_WIDTH,
+  normalizeDovetailClearance,
+  normalizeDovetailNeckWidth,
+} from "@/lib/dovetailGeometry";
+import {
   DEFAULT_HONEYCOMB_WIDTH,
   DEFAULT_HONEYCOMB_DEPTH,
   DEFAULT_HONEYCOMB_HEIGHT,
@@ -140,6 +149,7 @@ const SHAPE_LABEL_KEYS: Record<string, MessageKey> = {
   crescent: "shape.crescent",
   gear: "shape.gear",
   honeycomb: "shape.honeycomb",
+  dovetail: "shape.dovetail",
   thread: "shape.thread",
   spring: "shape.spring",
   polygon: "shape.polygon",
@@ -172,6 +182,7 @@ export const toolbarShapeAssets: ToolbarShapeAsset[] = [
   { id: "spring", name: "Spring", src: "assets/editor/shape-icons-gray/spring.png", menuIcon: "assets/editor/shape-icons-gray/spring.png", kind: "spring", color: "#18b99a" },
   { id: "gear", name: "Gear", src: "assets/editor/gear-types/spur.png", menuIcon: "assets/editor/gear-types/spur.png", kind: "gear", color: "#6f7f8d" },
   { id: "honeycomb", name: "Honeycomb", src: "assets/editor/shape-icons-gray/honeycomb.png", menuIcon: "assets/editor/shape-icons-gray/honeycomb.png", kind: "honeycomb", color: "#0ea5e9" },
+  { id: "dovetail", name: "Dovetail", src: "assets/editor/shape-icons-gray/dovetail.png", menuIcon: "assets/editor/shape-icons-gray/dovetail.png", kind: "dovetail", color: "#a0522d" },
   { id: "ruler", name: "Ruler", src: "assets/editor/shape-icons-gray/ruler.png", menuIcon: "assets/editor/shape-icons-gray/ruler.png", kind: "ruler", color: "#f2e4b8" },
 ];
 
@@ -209,6 +220,9 @@ export function shapeAssetDefaultDimensions(kind: ShapeKind) {
   }
   if (kind === "slot") {
     return { width: DEFAULT_SLOT_WIDTH, depth: DEFAULT_SLOT_DEPTH, height: DEFAULT_SLOT_HEIGHT };
+  }
+  if (kind === "dovetail") {
+    return { width: DEFAULT_DOVETAIL_WIDTH, depth: DEFAULT_DOVETAIL_DEPTH, height: DEFAULT_DOVETAIL_HEIGHT };
   }
   if (kind === "honeycomb") {
     return { width: DEFAULT_HONEYCOMB_WIDTH, depth: DEFAULT_HONEYCOMB_DEPTH, height: DEFAULT_HONEYCOMB_HEIGHT };
@@ -282,6 +296,12 @@ export function shapeAssetSpecialDefaults(kind: ShapeKind, dimensions = shapeAss
       crescentThickness: DEFAULT_CRESCENT_THICKNESS,
       crescentTipFillet: DEFAULT_CRESCENT_TIP_FILLET,
       crescentQuality: DEFAULT_CRESCENT_QUALITY,
+    };
+  }
+  if (kind === "dovetail") {
+    return {
+      dovetailNeckWidth: dimensions.width * DEFAULT_DOVETAIL_NECK_RATIO,
+      dovetailClearance: DEFAULT_DOVETAIL_CLEARANCE,
     };
   }
   if (kind === "honeycomb") {
@@ -398,6 +418,8 @@ export function sceneShape(shape: Partial<WorkplaneShape> & Pick<WorkplaneShape,
     honeycombCellSize: shape.honeycombCellSize,
     honeycombWallThickness: shape.honeycombWallThickness,
     honeycombFrameWidth: shape.honeycombFrameWidth,
+    dovetailNeckWidth: shape.dovetailNeckWidth,
+    dovetailClearance: shape.dovetailClearance,
     cornerFillet: shape.cornerFillet,
     topBottomFillet: shape.topBottomFillet,
     roundedBoxQuality: shape.roundedBoxQuality,
@@ -534,6 +556,8 @@ export function makeShapeFromAsset(
     honeycombCellSize: asset.kind === "honeycomb" ? normalizeHoneycombCellSize(customization.honeycombCellSize ?? DEFAULT_HONEYCOMB_CELL_SIZE) : undefined,
     honeycombWallThickness: asset.kind === "honeycomb" ? normalizeHoneycombWallThickness(customization.honeycombWallThickness ?? DEFAULT_HONEYCOMB_WALL_THICKNESS) : undefined,
     honeycombFrameWidth: asset.kind === "honeycomb" ? normalizeHoneycombFrameWidth(customization.honeycombFrameWidth ?? DEFAULT_HONEYCOMB_FRAME_WIDTH) : undefined,
+    dovetailNeckWidth: asset.kind === "dovetail" ? normalizeDovetailNeckWidth(customization.dovetailNeckWidth, width) : undefined,
+    dovetailClearance: asset.kind === "dovetail" ? normalizeDovetailClearance(customization.dovetailClearance ?? DEFAULT_DOVETAIL_CLEARANCE) : undefined,
     cornerFillet: asset.kind === "roundedBox" ? normalizeCornerFillet(customization.cornerFillet ?? DEFAULT_ROUNDED_BOX_CORNER_FILLET, Math.min(width, depth) / 2) : undefined,
     topBottomFillet: asset.kind === "roundedBox" ? normalizeTopBottomFillet(customization.topBottomFillet ?? DEFAULT_ROUNDED_BOX_TOP_BOTTOM_FILLET, height / 2) : undefined,
     roundedBoxQuality: asset.kind === "roundedBox" ? normalizeRoundedBoxQuality(customization.roundedBoxQuality ?? DEFAULT_ROUNDED_BOX_QUALITY) : undefined,

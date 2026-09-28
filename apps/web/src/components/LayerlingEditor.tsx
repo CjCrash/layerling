@@ -19,6 +19,7 @@ import { createStarGeometry } from "@/lib/starGeometry";
 import { createHeartGeometry } from "@/lib/heartGeometry";
 import { createCrescentGeometry } from "@/lib/crescentGeometry";
 import { createSlotGeometry } from "@/lib/slotGeometry";
+import { createDovetailGeometry } from "@/lib/dovetailGeometry";
 import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
 import { createRoundedBoxGeometry } from "@/lib/roundedBoxGeometry";
 import { bentTubeNaturalDimensions, createBentTubeGeometry, normalizedBentTubeFields } from "@/lib/bentTubeGeometry";
@@ -2382,6 +2383,16 @@ function geometryMeshForShape(shape: WorkplaneShape): MeshData | null {
         depth,
         height,
         sides: shape.sides,
+      });
+      break;
+    case "dovetail":
+      geometry = createDovetailGeometry({
+        width,
+        depth,
+        height,
+        dovetailNeckWidth: shape.dovetailNeckWidth,
+        dovetailClearance: shape.dovetailClearance,
+        hole: shape.hole,
       });
       break;
     case "gear":

@@ -119,6 +119,7 @@ import {
 } from "@/lib/bentTubeGeometry";
 import { displayStepFromMillimeters, displayToMillimeters, formatMeasurementNumber, lengthDisplayUnit, measurementOptionLabel, millimetersToDisplay, parseMeasurementInput, resolveMeasurementInput } from "@/lib/measurementUnits";
 import { t, type MessageKey } from "@/lib/i18n";
+import { MAX_DOVETAIL_CLEARANCE, normalizeDovetailClearance, normalizeDovetailNeckWidth } from "@/lib/dovetailGeometry";
 import { useLanguage } from "@/lib/useLanguage";
 import { isNonSolidShapeKind, resizedShapeSize, shapeDepth, shapeHasTaper, shapeOverallFootprintDimensions, shapeSupportsTaper, shapeTaperDimensions, shapeWidth } from "@/lib/workplaneShapes";
 import { normalizeSketchRevolveSettings } from "@/lib/sketchRevolve";
@@ -263,7 +264,7 @@ function formatPropertyNumber(value: number, accuracy: MeasurementAccuracy, step
 const RELATIVE_SIZE_PROPERTY_IDS = new Set(["width", "height", "length", "diameter", "starOuterSize"]);
 
 function propertyUsesLengthUnit(key: string) {
-  return ["radius", "length", "width", "height", "bevel", "topRadius", "baseRadius", "thickness", "toothSize", "toothWidth", "centerHole", "topLength", "topWidth", "bottomLength", "bottomWidth", "diameter", "pitch", "clearance", "threadLength", "headHeight", "chamfer", "headChamfer", "wire", "starOuterSize", "starInnerSize", "starOuterFillet", "starInnerFillet", "heartTipFillet", "crescentThickness", "crescentTipFillet", "honeycombCellSize", "honeycombWallThickness", "honeycombFrameWidth", "cornerFillet", "topBottomFillet", "bentTubeSize", "bentTubeWall", "bentTubeSegmentLength", "bentTubeBendRadius"].includes(key);
+  return ["radius", "length", "width", "height", "bevel", "topRadius", "baseRadius", "thickness", "toothSize", "toothWidth", "centerHole", "topLength", "topWidth", "bottomLength", "bottomWidth", "diameter", "pitch", "clearance", "threadLength", "headHeight", "chamfer", "headChamfer", "wire", "starOuterSize", "starInnerSize", "starOuterFillet", "starInnerFillet", "heartTipFillet", "crescentThickness", "crescentTipFillet", "honeycombCellSize", "honeycombWallThickness", "honeycombFrameWidth", "cornerFillet", "topBottomFillet", "bentTubeSize", "bentTubeWall", "bentTubeSegmentLength", "bentTubeBendRadius", "dovetailNeckWidth", "dovetailClearance"].includes(key);
 }
 
 /**
@@ -655,6 +656,33 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
       { id: "length", label: t("prop.length"), value: depth, min: MIN_SHAPE_SIZE, max: 200, onChange: setDepth },
       { id: "width", label: t("prop.width"), value: width, min: MIN_SHAPE_SIZE, max: 200, onChange: setWidth },
       { id: "height", label: t("prop.height"), value: shape.height, min: MIN_SHAPE_SIZE, max: 160, onChange: setHeight },
+    ];
+  }
+
+  if (shape.kind === "dovetail") {
+    const neck = normalizeDovetailNeckWidth(shape.dovetailNeckWidth, width);
+    return [
+      { id: "width", label: t("prop.dovetailWideEnd"), value: width, min: MIN_SHAPE_SIZE, max: 160, onChange: setWidth },
+      {
+        id: "dovetailNeckWidth",
+        label: t("prop.dovetailNeckWidth"),
+        value: neck,
+        min: 0.1,
+        max: Math.max(0.2, width * 0.95),
+        step: 0.1,
+        onChange: (value) => onUpdate({ dovetailNeckWidth: normalizeDovetailNeckWidth(value, width) }),
+      },
+      { id: "length", label: t("prop.dovetailLength"), value: depth, min: MIN_SHAPE_SIZE, max: 160, onChange: setDepth },
+      { id: "height", label: t("prop.height"), value: shape.height, min: MIN_SHAPE_SIZE, max: 160, onChange: setHeight },
+      {
+        id: "dovetailClearance",
+        label: t("prop.dovetailClearance"),
+        value: normalizeDovetailClearance(shape.dovetailClearance),
+        min: 0,
+        max: MAX_DOVETAIL_CLEARANCE,
+        step: 0.05,
+        onChange: (value) => onUpdate({ dovetailClearance: normalizeDovetailClearance(value) }),
+      },
     ];
   }
 
@@ -1375,7 +1403,8 @@ export function ShapeInspector({
         >
           {minimized ? <ChevronDown size={26} strokeWidth={2.8} /> : <ChevronUp size={26} strokeWidth={2.8} />}
         </button>
-        <strong>{shape.name}</strong>
+        {/* One long word ("Schwalbenschwanz") cannot wrap; it gets a smaller size instead. */}
+        <strong className={shape.name.split(/\s+/).some((word) => word.length > 14) ? "long-word" : undefined}>{shape.name}</strong>
         <div className="inspector-header-actions">
           <button className={locked ? "inspector-header-icon active" : "inspector-header-icon"} aria-label={locked ? "Unlock shape" : "Lock shape"} onClick={() => onUpdate({ locked: !locked })}>
             {locked ? <LockKeyhole size={31} strokeWidth={2.4} /> : <LockKeyholeOpen size={31} strokeWidth={2.4} />}

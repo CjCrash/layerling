@@ -42,7 +42,7 @@ export const LYL_LIMITS = {
 
 const SHAPE_KINDS = new Set([
   "box", "roundedBox", "cylinder", "slot", "ellipse", "sphere", "sketch", "scribble", "cone", "pyramid", "roof", "text", "roundRoof",
-  "halfSphere", "torus", "tube", "bentTube", "star", "heart", "crescent", "gear", "honeycomb", "thread", "spring", "ring", "wedge", "polygon", "icosahedron", "ruler", "mesh",
+  "halfSphere", "torus", "tube", "bentTube", "star", "heart", "crescent", "gear", "honeycomb", "dovetail", "thread", "spring", "ring", "wedge", "polygon", "icosahedron", "ruler", "mesh",
 ]);
 
 const FEATURE_TYPES = new Set([
@@ -1225,6 +1225,14 @@ function validateShapeDefinition(definition: Record<string, unknown>, label: str
       if (!Number.isInteger(crescentQuality) || crescentQuality < 16 || crescentQuality > 64) {
         throw new Error(`${label}.crescentQuality is outside the supported range`);
       }
+    }
+  }
+  if (kind === "dovetail") {
+    // Lenient on purpose: the geometry clamps the values itself; only nonsense is refused.
+    for (const key of ["dovetailNeckWidth", "dovetailClearance"] as const) {
+      if (definition[key] === undefined) continue;
+      const value = finiteNumber(definition[key], `${label}.${key}`);
+      if (value < 0 || value > 1e6) throw new Error(`${label}.${key} is outside the supported range`);
     }
   }
   if (kind === "honeycomb") {

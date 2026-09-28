@@ -10,6 +10,7 @@ import { normalizeStarInnerFillet, normalizeStarInnerSize, normalizeStarOuterFil
 import { normalizeHeartTipFillet } from "@/lib/heartGeometry";
 import { buildCrescentContourPoints, normalizeCrescentQuality, normalizeCrescentThickness, normalizeCrescentTipFillet } from "@/lib/crescentGeometry";
 import { buildHoneycombHoles, normalizeHoneycombCellSize, normalizeHoneycombFrameWidth, normalizeHoneycombWallThickness } from "@/lib/honeycombGeometry";
+import { dovetailOutlineForShape } from "@/lib/dovetailGeometry";
 import { gearToothPitch, normalizeGearCenterHoleSize, normalizeGearToothSize, normalizeGearToothWidth, normalizeGearTeeth, normalizeGearType } from "@/lib/gearGeometry";
 
 /*
@@ -24,7 +25,7 @@ type Point = { x: number; z: number };
 type Arc = { cx: number; cz: number; rx: number; rz: number; start: number; end: number };
 type Corner = { start: Point; end: Point; arc?: Arc };
 
-export const CAD_PROFILE_SHAPE_KINDS = new Set<WorkplaneShape["kind"]>(["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear"]);
+export const CAD_PROFILE_SHAPE_KINDS = new Set<WorkplaneShape["kind"]>(["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear", "dovetail"]);
 
 function shortestAngleDelta(from: number, to: number) {
   let delta = to - from;
@@ -497,6 +498,8 @@ export function cadProfileForShapeKind(shape: WorkplaneShape) {
       return { loops: slotProfileLoops(width, depth) };
     case "honeycomb":
       return { loops: honeycombProfileLoops(width, depth, shape) };
+    case "dovetail":
+      return { loops: [polygonLoop(dovetailOutlineForShape(shape).map((point) => ({ x: point.x, z: point.y })))] };
     case "gear":
       return normalizeGearType(shape.gearType) === "spur" ? { loops: gearProfileLoops(width, depth, shape) } : null;
     default:

@@ -21,6 +21,7 @@ export type ShapeKind =
   | "crescent"
   | "gear"
   | "honeycomb"
+  | "dovetail"
   | "thread"
   | "spring"
   | "ring"
@@ -122,6 +123,10 @@ export type ShapeCustomization = {
   honeycombCellSize?: number;
   honeycombWallThickness?: number;
   honeycombFrameWidth?: number;
+  /** Dovetail: width of the narrow neck in mm (the wide end is the shape's width). */
+  dovetailNeckWidth?: number;
+  /** Dovetail: gap in mm added on every side when the dovetail is a cut-out (its socket). */
+  dovetailClearance?: number;
   bentTubeProfile?: BentTubeProfile;
   bentTubeInnerProfile?: BentTubeInnerProfile;
   bentTubeSize?: number;
@@ -395,6 +400,10 @@ export type WorkplaneShape = {
   honeycombCellSize?: number;
   honeycombWallThickness?: number;
   honeycombFrameWidth?: number;
+  /** Dovetail: width of the narrow neck in mm (the wide end is the shape's width). */
+  dovetailNeckWidth?: number;
+  /** Dovetail: gap in mm added on every side when the dovetail is a cut-out (its socket). */
+  dovetailClearance?: number;
   cornerFillet?: number;
   topBottomFillet?: number;
   roundedBoxQuality?: number;

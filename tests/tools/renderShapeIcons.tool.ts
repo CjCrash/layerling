@@ -10,6 +10,7 @@ import { createStarGeometry } from "@/lib/starGeometry";
 import { createHeartGeometry } from "@/lib/heartGeometry";
 import { createCrescentGeometry } from "@/lib/crescentGeometry";
 import { createSlotGeometry } from "@/lib/slotGeometry";
+import { createDovetailGeometry } from "@/lib/dovetailGeometry";
 import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
 import { createRoundedBoxGeometry } from "@/lib/roundedBoxGeometry";
 import { createThreadGeometry } from "@/lib/threadGeometry";
@@ -359,6 +360,20 @@ describe("palette icons", () => {
         depth: 18,
         height: 16,
         sides: 32,
+      }),
+    });
+    render({
+      // Steiler von oben, damit das Trapez als Schwalbenschwanz zu lesen ist.
+      name: "apps/web/public/assets/editor/shape-icons-gray/dovetail.png",
+      height: 8,
+      lay: false,
+      azimuth: 0,
+      elevation: 55,
+      build: () => createDovetailGeometry({
+        width: 34,
+        depth: 24,
+        height: 8,
+        dovetailNeckWidth: 16,
       }),
     });
     render({
