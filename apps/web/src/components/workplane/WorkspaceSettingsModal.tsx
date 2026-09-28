@@ -315,11 +315,13 @@ export function WorkspaceSettingsModal({
   themePreference,
   moveDimensionsEnabled,
   originDimensionsEnabled,
+  startInPerspective,
   onWorkspaceChange,
   onSnapChange,
   onThemePreferenceChange,
   onMoveDimensionsEnabledChange,
   onOriginDimensionsEnabledChange,
+  onStartInPerspectiveChange,
   onMakeDefault,
   onClose,
 }: {
@@ -328,11 +330,13 @@ export function WorkspaceSettingsModal({
   themePreference: AppThemePreference;
   moveDimensionsEnabled: boolean;
   originDimensionsEnabled: boolean;
+  startInPerspective: boolean;
   onWorkspaceChange: (next: WorkspaceSettings) => void;
   onSnapChange: (next: GridSize) => void;
   onThemePreferenceChange?: (preference: AppThemePreference) => void;
   onMoveDimensionsEnabledChange: (enabled: boolean) => void;
   onOriginDimensionsEnabledChange: (enabled: boolean) => void;
+  onStartInPerspectiveChange: (perspective: boolean) => void;
   onMakeDefault: () => void;
   onClose: () => void;
 }) {
@@ -572,8 +576,8 @@ export function WorkspaceSettingsModal({
                   />
                   <WorkspaceToggle
                     label={t("workspace.startInPerspective")}
-                    checked={workspace.startInPerspective}
-                    onChange={(startInPerspective) => patchWorkspace({ startInPerspective })}
+                    checked={startInPerspective}
+                    onChange={onStartInPerspectiveChange}
                   />
                   <WorkspaceToggle
                     label={t("workspace.selectBeforeMoving")}

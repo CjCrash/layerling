@@ -111,6 +111,10 @@ const MAX_GRID_BLOCK_SIZE = 200;
 const WORKSPACE_DEFAULTS_STORAGE_PREFIX = "layerling.workspaceDefault.";
 const MOVE_DIMENSIONS_ENABLED_STORAGE_KEY = "layerling.editor.moveDimensionsEnabled";
 const ORIGIN_DIMENSIONS_ENABLED_STORAGE_KEY = "layerling.editor.originDimensionsEnabled";
+// How the editor opens a design: perspective (default) or orthographic. An app
+// preference like the two above, not a design setting - it has to hold for
+// every design, including ones saved before it existed.
+const START_IN_PERSPECTIVE_STORAGE_KEY = "layerling.editor.startInPerspective";
 /** Light-blue chrome for origin-distance lines, matching `.origin-dimension-value`. */
 const ORIGIN_DIMENSION_LINE_COLOR = { light: "#6ec4e8", dark: "#8fd4f0" } as const;
 /** Kreuzbreite und Vorgabe-Armlaengen des Winkellineal-Werkzeugs - kein Formen-Katalog-Eintrag mehr, siehe layerling-lineal.md. */
@@ -327,6 +331,17 @@ function readOriginDimensionsEnabled() {
     return true;
   }
   return window.localStorage.getItem(ORIGIN_DIMENSIONS_ENABLED_STORAGE_KEY) !== "false";
+}
+
+function readStartInPerspective() {
+  if (typeof window === "undefined") {
+    return true;
+  }
+  try {
+    return window.localStorage.getItem(START_IN_PERSPECTIVE_STORAGE_KEY) !== "false";
+  } catch {
+    return true;
+  }
 }
 
 type ShapeRenderRecord = {
@@ -3546,6 +3561,7 @@ export function WorkplaneViewport({
   const [moveDimensionsEnabled, setMoveDimensionsEnabled] = useState(true);
   const [originDimensionOverlay, setOriginDimensionOverlay] = useState<OriginDimensionOverlayData | null>(null);
   const [originDimensionsEnabled, setOriginDimensionsEnabled] = useState(true);
+  const [startInPerspective, setStartInPerspective] = useState(true);
   const hostRef = useRef<HTMLDivElement | null>(null);
   const threeRef = useRef<ThreeState | null>(null);
   const shapesRef = useRef(shapes);
@@ -3754,6 +3770,15 @@ export function WorkplaneViewport({
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
   }, [clearOriginDimensions, refreshOriginDimensions]);
+
+  const changeStartInPerspective = useCallback((perspective: boolean) => {
+    setStartInPerspective(perspective);
+    try {
+      window.localStorage.setItem(START_IN_PERSPECTIVE_STORAGE_KEY, String(perspective));
+    } catch {
+      // Without storage the next design still opens the way it always did.
+    }
+  }, []);
 
   const changeOriginDimensionsEnabled = useCallback((enabled: boolean) => {
     originDimensionsEnabledRef.current = enabled;
@@ -4370,14 +4395,16 @@ export function WorkplaneViewport({
   }, []);
 
   useEffect(() => {
-    // Each design opens in the projection its settings ask for. The editor
-    // stays mounted between designs, so this follows the settings key rather
-    // than the mount; later toggles within the design are left alone.
+    // Each design opens in the projection the app preference asks for. The
+    // editor stays mounted between designs, so this follows the settings key
+    // rather than the mount; later toggles within the design are left alone.
     const state = threeRef.current;
     if (!state) {
       return;
     }
-    const wantsOrthographic = !workspaceRef.current.startInPerspective;
+    const perspective = readStartInPerspective();
+    setStartInPerspective(perspective);
+    const wantsOrthographic = !perspective;
     if ((state.camera instanceof THREE.OrthographicCamera) !== wantsOrthographic) {
       toggleCameraProjection(state);
       syncViewCube(state, viewCubeRef.current);
@@ -7410,11 +7437,13 @@ export function WorkplaneViewport({
           themePreference={themePreference}
           moveDimensionsEnabled={moveDimensionsEnabled}
           originDimensionsEnabled={originDimensionsEnabled}
+          startInPerspective={startInPerspective}
           onWorkspaceChange={setWorkspace}
           onSnapChange={chooseSnapGrid}
           onThemePreferenceChange={onThemePreferenceChange}
           onMoveDimensionsEnabledChange={changeMoveDimensionsEnabled}
           onOriginDimensionsEnabledChange={changeOriginDimensionsEnabled}
+          onStartInPerspectiveChange={changeStartInPerspective}
           onMakeDefault={makeWorkspaceDefault}
           onClose={() => setSettingsOpen(false)}
         />
