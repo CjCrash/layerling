@@ -1302,6 +1302,98 @@ button {
   font-weight: 800;
 }
 
+/* Installed as an app, layerling also starts offline - a quiet strip under the
+   start tiles says so, with the browser's own install button where it has one. */
+.install-app-hint {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: -8px 0 22px;
+  padding: 12px 12px 12px 16px;
+  background: #fff8ee;
+  border: 1px solid #f0d9b8;
+  border-radius: 10px;
+}
+
+.install-app-hint-icon {
+  display: grid;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  color: #bf6508;
+  background: #fdebd3;
+  border-radius: 9px;
+}
+
+.install-app-hint-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.install-app-hint-text strong {
+  color: #573f26;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.install-app-hint-text span {
+  color: #7a6650;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.install-app-hint-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  background: #bf6508;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.install-app-hint-button:hover {
+  background: #a95805;
+}
+
+.install-app-hint-close {
+  display: grid;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: #96816a;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.install-app-hint-close:hover {
+  color: #573f26;
+  background: #f6e9d6;
+}
+
+@media (max-width: 560px) {
+  .install-app-hint {
+    flex-wrap: wrap;
+  }
+
+  .install-app-hint-button {
+    order: 3;
+    margin-left: 52px;
+  }
+}
+
 .dashboard-action-tile {
   display: flex;
   min-width: 0;
@@ -8792,6 +8884,30 @@ html[data-theme="dark"] .store-trail button.drop-target:not(:disabled) {
 
 html[data-theme="dark"] .store-trail button.drop-target:not(:disabled) {
   box-shadow: inset 0 0 0 1px #f3a452;
+}
+
+html[data-theme="dark"] .install-app-hint {
+  background: var(--panel);
+  border-color: #6a4a26;
+}
+
+html[data-theme="dark"] .install-app-hint-icon {
+  color: #f3a452;
+  background: #3a2c16;
+}
+
+html[data-theme="dark"] .install-app-hint-text strong {
+  color: #f3ede3;
+}
+
+html[data-theme="dark"] .install-app-hint-text span,
+html[data-theme="dark"] .install-app-hint-close {
+  color: #bda78e;
+}
+
+html[data-theme="dark"] .install-app-hint-close:hover {
+  color: #f3ede3;
+  background: #3a2c16;
 }
 
 html[data-theme="dark"] .dashboard-welcome {

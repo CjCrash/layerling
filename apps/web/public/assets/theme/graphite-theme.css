@@ -357,6 +357,45 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   color: #565656;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .install-app-hint {
+  background: #f7f7f7;
+  border: 1px solid #d4d4d4;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .install-app-hint-icon {
+  color: #bf6508;
+  background: #e8e8e8;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .install-app-hint-text strong {
+  color: #414141;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .install-app-hint-text span {
+  color: #595959;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .install-app-hint-button {
+  color: #ffffff;
+  background: #bf6508;
+  border: 0;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .install-app-hint-button:hover {
+  background: #a95805;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .install-app-hint-close {
+  color: #717171;
+  background: transparent;
+  border: 0;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .install-app-hint-close:hover {
+  color: #414141;
+  background: #e6e6e6;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .dashboard-action-tile {
   color: #414141;
   background: #ffffff;
@@ -3681,6 +3720,30 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .store-trail button.dro
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .store-trail button.drop-target:not(:disabled) {
   box-shadow: inset 0 0 0 1px #f3a452;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .install-app-hint {
+  background: var(--panel);
+  border-color: #4a4a4a;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .install-app-hint-icon {
+  color: #f3a452;
+  background: #2d2d2d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .install-app-hint-text strong {
+  color: #ebebeb;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .install-app-hint-text span,
+html[data-theme="dark"]:where([data-palette="graphite"]) .install-app-hint-close {
+  color: #929292;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .install-app-hint-close:hover {
+  color: #ebebeb;
+  background: #2d2d2d;
 }
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .dashboard-welcome {

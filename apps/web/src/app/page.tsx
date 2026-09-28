@@ -18,6 +18,7 @@ import { applyAppTheme, getAppThemePreference, readStoredAppTheme, resolveAppThe
 import { hydrateEditorHistoryState, notesForHistoryIndex, type EditorHistoryEntry } from "@/lib/editorHistory";
 import { detectLanguage, setLanguage, t, translate, type Language } from "@/lib/i18n";
 import { WelcomeGuideBody } from "@/components/WelcomeGuide";
+import { InstallAppHint } from "@/components/InstallAppHint";
 import { duplicateName, type DuplicateNamePatterns } from "@/lib/duplicateName";
 import { migrateLegacyProjectShapes, migrateLegacyStorageKeys, PROJECT_SHAPES_DB_NAME } from "@/lib/storageMigration";
 import { useLanguage } from "@/lib/useLanguage";
@@ -2553,6 +2554,7 @@ function Dashboard({
                   {dashboardNotice}
                 </div>
               ) : null}
+              <InstallAppHint />
 
               <div className="dashboard-section-header">
                 <div>

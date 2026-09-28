@@ -24,6 +24,11 @@ const STRUCTURED_DATA = {
 };
 const SOCIAL_CARD = "/assets/layerling/layerling-social.png";
 
+// Chrome and Edge announce "this can be installed" once, often before React is
+// running. The event is kept for the start page's install button
+// (InstallAppHint); preventDefault only stops the small bar on phones.
+const INSTALL_PROMPT_SCRIPT = `window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__layerlingInstallPrompt=e;window.dispatchEvent(new Event("layerling-install-prompt"))});window.addEventListener("appinstalled",function(){window.__layerlingInstallPrompt=null;window.dispatchEvent(new Event("layerling-install-prompt"))});`;
+
 export const metadata: Metadata = {
   // Damit die Bilder fuer Linkvorschauen als volle Adresse im Kopf stehen -
   // relative Angaben liest kein Forum und kein Messenger aus.
@@ -78,6 +83,7 @@ export default function RootLayout({
   return (
     <html lang="en" style={{ colorScheme: "light" }}>
       <body suppressHydrationWarning>
+        <script dangerouslySetInnerHTML={{ __html: INSTALL_PROMPT_SCRIPT }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }} />
         {children}
         <ServiceWorkerRegistration />
