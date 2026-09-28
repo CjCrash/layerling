@@ -4,6 +4,12 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.18.8
+
+- **Mirror arrows are back:** Since 1.15.0 the Mirror tool only showed "choose an axis arrow" for shapes added after the design was opened, and no arrows appeared. The arrows now show for every selection again. Reported in the forum.
+- **Place shapes by click is on by default:** A new shape follows the pointer and lands where you click, for new and existing projects alike. It can be switched off under Settings → Display ("Cruise when adding new shapes").
+- **Exact body for the spur gear:** Fillets, chamfers and hollowing on a spur gear now start from an exact CAD body with a truly round bore, like the shapes in 1.18.7. The default gear offers 147 edges instead of 288, a 0.5 mm fillet on all of them takes less than half the time, and a 1 mm fillet that was refused before now works. Helical and bevel gears keep the previous path. Contributed by @plazmabokor in #41.
+
 ## 1.18.7
 
 - **Exact bodies for fillets, chamfers and hollowing:** Polygon, star, heart, crescent, slot and honeycomb now go into the edge tool and the hollow tool as exact CAD bodies built from their own parameters, instead of being sewn together from the display mesh. Curves stay curves: a star with rounded tips offers 60 edges instead of 510 and takes a 1 mm fillet in well under a second instead of several, and a crescent that could not be filleted before now can be. The display mesh stays as the fallback, so anything that worked before still does. Contributed by @plazmabokor in #37.
