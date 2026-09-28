@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 
 const NAME = "layerling";
 const TITLE = "layerling - Free 3D CAD for 3D printing in your browser";
@@ -79,6 +80,7 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }} />
         {children}
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

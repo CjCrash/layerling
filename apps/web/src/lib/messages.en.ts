@@ -113,6 +113,8 @@ export const MESSAGES_EN = {
   "welcome.morePrintersBody": "more than 50 printers with their build plate; layerling warns when something overhangs.",
   "welcome.moreImportTitle": "Import",
   "welcome.moreImportBody": "STL, OBJ, 3MF, STEP and SVG, plus images as a reference.",
+  "welcome.moreOfflineTitle": "Works offline",
+  "welcome.moreOfflineBody": "after the first visit layerling also starts without internet - install it like a normal program, your designs stay on your computer.",
   "welcome.moreAiTitle": "Build with AI",
   "welcome.moreAiBody": "through the MCP interface an AI assistant can create and edit shapes.",
   "welcome.help": "In the editor, the Help group holds a short guide and the list of every keyboard shortcut.",

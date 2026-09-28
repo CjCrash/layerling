@@ -26,5 +26,6 @@ function run(args, extraEnvironment = {}) {
 run(["scripts/copy-occt-wasm.mjs"]);
 run([nextBin, "build", "apps/web"], { STATIC_EXPORT: "true" });
 run(["scripts/verify-static-worker-assets.mjs"]);
+run(["scripts/generate-service-worker.mjs"]);
 
 console.log("Static export ready in apps/web/.next-export/");

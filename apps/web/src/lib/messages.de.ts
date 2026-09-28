@@ -112,6 +112,8 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "welcome.morePrintersBody": "über 50 Drucker mit ihrer Bauplatte; layerling warnt, wenn etwas übersteht.",
   "welcome.moreImportTitle": "Importieren",
   "welcome.moreImportBody": "STL, OBJ, 3MF, STEP und SVG sowie Bilder als Vorlage.",
+  "welcome.moreOfflineTitle": "Ohne Internet",
+  "welcome.moreOfflineBody": "nach dem ersten Besuch startet layerling auch offline - installiert wie ein normales Programm, die Entwürfe bleiben auf deinem Rechner.",
   "welcome.moreAiTitle": "Mit KI bauen",
   "welcome.moreAiBody": "Über die MCP-Schnittstelle kann ein KI-Assistent Formen anlegen und bearbeiten.",
   "welcome.help": "Im Editor findest du im Bereich Hilfe eine Kurzanleitung und die Übersicht aller Tastenkürzel.",

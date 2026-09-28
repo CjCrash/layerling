@@ -24,6 +24,7 @@ const MORE = [
   ["welcome.moreMeasureTitle", "welcome.moreMeasureBody"],
   ["welcome.morePrintersTitle", "welcome.morePrintersBody"],
   ["welcome.moreImportTitle", "welcome.moreImportBody"],
+  ["welcome.moreOfflineTitle", "welcome.moreOfflineBody"],
   ["welcome.moreAiTitle", "welcome.moreAiBody"],
 ] as const satisfies ReadonlyArray<readonly [MessageKey, MessageKey]>;
 
