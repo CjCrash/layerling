@@ -52,6 +52,7 @@ import {
   ToolbarMirrorIcon,
   ToolbarRotationPivotIcon,
   ToolbarPatternIcon,
+  ToolbarLayFlatIcon,
   ToolbarNoteIcon,
   ToolbarPasteIcon,
   ToolbarRedoIcon,
@@ -63,7 +64,8 @@ import {
   ToolbarUndoIcon,
   ToolbarVectorExportIcon,
 } from "./icons";
-import { WorkplaneViewport } from "./WorkplaneViewport";
+import { WorkplaneViewport, type LayFlatPick } from "./WorkplaneViewport";
+import { layFlatRotation } from "@/lib/layFlat";
 import { SketchWorkspace, type SketchMeasurement, type SketchPrimitive, type SketchSelection, type SketchTool } from "./SketchWorkspace";
 import { EdgeModifierPanel } from "./workplane/EdgeModifierPanel";
 import { ShellPanel } from "./workplane/ShellPanel";
@@ -6095,6 +6097,7 @@ export function LayerlingEditor({
   // turns around its own centre again.
   const [rotationPivot, setRotationPivot] = useState<{ selectionKey: string; point: PivotPoint } | null>(null);
   const [pivotPickMode, setPivotPickMode] = useState(false);
+  const [layFlatPickMode, setLayFlatPickMode] = useState(false);
   const [cruiseAsset, setCruiseAsset] = useState<ShapeAsset | null>(null);
   const cruiseAssetRef = useRef<ShapeAsset | null>(null);
   cruiseAssetRef.current = cruiseAsset;
@@ -8923,6 +8926,65 @@ export function LayerlingEditor({
     );
   }, [commitShapes, hasSelection, placementWorkplane, selectedIds, shapes]);
 
+  // "Lay flat": click a face of the selection, the selection turns so that
+  // face lies on the workplane, and drops onto it - one undo step.
+  const toggleLayFlat = useCallback(() => {
+    if (layFlatPickMode) {
+      setLayFlatPickMode(false);
+      setNotice(t("status.layFlatCancelled"));
+      return;
+    }
+    if (!hasSelection) {
+      setNotice(t("status.selectShapeFirst"));
+      return;
+    }
+    setAlignMode(false);
+    setMirrorMode(false);
+    setPivotPickMode(false);
+    setArrayTool(null);
+    setLayFlatPickMode(true);
+    setNotice(t("status.layFlatStart"));
+  }, [hasSelection, layFlatPickMode]);
+
+  const layFlatOnFace = useCallback((pick: LayFlatPick | null) => {
+    setLayFlatPickMode(false);
+    const selected = new Set(selectedIds);
+    if (!pick || !selected.has(pick.shapeId)) {
+      setNotice(t("status.layFlatMissed"));
+      return;
+    }
+    const movable = selectedShapes.filter((shape) => !shape.locked);
+    if (movable.length !== selectedShapes.length) {
+      setNotice(t("status.selectionLocked"));
+      return;
+    }
+    const rotation = layFlatRotation(pick.normal, placementWorkplane.normal);
+    const pivot = movable.length > 1 ? selectionCenterOnWorkplane(movable, placementWorkplane) : null;
+    const turned = new Map(movable.map((shape) => [
+      shape.id,
+      canonicalizeShape(bakeShapeTransformIntoMesh(canonicalizeShape({ ...shape, ...rotatedGeometryShapePatch(shape, rotation, pivot) }))),
+    ]));
+    // One translation for the whole selection, so it stays together as it lands.
+    const translation = translationToWorkplane(
+      placementWorkplane,
+      [...turned.values()].flatMap((shape) => meshForShape(shape).vertices.map(([x, y, z]) => ({ x, y, z }))),
+    );
+    commitShapes(
+      shapes.map((shape) => {
+        const next = turned.get(shape.id);
+        if (!next) return shape;
+        return {
+          ...next,
+          x: cleanNearZero(next.x + translation.x),
+          z: cleanNearZero(next.z + translation.z),
+          elevation: cleanNearZero((next.elevation ?? 0) + translation.y),
+        };
+      }),
+      selectedIds,
+      t("status.laidFlat"),
+    );
+  }, [commitShapes, placementWorkplane, selectedIds, selectedShapes, shapes]);
+
   const centerSelectionOnWorkplane = useCallback(() => {
     if (!hasSelection) {
       setNotice(t("status.selectShapeFirst"));
@@ -10497,6 +10559,11 @@ export function LayerlingEditor({
           setNotice(t("status.pivotPickCancelled"));
           return;
         }
+        if (layFlatPickMode) {
+          setLayFlatPickMode(false);
+          setNotice(t("status.layFlatCancelled"));
+          return;
+        }
         if (arrayTool) {
           setArrayTool(null);
           setNotice(t("status.arrayCancelled"));
@@ -10655,6 +10722,7 @@ export function LayerlingEditor({
     arrayTool,
     pasteShape,
     pivotPickMode,
+    layFlatPickMode,
     raiseSelected,
     redo,
     rotateSelectedBy,
@@ -10736,6 +10804,8 @@ export function LayerlingEditor({
         onDuplicate={duplicateSelected}
         onCenterOnWorkplane={centerSelectionOnWorkplane}
         onDropToWorkplane={dropSelectedToWorkplane}
+        onLayFlat={toggleLayFlat}
+        layFlatActive={layFlatPickMode}
         onGroup={groupSelected}
         onIntersect={intersectSelected}
         onFillet={() => edgeModifier?.kind === "fillet" ? cancelEdgeModifier() : startEdgeModifier("fillet")}
@@ -10861,6 +10931,8 @@ export function LayerlingEditor({
           rotationPivot={activeRotationPivot}
           pivotPickMode={pivotPickMode}
           onPivotPick={pickRotationPivot}
+          layFlatPickMode={layFlatPickMode}
+          onLayFlatPick={layFlatOnFace}
           onNoteAdd={addNote}
           onNoteUpdate={updateNote}
           onNoteRemove={removeNote}
@@ -11126,6 +11198,8 @@ function SecondaryToolbar({
   onDuplicate,
   onCenterOnWorkplane,
   onDropToWorkplane,
+  onLayFlat,
+  layFlatActive,
   onGroup,
   onIntersect,
   onFillet,
@@ -11195,6 +11269,8 @@ function SecondaryToolbar({
   onDuplicate: () => void;
   onCenterOnWorkplane: () => void;
   onDropToWorkplane: () => void;
+  onLayFlat: () => void;
+  layFlatActive: boolean;
   onGroup: () => void;
   onIntersect: () => void;
   onFillet: () => void;
@@ -11395,6 +11471,7 @@ function SecondaryToolbar({
   ];
   const arrangeTools = [
     { id: "drop", label: t("editor.tool.dropToWorkplane"), icon: ToolbarDropToWorkplaneIcon, action: onDropToWorkplane, enabled: hasSelection },
+    { id: "layFlat", label: t("editor.tool.layFlat"), icon: ToolbarLayFlatIcon, action: onLayFlat, enabled: hasSelection, active: layFlatActive },
     { id: "center", label: t("editor.tool.centerOnWorkplane"), icon: ToolbarCenterOnWorkplaneIcon, action: onCenterOnWorkplane, enabled: hasSelection },
   ];
   const renderToolButton = (tool: (typeof leftTools)[number] | (typeof visibilityTools)[number] | (typeof combineTools)[number] | (typeof modifyTools)[number] | (typeof arrangeTools)[number]) => {

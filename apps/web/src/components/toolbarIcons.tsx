@@ -299,6 +299,19 @@ export function ToolbarDropToWorkplaneIcon(props: IconProps) {
   );
 }
 
+/** A block tipping over onto one of its faces, resting on the plate. */
+export function ToolbarLayFlatIcon(props: IconProps) {
+  return (
+    <ToolbarVectorIcon {...props}>
+      <path d="M24 32 40 39 24 45 8 39Z" {...SOLID} />
+      <path d="M24 32 40 39 24 45 8 39Z" />
+      <path d="M13 9 27 5 31 19 17 23Z" />
+      <path d="M36 12a13 13 0 0 1 -2 15" />
+      <path d="M29 26l5 2 1-5" />
+    </ToolbarVectorIcon>
+  );
+}
+
 export function ToolbarCenterOnWorkplaneIcon(props: IconProps) {
   return (
     <ToolbarVectorIcon {...props}>

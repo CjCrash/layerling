@@ -99,6 +99,7 @@ import {
 import type { AlignAxis, AlignHandleStatus, AlignTarget, GridSize, MeasurementAccuracy, ShapeAsset, WorkplaneNote, WorkplaneNoteAnchor, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 import { NOTE_TEXT_LIMIT } from "@/lib/workplaneNotes";
 import { planarFaceCentroid, type PivotPoint } from "@/lib/rotationPivot";
+import { outwardFaceNormal } from "@/lib/layFlat";
 import { rotatedGeometryShapePatch } from "@/lib/geometryRotation";
 import type { CadModifierEdge } from "@/lib/cadModifierTypes";
 
@@ -255,6 +256,9 @@ type WorkplaneViewportProps = {
   /** The next click on a body sets the rotation pivot. */
   pivotPickMode?: boolean;
   onPivotPick?: (point: PivotPoint | null) => void;
+  /** Waiting for a click on a face of the selection to lay it flat. */
+  layFlatPickMode?: boolean;
+  onLayFlatPick?: (pick: LayFlatPick | null) => void;
   onNoteAdd?: (note: { x: number; y: number; z: number; anchor?: WorkplaneNoteAnchor }) => string | null;
   onNoteUpdate?: (id: string, patch: Partial<WorkplaneNote>, transient?: boolean) => void;
   onNoteRemove?: (id: string) => void;
@@ -3477,6 +3481,8 @@ export function WorkplaneViewport({
   rotationPivot = null,
   pivotPickMode = false,
   onPivotPick,
+  layFlatPickMode = false,
+  onLayFlatPick,
   onNoteAdd,
   onNoteUpdate,
   onNoteRemove,
@@ -3586,6 +3592,8 @@ export function WorkplaneViewport({
   const noteModeRef = useRef(noteMode);
   const rotationPivotRef = useRef<PivotPoint | null>(rotationPivot);
   const pivotPickModeRef = useRef(pivotPickMode);
+  const layFlatPickModeRef = useRef(layFlatPickMode);
+  layFlatPickModeRef.current = layFlatPickMode;
   const notesVisibleRef = useRef(notesVisible);
   const noteOverlayRef = useRef<NoteOverlayState | null>(null);
   const noteDragRef = useRef<NoteDragState | null>(null);
@@ -6049,6 +6057,12 @@ export function WorkplaneViewport({
         return;
       }
 
+      if (layFlatPickModeRef.current) {
+        event.preventDefault();
+        onLayFlatPick?.(pickLayFlatFace(state, event.clientX, event.clientY));
+        return;
+      }
+
       if (noteModeRef.current) {
         event.preventDefault();
         const anchor = resolveNoteAnchor(event.clientX, event.clientY);
@@ -6346,6 +6360,7 @@ export function WorkplaneViewport({
       onInteractionActiveChange,
       onModifierEdgeToggle,
       onPivotPick,
+      onLayFlatPick,
       placeCornerRuler,
       onSelectShape,
       onSetPlacementWorkplane,
@@ -7169,7 +7184,7 @@ export function WorkplaneViewport({
         )}
       </div>
 
-      <section className={`workplane-wrap ${noteMode ? "note-mode" : ""} ${workplaneMode ? "placing-workplane" : ""} ${cruiseAsset ? "cruising" : ""} ${tapeMode ? "tape-mode" : ""} ${tapeDeleteMode ? "tape-delete-mode" : ""} ${tapeMoveMode ? "tape-move-mode" : ""} ${cornerRulerMode ? "corner-ruler-mode" : ""} ${pivotPickMode ? "pivot-pick-mode" : ""} ${modifierActive ? "modifier-edge-pick" : ""}`} aria-label={t("aria.workplane")}>
+      <section className={`workplane-wrap ${noteMode ? "note-mode" : ""} ${workplaneMode ? "placing-workplane" : ""} ${cruiseAsset ? "cruising" : ""} ${tapeMode ? "tape-mode" : ""} ${tapeDeleteMode ? "tape-delete-mode" : ""} ${tapeMoveMode ? "tape-move-mode" : ""} ${cornerRulerMode ? "corner-ruler-mode" : ""} ${pivotPickMode || layFlatPickMode ? "pivot-pick-mode" : ""} ${modifierActive ? "modifier-edge-pick" : ""}`} aria-label={t("aria.workplane")}>
         <div className="workplane-plane">
           <div
             className="three-workplane-host"
@@ -7196,7 +7211,7 @@ export function WorkplaneViewport({
           {!workplaneMode && originDimensionsEnabled && originDimensionOverlay ? (
             <OriginDimensionOverlay overlay={originDimensionOverlay} />
           ) : null}
-          {!workplaneMode && !pivotPickMode && transformOverlay && !alignMode && !mirrorMode && !tapeMode && !tapeDeleteMode && !tapeMoveMode && !modifierActive ? (
+          {!workplaneMode && !pivotPickMode && !layFlatPickMode && transformOverlay && !alignMode && !mirrorMode && !tapeMode && !tapeDeleteMode && !tapeMoveMode && !modifierActive ? (
             <TransformOverlay
               box={transformOverlay}
               measureKey={pinnedMeasureKey ?? hoverMeasureKey}
@@ -9341,6 +9356,27 @@ function pickRotationPivot(state: ThreeState, clientX: number, clientY: number):
     positions[offset * 3 + 2] = corner.z;
   }
   return planarFaceCentroid(positions, hit.faceIndex) ?? { x: hit.point.x, y: hit.point.y, z: hit.point.z };
+}
+
+export type LayFlatPick = { shapeId: string; normal: { x: number; y: number; z: number } };
+
+/** The clicked face of any body, as the body's id and the face's outward normal in world space. */
+function pickLayFlatFace(state: ThreeState, clientX: number, clientY: number): LayFlatPick | null {
+  const rect = state.renderer.domElement.getBoundingClientRect();
+  state.pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  state.pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+  state.raycaster.setFromCamera(state.pointer, state.camera);
+  state.raycaster.layers.set(RENDER_LAYER_SHAPES);
+  const hit = state.raycaster
+    .intersectObjects(state.shapeLayer.children, true)
+    .find((entry) => entry.object instanceof THREE.Mesh && entry.face && typeof entry.object.userData.shapeId === "string");
+  if (!hit || !hit.face) return null;
+  const mesh = hit.object as THREE.Mesh<THREE.BufferGeometry>;
+  mesh.updateWorldMatrix(true, false);
+  const position = mesh.geometry.getAttribute("position");
+  const corner = (index: number) => new THREE.Vector3().fromBufferAttribute(position, index).applyMatrix4(mesh.matrixWorld);
+  const normal = outwardFaceNormal(corner(hit.face.a), corner(hit.face.b), corner(hit.face.c), state.raycaster.ray.direction);
+  return normal ? { shapeId: mesh.userData.shapeId as string, normal } : null;
 }
 
 function findShapeObject(state: ThreeState, id: string) {

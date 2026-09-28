@@ -111,6 +111,7 @@ export {
   ToolbarMirrorIcon,
   ToolbarRotationPivotIcon,
   ToolbarPatternIcon,
+  ToolbarLayFlatIcon,
   ToolbarNoteIcon,
   ToolbarPasteIcon,
   ToolbarRedoIcon,
