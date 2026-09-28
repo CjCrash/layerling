@@ -4,6 +4,17 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.19.0
+
+- **Lay flat on face:** A new tool under Arrange, next to "Drop to workplane": click a face of the selection and it turns the shortest way so that face rests on the workplane - the best print orientation in one click. Works on slanted faces and for several bodies at once, which keep their spacing. One undo step.
+- **Dovetail joint:** A new shape after the honeycomb for joining flat printed parts without screws. Width is the wide end, the tail length and neck width are set separately. As a body it is the tail; a copy set to hole grows by its clearance (default 0.2 mm) on every side and makes the matching socket. Fillets and chamfers work on it as an exact body.
+- **Back up all designs:** A "Back up all" button on the start page packs every design of this browser into one file. Opening that file through "Open design" brings them all back - also the way to move designs to another browser or computer.
+- **Insert into this design:** The import panel can now add the bodies of a saved design (.lyl) to the open one instead of opening it separately - for basic parts used again and again. Asked for by darkwingbreydin in the forum.
+- **Copy and paste of large objects:** After copying a large object, such as an imported mesh, pasting could bring back something copied earlier, and saving the design list could fail with a storage error. Pasting now always takes the newest copy, and large copies no longer fill the browser's small storage. Reported by darkwingbreydin in the forum.
+- **Toolbar on narrower windows:** On common laptop widths the last toolbar groups ran off the right edge unseen, and below 1240 px the bar scrolled sideways. The icons now get smaller as soon as the full size does not fit, and narrow windows wrap the bar onto a second row; the workplane and menus move down with it.
+- **Install as an app:** The start page points out that layerling can be installed as an app and then starts without internet, with an install button in Chrome and Edge. Already live on layerling.com since 28 September.
+- **Inspector header:** Long single-word names such as "Schwalbenschwanz" no longer run into the lock icon.
+
 ## 1.18.9
 
 - **Works offline:** layerling now keeps the whole program on your computer after the first visit (a service worker), so it starts and works without internet - drawing, fillets, chamfers, hollowing, saving in the browser and exporting included. With a connection the page still comes fresh from the server, so reloading brings a new version as before. Server storage and the contact form need a connection. Browsers allow this only on https, so it applies to layerling.com; self-hosted copies over plain http run as before.
