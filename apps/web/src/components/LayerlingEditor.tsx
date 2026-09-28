@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Check, Circle as CircleIcon, CloudUpload, Download, Eye, EyeOff, FolderOpen, Hexagon as HexagonIcon, Pencil, Square as SquareIcon, Triangle as TriangleIcon, X } from "lucide-react";
+import { AlertTriangle, Check, Circle as CircleIcon, CloudUpload, Download, Eye, EyeOff, FilePlus2, FolderOpen, Hexagon as HexagonIcon, Pencil, Square as SquareIcon, Triangle as TriangleIcon, X } from "lucide-react";
 import type manifoldModule from "manifold-3d";
 import type { ManifoldToplevel } from "manifold-3d";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -145,7 +145,7 @@ import { buildSketchRevolveMesh, DEFAULT_SKETCH_REVOLVE_SETTINGS, normalizeSketc
 import { AppFooter } from "@/components/AppFooter";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
-import { exportLylProject, LYL_CREATED_WITH_VERSION, LYL_MEDIA_TYPE } from "@/lib/lylProject";
+import { exportLylProject, importLylProject, LYL_CREATED_WITH_VERSION, LYL_MEDIA_TYPE } from "@/lib/lylProject";
 import { makeShapeFromAsset, sceneShape, shapeAssetLabel, shapeAssetMenuLabel, toolbarShapeAssets } from "@/lib/shapeCatalog";
 import { importExtensionSupported } from "@/lib/importExtensions";
 import { importedShapeFromStl } from "@/lib/stlImport";
@@ -6173,6 +6173,7 @@ export function LayerlingEditor({
   }, [cruiseAsset, editorLanguage, setNotice]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const projectFileInputRef = useRef<HTMLInputElement | null>(null);
+  const insertProjectFileInputRef = useRef<HTMLInputElement | null>(null);
   const sketchImageInputRef = useRef<HTMLInputElement | null>(null);
   const booleanAutomationRunRef = useRef<string | null>(null);
   const projectHydratingRef = useRef(false);
@@ -10344,6 +10345,39 @@ export function LayerlingEditor({
     setMenuOpen(false);
   }, [commitShapes, shapes]);
 
+  // A saved design's bodies into the open one - for parts kept as building
+  // blocks. Fresh ids so nothing clashes, embedded source files come along,
+  // one undo step, the new bodies selected where they were saved.
+  const insertLylDesign = useCallback(async (file: File) => {
+    const sourceProjectId = projectInfoRef.current.projectId;
+    setNotice(t("status.validatingFile", { name: file.name }), true);
+    try {
+      const restored = await importLylProject(await file.arrayBuffer());
+      if (projectInfoRef.current.projectId !== sourceProjectId) {
+        setNotice(t("status.importCancelled", { count: 1 }));
+        return;
+      }
+      if (restored.shapes.length === 0) {
+        setNotice(t("status.insertDesignEmpty", { name: file.name }));
+        return;
+      }
+      const inserted = restored.shapes.map((shape) => canonicalizeShape(cloneWorkplaneShapeTreeWithFreshIds(shape, "insert")));
+      if (restored.assets.length > 0) {
+        const nextAssets = dedupeProjectAssets([...projectAssetsRef.current, ...restored.assets]);
+        projectAssetsRef.current = nextAssets;
+        setProjectAssets(nextAssets);
+      }
+      commitShapes(
+        [...shapesRef.current, ...inserted],
+        inserted.map((shape) => shape.id),
+        t("status.insertedDesign", { count: inserted.length, name: file.name }),
+      );
+      setTopPanel(null);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : t("status.insertDesignFailed", { name: file.name }));
+    }
+  }, [commitShapes]);
+
   const importFiles = useCallback(async (files: File[]) => {
     if (!files.length) return;
     const projectFiles = files.filter((file) => /\.(lyl|skf)$/i.test(file.name));
@@ -11108,6 +11142,7 @@ export function LayerlingEditor({
           onImportFiles={selectFiles}
           onPickFile={() => fileInputRef.current?.click()}
           onPickProjectFile={() => projectFileInputRef.current?.click()}
+          onPickInsertProjectFile={() => insertProjectFileInputRef.current?.click()}
           onNotice={setNotice}
         />
       ) : null}
@@ -11130,6 +11165,17 @@ export function LayerlingEditor({
         onChange={(event) => {
           const file = event.currentTarget.files?.[0];
           if (file) selectFiles([file]);
+          event.currentTarget.value = "";
+        }}
+      />
+      <input
+        ref={insertProjectFileInputRef}
+        className="hidden-file-input"
+        type="file"
+        accept=".lyl,.skf"
+        onChange={(event) => {
+          const file = event.currentTarget.files?.[0];
+          if (file) void insertLylDesign(file);
           event.currentTarget.value = "";
         }}
       />
@@ -12022,6 +12068,7 @@ function TopActionPanel({
   onImportFiles,
   onPickFile,
   onPickProjectFile,
+  onPickInsertProjectFile,
   onNotice,
 }: {
   panel: Exclude<TopPanel, null>;
@@ -12038,6 +12085,7 @@ function TopActionPanel({
   onImportFiles: (files: FileList | File[]) => void;
   onPickFile: () => void;
   onPickProjectFile: () => void;
+  onPickInsertProjectFile: () => void;
   onNotice: (message: string) => void;
 }) {
   const [exportFormat, setExportFormat] = useState<ExportFormat>("stl");
@@ -12114,6 +12162,13 @@ function TopActionPanel({
             <span>
               <strong>{t("import.openProject")}</strong>
               <small>{t("import.openProjectHint")}</small>
+            </span>
+          </button>
+          <button className="open-lyl-project-button" type="button" onClick={onPickInsertProjectFile}>
+            <span className="open-lyl-project-icon"><FilePlus2 size={18} /></span>
+            <span>
+              <strong>{t("import.insertProject")}</strong>
+              <small>{t("import.insertProjectHint")}</small>
             </span>
           </button>
           <div className="import-kind-divider"><span>{t("import.divider")}</span></div>
