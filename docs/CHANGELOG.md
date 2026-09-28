@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.18.9
+
+- **Works offline:** layerling now keeps the whole program on your computer after the first visit (a service worker), so it starts and works without internet - drawing, fillets, chamfers, hollowing, saving in the browser and exporting included. With a connection the page still comes fresh from the server, so reloading brings a new version as before. Server storage and the contact form need a connection. Browsers allow this only on https, so it applies to layerling.com; self-hosted copies over plain http run as before.
+
 ## 1.18.8
 
 - **Mirror arrows are back:** Since 1.15.0 the Mirror tool only showed "choose an axis arrow" for shapes added after the design was opened, and no arrows appeared. The arrows now show for every selection again. Reported in the forum.
