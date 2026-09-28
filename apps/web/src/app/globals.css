@@ -403,7 +403,11 @@ input:where([type='button'], [type='reset'], [type='submit']),
   --shadow: 0 2px 6px rgba(75, 56, 35, 0.12);
   --font-ui: "Avenir Next", Avenir, "Helvetica Neue", Arial, sans-serif;
   --dashboard-topbar-height: 70px;
+  /* The whole bar. The editor measures it and overwrites this value when the
+     tools wrap onto a second row (SecondaryToolbar), so everything that sits
+     below the bar - workplane, status, menus - moves down with it. */
   --editor-toolbar-height: 120px;
+  --editor-toolbar-title-height: 44px;
   --editor-toolbar-tools-height: 76px;
   --editor-footer-height: 30px;
 
@@ -2884,13 +2888,12 @@ button {
 
 .toolbar-mode-content {
   position: absolute;
-  top: calc(var(--editor-toolbar-height) - var(--editor-toolbar-tools-height));
+  top: var(--editor-toolbar-title-height);
   right: 0;
-  bottom: 0;
   left: 0;
   display: flex;
   width: 100%;
-  height: var(--editor-toolbar-tools-height);
+  min-height: var(--editor-toolbar-tools-height);
   align-items: stretch;
   background: #faf7f3;
   border-top: 1px solid #e7dfd0;
@@ -3129,7 +3132,7 @@ button {
   left: 0;
   z-index: 2;
   display: flex;
-  height: calc(var(--editor-toolbar-height) - var(--editor-toolbar-tools-height));
+  height: var(--editor-toolbar-title-height);
   align-items: stretch;
 }
 
@@ -8490,21 +8493,6 @@ button {
 }
 
 @media (max-width: 1240px) {
-  .toolbar-mode-content.geometry,
-  .toolbar-mode-content.sketch {
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-
-  .toolbar-section {
-    min-width: auto;
-  }
-
-  .toolbar-section-label {
-    padding-inline: 7px;
-    font-size: 10px;
-  }
-
   .shape-menu-dropdown {
     position: fixed;
     top: var(--editor-toolbar-height);
@@ -8513,11 +8501,9 @@ button {
     width: min(672px, calc(100vw - 20px));
   }
 
-  /* Dieselbe Rettung wie beim Formenmenue darueber: Die Leiste rollt hier
-     waagerecht, und damit schneidet sie senkrecht ab - `overflow-x: auto`
-     laesst der anderen Achse gar keine Wahl. Ein Menue, das unter der Leiste
-     haengt, liegt also ausserhalb und war schlicht weg. Es haengt sich deshalb
-     ans Fenster statt an seinen Ausloeser. */
+  /* Haengt am Fenster statt an seinem Ausloeser, direkt unter der Leiste -
+     auch wenn sie zweizeilig ist, denn deren Hoehe steht in der Variablen.
+     (Frueher rollte die Leiste hier waagerecht und schnitt jedes Menue ab.) */
   .sketch-create-dropdown {
     position: fixed;
     top: var(--editor-toolbar-height);
@@ -10072,7 +10058,7 @@ html[data-theme="dark"] .shortcuts-or {
 /* Das Menueband traegt neun Gruppen. Zwischen Laptop und breitem Schirm passen
    sie nicht mehr in voller Groesse nebeneinander - bisher wurde die letzte
    Gruppe einfach abgeschnitten, jetzt gehen die Symbole eine Stufe zurueck. */
-@media (max-width: 1360px) {
+@media (max-width: 1599px) {
   :root {
     --toolbar-icon-size: 37px;
   }
@@ -10093,9 +10079,34 @@ html[data-theme="dark"] .shortcuts-or {
   }
 }
 
-@media (max-width: 1240px) {
+@media (max-width: 1343px) {
   :root {
     --toolbar-icon-size: 34px;
+  }
+
+  .toolbar-section {
+    min-width: auto;
+  }
+
+  .toolbar-section-label {
+    padding-inline: 7px;
+    font-size: 10px;
+  }
+}
+
+/* Below the width even the smallest step needs (about 1222 px) the groups
+   wrap onto a further row instead of scrolling sideways: a scrolling bar
+   hides tools and cuts off every menu that hangs beneath it. The bar grows,
+   and the editor passes its real height on (see --editor-toolbar-height). */
+@media (max-width: 1221px) {
+  .toolbar-mode-content,
+  .sketch-toolbar-ribbon {
+    flex-wrap: wrap;
+    height: auto;
+  }
+
+  .toolbar-mode-content .tool-group {
+    display: contents;
   }
 }
 

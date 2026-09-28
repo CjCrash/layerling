@@ -3,7 +3,7 @@
 import { AlertTriangle, Check, Circle as CircleIcon, CloudUpload, Download, Eye, EyeOff, FilePlus2, FolderOpen, Hexagon as HexagonIcon, Pencil, Square as SquareIcon, Triangle as TriangleIcon, X } from "lucide-react";
 import type manifoldModule from "manifold-3d";
 import type { ManifoldToplevel } from "manifold-3d";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ADDITION, Brush, Evaluator, HOLLOW_INTERSECTION, HOLLOW_SUBTRACTION, INTERSECTION, SUBTRACTION, type CSGOperation } from "three-bvh-csg";
 import * as THREE from "three";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
@@ -11395,6 +11395,30 @@ function SecondaryToolbar({
 }) {
   const [shapesOpen, setShapesOpen] = useState(false);
   const [sketchCreateOpen, setSketchCreateOpen] = useState(false);
+  // On a narrow window the tools wrap onto more rows. Their real height goes
+  // into --editor-toolbar-height, which the workplane, the status and the menus
+  // below the bar are placed by.
+  const toolbarContentRef = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
+    const content = toolbarContentRef.current;
+    if (!content || typeof ResizeObserver === "undefined") return;
+    const root = document.documentElement;
+    const apply = () => {
+      const styles = getComputedStyle(root);
+      const title = parseFloat(styles.getPropertyValue("--editor-toolbar-title-height")) || 44;
+      const minimum = parseFloat(styles.getPropertyValue("--editor-toolbar-tools-height")) || 76;
+      const tools = content.offsetHeight;
+      // A hidden editor measures nothing; it keeps the one-row height.
+      root.style.setProperty("--editor-toolbar-height", `${Math.round(title + Math.max(minimum, tools))}px`);
+    };
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(content);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--editor-toolbar-height");
+    };
+  }, []);
   const [visibilityOpen, setVisibilityOpen] = useState(false);
   const [visibilityMenuPosition, setVisibilityMenuPosition] = useState({ top: 0, left: 0 });
   const shapesMenuRef = useRef<HTMLDivElement>(null);
@@ -11589,7 +11613,7 @@ function SecondaryToolbar({
 
   return (
     <div className="secondary-toolbar">
-      <div className={`toolbar-mode-content ${toolbarMode}`}>
+      <div ref={toolbarContentRef} className={`toolbar-mode-content ${toolbarMode}`}>
         {toolbarMode === "geometry" ? (
           <>
       {onHome ? (
