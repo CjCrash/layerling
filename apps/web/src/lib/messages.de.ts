@@ -113,7 +113,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "welcome.moreImportTitle": "Importieren",
   "welcome.moreImportBody": "STL, OBJ, 3MF, STEP und SVG sowie Bilder als Vorlage.",
   "installHint.title": "layerling als App – auch ohne Internet",
-  "installHint.body": "Einmal installiert, startet layerling mit eigenem Symbol und Fenster, auch offline. Deine Entwürfe bleiben auf deinem Rechner.",
+  "installHint.body": "Einmal installiert, startet layerling mit eigenem Symbol und Fenster, auch offline.",
   "installHint.install": "Jetzt installieren",
   "installHint.dismiss": "Hinweis ausblenden",
   "installHint.chromium": "Installieren über das Symbol rechts in der Adressleiste oder im Browsermenü unter „Als App installieren“.",

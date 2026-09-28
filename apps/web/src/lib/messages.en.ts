@@ -114,7 +114,7 @@ export const MESSAGES_EN = {
   "welcome.moreImportTitle": "Import",
   "welcome.moreImportBody": "STL, OBJ, 3MF, STEP and SVG, plus images as a reference.",
   "installHint.title": "layerling as an app – even without internet",
-  "installHint.body": "Once installed, layerling starts with its own icon and window, even offline. Your designs stay on your computer.",
+  "installHint.body": "Once installed, layerling starts with its own icon and window, even offline.",
   "installHint.install": "Install now",
   "installHint.dismiss": "Hide this hint",
   "installHint.chromium": "Install it with the icon on the right of the address bar, or from the browser menu under “Install as app”.",
