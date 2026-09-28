@@ -3944,6 +3944,16 @@ export function WorkplaneViewport({
     }
   }, [alignReferenceShapes]);
 
+  // Without this the mirror arrows keep measuring the shapes the viewport
+  // was mounted with - anything added later has no frame and no arrows.
+  useEffect(() => {
+    mirrorReferenceShapesRef.current = mirrorReferenceShapes;
+    if (threeRef.current) {
+      syncMirrorOverlay(threeRef.current, mirrorReferenceShapes, selectedIdsRef.current, mirrorModeRef.current, mirrorOverlayRef, setMirrorOverlay);
+      threeRef.current.needsRender = true;
+    }
+  }, [mirrorReferenceShapes]);
+
   useEffect(() => {
     alignModeRef.current = alignMode;
     mirrorModeRef.current = mirrorMode;
