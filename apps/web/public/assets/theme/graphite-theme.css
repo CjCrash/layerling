@@ -449,6 +449,10 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   border: 1px solid #dfdfdf;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .dashboard-backup-button:hover {
+  border-color: #e3b77c;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .dashboard-select select {
   border: 0;
   outline: 0;

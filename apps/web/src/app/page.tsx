@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock3, Copy, EllipsisVertical, FileUp, FolderInput, FolderKanban, FolderPlus, FolderUp, Grid3X3, List, Pencil, Plus, RefreshCw, Search, SlidersHorizontal, Sparkles, Trash2, X } from "lucide-react";
+import { Archive, Clock3, Copy, EllipsisVertical, FileUp, FolderInput, FolderKanban, FolderPlus, FolderUp, Grid3X3, List, Pencil, Plus, RefreshCw, Search, SlidersHorizontal, Sparkles, Trash2, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { AppFooter } from "@/components/AppFooter";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
@@ -32,6 +32,7 @@ import {
 import { attachProjectAsset, dedupeProjectAssets, projectAssetFromBytes, sourceFormatForFileName } from "@/lib/projectAssets";
 import { hydrateProjectShapeState, reconcileLoadedProjectShapeCacheEntry, type ImportedMeshResource } from "@/lib/projectShapePersistence";
 import { exportLylProject, importLylProject, LYL_CREATED_WITH_VERSION, LYL_MEDIA_TYPE } from "@/lib/lylProject";
+import { backupEntryNames, backupFileName, isBackupFileName, packBackup, unpackBackup } from "@/lib/projectBackup";
 import { importExtensionSupported } from "@/lib/importExtensions";
 import { DEFAULT_SNAP_GRID, DEFAULT_WORKPLANE_WORKSPACE, normalizeSnapGrid, normalizeWorkspaceSettings, readWorkspaceDefault, workplaneSettingsFingerprint } from "@/lib/workplaneSettings";
 import type { GridSize, ProjectAsset, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
@@ -1600,9 +1601,93 @@ export default function Home() {
     }
   }, [refreshSharedProjects]);
 
+  // Every design of this browser as its own .lyl, together in one ZIP.
+  const backupAllProjects = useCallback(async () => {
+    if (projects.length === 0) {
+      setDashboardNotice(t("notice.backupEmpty"));
+      return;
+    }
+    try {
+      const names = backupEntryNames(projects.map((project) => project.name), t("dashboard.backupFallbackName"));
+      const entries = [];
+      for (let index = 0; index < projects.length; index += 1) {
+        setDashboardNotice(t("notice.backingUp", { index: index + 1, total: projects.length }));
+        entries.push({ name: names[index], bytes: await projectPackageBytes(projects[index]) });
+      }
+      const fileName = backupFileName(new Date());
+      const url = URL.createObjectURL(new Blob([packBackup(entries) as BlobPart], { type: "application/zip" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      setDashboardNotice(t("notice.backupDone", { count: entries.length, name: fileName }));
+    } catch (error) {
+      setDashboardNotice(t("notice.backupFailed", { reason: error instanceof Error ? error.message : String(error) }));
+    }
+  }, [projects]);
+
+  // A backup brings every design back as a new design of this browser; the
+  // editor stays closed, so the whole set lands on the start page at once.
+  const restoreBackup = useCallback(async (file: File) => {
+    setDashboardNotice(t("notice.validatingFile", { name: file.name }));
+    let entries;
+    try {
+      entries = unpackBackup(new Uint8Array(await file.arrayBuffer()));
+    } catch {
+      setDashboardNotice(t("notice.backupNotReadable", { name: file.name }));
+      return;
+    }
+    if (entries.length === 0) {
+      setDashboardNotice(t("notice.backupNoDesigns", { name: file.name }));
+      return;
+    }
+    const restoredProjects: DashboardProject[] = [];
+    const restoredEntries: Record<string, ProjectShapeCacheEntry> = {};
+    let failed = 0;
+    for (let index = 0; index < entries.length; index += 1) {
+      setDashboardNotice(t("notice.restoringBackup", { index: index + 1, total: entries.length }));
+      try {
+        const restored = await importLylProject(entries[index].bytes);
+        const now = Date.now() + index;
+        const project: DashboardProject = {
+          ...newProject(restored.projectName || projectNameFromFileName(entries[index].name), projects.length + index, restored.shapes.length),
+          createdAt: restored.createdAt,
+          updatedAt: now,
+          revision: now,
+          workspace: restored.workspace,
+          snapGrid: restored.snapGrid,
+          placementElevation: restored.placementElevation,
+          placementWorkplane: restored.placementWorkplane,
+          sketchPlacementWorkplane: restored.sketchPlacementWorkplane,
+        };
+        const entry = projectShapeCacheEntry(now, restored.shapes, restored.history, restored.historyIndex, restored.assets);
+        await saveProjectShapes(project.id, entry, projectShapeSaveContext(project));
+        restoredProjects.push(project);
+        restoredEntries[project.id] = entry;
+      } catch {
+        failed += 1;
+      }
+    }
+    setProjectShapesById((current) => ({ ...current, ...restoredEntries }));
+    setProjects((current) => [...restoredProjects, ...current]);
+    setDashboardNotice(failed
+      ? t("notice.backupRestoredPartly", { count: restoredProjects.length, failed, name: file.name })
+      : t("notice.backupRestored", { count: restoredProjects.length, name: file.name }));
+  }, [projects.length]);
+
   const importFilesFromDashboard = useCallback(
     async (files: File[]) => {
       if (!files.length) return;
+      const backups = files.filter((file) => isBackupFileName(file.name));
+      if (backups.length) {
+        if (files.length !== 1) {
+          setDashboardNotice(t("notice.oneBackupAtATime"));
+          return;
+        }
+        await restoreBackup(backups[0]);
+        return;
+      }
       const projectFiles = files.filter((file) => /\.(lyl|skf)$/i.test(file.name));
       if (projectFiles.length) {
         if (files.length !== 1) {
@@ -1813,7 +1898,7 @@ export default function Home() {
         className="hidden-file-input"
         type="file"
         multiple
-        accept=".lyl,.skf,.stl,.obj,.3mf,.step,.stp,.svg,image/svg+xml"
+        accept=".lyl,.skf,.zip,.stl,.obj,.3mf,.step,.stp,.svg,image/svg+xml"
         onChange={(event) => {
           const files = event.currentTarget.files ? Array.from(event.currentTarget.files) : [];
           if (files.length) {
@@ -1851,6 +1936,7 @@ export default function Home() {
           onDuplicateProject={(projectId) => void duplicateProject(projectId)}
           onDuplicateSharedProject={(project) => void duplicateSharedProject(project)}
           onImportFile={() => dashboardImportInputRef.current?.click()}
+          onBackupAll={() => void backupAllProjects()}
           onOpenSharedProject={(project) => void openSharedProject(project)}
           onOpenProject={openEditor}
           onQueryChange={setQuery}
@@ -2003,6 +2089,7 @@ function Dashboard({
   onDuplicateProject,
   onDuplicateSharedProject,
   onImportFile,
+  onBackupAll,
   onOpenSharedProject,
   onOpenProject,
   onQueryChange,
@@ -2040,6 +2127,7 @@ function Dashboard({
   onDuplicateProject: (projectId: string) => void;
   onDuplicateSharedProject: (project: SharedProject) => void;
   onImportFile: () => void;
+  onBackupAll: () => void;
   onOpenSharedProject: (project: SharedProject) => void;
   onOpenProject: (projectId: string) => void;
   onQueryChange: (value: string) => void;
@@ -2564,6 +2652,12 @@ function Dashboard({
                     : t("dashboard.projectsVisibleMany", { count: projects.length })}</span>
                 </div>
                 <div className="dashboard-controls">
+                  {projects.length > 0 ? (
+                    <button className="dashboard-select dashboard-backup-button" type="button" title={t("dashboard.backupAllTitle")} onClick={onBackupAll}>
+                      <Archive size={17} />
+                      <span>{t("dashboard.backupAll")}</span>
+                    </button>
+                  ) : null}
                   <label className="dashboard-select">
                     <SlidersHorizontal size={17} />
                     <select value={sortMode} onChange={(event) => onSortModeChange(event.currentTarget.value)} aria-label={t("dashboard.sortLabel")}>

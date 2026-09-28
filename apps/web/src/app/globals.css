@@ -1524,6 +1524,16 @@ button {
   border-radius: 6px;
 }
 
+.dashboard-backup-button {
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.dashboard-backup-button:hover {
+  border-color: #e3b77c;
+}
+
 .dashboard-select select {
   min-width: 82px;
   border: 0;
