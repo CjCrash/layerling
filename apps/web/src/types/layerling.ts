@@ -134,6 +134,10 @@ export type ShapeCustomization = {
   bentTubeQuality?: number;
   text?: string;
   font?: string;
+  textCurved?: boolean;
+  textRadius?: number;
+  textArcAngle?: number;
+  textInward?: boolean;
 };
 
 export type ShapeCustomizationMap = Partial<Record<ShapeKind, ShapeCustomization>>;
@@ -415,6 +419,10 @@ export type WorkplaneShape = {
   bentTubeSegments?: BentTubeSegment[];
   text?: string;
   font?: string;
+  textCurved?: boolean;
+  textRadius?: number;
+  textArcAngle?: number;
+  textInward?: boolean;
   importedMesh?: {
     positions: number[];
     normals?: number[];

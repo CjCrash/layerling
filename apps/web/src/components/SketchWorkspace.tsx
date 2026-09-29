@@ -1,9 +1,10 @@
 "use client";
 
-import { ChevronUp, CornerDownRight, Home, Link, Link2Off, LockKeyhole, LockKeyholeOpen, Minus, Plus, Split, Trash2, Waves } from "lucide-react";
+import { Check, ChevronUp, CornerDownRight, Home, Link, Link2Off, LockKeyhole, LockKeyholeOpen, Minus, Plus, Slash, Spline, Split, Trash2, Waves, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import { SnapGridControl } from "@/components/workplane/ShapeInspector";
 import { SketchRevolvePreview } from "@/components/SketchRevolvePreview";
+import { canApplySketchCornerTreatment } from "@/lib/sketchFilletChamfer";
 import { t } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
 import { parseMeasurementInput } from "@/lib/measurementUnits";
@@ -53,6 +54,8 @@ type SketchWorkspaceProps = {
   onMoveHandle: (id: string, handle: "in" | "out", point: { x: number; z: number }) => void;
   onInsertPoint: (segmentId: string, point: { x: number; z: number }, amount: number) => void;
   onSetPointMode: (id: string, mode: "corner" | "smooth" | "split") => void;
+  onApplyFillet?: (id: string, radius: number) => void;
+  onApplyChamfer?: (id: string, distance: number) => void;
   onClearMeasurement: () => void;
 };
 
@@ -496,6 +499,8 @@ export function SketchWorkspace({
   onMoveHandle,
   onInsertPoint,
   onSetPointMode,
+  onApplyFillet,
+  onApplyChamfer,
   onClearMeasurement,
 }: SketchWorkspaceProps) {
   useLanguage();
@@ -590,6 +595,25 @@ export function SketchWorkspace({
   const selectedGeometryBounds = boundsForSketchPoints(selectedGeometryPoints);
   const isPointSelected = (id: string) => selected?.kind === "point" ? selected.id === id : selected?.kind === "multiple" ? selected.pointIds.includes(id) : false;
   const isSegmentSelected = (id: string) => selected?.kind === "segment" ? selected.id === id : selected?.kind === "multiple" ? selected.segmentIds.includes(id) : false;
+  const [cornerDialog, setCornerDialog] = useState<"fillet" | "chamfer" | null>(null);
+  const [cornerValue, setCornerValue] = useState("2");
+
+  useEffect(() => {
+    setCornerDialog(null);
+    setCornerValue("2");
+  }, [selectedPoint?.id]);
+
+  const handleApplyCorner = () => {
+    if (!selectedPoint || !cornerDialog) return;
+    const val = parseFloat(cornerValue.replace(",", "."));
+    if (!Number.isFinite(val) || val <= 0) return;
+    if (cornerDialog === "fillet") {
+      onApplyFillet?.(selectedPoint.id, val);
+    } else if (cornerDialog === "chamfer") {
+      onApplyChamfer?.(selectedPoint.id, val);
+    }
+    setCornerDialog(null);
+  };
   const gridStep = clamp(workspace.gridBlockSize, 1, 200);
   const verticalLines = useMemo(() => {
     const lines: number[] = [];
@@ -1197,9 +1221,78 @@ export function SketchWorkspace({
       ) : null}
       {selectedPoint && tool === "select" ? (
         <div className="sketch-point-actions" aria-label={t("sketch.pointActions")}>
-          <button type="button" title={t("sketch.makeCorner")} onClick={() => onSetPointMode(selectedPoint.id, "corner")}><CornerDownRight /><span>{t("sketch.corner")}</span></button>
-          <button type="button" title={t("sketch.makeSmooth")} onClick={() => onSetPointMode(selectedPoint.id, "smooth")}><Waves /><span>{t("sketch.smooth")}</span></button>
-          <button type="button" title={t("sketch.splitHandles")} onClick={() => onSetPointMode(selectedPoint.id, "split")}><Split /><span>{t("sketch.split")}</span></button>
+          {cornerDialog ? (
+            <div className="sketch-corner-dialog">
+              <span className="sketch-corner-label">
+                {cornerDialog === "fillet" ? t("sketch.filletRadius") : t("sketch.chamferDistance")}
+              </span>
+              <input
+                type="number"
+                min="0.1"
+                step="0.5"
+                className="sketch-corner-input"
+                value={cornerValue}
+                onChange={(e) => setCornerValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleApplyCorner();
+                  if (e.key === "Escape") setCornerDialog(null);
+                }}
+                autoFocus
+              />
+              <span className="sketch-corner-unit">mm</span>
+              <button
+                type="button"
+                className="sketch-corner-submit"
+                title={t("sketch.apply")}
+                aria-label={t("sketch.apply")}
+                onClick={handleApplyCorner}
+              >
+                <Check />
+              </button>
+              <button
+                type="button"
+                className="sketch-corner-cancel"
+                title={t("common.cancel")}
+                aria-label={t("common.cancel")}
+                onClick={() => setCornerDialog(null)}
+              >
+                <X />
+              </button>
+            </div>
+          ) : (
+            <>
+              <button type="button" title={t("sketch.makeCorner")} onClick={() => onSetPointMode(selectedPoint.id, "corner")}><CornerDownRight /><span>{t("sketch.corner")}</span></button>
+              <button type="button" title={t("sketch.makeSmooth")} onClick={() => onSetPointMode(selectedPoint.id, "smooth")}><Waves /><span>{t("sketch.smooth")}</span></button>
+              <button type="button" title={t("sketch.splitHandles")} onClick={() => onSetPointMode(selectedPoint.id, "split")}><Split /><span>{t("sketch.split")}</span></button>
+              {canApplySketchCornerTreatment(displayProfile, selectedPoint.id) ? (
+                <>
+                  <span className="sketch-point-divider" />
+                  <button
+                    type="button"
+                    title={t("sketch.filletCorner")}
+                    onClick={() => {
+                      setCornerDialog("fillet");
+                      setCornerValue("2");
+                    }}
+                  >
+                    <Spline />
+                    <span>{t("sketch.fillet")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    title={t("sketch.chamferCorner")}
+                    onClick={() => {
+                      setCornerDialog("chamfer");
+                      setCornerValue("2");
+                    }}
+                  >
+                    <Slash />
+                    <span>{t("sketch.chamfer")}</span>
+                  </button>
+                </>
+              ) : null}
+            </>
+          )}
         </div>
       ) : null}
       <div className="grid-settings">

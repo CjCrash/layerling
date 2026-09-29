@@ -33,6 +33,7 @@ import { createRoundedBoxGeometry } from "@/lib/roundedBoxGeometry";
 import { createBentTubeGeometry } from "@/lib/bentTubeGeometry";
 import { createThreadGeometry } from "@/lib/threadGeometry";
 import { createSpringGeometry } from "@/lib/springGeometry";
+import { createTextGeometry } from "@/lib/textGeometry";
 import { parseMeasurementInput, resolveMeasurementInput } from "@/lib/measurementUnits";
 import {
   computeCornerRulerRelativeCoordinates,
@@ -1058,6 +1059,9 @@ function tapeShapeTopologyKey(shape: WorkplaneShape): string {
     bentTubeSegments: shape.bentTubeSegments,
     text: shape.text,
     font: shape.font,
+    textCurved: shape.textCurved,
+    textRadius: shape.textRadius,
+    textInward: shape.textInward,
     mesh: [positions.length, positionSample],
     brep: [brep.length, brepSample],
     treatments: shape.edgeTreatments,
@@ -1243,6 +1247,9 @@ function shapeGeometrySignature(shape: WorkplaneShape): string {
     bentTubeSegments: shape.bentTubeSegments,
     text: shape.text,
     font: shape.font,
+    textCurved: shape.textCurved,
+    textRadius: shape.textRadius,
+    textInward: shape.textInward,
   });
 }
 
@@ -10475,42 +10482,7 @@ function setComplexEdgeVisibility(object: THREE.Object3D, visible: boolean) {
 }
 
 function addTextShape(group: THREE.Group, material: THREE.MeshStandardMaterial, shape: WorkplaneShape, geometryCacheKey: string) {
-  const geometry = sharedShapeGeometry(geometryCacheKey, () => {
-    const text = (shape.text ?? "TEXT").trim() || " ";
-    const bevel = clamp(shape.bevel ?? 0, 0, 8);
-    const fontName = shape.font ?? "Multilanguage";
-    const next = new TextGeometry(text, {
-      font: textFont(fontName),
-      size: 20,
-      depth: shape.height,
-      curveSegments: fontName === "Stencil" ? 1 : 8,
-      bevelEnabled: bevel > 0,
-      bevelThickness: bevel * 0.22,
-      bevelSize: bevel * 0.16,
-      bevelSegments: Math.max(1, shape.segments ?? 0),
-    });
-
-    next.computeBoundingBox();
-    const box = next.boundingBox;
-    if (box) {
-      const textWidth = Math.max(1, box.max.x - box.min.x);
-      const textDepth = Math.max(1, box.max.y - box.min.y);
-      const scale = Math.min(shapeWidth(shape) / textWidth, shapeDepth(shape) / textDepth);
-      next.scale(scale, scale, 1);
-    }
-
-    next.rotateX(-Math.PI / 2);
-    next.computeBoundingBox();
-    const rotatedBox = next.boundingBox;
-    if (rotatedBox) {
-      next.translate(
-        -(rotatedBox.min.x + rotatedBox.max.x) / 2,
-        -rotatedBox.min.y,
-        -(rotatedBox.min.z + rotatedBox.max.z) / 2,
-      );
-    }
-    return next;
-  });
+  const geometry = sharedShapeGeometry(geometryCacheKey, () => createTextGeometry(shape));
   addMesh(group, geometry, material, shape);
 }
 

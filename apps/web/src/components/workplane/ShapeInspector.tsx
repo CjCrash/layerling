@@ -1199,11 +1199,12 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
   }
 
   if (shape.kind === "text") {
-    return [
+    const isCurved = Boolean(shape.textCurved);
+    const properties: ShapePropertyConfig[] = [
       {
         type: "text",
         id: "text",
-      label: t("prop.text"),
+        label: t("prop.text"),
         value: shape.text ?? "TEXT",
         onChange: (text) => {
           const nextText = text.slice(0, 24) || " ";
@@ -1215,7 +1216,35 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
       { id: "height", label: t("prop.height"), value: shape.height, min: MIN_SHAPE_SIZE, max: 40, onChange: setHeight },
       { id: "bevel", label: t("prop.bevel"), value: shape.bevel ?? 0, min: 0, max: 8, onChange: (bevel) => onUpdate({ bevel }) },
       { id: "segments", label: t("prop.segments"), value: shape.segments ?? 0, min: 0, max: 24, step: 1, onChange: (segments) => onUpdate({ segments: Math.round(segments) }) },
+      {
+        type: "toggle",
+        id: "textCurved",
+        label: t("prop.textCurved"),
+        value: isCurved,
+        onChange: (textCurved) => onUpdate({ textCurved, textRadius: shape.textRadius ?? 30 }),
+      },
     ];
+    if (isCurved) {
+      properties.push(
+        {
+          id: "textRadius",
+          label: t("prop.textRadius"),
+          value: shape.textRadius ?? 30,
+          min: 10,
+          max: 200,
+          step: 1,
+          onChange: (textRadius) => onUpdate({ textRadius }),
+        },
+        {
+          type: "toggle",
+          id: "textInward",
+          label: t("prop.textInward"),
+          value: Boolean(shape.textInward),
+          onChange: (textInward) => onUpdate({ textInward }),
+        },
+      );
+    }
+    return properties;
   }
 
   return [

@@ -499,6 +499,10 @@ export function workplaneShapesEqual(a: WorkplaneShape, b: WorkplaneShape) {
     bentTubeSegmentsEqual(a.bentTubeSegments, b.bentTubeSegments) &&
     a.text === b.text &&
     a.font === b.font &&
+    a.textCurved === b.textCurved &&
+    a.textRadius === b.textRadius &&
+    a.textArcAngle === b.textArcAngle &&
+    a.textInward === b.textInward &&
     a.importedMesh === b.importedMesh &&
     a.imagePlate === b.imagePlate &&
     a.sketchProfile === b.sketchProfile &&

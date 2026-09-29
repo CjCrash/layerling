@@ -5052,6 +5052,90 @@ button {
   height: 17px;
 }
 
+.sketch-point-divider {
+  width: 1px;
+  height: 20px;
+  margin: auto 2px;
+  background: #dccdbd;
+}
+
+.sketch-corner-dialog {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.sketch-corner-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #725b43;
+}
+
+.sketch-corner-input {
+  width: 52px;
+  height: 28px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #49351f;
+  background: #ffffff;
+  border: 1px solid #dccdbd;
+  border-radius: 6px;
+  text-align: right;
+  outline: none;
+}
+
+.sketch-corner-input:focus {
+  border-color: #8e5112;
+  box-shadow: 0 0 0 2px rgba(142, 81, 18, 0.15);
+}
+
+.sketch-corner-unit {
+  font-size: 11px;
+  font-weight: 600;
+  color: #907d6a;
+}
+
+.sketch-corner-submit,
+.sketch-corner-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 14px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.sketch-corner-submit {
+  color: #2e7d32;
+  background: #e8f5e9;
+}
+
+.sketch-corner-submit:hover {
+  background: #c8e6c9;
+  color: #1b5e20;
+}
+
+.sketch-corner-cancel {
+  color: #725b43;
+}
+
+.sketch-corner-cancel:hover {
+  background: #f7f2ea;
+  color: #8e5112;
+}
+
+.sketch-corner-submit svg,
+.sketch-corner-cancel svg {
+  width: 15px;
+  height: 15px;
+}
+
 .sketch-image-inspector .shape-inspector-header strong {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -9731,6 +9815,65 @@ html[data-theme="dark"] .sketch-create-dropdown button:focus-visible {
 html[data-theme="dark"] .sketch-create-dropdown span {
   color: #a79078;
 }
+
+html[data-theme="dark"] .sketch-point-actions {
+  background: rgba(30, 26, 22, 0.94);
+  border-color: #443a30;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .sketch-point-actions button {
+  color: #cbd5e0;
+}
+
+html[data-theme="dark"] .sketch-point-actions button:hover {
+  color: #f7fafc;
+  background: #2d241e;
+  border-color: #554438;
+}
+
+html[data-theme="dark"] .sketch-point-divider {
+  background: #443a30;
+}
+
+html[data-theme="dark"] .sketch-corner-label {
+  color: #cbd5e0;
+}
+
+html[data-theme="dark"] .sketch-corner-input {
+  color: #f7fafc;
+  background: #1e1a16;
+  border-color: #443a30;
+}
+
+html[data-theme="dark"] .sketch-corner-input:focus {
+  border-color: #ed8936;
+  box-shadow: 0 0 0 2px rgba(237, 137, 54, 0.2);
+}
+
+html[data-theme="dark"] .sketch-corner-unit {
+  color: #a0aec0;
+}
+
+html[data-theme="dark"] .sketch-corner-submit {
+  color: #68d391;
+  background: rgba(46, 125, 50, 0.25);
+}
+
+html[data-theme="dark"] .sketch-corner-submit:hover {
+  background: rgba(46, 125, 50, 0.4);
+  color: #9ae6b4;
+}
+
+html[data-theme="dark"] .sketch-corner-cancel {
+  color: #a0aec0;
+}
+
+html[data-theme="dark"] .sketch-corner-cancel:hover {
+  background: #2d241e;
+  color: #f7fafc;
+}
+
 
 /* Only the sprites need rescuing here: their colours are baked into an image
    file and cannot follow the theme. The drawn marks do follow it, through

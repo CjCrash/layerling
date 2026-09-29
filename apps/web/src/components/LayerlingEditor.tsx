@@ -30,6 +30,7 @@ import { createPyramidGeometry } from "@/lib/pyramidGeometry";
 import { roundSideCount } from "@/lib/roundSideCount";
 import { createThreadGeometry, defaultThreadHeadHeight, normalizeThreadHeadHeight, threadNaturalFootprint, threadSettings } from "@/lib/threadGeometry";
 import { createSpringGeometry } from "@/lib/springGeometry";
+import { createTextGeometry } from "@/lib/textGeometry";
 import { sketchPrimitiveGeometry } from "@/lib/sketchPrimitives";
 import {
   SketchBoltCircleIcon,
@@ -142,6 +143,7 @@ import { importedShapeFrom3mf } from "@/lib/threemfImport";
 import { attachProjectAsset, dedupeProjectAssets, projectAssetFromBytes, sourceFormatForFileName } from "@/lib/projectAssets";
 import { findSketchOutlineIntersection } from "@/lib/sketchProfileValidation";
 import { addLineIntersectionPoints, splitSketchSegment } from "@/lib/sketchPointRefinement";
+import { applySketchChamfer, applySketchFillet } from "@/lib/sketchFilletChamfer";
 import { buildSketchRevolveMesh, DEFAULT_SKETCH_REVOLVE_SETTINGS, normalizeSketchRevolveSettings, type SketchRevolveMesh } from "@/lib/sketchRevolve";
 import { AppFooter } from "@/components/AppFooter";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
@@ -2276,40 +2278,7 @@ function createBooleanHollowCylinderGeometry(width: number, height: number, dept
 }
 
 function createBooleanTextGeometry(shape: WorkplaneShape) {
-  const text = (shape.text ?? "TEXT").trim() || " ";
-  const bevel = clampNumber(shape.bevel ?? 0, 0, 8);
-  const fontName = shape.font ?? "Multilanguage";
-  const geometry = new TextGeometry(text, {
-    font: textFont(fontName),
-    size: 20,
-    depth: shape.height,
-    curveSegments: fontName === "Stencil" ? 1 : 8,
-    bevelEnabled: bevel > 0,
-    bevelThickness: bevel * 0.22,
-    bevelSize: bevel * 0.16,
-    bevelSegments: Math.max(1, shape.segments ?? 0),
-  });
-
-  geometry.computeBoundingBox();
-  const box = geometry.boundingBox;
-  if (box) {
-    const textWidth = Math.max(1, box.max.x - box.min.x);
-    const textDepth = Math.max(1, box.max.y - box.min.y);
-    const scale = Math.min(shapeWidth(shape) / textWidth, shapeDepth(shape) / textDepth);
-    geometry.scale(scale, scale, 1);
-  }
-
-  geometry.rotateX(-Math.PI / 2);
-  geometry.computeBoundingBox();
-  const rotatedBox = geometry.boundingBox;
-  if (rotatedBox) {
-    geometry.translate(
-      -(rotatedBox.min.x + rotatedBox.max.x) / 2,
-      -rotatedBox.min.y,
-      -(rotatedBox.min.z + rotatedBox.max.z) / 2,
-    );
-  }
-  return geometry;
+  return createTextGeometry(shape);
 }
 
 function geometryMeshForShape(shape: WorkplaneShape): MeshData | null {
@@ -7742,6 +7711,20 @@ export function LayerlingEditor({
     setSketchTool("select");
   }, [commitSketchProfile, sketchProfile]);
 
+  const applySketchFilletHandler = useCallback((id: string, radius: number) => {
+    const result = applySketchFillet(sketchProfile, id, radius, createLocalId);
+    if (!result) return;
+    commitSketchProfile(result.profile, t("sketch.filletApplied"));
+    setSketchSelection(null);
+  }, [commitSketchProfile, sketchProfile]);
+
+  const applySketchChamferHandler = useCallback((id: string, distance: number) => {
+    const result = applySketchChamfer(sketchProfile, id, distance, createLocalId);
+    if (!result) return;
+    commitSketchProfile(result.profile, t("sketch.chamferApplied"));
+    setSketchSelection(null);
+  }, [commitSketchProfile, sketchProfile]);
+
   const finishSketch = useCallback(async () => {
     const existing = editingSketchShapeId ? shapes.find((shape) => shape.id === editingSketchShapeId) ?? null : null;
     const height = existing?.height ?? 10;
@@ -11021,6 +11004,8 @@ export function LayerlingEditor({
             onMoveHandle={moveSketchHandle}
             onInsertPoint={insertSketchPoint}
             onSetPointMode={setSketchPointMode}
+            onApplyFillet={applySketchFilletHandler}
+            onApplyChamfer={applySketchChamferHandler}
             onClearMeasurement={clearSketchMeasurement}
           />
         ) : (

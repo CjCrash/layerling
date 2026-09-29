@@ -2041,6 +2041,55 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   border-color: #c7c7c7;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-point-divider {
+  background: #cdcdcd;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-corner-label {
+  color: #505050;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-corner-input {
+  color: #383838;
+  background: #ffffff;
+  border: 1px solid #cdcdcd;
+  outline: none;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-corner-input:focus {
+  border-color: #8e5112;
+  box-shadow: 0 0 0 2px rgba(142, 81, 18, 0.15);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-corner-unit {
+  color: #6e6e6e;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-corner-submit,
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-corner-cancel {
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-corner-submit {
+  color: #2e7d32;
+  background: #e8f5e9;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-corner-submit:hover {
+  background: #c8e6c9;
+  color: #1b5e20;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-corner-cancel {
+  color: #505050;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-corner-cancel:hover {
+  background: #f1f1f1;
+  color: #8e5112;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .sketch-image-inspector .inspector-header-icon.danger:hover {
   color: #c3262e;
   background: #fff0f1;
@@ -4547,6 +4596,64 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-create-dropdown
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-create-dropdown span {
   color: #7e7e7e;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-point-actions {
+  background: rgba(32, 32, 32, 0.94);
+  border-color: #3d3d3d;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-point-actions button {
+  color: #cbd5e0;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-point-actions button:hover {
+  color: #f7fafc;
+  background: #2b2b2b;
+  border-color: #484848;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-point-divider {
+  background: #3d3d3d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-corner-label {
+  color: #cbd5e0;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-corner-input {
+  color: #f7fafc;
+  background: #202020;
+  border-color: #3d3d3d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-corner-input:focus {
+  border-color: #ed8936;
+  box-shadow: 0 0 0 2px rgba(237, 137, 54, 0.2);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-corner-unit {
+  color: #a0aec0;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-corner-submit {
+  color: #68d391;
+  background: rgba(46, 125, 50, 0.25);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-corner-submit:hover {
+  background: rgba(46, 125, 50, 0.4);
+  color: #9ae6b4;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-corner-cancel {
+  color: #a0aec0;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-corner-cancel:hover {
+  background: #2b2b2b;
+  color: #f7fafc;
 }
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .toolbar-icon:not(.disabled) .toolbar-sprite-icon,
