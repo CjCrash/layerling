@@ -2126,7 +2126,7 @@ type CornerRulerOverlayItem = {
   labels: CornerRulerLabelScreen[];
   neighborLabels: CornerRulerNeighborLabel[];
   selectedCoordinate?: {
-    shapeId: string;
+    shapeIds: string[];
     xValue: number;
     zValue: number;
     elevationValue: number;
@@ -2182,9 +2182,10 @@ function syncCornerRulerToolOverlay(
   const items: CornerRulerOverlayItem[] = [];
   if (state) {
     const topY = shapes.reduce((max, shape) => Math.max(max, (shape.elevation ?? 0) + shape.height), 0);
-    const selectedShape = selectedIds.length === 1
-      ? shapes.find((s) => s.id === selectedIds[0] && !s.hidden && !isNonSolidShapeKind(s.kind))
-      : null;
+    // Mehrere markierte Koerper zaehlen zusammen wie einer: gemessen wird
+    // ihre gemeinsame Umrissbox, wie beim Abstand zum Nullpunkt.
+    const wanted = new Set(selectedIds);
+    const selectedShapes = shapes.filter((s) => wanted.has(s.id) && !s.hidden && !isNonSolidShapeKind(s.kind));
 
     rulers.forEach((ruler) => {
       const armWidth = CORNER_RULER_ARM_WIDTH;
@@ -2221,8 +2222,8 @@ function syncCornerRulerToolOverlay(
       buildTicks(zAxis, xAxis.clone().negate(), ruler.armLengthZ);
 
       let selectedCoordinate: CornerRulerOverlayItem["selectedCoordinate"] = null;
-      if (selectedShape) {
-        const bounds = projectShapeExtent(selectedShape, xAxis, yAxis, zAxis, corner);
+      if (selectedShapes.length) {
+        const bounds = projectShapesExtent(selectedShapes, xAxis, yAxis, zAxis, corner);
         const coords = computeCornerRulerRelativeCoordinates({
           rulerCorner: { x: ruler.x, y: ruler.elevation, z: ruler.z },
           rulerRotation: ruler.rotation,
@@ -2263,7 +2264,7 @@ function syncCornerRulerToolOverlay(
         };
 
         selectedCoordinate = {
-          shapeId: selectedShape.id,
+          shapeIds: selectedShapes.map((shape) => shape.id),
           xValue: coords.x,
           zValue: coords.z,
           elevationValue: coords.elevation,
@@ -2281,7 +2282,7 @@ function syncCornerRulerToolOverlay(
       const neighborLabels: CornerRulerNeighborLabel[] = [];
       shapes.forEach((candidate) => {
         if (isNonSolidShapeKind(candidate.kind) || candidate.hidden) return;
-        if (selectedShape && candidate.id === selectedShape.id) return;
+        if (wanted.has(candidate.id)) return;
         const { armX, armZ } = cornerRulerDimensionMatchesFromCorner(
           { x: ruler.x, z: ruler.z },
           ruler.rotation,
@@ -2353,7 +2354,7 @@ function CornerRulerToolOverlay({
   onHandlePointerUp: (event: ReactPointerEvent<SVGCircleElement>, id: string) => void;
   onDelete: (id: string) => void;
   onToggleMode: (id: string) => void;
-  onCoordinateClick: (rulerId: string, shapeId: string, axis: "x" | "z" | "elevation", value: number, x: number, y: number) => void;
+  onCoordinateClick: (rulerId: string, shapeIds: string[], axis: "x" | "z" | "elevation", value: number, x: number, y: number) => void;
 }) {
   if (overlay.items.length === 0) {
     return null;
@@ -2411,7 +2412,7 @@ function CornerRulerToolOverlay({
                 aria-label={t("aria.rulerCoordinateX")}
                 title={t("ruler.coordinate.x")}
                 onPointerDown={(event) => event.stopPropagation()}
-                onClick={() => onCoordinateClick(item.id, item.selectedCoordinate!.shapeId, "x", item.selectedCoordinate!.xValue, item.selectedCoordinate!.xLabel.x, item.selectedCoordinate!.xLabel.y)}
+                onClick={() => onCoordinateClick(item.id, item.selectedCoordinate!.shapeIds, "x", item.selectedCoordinate!.xValue, item.selectedCoordinate!.xLabel.x, item.selectedCoordinate!.xLabel.y)}
               >
                 {item.selectedCoordinate.xLabel.text}
               </button>
@@ -2422,7 +2423,7 @@ function CornerRulerToolOverlay({
                 aria-label={t("aria.rulerCoordinateZ")}
                 title={t("ruler.coordinate.z")}
                 onPointerDown={(event) => event.stopPropagation()}
-                onClick={() => onCoordinateClick(item.id, item.selectedCoordinate!.shapeId, "z", item.selectedCoordinate!.zValue, item.selectedCoordinate!.zLabel.x, item.selectedCoordinate!.zLabel.y)}
+                onClick={() => onCoordinateClick(item.id, item.selectedCoordinate!.shapeIds, "z", item.selectedCoordinate!.zValue, item.selectedCoordinate!.zLabel.x, item.selectedCoordinate!.zLabel.y)}
               >
                 {item.selectedCoordinate.zLabel.text}
               </button>
@@ -2433,7 +2434,7 @@ function CornerRulerToolOverlay({
                 aria-label={t("aria.rulerCoordinateElevation")}
                 title={t("ruler.coordinate.elevation")}
                 onPointerDown={(event) => event.stopPropagation()}
-                onClick={() => onCoordinateClick(item.id, item.selectedCoordinate!.shapeId, "elevation", item.selectedCoordinate!.elevationValue, item.selectedCoordinate!.elevationLabel.x, item.selectedCoordinate!.elevationLabel.y)}
+                onClick={() => onCoordinateClick(item.id, item.selectedCoordinate!.shapeIds, "elevation", item.selectedCoordinate!.elevationValue, item.selectedCoordinate!.elevationLabel.x, item.selectedCoordinate!.elevationLabel.y)}
               >
                 {item.selectedCoordinate.elevationLabel.text}
               </button>
@@ -2729,6 +2730,24 @@ function projectShapeExtent(
         max.max(local);
       });
     });
+  });
+  return { min, max };
+}
+
+/** Gemeinsame Umrissbox mehrerer Formen in denselben Achsen - mehrere markierte Koerper zaehlen am Lineal wie einer. */
+function projectShapesExtent(
+  shapes: WorkplaneShape[],
+  xAxis: THREE.Vector3,
+  yAxis: THREE.Vector3,
+  zAxis: THREE.Vector3,
+  origin: THREE.Vector3,
+): { min: THREE.Vector3; max: THREE.Vector3 } {
+  const min = new THREE.Vector3(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+  const max = new THREE.Vector3(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
+  shapes.forEach((shape) => {
+    const extent = projectShapeExtent(shape, xAxis, yAxis, zAxis, origin);
+    min.min(extent.min);
+    max.max(extent.max);
   });
   return { min, max };
 }
@@ -3575,7 +3594,7 @@ export function WorkplaneViewport({
   const [rulerDimensionEditing, setRulerDimensionEditing] = useState<{ shapeId: string; field: RulerDimensionField; x: number; y: number; value: string; base: number } | null>(null);
   const [rulerDuplicatePreview, setRulerDuplicatePreview] = useState<{ x: number; y: number; label: string } | null>(null);
   const [rulerDuplicateEditing, setRulerDuplicateEditing] = useState<{ rulerId: string; shapeId: string; baseAlong: number; x: number; y: number; value: string } | null>(null);
-  const [rulerCoordinateEditing, setRulerCoordinateEditing] = useState<{ rulerId: string; shapeId: string; axis: "x" | "z" | "elevation"; x: number; y: number; value: string } | null>(null);
+  const [rulerCoordinateEditing, setRulerCoordinateEditing] = useState<{ rulerId: string; shapeIds: string[]; axis: "x" | "z" | "elevation"; x: number; y: number; value: string } | null>(null);
   const [noteOverlay, setNoteOverlay] = useState<NoteOverlayState | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [moveDimensionOverlay, setMoveDimensionOverlay] = useState<MoveDimensionOverlayState | null>(null);
@@ -5914,7 +5933,7 @@ export function WorkplaneViewport({
 
   const beginRulerCoordinateEdit = useCallback((
     rulerId: string,
-    shapeId: string,
+    shapeIds: string[],
     axis: "x" | "z" | "elevation",
     value: number,
     x: number,
@@ -5922,7 +5941,7 @@ export function WorkplaneViewport({
   ) => {
     setRulerCoordinateEditing({
       rulerId,
-      shapeId,
+      shapeIds,
       axis,
       x,
       y,
@@ -5934,17 +5953,18 @@ export function WorkplaneViewport({
     const edit = rulerCoordinateEditing;
     setRulerCoordinateEditing(null);
     if (!edit) return;
-    const shape = shapesRef.current.find((entry) => entry.id === edit.shapeId);
+    const wanted = new Set(edit.shapeIds);
+    const moved = shapesRef.current.filter((entry) => wanted.has(entry.id));
     const ruler = cornerRulerModelRef.current.find((entry) => entry.id === edit.rulerId);
     const value = parseMeasurementInput(edit.value);
-    if (!shape || !ruler || !Number.isFinite(value)) return;
+    if (!moved.length || !ruler || !Number.isFinite(value)) return;
 
     const rulerQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, THREE.MathUtils.degToRad(ruler.rotation), 0, "XYZ"));
     const xAxis = new THREE.Vector3(1, 0, 0).applyQuaternion(rulerQuat);
     const zAxis = new THREE.Vector3(0, 0, 1).applyQuaternion(rulerQuat);
     const yAxis = new THREE.Vector3(0, 1, 0);
     const corner = new THREE.Vector3(ruler.x, ruler.elevation ?? 0, ruler.z);
-    const bounds = projectShapeExtent(shape, xAxis, yAxis, zAxis, corner);
+    const bounds = projectShapesExtent(moved, xAxis, yAxis, zAxis, corner);
     const coords = computeCornerRulerRelativeCoordinates({
       rulerCorner: { x: ruler.x, y: ruler.elevation, z: ruler.z },
       rulerRotation: ruler.rotation,
@@ -5954,19 +5974,26 @@ export function WorkplaneViewport({
     const currentVal = edit.axis === "elevation" ? coords.elevation : edit.axis === "x" ? coords.x : coords.z;
     const delta = value - currentVal;
 
-    if (edit.axis === "elevation") {
-      const targetElevation = (shape.elevation ?? 0) + delta;
-      onUpdateShape(edit.shapeId, {
-        elevation: cleanNearZero(clamp(targetElevation, MIN_ELEVATION, MAX_ELEVATION), 0.0005),
+    // Alle markierten Koerper wandern um denselben Betrag - ihre Lage
+    // zueinander bleibt, wie beim gemeinsamen Verschieben mit der Maus. Die
+    // Klammer macht daraus einen einzigen Rueckgaengig-Schritt.
+    const shift = edit.axis === "elevation" ? null : computeCornerRulerShift(ruler.rotation, edit.axis, delta);
+    onInteractionActiveChange?.(true);
+    moved.forEach((shape) => {
+      if (!shift) {
+        const targetElevation = (shape.elevation ?? 0) + delta;
+        onUpdateShape(shape.id, {
+          elevation: cleanNearZero(clamp(targetElevation, MIN_ELEVATION, MAX_ELEVATION), 0.0005),
+        });
+        return;
+      }
+      onUpdateShape(shape.id, {
+        x: cleanNearZero(shape.x + shift.x, 0.0005),
+        z: cleanNearZero(shape.z + shift.z, 0.0005),
       });
-      return;
-    }
-    const shift = computeCornerRulerShift(ruler.rotation, edit.axis, delta);
-    onUpdateShape(edit.shapeId, {
-      x: cleanNearZero(shape.x + shift.x, 0.0005),
-      z: cleanNearZero(shape.z + shift.z, 0.0005),
     });
-  }, [onUpdateShape, rulerCoordinateEditing]);
+    onInteractionActiveChange?.(false);
+  }, [onInteractionActiveChange, onUpdateShape, rulerCoordinateEditing]);
 
   const cancelRulerCoordinateEdit = useCallback(() => {
     setRulerCoordinateEditing(null);

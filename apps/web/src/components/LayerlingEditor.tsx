@@ -8953,6 +8953,9 @@ export function LayerlingEditor({
     if (!edgeModifier?.prepared) return;
     if (edgeModifier.selectedEdgeIds.length === 0) {
       discardPendingCadPreviews();
+      // Ein neuer Wert ohne markierte Kante hat nichts zu rechnen - sonst
+      // bliebe der Kreis auf "Anwenden" fuer immer stehen.
+      setEdgeModifier((current) => current?.busy && current.selectedEdgeIds.length === 0 ? { ...current, busy: false } : current);
       return;
     }
     const timer = window.setTimeout(() => {
