@@ -352,7 +352,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "guide.group.select": "Auswählen und ordnen",
   "guide.select.click": "Klicken wählt aus, Shift nimmt dazu, ein Klick ins Leere hebt die Auswahl auf.",
   "guide.select.group": "Gruppiere, was zusammengehört, sperre, was liegen bleiben soll, blende aus, was im Weg ist - alles im Menüband.",
-  "guide.select.align": "Ausrichten legt mehrere Körper an eine Kante oder Mitte, Spiegeln wirft eine Kopie über eine Ebene.",
+  "guide.select.align": "Ausrichten legt mehrere Körper an eine Kante oder Mitte, Spiegeln kippt die Auswahl an einer Ebene (links-rechts, vorn-hinten oder oben-unten). Für eine gespiegelte Kopie erst duplizieren.",
   "guide.select.pivot": "Drehpunkt setzen, dann eine Fläche anklicken: Eine ebene Fläche gibt ihren Mittelpunkt vor, etwa die Achse eines Rohrendes. Die Auswahl dreht sich danach um diesen Punkt statt um ihre Mitte - so bleibt ein gekipptes Rohrende auf seiner Achse. Ein zweiter Klick auf das Werkzeug oder eine neue Auswahl hebt ihn wieder auf.",
   "guide.select.layFlat": "Auf Fläche legen (unter Anordnen), dann eine Fläche der Auswahl anklicken: Der Körper dreht sich so, dass diese Fläche unten auf der Arbeitsebene liegt - praktisch, um ein Teil für den Druck auf seine beste Seite zu legen.",
   "guide.select.pattern": "Muster wiederholt die Auswahl n-mal in einer Reihe oder im Kreis - für Lochraster, Lochkreise und Zahnkränze. Die Kopien erscheinen als Vorschau, erst „Erzeugen\" legt sie an.",

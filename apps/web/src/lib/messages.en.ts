@@ -353,7 +353,7 @@ export const MESSAGES_EN = {
   "guide.group.select": "Selecting and ordering",
   "guide.select.click": "Click to select, hold Shift to add, click empty space to let go.",
   "guide.select.group": "Group what belongs together, lock what should stay put, hide what is in the way - all in the ribbon.",
-  "guide.select.align": "Align lays several bodies out along one edge or centre; Mirror throws a copy across a plane.",
+  "guide.select.align": "Align lays several bodies out along one edge or centre; Mirror flips the selection across a plane (left-right, front-back or top-bottom). For a mirrored copy, duplicate first.",
   "guide.select.pivot": "Set rotation pivot, then click a face: a flat face gives its centre, such as the axis of a pipe end. The selection then turns around that point instead of its own centre - a tilted pipe end stays on its axis. Clicking the tool again, or selecting something else, removes it.",
   "guide.select.layFlat": "Lay flat on face (under Arrange), then click a face of the selection: the body turns so that face rests on the workplane - handy for putting a part on its best side for printing.",
   "guide.select.pattern": "Pattern repeats the selection n times in a row or around a circle - for hole grids, bolt circles and toothed rings. The copies show as a preview; only \"Create\" adds them.",
