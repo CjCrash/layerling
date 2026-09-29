@@ -31,6 +31,7 @@ import { roundSideCount } from "@/lib/roundSideCount";
 import { createThreadGeometry, defaultThreadHeadHeight, normalizeThreadHeadHeight, threadNaturalFootprint, threadSettings } from "@/lib/threadGeometry";
 import { createSpringGeometry } from "@/lib/springGeometry";
 import { createTextGeometry } from "@/lib/textGeometry";
+import { canApplySketchCornerTreatment } from "@/lib/sketchFilletChamfer";
 import { sketchPrimitiveGeometry } from "@/lib/sketchPrimitives";
 import {
   SketchBoltCircleIcon,
@@ -6192,6 +6193,21 @@ export function LayerlingEditor({
   const [sketchMeasureStart, setSketchMeasureStart] = useState<SketchPoint | null>(null);
   const [sketchMeasurement, setSketchMeasurement] = useState<SketchMeasurement>(null);
   const [editingSketchShapeId, setEditingSketchShapeId] = useState<string | null>(null);
+  const [sketchCornerDialog, setSketchCornerDialog] = useState<"fillet" | "chamfer" | null>(null);
+  const selectedSketchPointId = useMemo(() => {
+    if (sketchSelection?.kind === "point") return sketchSelection.id;
+    if (sketchSelection?.kind === "multiple" && sketchSelection.pointIds.length === 1 && sketchSelection.segmentIds.length === 0) {
+      return sketchSelection.pointIds[0];
+    }
+    return null;
+  }, [sketchSelection]);
+  const canFilletSketchPoint = useMemo(() => {
+    if (!selectedSketchPointId) return false;
+    return canApplySketchCornerTreatment(sketchProfile, selectedSketchPointId);
+  }, [selectedSketchPointId, sketchProfile]);
+  useEffect(() => {
+    setSketchCornerDialog(null);
+  }, [sketchSelection, sketchTool, sketchActive]);
   const [edgeModifier, setEdgeModifier] = useState<EdgeModifierSession | null>(null);
   const [shellTool, setShellTool] = useState<{ thickness: number; openings: ShellOpenings; edges: ShellEdges; busy: boolean; error: string | null } | null>(null);
   const edgeModifierRef = useRef<EdgeModifierSession | null>(null);
@@ -10887,6 +10903,9 @@ export function LayerlingEditor({
         sketchCanUndo={sketchHistoryIndex > 0}
         sketchCanRedo={sketchHistoryIndex < sketchHistory.length - 1}
         canEditSketch={selectedShapes.length === 1 && Boolean(selectedShape?.sketchProfile)}
+        canFilletSketchPoint={canFilletSketchPoint}
+        sketchCornerDialog={sketchCornerDialog}
+        onSketchCornerDialog={setSketchCornerDialog}
         onStartSketch={(operation) => beginSketch(operation)}
         onEditSketch={beginSketchEdit}
         onSketchTool={setActiveSketchTool}
@@ -11007,6 +11026,8 @@ export function LayerlingEditor({
             onApplyFillet={applySketchFilletHandler}
             onApplyChamfer={applySketchChamferHandler}
             onClearMeasurement={clearSketchMeasurement}
+            cornerDialog={sketchCornerDialog}
+            onCornerDialogChange={setSketchCornerDialog}
           />
         ) : (
           <WorkplaneViewport
@@ -11312,6 +11333,9 @@ function SecondaryToolbar({
   sketchCanUndo,
   sketchCanRedo,
   canEditSketch,
+  canFilletSketchPoint,
+  sketchCornerDialog,
+  onSketchCornerDialog,
   onStartSketch,
   onEditSketch,
   onSketchTool,
@@ -11384,6 +11408,9 @@ function SecondaryToolbar({
   sketchCanUndo: boolean;
   sketchCanRedo: boolean;
   canEditSketch: boolean;
+  canFilletSketchPoint?: boolean;
+  sketchCornerDialog?: "fillet" | "chamfer" | null;
+  onSketchCornerDialog?: (dialog: "fillet" | "chamfer" | null) => void;
   onStartSketch: (operation: SketchOperation) => void;
   onEditSketch: () => void;
   onSketchTool: (tool: SketchTool) => void;
@@ -11976,6 +12003,32 @@ function SecondaryToolbar({
                     </button>
                     <button className={`toolbar-icon sketch-tool-icon ${sketchTool === "refine" ? "active" : ""}`} type="button" aria-label={t("sketch.refine")} title={t("sketch.refine")} onClick={() => onSketchTool("refine")}>
                       <SketchReferenceIcon name="refine" />
+                    </button>
+                    <button
+                      className={`toolbar-icon sketch-tool-icon ${canFilletSketchPoint ? "" : "disabled"} ${sketchCornerDialog === "fillet" ? "active" : ""}`}
+                      type="button"
+                      aria-label={t("sketch.filletCorner")}
+                      title={canFilletSketchPoint ? t("sketch.filletCorner") : t("sketch.filletCornerDisabled")}
+                      onClick={() => {
+                        if (!canFilletSketchPoint) return;
+                        onSketchCornerDialog?.(sketchCornerDialog === "fillet" ? null : "fillet");
+                      }}
+                      disabled={!canFilletSketchPoint}
+                    >
+                      <ToolbarFilletIcon />
+                    </button>
+                    <button
+                      className={`toolbar-icon sketch-tool-icon ${canFilletSketchPoint ? "" : "disabled"} ${sketchCornerDialog === "chamfer" ? "active" : ""}`}
+                      type="button"
+                      aria-label={t("sketch.chamferCorner")}
+                      title={canFilletSketchPoint ? t("sketch.chamferCorner") : t("sketch.chamferCornerDisabled")}
+                      onClick={() => {
+                        if (!canFilletSketchPoint) return;
+                        onSketchCornerDialog?.(sketchCornerDialog === "chamfer" ? null : "chamfer");
+                      }}
+                      disabled={!canFilletSketchPoint}
+                    >
+                      <ToolbarChamferIcon />
                     </button>
                     <button className={`toolbar-icon sketch-tool-icon ${sketchTool === "erase" ? "active" : ""}`} type="button" aria-label={t("sketch.erase")} title={t("sketch.erase")} onClick={() => onSketchTool("erase")}>
                       <SketchReferenceIcon name="erase" />

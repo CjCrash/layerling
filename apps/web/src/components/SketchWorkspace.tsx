@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, ChevronUp, CornerDownRight, Home, Link, Link2Off, LockKeyhole, LockKeyholeOpen, Minus, Plus, Slash, Spline, Split, Trash2, Waves, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import { SnapGridControl } from "@/components/workplane/ShapeInspector";
 import { SketchRevolvePreview } from "@/components/SketchRevolvePreview";
 import { canApplySketchCornerTreatment } from "@/lib/sketchFilletChamfer";
@@ -57,6 +57,8 @@ type SketchWorkspaceProps = {
   onApplyFillet?: (id: string, radius: number) => void;
   onApplyChamfer?: (id: string, distance: number) => void;
   onClearMeasurement: () => void;
+  cornerDialog?: "fillet" | "chamfer" | null;
+  onCornerDialogChange?: (dialog: "fillet" | "chamfer" | null) => void;
 };
 
 type PathStep = { segment: SketchSegment; from: SketchPoint; to: SketchPoint };
@@ -502,6 +504,8 @@ export function SketchWorkspace({
   onApplyFillet,
   onApplyChamfer,
   onClearMeasurement,
+  cornerDialog: propCornerDialog,
+  onCornerDialogChange,
 }: SketchWorkspaceProps) {
   useLanguage();
   const workspace = useMemo(() => normalizeWorkspaceSettings(initialWorkspace, DEFAULT_WORKPLANE_WORKSPACE), [initialWorkspace]);
@@ -587,7 +591,11 @@ export function SketchWorkspace({
   const pointById = useMemo(() => new Map(displayProfile.points.map((point) => [point.id, point])), [displayProfile.points]);
   const paths = useMemo(() => orderedPaths(displayProfile), [displayProfile]);
   const activePoint = activePointId ? pointById.get(activePointId) ?? null : null;
-  const selectedPoint = selected?.kind === "point" ? pointById.get(selected.id) ?? null : null;
+  const selectedPoint = selected?.kind === "point"
+    ? pointById.get(selected.id) ?? null
+    : selected?.kind === "multiple" && selected.pointIds.length === 1 && selected.segmentIds.length === 0
+      ? pointById.get(selected.pointIds[0]) ?? null
+      : null;
   const selectedImage = selected?.kind === "image" ? displayImages.find((image) => image.id === selected.id) ?? null : null;
   const selectedGeometryPoints = selected?.kind === "multiple"
     ? selected.pointIds.map((id) => pointById.get(id)).filter((point): point is SketchPoint => Boolean(point))
@@ -595,21 +603,26 @@ export function SketchWorkspace({
   const selectedGeometryBounds = boundsForSketchPoints(selectedGeometryPoints);
   const isPointSelected = (id: string) => selected?.kind === "point" ? selected.id === id : selected?.kind === "multiple" ? selected.pointIds.includes(id) : false;
   const isSegmentSelected = (id: string) => selected?.kind === "segment" ? selected.id === id : selected?.kind === "multiple" ? selected.segmentIds.includes(id) : false;
-  const [cornerDialog, setCornerDialog] = useState<"fillet" | "chamfer" | null>(null);
+  const [localCornerDialog, setLocalCornerDialog] = useState<"fillet" | "chamfer" | null>(null);
+  const activeCornerDialog = propCornerDialog !== undefined ? propCornerDialog : localCornerDialog;
+  const setCornerDialog = useCallback((dialog: "fillet" | "chamfer" | null) => {
+    setLocalCornerDialog(dialog);
+    onCornerDialogChange?.(dialog);
+  }, [onCornerDialogChange]);
   const [cornerValue, setCornerValue] = useState("2");
 
   useEffect(() => {
     setCornerDialog(null);
     setCornerValue("2");
-  }, [selectedPoint?.id]);
+  }, [selectedPoint?.id, setCornerDialog]);
 
   const handleApplyCorner = () => {
-    if (!selectedPoint || !cornerDialog) return;
+    if (!selectedPoint || !activeCornerDialog) return;
     const val = parseFloat(cornerValue.replace(",", "."));
     if (!Number.isFinite(val) || val <= 0) return;
-    if (cornerDialog === "fillet") {
+    if (activeCornerDialog === "fillet") {
       onApplyFillet?.(selectedPoint.id, val);
-    } else if (cornerDialog === "chamfer") {
+    } else if (activeCornerDialog === "chamfer") {
       onApplyChamfer?.(selectedPoint.id, val);
     }
     setCornerDialog(null);
@@ -1221,10 +1234,10 @@ export function SketchWorkspace({
       ) : null}
       {selectedPoint && tool === "select" ? (
         <div className="sketch-point-actions" aria-label={t("sketch.pointActions")}>
-          {cornerDialog ? (
+          {activeCornerDialog ? (
             <div className="sketch-corner-dialog">
               <span className="sketch-corner-label">
-                {cornerDialog === "fillet" ? t("sketch.filletRadius") : t("sketch.chamferDistance")}
+                {activeCornerDialog === "fillet" ? t("sketch.filletRadius") : t("sketch.chamferDistance")}
               </span>
               <input
                 type="number"

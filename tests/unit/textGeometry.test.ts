@@ -88,4 +88,45 @@ describe("textGeometry", () => {
     expect(box.min.y).toBeCloseTo(0, 3);
     expect(box.max.y).toBeCloseTo(4, 3);
   });
+
+  it("places top arch in negative Z (12 o'clock) and bottom arch in positive Z (6 o'clock)", () => {
+    const topShape = mockShape({
+      text: "TOP",
+      textCurved: true,
+      textRadius: 40,
+      textInward: false,
+    });
+    const topGeom = createTextGeometry(topShape);
+    topGeom.computeBoundingBox();
+    const topBox = topGeom.boundingBox!;
+    // Top arch extends towards -radius (-40)
+    expect(topBox.min.z).toBeLessThan(-35);
+    expect(topBox.max.z).toBeLessThan(0);
+
+    const bottomShape = mockShape({
+      text: "BOTTOM",
+      textCurved: true,
+      textRadius: 40,
+      textInward: true,
+    });
+    const bottomGeom = createTextGeometry(bottomShape);
+    bottomGeom.computeBoundingBox();
+    const bottomBox = bottomGeom.boundingBox!;
+    // Bottom arch extends towards +radius (+40)
+    expect(bottomBox.max.z).toBeGreaterThan(35);
+  });
+
+  it("auto-scales long text so it does not wrap over 360 degrees", () => {
+    const longShape = mockShape({
+      text: "THIS IS A VERY LONG CURVED TEXT STRING",
+      textCurved: true,
+      textRadius: 30,
+    });
+    const geom = createTextGeometry(longShape);
+    geom.computeBoundingBox();
+    const box = geom.boundingBox!;
+    // With radius 30, max extent in X cannot exceed [-35, 35]
+    expect(box.min.x).toBeGreaterThanOrEqual(-35);
+    expect(box.max.x).toBeLessThanOrEqual(35);
+  });
 });

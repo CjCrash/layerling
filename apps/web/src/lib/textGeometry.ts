@@ -71,7 +71,22 @@ export function createTextGeometry(shape: WorkplaneShape): THREE.BufferGeometry 
     charGeoms.push(g);
   }
 
-  const charSpacing = 3;
+  const baseSpacing = 2.5;
+  const rawTotalLength = charWidths.reduce((acc, w) => acc + w, 0) + Math.max(0, text.length - 1) * baseSpacing;
+  // Maximum allowed arc span (~300 deg = 5.2 rad) to prevent characters from colliding into each other
+  const maxArcLength = 2 * Math.PI * radius * 0.84;
+  const fitScale = rawTotalLength > maxArcLength ? maxArcLength / rawTotalLength : 1.0;
+
+  if (fitScale < 1.0) {
+    for (let i = 0; i < charGeoms.length; i++) {
+      charGeoms[i].scale(fitScale, fitScale, 1);
+    }
+    for (let i = 0; i < charWidths.length; i++) {
+      charWidths[i] *= fitScale;
+    }
+  }
+
+  const charSpacing = baseSpacing * fitScale;
   const totalLength = charWidths.reduce((acc, w) => acc + w, 0) + Math.max(0, text.length - 1) * charSpacing;
   const arcSpan = totalLength / radius;
   let currentAngle = -arcSpan / 2;
@@ -89,7 +104,9 @@ export function createTextGeometry(shape: WorkplaneShape): THREE.BufferGeometry 
     }
 
     const g = charGeoms[geomIndex++];
-    // Put flat on XZ workplane
+    // Put flat on XZ workplane:
+    // TextGeometry's original Y (letter height) rotates to -Z (up/north in 2D)
+    // Original Z (extrusion thickness) rotates to +Y (vertical thickness)
     g.rotateX(-Math.PI / 2);
     g.computeBoundingBox();
     const bb = g.boundingBox;
@@ -97,15 +114,22 @@ export function createTextGeometry(shape: WorkplaneShape): THREE.BufferGeometry 
       g.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2);
     }
 
-    // Tangential rotation along arc
-    if (inward) {
-      g.rotateY(Math.PI - charAngle);
-    } else {
+    if (!inward) {
+      // Top arch (rainbow):
+      // Position: center at (0, 0, -radius) [12 o'clock], spreading from -X (left) to +X (right)
+      // Tangential clockwise rotation: rotateY(-charAngle)
+      // Normal points outward (+height along -Z)
       g.rotateY(-charAngle);
+      g.translate(radius * Math.sin(charAngle), 0, -radius * Math.cos(charAngle));
+    } else {
+      // Bottom arch (smile):
+      // Position: center at (0, 0, +radius) [6 o'clock], spreading from -X (left) to +X (right)
+      // Tangential counter-clockwise rotation: rotateY(charAngle)
+      // Normal points inward (+height along -Z towards center)
+      g.rotateY(charAngle);
+      g.translate(radius * Math.sin(charAngle), 0, radius * Math.cos(charAngle));
     }
 
-    // Translate to circle perimeter at radius
-    g.translate(radius * Math.sin(charAngle), 0, radius * Math.cos(charAngle));
     transformed.push(g);
   }
 
@@ -119,10 +143,12 @@ export function createTextGeometry(shape: WorkplaneShape): THREE.BufferGeometry 
   merged.computeBoundingBox();
   const finalBox = merged.boundingBox;
   if (finalBox) {
+    // Keep X centered symmetrically around 0, Y base at 0,
+    // and maintain the exact circle center of curvature at (0, 0, 0).
     merged.translate(
       -(finalBox.min.x + finalBox.max.x) / 2,
       -finalBox.min.y,
-      -(finalBox.min.z + finalBox.max.z) / 2,
+      0,
     );
   }
   merged.computeVertexNormals();
