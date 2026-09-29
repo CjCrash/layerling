@@ -501,7 +501,7 @@ export function workplaneShapesEqual(a: WorkplaneShape, b: WorkplaneShape) {
     a.font === b.font &&
     a.textCurved === b.textCurved &&
     a.textRadius === b.textRadius &&
-    a.textArcAngle === b.textArcAngle &&
+    a.textSize === b.textSize &&
     a.textInward === b.textInward &&
     a.importedMesh === b.importedMesh &&
     a.imagePlate === b.imagePlate &&

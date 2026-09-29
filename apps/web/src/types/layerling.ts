@@ -134,9 +134,13 @@ export type ShapeCustomization = {
   bentTubeQuality?: number;
   text?: string;
   font?: string;
+  /** Text only: bend the line along a circle instead of laying it straight. */
   textCurved?: boolean;
+  /** Curved text: radius of the circle the baseline follows, in mm. */
   textRadius?: number;
-  textArcAngle?: number;
+  /** Curved text: letter size (em) in mm. Straight text just fills its box. */
+  textSize?: number;
+  /** Curved text: run along the bottom of the circle, letters pointing at the centre. */
   textInward?: boolean;
 };
 
@@ -419,9 +423,13 @@ export type WorkplaneShape = {
   bentTubeSegments?: BentTubeSegment[];
   text?: string;
   font?: string;
+  /** Text only: bend the line along a circle instead of laying it straight. */
   textCurved?: boolean;
+  /** Curved text: radius of the circle the baseline follows, in mm. */
   textRadius?: number;
-  textArcAngle?: number;
+  /** Curved text: letter size (em) in mm. Straight text just fills its box. */
+  textSize?: number;
+  /** Curved text: run along the bottom of the circle, letters pointing at the centre. */
   textInward?: boolean;
   importedMesh?: {
     positions: number[];

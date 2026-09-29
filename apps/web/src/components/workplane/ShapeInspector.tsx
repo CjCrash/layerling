@@ -1221,7 +1221,8 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
         id: "textCurved",
         label: t("prop.textCurved"),
         value: isCurved,
-        onChange: (textCurved) => onUpdate({ textCurved, textRadius: shape.textRadius ?? 30 }),
+        // Radius, letter size and the box follow in curvedTextPatch.
+        onChange: (textCurved) => onUpdate({ textCurved }),
       },
     ];
     if (isCurved) {
@@ -1230,10 +1231,19 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
           id: "textRadius",
           label: t("prop.textRadius"),
           value: shape.textRadius ?? 30,
-          min: 10,
-          max: 200,
+          min: 5,
+          max: 500,
           step: 1,
           onChange: (textRadius) => onUpdate({ textRadius }),
+        },
+        {
+          id: "textSize",
+          label: t("prop.textSize"),
+          value: shape.textSize ?? 10,
+          min: 0.5,
+          max: 200,
+          step: 0.5,
+          onChange: (textSize) => onUpdate({ textSize }),
         },
         {
           type: "toggle",

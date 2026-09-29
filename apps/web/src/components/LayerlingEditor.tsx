@@ -30,7 +30,7 @@ import { createPyramidGeometry } from "@/lib/pyramidGeometry";
 import { roundSideCount } from "@/lib/roundSideCount";
 import { createThreadGeometry, defaultThreadHeadHeight, normalizeThreadHeadHeight, threadNaturalFootprint, threadSettings } from "@/lib/threadGeometry";
 import { createSpringGeometry } from "@/lib/springGeometry";
-import { createTextGeometry } from "@/lib/textGeometry";
+import { createTextGeometry, curvedTextPatch } from "@/lib/textGeometry";
 import { canApplySketchCornerTreatment } from "@/lib/sketchFilletChamfer";
 import { sketchPrimitiveGeometry } from "@/lib/sketchPrimitives";
 import {
@@ -7948,7 +7948,7 @@ export function LayerlingEditor({
           // das Netz verbiegen. Ein Zug am Anfasser trifft dagegen nur den
           // Rahmen und laesst das gebackene Netz in Ruhe.
           const neugebaut = patchTouchesBodyParameters(cleanedPatch) ? rebuiltParametricShape(shape, cleanedPatch) : null;
-          const patched = neugebaut ?? { ...shape, ...cleanedPatch };
+          const patched = neugebaut ?? { ...shape, ...curvedTextPatch(shape, cleanedPatch) };
           const canonicalBase = canonicalizeShape("hole" in cleanedPatch ? withHoleMode(patched, Boolean(cleanedPatch.hole), cleanedPatch.color) : patched);
           const canonical = bakeTransform ? canonicalizeShape(bakeShapeTransformIntoMesh(canonicalBase)) : canonicalBase;
           if (workplaneShapesEqual(shape, canonical)) {
@@ -9363,6 +9363,9 @@ export function LayerlingEditor({
           if (shape.kind === "bentTube") {
             shape = { ...shape, ...mcpBentTubePatch(shape, params) };
           }
+          if (shape.kind === "text" && shape.textCurved) {
+            shape = { ...shape, ...curvedTextPatch({ ...shape, textCurved: false }, { textCurved: true, textRadius: shape.textRadius, textSize: shape.textSize }) };
+          }
         } else {
           throw new Error(`MCP create_shape does not know a shape called "${rawKind}"`);
         }
@@ -9512,7 +9515,7 @@ export function LayerlingEditor({
           const sauber = cleanShapePatch(patch);
           const neugebaut = patchTouchesBodyParameters(sauber) ? rebuiltParametricShape(shape, sauber) : null;
           if (neugebaut) return neugebaut;
-          const patched = { ...shape, ...sauber };
+          const patched = { ...shape, ...curvedTextPatch(shape, sauber) };
           const width = shapeWidth(patched);
           const depth = shapeDepth(patched);
           const canonical = canonicalizeShape({ ...patched, size: Math.max(width, depth) });

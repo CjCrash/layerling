@@ -131,4 +131,18 @@ describe("sketchFilletChamfer", () => {
     expect(distA).toBeLessThanOrEqual(18.01);
     expect(distB).toBeLessThanOrEqual(18.01);
   });
+  it("leaves corners on a curve alone", () => {
+    const profile: SketchProfile = {
+      points: [
+        { id: "a", x: 0, z: 0 },
+        { id: "b", x: 10, z: 0, mode: "corner" },
+        { id: "c", x: 10, z: 10, handleIn: { x: 14, z: 6 } },
+      ],
+      segments: [
+        { id: "ab", startId: "a", endId: "b", kind: "line" },
+        { id: "bc", startId: "b", endId: "c", kind: "bezier" },
+      ],
+    } as SketchProfile;
+    expect(canApplySketchCornerTreatment(profile, "b")).toBe(false);
+  });
 });

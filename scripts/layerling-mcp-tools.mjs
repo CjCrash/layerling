@@ -106,10 +106,10 @@ export const shapeSettingSchema = {
   },
   text: { type: "string", description: "Text only: the lettering itself." },
   font: { type: "string", description: "Text only." },
-  textCurved: { type: "boolean", description: "Text only: when true, curves text along a circular arc." },
-  textRadius: { type: "number", description: "Text only: radius of the arc in mm (10 to 200)." },
-  textArcAngle: { type: "number", description: "Text only: maximum arc span angle in degrees (10 to 360)." },
-  textInward: { type: "boolean", description: "Text only: when true, text faces inward towards the arc center." },
+  textCurved: { type: "boolean", description: "Text only: true bends the line along a circle. Width and depth then follow radius and letter size." },
+  textRadius: { type: "number", description: "Curved text only: radius of the circle the baseline follows, in mm (5 to 500)." },
+  textSize: { type: "number", description: "Curved text only: letter size in mm. Defaults to the size the straight text had." },
+  textInward: { type: "boolean", description: "Curved text only: true runs the line along the bottom of the circle, letters pointing at the centre." },
 };
 
 export const tools = [

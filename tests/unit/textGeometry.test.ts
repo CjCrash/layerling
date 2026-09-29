@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { loadTextFonts } from "@/lib/textFonts";
-import { createTextGeometry } from "@/lib/textGeometry";
+import { createTextGeometry, curvedTextFootprint, curvedTextPatch } from "@/lib/textGeometry";
 import type { WorkplaneShape } from "@/types/layerling";
 
 function mockShape(overrides: Partial<WorkplaneShape> = {}): WorkplaneShape {
@@ -89,44 +89,60 @@ describe("textGeometry", () => {
     expect(box.max.y).toBeCloseTo(4, 3);
   });
 
-  it("places top arch in negative Z (12 o'clock) and bottom arch in positive Z (6 o'clock)", () => {
-    const topShape = mockShape({
-      text: "TOP",
-      textCurved: true,
-      textRadius: 40,
-      textInward: false,
-    });
-    const topGeom = createTextGeometry(topShape);
-    topGeom.computeBoundingBox();
-    const topBox = topGeom.boundingBox!;
-    // Top arch extends towards -radius (-40)
-    expect(topBox.min.z).toBeLessThan(-35);
-    expect(topBox.max.z).toBeLessThan(0);
-
-    const bottomShape = mockShape({
-      text: "BOTTOM",
-      textCurved: true,
-      textRadius: 40,
-      textInward: true,
-    });
-    const bottomGeom = createTextGeometry(bottomShape);
-    bottomGeom.computeBoundingBox();
-    const bottomBox = bottomGeom.boundingBox!;
-    // Bottom arch extends towards +radius (+40)
-    expect(bottomBox.max.z).toBeGreaterThan(35);
+  it("keeps every letter on one baseline instead of centring each on its own", () => {
+    // Nearest point of the lettering to the circle centre: the baseline sits on the radius.
+    const innerRadius = (text: string) => {
+      const shape = mockShape({ text, textCurved: true, textRadius: 40, textSize: 10 });
+      const geometry = createTextGeometry({ ...shape, ...curvedTextFootprint(shape) });
+      const position = geometry.getAttribute("position");
+      let inner = Infinity;
+      for (let index = 0; index < position.count; index += 1) {
+        inner = Math.min(inner, Math.hypot(position.getX(index), position.getZ(index)));
+      }
+      return inner;
+    };
+    // "x", "." and "H" stand on the baseline ...
+    expect(innerRadius("x")).toBeCloseTo(40, 0);
+    expect(innerRadius(".")).toBeCloseTo(40, 0);
+    expect(innerRadius("H")).toBeCloseTo(40, 0);
+    // ... and "g" hangs below it, towards the centre.
+    expect(innerRadius("g")).toBeLessThan(38);
   });
 
-  it("auto-scales long text so it does not wrap over 360 degrees", () => {
-    const longShape = mockShape({
-      text: "THIS IS A VERY LONG CURVED TEXT STRING",
-      textCurved: true,
-      textRadius: 30,
-    });
-    const geom = createTextGeometry(longShape);
-    geom.computeBoundingBox();
-    const box = geom.boundingBox!;
-    // With radius 30, max extent in X cannot exceed [-35, 35]
-    expect(box.min.x).toBeGreaterThanOrEqual(-35);
-    expect(box.max.x).toBeLessThanOrEqual(35);
+  it("keeps the circle centre in the middle of its box, with the lettering inside", () => {
+    const base = mockShape({ text: "Layerling", textCurved: true, textRadius: 40, textSize: 8 });
+    const footprint = curvedTextFootprint(base);
+    const geometry = createTextGeometry({ ...base, ...footprint });
+    geometry.computeBoundingBox();
+    const box = geometry.boundingBox!;
+    expect(Math.max(-box.min.x, box.max.x)).toBeCloseTo(footprint.width / 2, 2);
+    expect(Math.max(-box.min.z, box.max.z)).toBeCloseTo(footprint.depth / 2, 2);
+    // A word along the top of the circle lies above its centre.
+    expect(box.max.z).toBeLessThan(0);
+  });
+
+  it("takes the straight letter size when the curve is switched on, and the box follows", () => {
+    const straight = mockShape({ text: "TEXT", width: 86, depth: 28 });
+    const patch = curvedTextPatch(straight, { textCurved: true });
+    expect(patch.textSize).toBeGreaterThan(20);
+    expect(patch.textRadius).toBeGreaterThan(5);
+    const footprint = curvedTextFootprint({ ...straight, ...patch } as WorkplaneShape);
+    expect(patch.width).toBeCloseTo(footprint.width, 5);
+    expect(patch.depth).toBeCloseTo(footprint.depth, 5);
+  });
+
+  it("scales radius and letter size together when a handle is pulled", () => {
+    const curved = mockShape({ text: "RING", textCurved: true, textRadius: 30, textSize: 6 });
+    const footprint = curvedTextFootprint(curved);
+    const shape = { ...curved, ...footprint };
+    const patch = curvedTextPatch(shape, { width: footprint.width * 2 });
+    expect(patch.textRadius).toBeCloseTo(60, 1);
+    expect(patch.textSize).toBeCloseTo(12, 1);
+    expect(patch.width).toBeCloseTo(footprint.width * 2, 0);
+  });
+
+  it("shrinks letters that would not fit on the circle", () => {
+    const footprint = curvedTextFootprint(mockShape({ text: "THIS IS A VERY LONG CURVED TEXT STRING", textCurved: true, textRadius: 30, textSize: 10 }));
+    expect(footprint.width).toBeLessThanOrEqual(2 * (30 + 10));
   });
 });

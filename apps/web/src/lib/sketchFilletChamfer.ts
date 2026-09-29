@@ -28,6 +28,9 @@ export function getCornerGeometryInfo(profile: SketchProfile, pointId: string): 
   if (connected.length !== 2) return null;
 
   const [seg1, seg2] = connected;
+  // Only a corner between two straight lines: pulling the end of a curve back
+  // along its chord would leave its handles behind and bend the curve.
+  if ((seg1.kind ?? "line") !== "line" || (seg2.kind ?? "line") !== "line") return null;
   const otherId1 = seg1.startId === pointId ? seg1.endId : seg1.startId;
   const otherId2 = seg2.startId === pointId ? seg2.endId : seg2.startId;
   if (otherId1 === otherId2) return null; // degenerate loop

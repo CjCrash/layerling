@@ -202,6 +202,10 @@ export function normalizeShapeCustomizations(value: unknown, fallback: ShapeCust
           : fallbackEntry?.font;
       entry.bevel = optionalShapeNumber(source.bevel, fallbackEntry?.bevel, 0, 8);
       entry.segments = optionalShapeNumber(source.segments, fallbackEntry?.segments, 0, 24, true);
+      entry.textCurved = typeof source.textCurved === "boolean" ? source.textCurved : fallbackEntry?.textCurved;
+      entry.textInward = typeof source.textInward === "boolean" ? source.textInward : fallbackEntry?.textInward;
+      entry.textRadius = optionalShapeNumber(source.textRadius, fallbackEntry?.textRadius, 5, 500);
+      entry.textSize = optionalShapeNumber(source.textSize, fallbackEntry?.textSize, 0.5, 200);
     }
     if (kind === "spring") {
       entry.springTurns = optionalShapeNumber(source.springTurns, fallbackEntry?.springTurns, 1, 60, true);
