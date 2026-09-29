@@ -341,6 +341,17 @@ describe("workplane shape helpers", () => {
     expect(groupBackToSolid.groupedShapes?.[1].hole).toBe(true);
   });
 
+  it("macht aus einer reinen Aussparungsgruppe beim Umschalten auf Koerper auch koerperliche Teile", () => {
+    const group = shape({
+      id: "group-holes",
+      hole: true,
+      groupedShapes: [shape({ id: "a", hole: true }), shape({ id: "b", kind: "cylinder", hole: true })],
+    });
+    const solid = withHoleMode(group, false);
+    expect(solid.groupedShapes?.map((child) => child.hole)).toEqual([false, false]);
+    expect(withHoleMode(solid, true).groupedShapes?.map((child) => child.hole)).toEqual([true, true]);
+  });
+
   it("can resize the body while preserving fillet and chamfer boundary distances", () => {
     const modified = shape({
       kind: "mesh",

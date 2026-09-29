@@ -74,9 +74,10 @@ export function ObjectListPanel({
   };
 
   const commitRename = () => {
-    if (editingId && onRenameShape) {
-      const trimmed = editingDraft.trim();
-      onRenameShape(editingId, trimmed);
+    const shape = editingId ? shapes.find((candidate) => candidate.id === editingId) : undefined;
+    const trimmed = editingDraft.trim();
+    if (shape && onRenameShape && trimmed !== getShapeDisplayName(shape)) {
+      onRenameShape(shape.id, trimmed);
     }
     setEditingId(null);
   };
@@ -105,7 +106,8 @@ export function ObjectListPanel({
     return shapes.filter((shape) => {
       const name = getShapeDisplayName(shape).toLowerCase();
       const kind = shape.kind.toLowerCase();
-      return name.includes(query) || kind.includes(query);
+      const kindLabel = getShapeKindSubtitle(shape).toLowerCase();
+      return name.includes(query) || kind.includes(query) || kindLabel.includes(query);
     });
   }, [shapes, filterText]);
 
@@ -142,7 +144,7 @@ export function ObjectListPanel({
               className="outliner-search-clear"
               type="button"
               onClick={() => setFilterText("")}
-              aria-label="Filter leeren"
+              aria-label={t("outliner.clearSearch")}
             >
               <X size={12} />
             </button>
@@ -178,7 +180,7 @@ export function ObjectListPanel({
                         type="button"
                         className="outliner-expand-toggle"
                         onClick={(e) => toggleGroupExpand(shape.id, e)}
-                        aria-label={isExpanded ? "Gruppe einklappen" : "Gruppe aufklappen"}
+                        aria-label={isExpanded ? t("outliner.collapse") : t("outliner.expand")}
                       >
                         {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                       </button>
@@ -224,8 +226,8 @@ export function ObjectListPanel({
                         <button
                           type="button"
                           className="outliner-action-btn rename-btn"
-                          title="Umbenennen"
-                          aria-label="Umbenennen"
+                          title={t("outliner.rename")}
+                          aria-label={t("outliner.rename")}
                           onClick={(e) => startRename(shape, e)}
                         >
                           <Pencil size={13} />

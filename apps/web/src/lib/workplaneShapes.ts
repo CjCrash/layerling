@@ -341,13 +341,20 @@ export function fallbackSolidColor(shape: WorkplaneShape) {
   return "#d41721";
 }
 
+/**
+ * A group whose parts are all solid or all holes follows the switch, parts
+ * included. A mixed group - a body with its cut-outs - keeps every part's own
+ * state, so switching it to a hole and back never turns the cut-outs solid.
+ */
 export function withHoleMode(shape: WorkplaneShape, hole: boolean, parentColor?: string): WorkplaneShape {
   const color = parentColor ?? shape.color;
+  const children = shape.groupedShapes;
+  const mixed = Boolean(children?.some((child) => child.hole) && children?.some((child) => !child.hole));
   return {
     ...shape,
     hole,
     color,
-    groupedShapes: shape.groupedShapes?.map((child) => withHoleMode(child, Boolean(child.hole), parentColor)),
+    groupedShapes: children?.map((child) => withHoleMode(child, mixed ? Boolean(child.hole) : hole, parentColor)),
   };
 }
 
