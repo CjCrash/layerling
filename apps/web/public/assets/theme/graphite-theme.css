@@ -5234,6 +5234,40 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .export-holes-only-warn
   color: #ffa447;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .open-group-banner {
+  color: #404040;
+  background: #f9f9f9;
+  border: 1px solid #e3b57a;
+  box-shadow: 0 6px 18px rgba(49, 49, 49, 0.16);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .open-group-cancel {
+  color: #404040;
+  background: transparent;
+  border: 1px solid #e3b57a;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .open-group-done {
+  color: #ffffff;
+  background: #d46b08;
+  border: 1px solid #d46b08;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-item.open-group-part {
+  box-shadow: inset 3px 0 0 #d46b08;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .open-group-banner {
+  color: #e2e2e2;
+  background: rgba(38, 38, 38, 0.96);
+  border-color: rgba(227, 181, 122, 0.45);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .open-group-cancel {
+  color: #e2e2e2;
+  border-color: rgba(227, 181, 122, 0.45);
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section-tools,
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section .action-buttons {
   background: var(--toolbar-tile);

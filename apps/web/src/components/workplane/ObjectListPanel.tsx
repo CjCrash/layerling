@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useRef, useEffect, type KeyboardEvent, type MouseEvent } from "react";
-import { ChevronDown, ChevronRight, Eye, EyeOff, Layers, ListTree, Lock, Pencil, Search, Unlock, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, EyeOff, FolderOpen, Layers, ListTree, Lock, Pencil, Search, Unlock, X } from "lucide-react";
 import { useLanguage } from "@/lib/useLanguage";
 import { t, type MessageKey } from "@/lib/i18n";
 import { displayShapeName } from "@/lib/shapeCatalog";
@@ -14,6 +14,10 @@ export interface ObjectListPanelProps {
   onToggleLock: (id: string) => void;
   onToggleHidden: (id: string) => void;
   onRenameShape?: (id: string, name: string) => void;
+  /** Opens a group so its parts can be changed one by one. */
+  onOpenGroup?: (id: string) => void;
+  /** The loose parts of the group that is open right now. */
+  openGroupPartIds?: string[];
   onClose: () => void;
 }
 
@@ -24,8 +28,11 @@ export function ObjectListPanel({
   onToggleLock,
   onToggleHidden,
   onRenameShape,
+  onOpenGroup,
+  openGroupPartIds,
   onClose,
 }: ObjectListPanelProps) {
+  const openParts = useMemo(() => new Set(openGroupPartIds ?? []), [openGroupPartIds]);
   useLanguage();
   const [filterText, setFilterText] = useState("");
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -170,7 +177,7 @@ export function ObjectListPanel({
               return (
                 <li
                   key={shape.id}
-                  className={`outliner-item ${isSelected ? "selected" : ""} ${shape.hidden ? "hidden-shape" : ""} ${shape.locked ? "locked-shape" : ""}`}
+                  className={`outliner-item ${isSelected ? "selected" : ""} ${shape.hidden ? "hidden-shape" : ""} ${shape.locked ? "locked-shape" : ""} ${openParts.has(shape.id) ? "open-group-part" : ""}`}
                   role="option"
                   aria-selected={isSelected}
                   onClick={(e) => handleRowClick(shape.id, e)}
@@ -223,6 +230,20 @@ export function ObjectListPanel({
                     </div>
 
                     <div className="outliner-row-actions">
+                      {isGroup && onOpenGroup && !openParts.size ? (
+                        <button
+                          type="button"
+                          className="outliner-action-btn open-group-btn"
+                          title={t("group.open")}
+                          aria-label={t("group.open")}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenGroup(shape.id);
+                          }}
+                        >
+                          <FolderOpen size={13} />
+                        </button>
+                      ) : null}
                       {onRenameShape && editingId !== shape.id ? (
                         <button
                           type="button"

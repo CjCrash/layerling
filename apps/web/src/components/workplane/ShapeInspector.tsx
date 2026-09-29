@@ -1293,6 +1293,7 @@ export function ShapeInspector({
   onSnapChange,
   onSnapOpenChange,
   onEditSketch,
+  onOpenGroup,
   canSeparateParts = false,
   onSeparateParts,
   onInteractionActiveChange,
@@ -1305,6 +1306,8 @@ export function ShapeInspector({
   onSnapChange: Dispatch<SetStateAction<GridSize>>;
   onSnapOpenChange: Dispatch<SetStateAction<boolean>>;
   onEditSketch?: () => void;
+  /** Opens a group so its parts can be changed one by one. */
+  onOpenGroup?: () => void;
   canSeparateParts?: boolean;
   onSeparateParts?: () => void;
   onInteractionActiveChange?: (active: boolean) => void;
@@ -1543,6 +1546,12 @@ export function ShapeInspector({
       {shape.sketchProfile && onEditSketch ? (
         <button className="edit-sketch-button" type="button" disabled={locked} onClick={onEditSketch}>
           {t("inspector.editSketch")}
+        </button>
+      ) : null}
+
+      {onOpenGroup ? (
+        <button className="inspector-action-button" type="button" disabled={locked} onClick={onOpenGroup}>
+          {t("group.open")}
         </button>
       ) : null}
 

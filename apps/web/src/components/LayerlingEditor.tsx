@@ -6165,6 +6165,14 @@ export function LayerlingEditor({
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [outlinerOpen, setOutlinerOpen] = useState(false);
+  /**
+   * A group opened for editing: its parts lie loose on the workplane until
+   * "Done" groups them again with the group's own name, colour and state, or
+   * "Cancel" puts the untouched group back. Not part of the history itself -
+   * undoing the opening simply ends it (see the effect below).
+   */
+  const [openGroup, setOpenGroup] = useState<{ original: WorkplaneShape; childIds: string[] } | null>(null);
+  const [openGroupBusy, setOpenGroupBusy] = useState(false);
   const [stepExporting, setStepExporting] = useState(false);
   const [lylExporting, setLylExporting] = useState(false);
   const [alignMode, setAlignMode] = useState(false);
@@ -9267,6 +9275,100 @@ export function LayerlingEditor({
     commitShapes([...remainingShapes, intersection], intersection.id, t("status.intersectedMany", { count: groupable.length }));
   }, [commitShapes, selectedShapes]);
 
+  const openGroupForEditing = useCallback((id: string) => {
+    const group = shapesRef.current.find((shape) => shape.id === id);
+    if (!group?.groupedShapes?.length) {
+      setNotice(t("status.selectGroupFirst"));
+      return;
+    }
+    if (group.locked) {
+      setNotice(t("status.unlockBeforeGroup"));
+      return;
+    }
+    if (openGroup) {
+      setNotice(t("group.finishOpenFirst"));
+      return;
+    }
+    const parts = restoreGroupedChildren(group);
+    commitShapes(
+      [...shapesRef.current.filter((shape) => shape.id !== group.id), ...parts],
+      parts.map((shape) => shape.id),
+      t("status.groupOpened", { name: displayShapeName(group) }),
+    );
+    setOpenGroup({ original: group, childIds: parts.map((shape) => shape.id) });
+  }, [commitShapes, openGroup]);
+
+  const cancelOpenGroup = useCallback(() => {
+    if (!openGroup) return;
+    const parts = new Set(openGroup.childIds);
+    commitShapes(
+      [...shapesRef.current.filter((shape) => !parts.has(shape.id)), openGroup.original],
+      openGroup.original.id,
+      t("status.groupOpenCancelled", { name: displayShapeName(openGroup.original) }),
+    );
+    setOpenGroup(null);
+  }, [commitShapes, openGroup]);
+
+  const finishOpenGroup = useCallback(async () => {
+    if (!openGroup || openGroupBusy) return;
+    const { original, childIds } = openGroup;
+    const byId = new Map(shapesRef.current.map((shape) => [shape.id, shape]));
+    // In their original order, unlocked - a part locked while the group was open still belongs in it.
+    const parts = childIds.flatMap((id) => {
+      const shape = byId.get(id);
+      return shape ? [{ ...shape, locked: false }] : [];
+    });
+    if (parts.length < 2) {
+      setOpenGroup(null);
+      setNotice(parts.length ? t("status.groupOnePartLeft") : t("status.groupNoPartsLeft"));
+      return;
+    }
+    const sourceFingerprint = projectShapesFingerprint(shapesRef.current);
+    const sourceProjectId = projectInfoRef.current.projectId;
+    setOpenGroupBusy(true);
+    try {
+      const operation = original.groupOperation === "intersection" ? "intersection" : "group";
+      const result = operation === "intersection" ? await buildIntersectionShapeFromSelection(parts) : await buildGroupedShapeFromSelection(parts);
+      if (projectInfoRef.current.projectId !== sourceProjectId || projectShapesFingerprint(shapesRef.current) !== sourceFingerprint) {
+        setNotice(t("status.groupChanged"));
+        return;
+      }
+      if (!result.group) {
+        setNotice("failureNotice" in result && result.failureNotice ? result.failureNotice : t("status.groupChanged"));
+        return;
+      }
+      // The group keeps what was its own: name, solid or hole, see-through, hidden -
+      // and its colour, if it had been given one apart from its first part.
+      const firstSolid = original.groupedShapes?.find((child) => !child.hole) ?? original.groupedShapes?.[0];
+      const ownColour = Boolean(firstSolid && firstSolid.color !== original.color);
+      const rebuilt = canonicalizeShape({ ...result.group, groupOperation: operation });
+      const regrouped = canonicalizeShape(withHoleMode({
+        ...rebuilt,
+        name: original.name,
+        color: ownColour ? original.color : rebuilt.color,
+        transparent: original.transparent,
+        hidden: original.hidden,
+      }, Boolean(original.hole)));
+      const partIds = new Set(parts.map((shape) => shape.id));
+      commitShapes(
+        [...shapesRef.current.filter((shape) => !partIds.has(shape.id)), regrouped],
+        regrouped.id,
+        t("status.groupClosed", { name: displayShapeName(regrouped) }),
+      );
+      setOpenGroup(null);
+    } finally {
+      setOpenGroupBusy(false);
+    }
+  }, [commitShapes, openGroup, openGroupBusy]);
+
+  // Undo past the opening brings the group back, and deleting every part leaves
+  // nothing to close: in both cases the open group is over.
+  useEffect(() => {
+    if (!openGroup) return;
+    const ids = new Set(shapes.map((shape) => shape.id));
+    if (ids.has(openGroup.original.id) || !openGroup.childIds.some((id) => ids.has(id))) setOpenGroup(null);
+  }, [openGroup, shapes]);
+
   const ungroupSelected = useCallback(() => {
     const groups = selectedShapes.filter((shape) => shape.groupedShapes?.length);
     if (groups.length === 0) {
@@ -11069,6 +11171,8 @@ export function LayerlingEditor({
             onToggleLock={toggleShapeLockById}
             onToggleHidden={toggleShapeHiddenById}
             onRenameShape={renameShapeById}
+            onOpenGroup={openGroupForEditing}
+            openGroupPartIds={openGroup?.childIds}
             onClose={() => setOutlinerOpen(false)}
           />
         ) : null}
@@ -11150,6 +11254,7 @@ export function LayerlingEditor({
           onToggleWorkplaneTool={activateWorkplaneTool}
           onInteractionActiveChange={updateProjectInteractionActive}
           onEditSketch={beginSketchEdit}
+          onOpenGroup={openGroup ? undefined : openGroupForEditing}
           canSeparateParts={canSeparateSelectedParts}
           onSeparateParts={separateSelectedParts}
           onUpdateShape={updateShape}
@@ -11181,6 +11286,16 @@ export function LayerlingEditor({
         )}
       </div>
       <AppFooter variant="editor" version={LYL_CREATED_WITH_VERSION} />
+      {openGroup ? (
+        <div className="open-group-banner" role="status">
+          <span>
+            {t("group.editing", { name: displayShapeName(openGroup.original) })}
+            {openGroup.original.edgeTreatments?.length ? t("group.editingEdgeWarning") : ""}
+          </span>
+          <button type="button" className="open-group-cancel" onClick={cancelOpenGroup} disabled={openGroupBusy}>{t("common.cancel")}</button>
+          <button type="button" className="open-group-done" onClick={() => void finishOpenGroup()} disabled={openGroupBusy}>{t("group.done")}</button>
+        </div>
+      ) : null}
       {overhangWarning ? (
         <div className="bed-overhang-warning" role="status">
           <AlertTriangle size={16} aria-hidden="true" />

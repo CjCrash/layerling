@@ -249,6 +249,7 @@ type WorkplaneViewportProps = {
   onToggleWorkplaneTool: () => void;
   onInteractionActiveChange?: (active: boolean) => void;
   onEditSketch?: () => void;
+  onOpenGroup?: (id: string) => void;
   canSeparateParts?: boolean;
   onSeparateParts?: () => void;
   onUpdateShape: (id: string, patch: ShapeUpdatePatch) => void;
@@ -3511,6 +3512,7 @@ export function WorkplaneViewport({
   onToggleWorkplaneTool,
   onInteractionActiveChange,
   onEditSketch,
+  onOpenGroup,
   canSeparateParts = false,
   onSeparateParts,
   onUpdateShape,
@@ -7443,6 +7445,7 @@ export function WorkplaneViewport({
           onSnapChange={chooseSnapGrid}
           onSnapOpenChange={setSnapOpen}
           onEditSketch={selectedShape.sketchProfile ? onEditSketch : undefined}
+          onOpenGroup={selectedShape.groupedShapes?.length && onOpenGroup ? () => onOpenGroup(selectedShape.id) : undefined}
           canSeparateParts={canSeparateParts}
           onSeparateParts={onSeparateParts}
           onInteractionActiveChange={onInteractionActiveChange}

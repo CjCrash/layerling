@@ -10959,3 +10959,70 @@ html[data-theme="dark"] .export-holes-only-warning {
 html[data-theme="dark"] .export-holes-only-warning svg {
   color: #ffa447;
 }
+
+/* ==========================================================================
+   Open group: the bar that closes it again
+   ========================================================================== */
+.open-group-banner {
+  position: fixed;
+  bottom: 88px;
+  left: 50%;
+  z-index: 41;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(720px, calc(100vw - 32px));
+  padding: 8px 8px 8px 16px;
+  color: #563e24;
+  font-size: 13px;
+  font-weight: 700;
+  background: #fffaf2;
+  border: 1px solid #e3b57a;
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(80, 45, 10, 0.16);
+  transform: translateX(-50%);
+}
+
+.open-group-banner span {
+  flex: 1 1 auto;
+}
+
+.open-group-banner button {
+  flex: none;
+  padding: 6px 14px;
+  font: inherit;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.open-group-banner button:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.open-group-cancel {
+  color: #563e24;
+  background: transparent;
+  border: 1px solid #e3b57a;
+}
+
+.open-group-done {
+  color: #ffffff;
+  background: #d46b08;
+  border: 1px solid #d46b08;
+}
+
+.outliner-item.open-group-part {
+  box-shadow: inset 3px 0 0 #d46b08;
+}
+
+html[data-theme="dark"] .open-group-banner {
+  color: #f1e4d3;
+  background: rgba(40, 32, 24, 0.96);
+  border-color: rgba(227, 181, 122, 0.45);
+}
+
+html[data-theme="dark"] .open-group-cancel {
+  color: #f1e4d3;
+  border-color: rgba(227, 181, 122, 0.45);
+}
