@@ -60,6 +60,8 @@ export type LayerlingMcpSceneSummary = {
   workspace: WorkplaneWorkspaceSettings;
   snap: GridSize | null;
   shapes: LayerlingMcpShapeSummary[];
+  /** The group opened for editing, if any: its parts lie loose until it is closed. */
+  openGroup?: { groupId: string; name: string; partIds: string[] } | null;
 };
 
 export type LayerlingMcpEditorSummary = {
@@ -86,6 +88,8 @@ export type LayerlingMcpCommandName =
   | "update_object"
   | "align_objects"
   | "lay_flat"
+  | "open_group"
+  | "close_group"
   | "group_objects"
   | "ungroup_objects"
   | "boolean_cut"

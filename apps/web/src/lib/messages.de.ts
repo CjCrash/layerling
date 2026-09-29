@@ -1065,6 +1065,8 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "outliner.hole": "Aussparung",
   "group.open": "Gruppe öffnen",
   "group.done": "Fertig",
+  "group.noneOpen": "Keine Gruppe geöffnet",
+  "group.busy": "Die Gruppe wird gerade neu berechnet",
   "group.editing": "„{name}“ ist geöffnet: Teile ändern, dann „Fertig“.",
   "group.editingEdgeWarning": " Rundungen und Fasen der ganzen Gruppe gehen beim Neurechnen verloren.",
   "group.finishOpenFirst": "Erst die geöffnete Gruppe mit „Fertig“ schließen",

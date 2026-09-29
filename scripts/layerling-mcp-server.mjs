@@ -93,6 +93,10 @@ async function callTool(name, args) {
       return bridgeCommand("align_objects", args);
     case "layerling_lay_flat":
       return bridgeCommand("lay_flat", args, 30000);
+    case "layerling_open_group":
+      return bridgeCommand("open_group", args);
+    case "layerling_close_group":
+      return bridgeCommand("close_group", args, 45000);
     case "layerling_group_objects":
       return bridgeCommand("group_objects", args, 30000);
     case "layerling_ungroup_objects":

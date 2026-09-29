@@ -1066,6 +1066,8 @@ export const MESSAGES_EN = {
   "outliner.hole": "Hole",
   "group.open": "Open group",
   "group.done": "Done",
+  "group.noneOpen": "No group is open",
+  "group.busy": "The group is being rebuilt",
   "group.editing": "\"{name}\" is open: change its parts, then Done.",
   "group.editingEdgeWarning": " Fillets and chamfers on the whole group are lost when it is rebuilt.",
   "group.finishOpenFirst": "Close the open group with Done first",

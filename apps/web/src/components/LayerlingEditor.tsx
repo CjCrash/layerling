@@ -133,7 +133,7 @@ import { appendEditorHistorySnapshot, boundedEditorHistoryState, editorHistoryEn
 import { snapShapeFootprintToVisibleGrid, visibleGridStep } from "@/lib/gridSnap";
 import { composedShapeRotation, geometryRotationDegreesForShortcut, geometryRotationDelta, rotatedGeometryShapePatch } from "@/lib/geometryRotation";
 import type { PivotPoint } from "@/lib/rotationPivot";
-import { createLocalId } from "@/lib/localIds";
+import { createLocalId, derivedLocalId } from "@/lib/localIds";
 import { projectExportFileName } from "@/lib/exportNames";
 import { exportMeshesToObj } from "@/lib/objExport";
 import { meshBounds, overlappingExportClusters } from "@/lib/exportUnion";
@@ -197,6 +197,7 @@ type Vec3 = [number, number, number];
 type MeshData = { name: string; vertices: Vec3[]; faces: [number, number, number][] };
 type Cuboid = { minX: number; maxX: number; minY: number; maxY: number; minZ: number; maxZ: number };
 type ShapeUpdatePatch = Partial<WorkplaneShape> & { bakeTransform?: boolean };
+type OpenGroupOutcome = { ok: boolean; message: string; partIds?: string[]; groupId?: string };
 type WithoutRequestId<T> = T extends unknown ? Omit<T, "requestId"> : never;
 type CadModifierWorkerPayload = WithoutRequestId<CadModifierWorkerRequest>;
 type CadPreviewPayload = Extract<CadModifierWorkerPayload, { type: "preview" }>;
@@ -4479,7 +4480,7 @@ function coplanarRescueCutterShape(shape: WorkplaneShape): WorkplaneShape {
 function cloneAsGroupChild(shape: WorkplaneShape, centerX: number, centerZ: number, minY: number): WorkplaneShape {
   return {
     ...shape,
-    id: createLocalId(`${shape.id}-group-child`),
+    id: derivedLocalId(shape.id, "group-child"),
     x: shape.x - centerX,
     z: shape.z - centerZ,
     elevation: (shape.elevation ?? 0) - minY,
@@ -5636,7 +5637,7 @@ function restoreGroupedChildren(group: WorkplaneShape): WorkplaneShape[] {
     const childRotation = rotationFromQuaternion(new THREE.Quaternion().setFromRotationMatrix(childRotationMatrix));
     const restored: WorkplaneShape = {
       ...child,
-      id: createLocalId(`${child.id}-ungroup`),
+      id: derivedLocalId(child.id, "ungroup"),
       x: worldCenter.x,
       z: worldCenter.z,
       elevation: worldCenter.y - height / 2,
@@ -6173,6 +6174,8 @@ export function LayerlingEditor({
    */
   const [openGroup, setOpenGroup] = useState<{ original: WorkplaneShape; childIds: string[] } | null>(null);
   const [openGroupBusy, setOpenGroupBusy] = useState(false);
+  const openGroupRef = useRef(openGroup);
+  openGroupRef.current = openGroup;
   const [stepExporting, setStepExporting] = useState(false);
   const [lylExporting, setLylExporting] = useState(false);
   const [alignMode, setAlignMode] = useState(false);
@@ -9275,43 +9278,53 @@ export function LayerlingEditor({
     commitShapes([...remainingShapes, intersection], intersection.id, t("status.intersectedMany", { count: groupable.length }));
   }, [commitShapes, selectedShapes]);
 
-  const openGroupForEditing = useCallback((id: string) => {
+  // Each step answers with what happened, so the buttons can show it and MCP can pass it on.
+  const openGroupForEditing = useCallback((id: string): OpenGroupOutcome => {
+    const refuse = (message: string): OpenGroupOutcome => {
+      setNotice(message);
+      return { ok: false, message };
+    };
+    if (openGroupRef.current) return refuse(t("group.finishOpenFirst"));
     const group = shapesRef.current.find((shape) => shape.id === id);
-    if (!group?.groupedShapes?.length) {
-      setNotice(t("status.selectGroupFirst"));
-      return;
-    }
-    if (group.locked) {
-      setNotice(t("status.unlockBeforeGroup"));
-      return;
-    }
-    if (openGroup) {
-      setNotice(t("group.finishOpenFirst"));
-      return;
-    }
+    if (!group?.groupedShapes?.length) return refuse(t("status.selectGroupFirst"));
+    if (group.locked) return refuse(t("status.unlockBeforeGroup"));
     const parts = restoreGroupedChildren(group);
+    const message = t("status.groupOpened", { name: displayShapeName(group) });
     commitShapes(
       [...shapesRef.current.filter((shape) => shape.id !== group.id), ...parts],
       parts.map((shape) => shape.id),
-      t("status.groupOpened", { name: displayShapeName(group) }),
+      message,
     );
-    setOpenGroup({ original: group, childIds: parts.map((shape) => shape.id) });
-  }, [commitShapes, openGroup]);
+    const session = { original: group, childIds: parts.map((shape) => shape.id) };
+    openGroupRef.current = session;
+    setOpenGroup(session);
+    return { ok: true, message, partIds: session.childIds };
+  }, [commitShapes]);
 
-  const cancelOpenGroup = useCallback(() => {
-    if (!openGroup) return;
-    const parts = new Set(openGroup.childIds);
+  const cancelOpenGroup = useCallback((): OpenGroupOutcome => {
+    const session = openGroupRef.current;
+    if (!session) return { ok: false, message: t("group.noneOpen") };
+    const parts = new Set(session.childIds);
+    const message = t("status.groupOpenCancelled", { name: displayShapeName(session.original) });
     commitShapes(
-      [...shapesRef.current.filter((shape) => !parts.has(shape.id)), openGroup.original],
-      openGroup.original.id,
-      t("status.groupOpenCancelled", { name: displayShapeName(openGroup.original) }),
+      [...shapesRef.current.filter((shape) => !parts.has(shape.id)), session.original],
+      session.original.id,
+      message,
     );
+    openGroupRef.current = null;
     setOpenGroup(null);
-  }, [commitShapes, openGroup]);
+    return { ok: true, message, groupId: session.original.id };
+  }, [commitShapes]);
 
-  const finishOpenGroup = useCallback(async () => {
-    if (!openGroup || openGroupBusy) return;
-    const { original, childIds } = openGroup;
+  const finishOpenGroup = useCallback(async (): Promise<OpenGroupOutcome> => {
+    const session = openGroupRef.current;
+    if (!session) return { ok: false, message: t("group.noneOpen") };
+    if (openGroupBusy) return { ok: false, message: t("group.busy") };
+    const refuse = (message: string): OpenGroupOutcome => {
+      setNotice(message);
+      return { ok: false, message };
+    };
+    const { original, childIds } = session;
     const byId = new Map(shapesRef.current.map((shape) => [shape.id, shape]));
     // In their original order, unlocked - a part locked while the group was open still belongs in it.
     const parts = childIds.flatMap((id) => {
@@ -9319,9 +9332,11 @@ export function LayerlingEditor({
       return shape ? [{ ...shape, locked: false }] : [];
     });
     if (parts.length < 2) {
+      openGroupRef.current = null;
       setOpenGroup(null);
-      setNotice(parts.length ? t("status.groupOnePartLeft") : t("status.groupNoPartsLeft"));
-      return;
+      const message = parts.length ? t("status.groupOnePartLeft") : t("status.groupNoPartsLeft");
+      setNotice(message);
+      return { ok: true, message, partIds: parts.map((shape) => shape.id) };
     }
     const sourceFingerprint = projectShapesFingerprint(shapesRef.current);
     const sourceProjectId = projectInfoRef.current.projectId;
@@ -9330,12 +9345,10 @@ export function LayerlingEditor({
       const operation = original.groupOperation === "intersection" ? "intersection" : "group";
       const result = operation === "intersection" ? await buildIntersectionShapeFromSelection(parts) : await buildGroupedShapeFromSelection(parts);
       if (projectInfoRef.current.projectId !== sourceProjectId || projectShapesFingerprint(shapesRef.current) !== sourceFingerprint) {
-        setNotice(t("status.groupChanged"));
-        return;
+        return refuse(t("status.groupChanged"));
       }
       if (!result.group) {
-        setNotice("failureNotice" in result && result.failureNotice ? result.failureNotice : t("status.groupChanged"));
-        return;
+        return refuse("failureNotice" in result && result.failureNotice ? result.failureNotice : t("status.groupChanged"));
       }
       // The group keeps what was its own: name, solid or hole, see-through, hidden -
       // and its colour, if it had been given one apart from its first part.
@@ -9350,23 +9363,29 @@ export function LayerlingEditor({
         hidden: original.hidden,
       }, Boolean(original.hole)));
       const partIds = new Set(parts.map((shape) => shape.id));
+      const message = t("status.groupClosed", { name: displayShapeName(regrouped) });
       commitShapes(
         [...shapesRef.current.filter((shape) => !partIds.has(shape.id)), regrouped],
         regrouped.id,
-        t("status.groupClosed", { name: displayShapeName(regrouped) }),
+        message,
       );
+      openGroupRef.current = null;
       setOpenGroup(null);
+      return { ok: true, message, groupId: regrouped.id };
     } finally {
       setOpenGroupBusy(false);
     }
-  }, [commitShapes, openGroup, openGroupBusy]);
+  }, [commitShapes, openGroupBusy]);
 
   // Undo past the opening brings the group back, and deleting every part leaves
   // nothing to close: in both cases the open group is over.
   useEffect(() => {
     if (!openGroup) return;
     const ids = new Set(shapes.map((shape) => shape.id));
-    if (ids.has(openGroup.original.id) || !openGroup.childIds.some((id) => ids.has(id))) setOpenGroup(null);
+    if (ids.has(openGroup.original.id) || !openGroup.childIds.some((id) => ids.has(id))) {
+      openGroupRef.current = null;
+      setOpenGroup(null);
+    }
   }, [openGroup, shapes]);
 
   const ungroupSelected = useCallback(() => {
@@ -9413,6 +9432,9 @@ export function LayerlingEditor({
       workspace: workspaceSettingsRef.current,
       snap: initialSnap ?? null,
       shapes: currentShapes.map(mcpShapeSummary),
+      openGroup: openGroupRef.current
+        ? { groupId: openGroupRef.current.original.id, name: displayShapeName(openGroupRef.current.original), partIds: openGroupRef.current.childIds }
+        : null,
       ...(includeRawShapes ? { rawShapes: currentShapes.map((shape) => canonicalizeShape(shape)) } : {}),
     };
   }, [initialSnap]);
@@ -9685,6 +9707,21 @@ export function LayerlingEditor({
         return { object: mcpShapeSummary(updated) };
       }
 
+      if (command.action === "open_group") {
+        const id = typeof params.id === "string" ? params.id : selectedIdsRef.current.length === 1 ? selectedIdsRef.current[0] : null;
+        if (!id) throw new Error("open_group needs the id of one group");
+        const outcome = openGroupForEditing(id);
+        if (!outcome.ok) throw new Error(outcome.message);
+        return { partIds: outcome.partIds, objects: currentShapes().filter((shape) => outcome.partIds?.includes(shape.id)).map(mcpShapeSummary) };
+      }
+
+      if (command.action === "close_group") {
+        const outcome = params.cancel === true ? cancelOpenGroup() : await finishOpenGroup();
+        if (!outcome.ok) throw new Error(outcome.message);
+        const group = outcome.groupId ? findShape(outcome.groupId) : null;
+        return { message: outcome.message, object: group ? mcpShapeSummary(group) : null, partIds: outcome.partIds ?? [] };
+      }
+
       if (command.action === "lay_flat") {
         const requestedIds = mcpStringArray(params.ids ?? params.id);
         const ids = new Set(requestedIds.length ? requestedIds : selectedIdsRef.current);
@@ -9916,8 +9953,11 @@ export function LayerlingEditor({
     }
   }, [
     applyCadModifierForMcp,
+    cancelOpenGroup,
     commitShapes,
+    finishOpenGroup,
     initialSnap,
+    openGroupForEditing,
     invalidateCadModifierSession,
     mcpSceneSnapshot,
     placementElevation,
