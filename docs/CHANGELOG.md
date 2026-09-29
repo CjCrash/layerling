@@ -4,6 +4,12 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.20.0
+
+- **Object list:** A new panel lists every object in the design - open it with the list button under Visibility, from the eye menu, or with Ctrl+Shift+O. A click selects an object, even one hidden behind others; each row can lock, hide or rename its object (pencil or double-click). Groups fold open and show their parts, each marked Solid or Hole. With more than four objects a search box filters by name or shape. Asked for by Fratercula in the forum.
+- **Switching a group between hole and solid keeps its cut-outs:** A group made of a body and its cut-outs, set to Hole and back to Solid, used to turn every part solid, so the cut-outs were gone after the next ungroup. Mixed groups now keep each part's own state; groups of only solids or only holes switch their parts along as before. From archy's report in the forum.
+- **Hint when exporting only holes:** If the selection - or the whole design - holds nothing but holes, the export panel now says why there is nothing to export and that a hole needs to be grouped with a body. From archy's report in the forum.
+
 ## 1.19.1
 
 - **See-through bodies:** A new checkbox "Transparent" in the inspector, under Solid / Hole, draws a body see-through in its own colour, as in Tinkercad. Bodies behind or inside it and the faces where parts touch stay visible from every side. Display only - it stays a normal solid and exports as one. Saved with the design, and a group passes it on to all its parts. Asked for by Eichhornkobel in the forum.
