@@ -4,6 +4,15 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.22.1
+
+- **Fillets and chamfers on text:** Raised text is now handed to the CAD kernel as its exact letter outlines, curves included, instead of thousands of short straight pieces. Chamfering or rounding all edges of a word now works where it used to be refused as too complex, straight or curved, and the edges come out clean. Contributed by @plazmabokor in #48.
+- **Umlauts in every typeface:** Multilanguage, Stencil and Rounded had no ä, ö, ü, ß, é or €; missing letters are now taken from Sans. New text starts in Sans.
+- **Corner ruler with several bodies:** The green distances at the corner ruler now also show when several bodies are selected, measured on their shared outline. A typed value moves all of them together, in one undo step. Asked for by Eichhornkobel in the forum.
+- **Edge tool no longer spins forever:** Changing the fillet or chamfer size before any edge was selected left the spinner on "Apply" running for good. From raimcomputi's report in the forum.
+- **Copies of curved text stay curved,** and MCP can create curved text directly.
+- **Guide:** Every guide page has the footer with legal notice, privacy and project links; the quick guide now says correctly that Mirror flips the selection itself. New sections on the corner ruler's green distances, on edge treatments on groups and on edges of text.
+
 ## 1.22.0
 
 - **User guide:** A complete guide with pictures, in German (layerling.com/anleitung) and English (layerling.com/guide): 15 chapters from the first steps through solids and holes, edges, sketches, text, threads, measuring, printing and files to keyboard shortcuts and building with an AI. It is linked from the start page footer, the welcome text and the editor's quick guide, and it also opens offline.
