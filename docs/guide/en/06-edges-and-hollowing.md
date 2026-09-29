@@ -1,0 +1,54 @@
+---
+title: Breaking edges and hollowing bodies
+summary: Chamfer and fillet on chosen edges, walls of equal thickness for boxes, cups and cases.
+---
+
+## Chamfering and filleting edges
+
+Sharp edges rarely look good on a printed part, and they are not particularly strong either. A **chamfer** cuts the edge off at an angle, a **fillet** rounds it. Both act on the edges you click.
+
+1. Select the body (or the group).
+2. Click {{ui:editor.tool.fillet}} or {{ui:editor.tool.chamfer}} in the ribbon.
+3. The body's edges light up. Click those that should be affected. Another click takes an edge out again. With [[Shift]] you add or remove a single edge.
+4. Set the size and confirm with {{ui:edge.apply}} or [[Enter]].
+
+![The "Fillet edges" tool: all sharp edges are selected, the picture shows the preview with a 4 mm radius.](shot:fillet-preview)
+
+In the panel you find:
+
+- {{ui:edge.allSharpEdges}} selects every edge at once, {{ui:edge.clear}} empties the selection.
+- **{{ui:edge.radius}}** for the fillet. For the chamfer you set {{ui:edge.distance}} or {{ui:edge.angle}}.
+- {{ui:edge.sharpThreshold}} decides which edges count as sharp at all. A value of 25° treats only clear kinks as edges and leaves flat transitions alone.
+- {{ui:edge.tangentChains}} takes along edges that flow smoothly into each other, for example all edges around a face with rounded corners.
+- {{ui:edge.keepSize}} keeps the chamfer or fillet as large as it is, even if you scale the body later.
+- {{ui:edge.previewQuality}} ({{ui:edge.draft}}, {{ui:edge.standard}} or {{ui:edge.fine}}) decides how finely the preview is calculated. For difficult parts {{ui:edge.draft}} is faster.
+
+While you adjust the size, layerling recalculates the preview. It can take a moment. You may keep adjusting; the last value you chose is what gets calculated.
+
+If the size is too large for the edge, layerling says so and suggests a smaller value. Often one or two millimetres less will do. At sharp angles a fillet needs more room than its radius suggests.
+
+### Taking an edge treatment back
+
+A treated body can always be treated again. Select it again and open the tool: under {{ui:edge.featureHistory}} you see what is already on it. {{ui:edge.revertAction}} takes back a single treatment. Note: if newer treatments lie on top, they go with it, and the panel tells you how many.
+
+> **Good to know:** layerling works with real CAD geometry for fillets and chamfers, not just a triangle mesh. That is why a rounded edge is still a rounded edge in the STEP export.
+
+## Hollowing bodies
+
+Boxes, cups, cases and covers have one thing in common: they are empty inside, with walls of equal thickness. That is exactly what {{ui:editor.tool.hollow}} does.
+
+1. Select the body and click {{ui:editor.tool.hollow}}.
+2. Set the {{ui:shell.wall}}.
+3. Choose which side stays open: {{ui:shell.opening.top}}, {{ui:shell.opening.bottom}}, {{ui:shell.opening.top-bottom}} or {{ui:shell.opening.none}} (fully closed, with a cavity in the middle).
+4. Decide whether the {{ui:shell.edges}} should be {{ui:shell.edges.round}} or {{ui:shell.edges.sharp}}.
+5. Click {{ui:shell.apply}}.
+
+![The hollowing panel with wall thickness and open side.](shot:hollow-panel)
+
+The walls grow inward. The outside stays as it is.
+
+![The result: a shell with a 3 mm wall, open at the top.](shot:hollow-result)
+
+For an opening at the top or bottom, the body needs a flat face there. Spheres and free-form shapes therefore cannot be hollowed this way. If the wall is too thick for the body, layerling tells you and asks for a thinner one.
+
+> **Tip:** With a 0.4 mm nozzle, 1.2 to 2 mm of wall is a good start: thin enough to save material, thick enough for a sturdy part.

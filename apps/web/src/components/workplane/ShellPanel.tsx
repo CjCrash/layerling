@@ -1,5 +1,6 @@
 "use client";
 
+import { GuideHelpLink } from "@/components/GuideHelpLink";
 import { Check, LoaderCircle, X } from "lucide-react";
 import { EdgeModifierSlider } from "@/components/workplane/EdgeModifierPanel";
 import { cadModifierUserErrorMessage } from "@/lib/cadModifierRuntime";
@@ -55,7 +56,10 @@ export function ShellPanel({
           <strong>{title}</strong>
           <span>{t("shell.subtitle")}</span>
         </div>
-        <button type="button" aria-label={t("shell.cancel")} onClick={onCancel}><X size={20} /></button>
+        <div className="panel-header-actions">
+          <GuideHelpLink chapter="edges" />
+          <button type="button" aria-label={t("shell.cancel")} onClick={onCancel}><X size={20} /></button>
+        </div>
       </div>
 
       <div className="edge-modifier-target">

@@ -4,6 +4,13 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.22.0
+
+- **User guide:** A complete guide with pictures, in German (layerling.com/anleitung) and English (layerling.com/guide): 15 chapters from the first steps through solids and holes, edges, sketches, text, threads, measuring, printing and files to keyboard shortcuts and building with an AI. It is linked from the start page footer, the welcome text and the editor's quick guide, and it also opens offline.
+- **It keeps itself current:** Button names in the guide are read from the interface's own texts, the shortcut chapter from the shortcut dialog, and the pictures are taken from the running program by `npm run guide:images`, once per language. A test checks that both languages have the same chapters and pictures and that every MCP tool is named.
+- **More German in the German interface:** The "Sketch view" badge, the handle tooltips (resize, height, lift), the mirror handles and the sketch status messages were still English.
+- **For self-hosters:** `npm run export` and `npm run dev` build the guide from `docs/guide`; see `docs/guide/README.md`.
+
 ## 1.21.0
 
 - **Curved text:** Text can now follow a circle ("On arc" in the inspector), along the top or along the bottom of it, with its own radius and letter size. All letters sit on one baseline, as in a straight line; the centre of the circle is the middle of the shape, so centring the text on a round body places it concentric. Pulling a handle scales radius and letter size together. "Upside down" turns the letters over in place, to be read from the other side.

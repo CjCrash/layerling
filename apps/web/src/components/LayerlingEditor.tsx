@@ -1,5 +1,6 @@
 "use client";
 
+import { GuideHelpLink } from "@/components/GuideHelpLink";
 import { AlertTriangle, Check, Circle as CircleIcon, CloudUpload, Download, Eye, EyeOff, FilePlus2, FolderOpen, Hexagon as HexagonIcon, Info, ListTree, Pencil, Square as SquareIcon, Triangle as TriangleIcon, X } from "lucide-react";
 import { ObjectListPanel } from "@/components/workplane/ObjectListPanel";
 import type manifoldModule from "manifold-3d";
@@ -7854,8 +7855,15 @@ export function LayerlingEditor({
       return;
     }
     const nextShapes = existing ? shapes.map((shape) => (shape.id === existing.id ? resolved : shape)) : [...shapes, resolved];
-    const action = sketchOperation === "revolve" ? "Revolve sketch" : "Sketch";
-    commitShapes(nextShapes, resolved.id, existing ? `${action} updated` : sketchOperation === "revolve" ? "Revolved sketch created" : t("status.exactSketchCreated"));
+    commitShapes(
+      nextShapes,
+      resolved.id,
+      existing
+        ? t(sketchOperation === "revolve" ? "status.revolveUpdated" : "status.sketchUpdated")
+        : sketchOperation === "revolve"
+          ? t("status.revolveCreated")
+          : t("status.exactSketchCreated"),
+    );
     setSketchActive(false);
     setSketchRevolvePreview(null);
     setEditingSketchShapeId(null);
@@ -11975,7 +11983,10 @@ function SecondaryToolbar({
           </div>
           {shapesOpen ? (
             <div className="shape-menu-dropdown">
-              <div className="shape-menu-title">{t("shape.basicShapes")}</div>
+              <div className="shape-menu-title">
+                {t("shape.basicShapes")}
+                <GuideHelpLink chapter="shapes" />
+              </div>
               <div className="shape-menu-list">
                 {toolbarShapeAssets.map((shape) => (
                   <button
@@ -12206,7 +12217,10 @@ function SecondaryToolbar({
                   </div>
                   {shapesOpen ? (
                     <div className="shape-menu-dropdown sketch-shape-menu-dropdown" role="menu" aria-label={t("sketch.shapesMenu")}>
-                      <div className="shape-menu-title">{t("sketch.shapesTitle")}</div>
+                      <div className="shape-menu-title">
+                        {t("sketch.shapesTitle")}
+                        <GuideHelpLink chapter="sketches" />
+                      </div>
                       <div className="shape-menu-list">
                         {sketchShapeMenuItems.map(({ primitive, label, icon: Icon }) => (
                           <button
@@ -12534,9 +12548,12 @@ function TopActionPanel({
         <div className="top-action-heading">
           <strong>{title}</strong>
         </div>
-        <button aria-label={t("panel.close", { title })} onClick={onClose}>
-          <X size={18} />
-        </button>
+        <div className="panel-header-actions">
+          <GuideHelpLink chapter="files" />
+          <button aria-label={t("panel.close", { title })} onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
       </header>
       {panel === "import" ? (
         <div className="top-action-body">

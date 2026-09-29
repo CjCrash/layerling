@@ -118,6 +118,9 @@ export function AppFooter({
               {SPONSOR_LINK.label || t("dashboard.sponsor")}
             </a>
           ) : null,
+          <a href={t("welcome.guideUrl")} target="_blank" rel="noreferrer" key="guide">
+            {t("dashboard.userGuide")}
+          </a>,
           <a href={communityUrl(language)} target="_blank" rel="noreferrer" key="community">
             {t("dashboard.forum")}
           </a>,

@@ -1,0 +1,44 @@
+---
+title: Installing as an app, working offline and self-hosting
+summary: Start layerling like a normal program, even without a network, and how to run it on your own computer.
+---
+
+## Installing as an app
+
+layerling can be installed like a normal program. It then gets an icon and a window of its own, without an address bar. After the first visit it starts even **without internet**. Your designs stay on your computer.
+
+On the start page a hint with {{ui:installHint.install}} appears if your browser can do it. Otherwise:
+
+- **Chrome and Edge:** Click the install icon at the right of the address bar, or choose "Install as app" in the browser menu.
+- **Safari on the Mac:** Menu "File", then "Add to Dock".
+- **Safari on iPhone and iPad:** Share icon, then "Add to Home Screen".
+- **Firefox:** cannot install apps. layerling still starts offline in a tab there.
+
+You can close the hint on the start page with {{ui:installHint.dismiss}}.
+
+## Updates
+
+When a newer version exists, layerling shows it on the start page. Through {{ui:dashboard.updateBannerLink}} you read what has changed. The version number is at the bottom right. After reloading the page you have the new version.
+
+## Language and appearance
+
+You set the language at the top right, German or English. The colour scheme beside it offers {{ui:theme.short.system}} (follows the operating system), {{ui:theme.short.light}}, {{ui:theme.short.dark}} and {{ui:theme.short.graphite}}, a neutral dark grey.
+
+## Running it yourself
+
+layerling is free software (AGPL-3.0) and can be run on your own computer or server, for example in a workshop, a club or a school. There are several ways, described in the [README on GitHub](https://github.com/henmedia/layerling/blob/main/README.md#getting-started):
+
+- **The quick start on Windows:** A single line in PowerShell installs everything and puts a shortcut on the desktop.
+- **Docker:** For NAS devices and home servers, without Node.js needing to be installed.
+- **Static export:** The result is plain files that any web server can serve. With a writable folder `store` next to `index.html` and PHP on the server it also becomes the shared storage for designs.
+
+The MCP bridge for AI assistants exists only in the development server, see [Building with an AI](chapter:ai-with-mcp).
+
+## Help and feedback
+
+- In the editor, the {{ui:editor.group.help}} area holds the {{ui:editor.guide}} with the most important moves and the overview of [keyboard shortcuts](chapter:shortcuts). Each section of the quick guide has a question mark that leads to the matching chapter here.
+
+![The quick guide in the editor. A button at the top leads to the full guide, and every section has a question mark.](shot:quick-guide)
+
+- Questions, wishes and bug reports are welcome in the [forum](https://forum.drucktipps3d.de/forum/board/127-layerling/) and on [GitHub](https://github.com/henmedia/layerling/discussions).
+- What changed in which version is in the release notes, which you find at the bottom of the start page and of the editor.

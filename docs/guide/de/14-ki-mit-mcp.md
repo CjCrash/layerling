@@ -1,0 +1,67 @@
+---
+title: Mit einer KI bauen (MCP)
+summary: Wie ein KI-Assistent wie Claude oder Codex in deinem geöffneten Editor Formen anlegt, ändert, gruppiert und Bilder der Ansicht aufnimmt.
+---
+
+layerling bringt einen MCP-Server mit. MCP ist ein Standard, über den ein KI-Assistent Werkzeuge in anderen Programmen benutzen kann. Damit sieht ein KI-Client wie Claude oder Codex einen offenen Editor-Tab und arbeitet darin: Er legt Formen an, ändert Maße, gruppiert, schneidet, rundet Kanten, liest die Szene aus und nimmt Bilder der Ansicht auf. Du beschreibst das Teil, die KI baut es, du siehst zu und greifst jederzeit ein.
+
+Die Brücke zwischen KI-Client und Editor läuft **lokal auf deinem Rechner**. Bedenke aber: Was die KI liest, also die Szene und die Bilder der Ansicht, geht an den Anbieter deines KI-Clients, so wie jede andere Eingabe dort auch.
+
+> **Wichtig:** Die MCP-Brücke gibt es nur im Entwicklungsserver, den du selbst auf deinem Rechner startest. Auf layerling.com und in Installationen mit statischem Hosting ist sie abgeschaltet.
+
+## Einrichten
+
+1. Lade layerling von [GitHub](https://github.com/henmedia/layerling) und starte es im Projektordner mit `npm run dev`. Node.js muss installiert sein. Unter Windows erledigt das die Schnellstart-Zeile in der README.
+2. Öffne einen Editor-Tab, zum Beispiel `http://127.0.0.1:3000/?editor=1`.
+3. Verbinde deinen KI-Client mit dem MCP-Server. Er wird vom Client selbst mit `node scripts/layerling-mcp-server.mjs` gestartet.
+
+### Claude Code
+
+Nichts zu installieren: Das Projekt bringt eine `.mcp.json` mit, die den Server einträgt, und den Skill unter `.claude/skills/layerling-mcp-skill`. Öffne den layerling-Ordner in Claude Code und bitte zum Beispiel: „Nutze die layerling-MCP-Werkzeuge, liste meine offenen Editoren auf und sieh dir die Szene an.“
+
+### Claude Desktop
+
+Claude Desktop liest keine Projektdateien. Trage den Server in seiner eigenen Konfiguration ein. Als Vorlage dient `docs/mcp/claude-desktop-config.example.json` im Projekt, in der du den Skriptpfad durch den absoluten Pfad auf deinem Rechner ersetzt. Danach Claude Desktop neu starten.
+
+### Codex
+
+Kopiere den Skill aus `docs/skills/layerling-mcp-skill` in deinen Codex-Skill-Ordner, trage den Server anhand von `docs/mcp/codex-config.example.toml` in deine Codex-Konfiguration ein und starte Codex neu.
+
+Die ausführliche Anleitung für alle drei steht in der [README auf GitHub](https://github.com/henmedia/layerling/blob/main/README.de.md#layerling-mcp-skill).
+
+## Was die KI kann
+
+Die KI arbeitet mit denselben Funktionen wie du, sie läuft über denselben Weg wie deine Bedienung im Editor. Neue Funktionen von layerling bekommen ihre MCP-Aktion gleich mit. Die Werkzeuge:
+
+| Werkzeug | Was es tut |
+| --- | --- |
+| `layerling_list_editors` | listet die offenen Editor-Tabs auf |
+| `layerling_read_scene` | liest Szene, Auswahl, Einheiten und die genauen Maße aller Objekte |
+| `layerling_list_objects` | listet alle Objekte mit Maßen, Lage, Drehung und Kennung |
+| `layerling_select_objects` | wählt Objekte aus |
+| `layerling_delete_objects` | löscht Objekte |
+| `layerling_create_shape` | legt eine Form an: Quader, Zylinder, Text (auch gebogen), Gewinde, Zahnrad, Skizzenkörper und alle anderen |
+| `layerling_import_mesh` | bringt ein Dreiecksnetz in den Entwurf |
+| `layerling_update_object` | ändert Maße, Lage, Farbe, Name, Körper oder Aussparung und alles, was die Form sonst ausmacht |
+| `layerling_align_objects` | richtet Objekte aneinander aus |
+| `layerling_lay_flat` | legt ein Objekt mit einer Fläche auf die Platte |
+| `layerling_open_group` | öffnet eine Gruppe, damit ihre Teile einzeln änderbar sind |
+| `layerling_close_group` | schließt sie wieder („Fertig“) oder bricht ab |
+| `layerling_group_objects` | gruppiert Objekte |
+| `layerling_ungroup_objects` | löst Gruppen auf |
+| `layerling_boolean_cut` | schneidet Körper mit Aussparungen |
+| `layerling_separate_parts` | zerlegt eine Form mit losen Teilen |
+| `layerling_list_edges` | listet die echten CAD-Kanten eines Objekts |
+| `layerling_apply_edge_treatment` | fast oder verrundet ausgewählte Kanten |
+| `layerling_hollow_object` | höhlt einen Körper mit gleichmäßiger Wand aus |
+| `layerling_array_objects` | vervielfältigt in einer Reihe oder auf einem Kreis |
+| `layerling_inspect_errors` | zeigt die letzte Meldung und den letzten Fehler |
+| `layerling_capture_image` | nimmt ein Bild der Ansicht auf, von vorn, oben, seitlich und mehr |
+
+Die KI kann sich damit selbst kontrollieren: Sie legt etwas an, macht ein Bild, sieht nach und verbessert.
+
+## Ein Beispiel
+
+Du sagst: „Baue mir eine runde Dose mit 60 mm Durchmesser, 40 mm Höhe und 2,5 mm Wand, oben offen, dazu einen flachen Deckel, auf dem ‚Tee‘ im Bogen steht.“ Die KI legt Zylinder an, höhlt einen aus, setzt den gebogenen Text auf den Deckel und nimmt zum Schluss Bilder auf, damit sie sieht, ob es passt.
+
+> **Tipp:** Gib der KI konkrete Maße und sag ihr, wofür das Teil gedacht ist („Halter für eine 12-mm-Stange, passt auf ein Bambu Lab A1“). Dann trifft sie sinnvollere Entscheidungen. Und schau ihr beim Bauen zu: Du kannst jederzeit selbst eingreifen, denn es ist derselbe Editor.

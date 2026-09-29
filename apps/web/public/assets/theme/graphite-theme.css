@@ -5268,6 +5268,36 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .open-group-cancel {
   border-color: rgba(227, 181, 122, 0.45);
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .guide-help-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .guide-help-link:hover,
+:where(html[data-theme="dark"][data-palette="graphite"]) .guide-help-link:focus-visible {
+  background: rgba(127, 127, 127, 0.16);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .guide-full-link a {
+  color: #fff;
+  background: #ad6206;
+  text-decoration: none;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .inspector-help-link {
+  color: #585858;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .guide-footer-link {
+  color: #fff;
+  background: #ad6206;
+  text-decoration: none;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .inspector-help-link {
+  color: #dfdfdf;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section-tools,
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section .action-buttons {
   background: var(--toolbar-tile);

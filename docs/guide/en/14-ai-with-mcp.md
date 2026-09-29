@@ -1,0 +1,67 @@
+---
+title: Building with an AI (MCP)
+summary: How an AI assistant such as Claude or Codex creates and changes shapes, groups them and takes pictures of the view in your open editor.
+---
+
+layerling comes with an MCP server. MCP is a standard through which an AI assistant can use tools in other programs. With it an AI client such as Claude or Codex sees an open editor tab and works in it: it creates shapes, changes dimensions, groups, cuts, rounds edges, reads out the scene and takes pictures of the view. You describe the part, the AI builds it, you watch and can step in at any moment.
+
+The bridge between AI client and editor runs **locally on your computer**. Keep in mind, though: what the AI reads, meaning the scene and the pictures of the view, goes to the provider of your AI client, like any other input there.
+
+> **Important:** The MCP bridge exists only in the development server that you start yourself on your computer. On layerling.com and in installations with static hosting it is switched off.
+
+## Setting up
+
+1. Get layerling from [GitHub](https://github.com/henmedia/layerling) and start it in the project folder with `npm run dev`. Node.js must be installed. On Windows the quick-start line in the README takes care of that.
+2. Open an editor tab, for example `http://127.0.0.1:3000/?editor=1`.
+3. Connect your AI client to the MCP server. The client starts it itself with `node scripts/layerling-mcp-server.mjs`.
+
+### Claude Code
+
+Nothing to install: the project brings a `.mcp.json` that registers the server, and the skill under `.claude/skills/layerling-mcp-skill`. Open the layerling folder in Claude Code and ask, for example: "Use the layerling MCP tools to list my open editors and inspect the scene."
+
+### Claude Desktop
+
+Claude Desktop does not read project files. Enter the server in its own configuration. As a template use `docs/mcp/claude-desktop-config.example.json` in the project, replacing the script path with the absolute path on your computer. Then restart Claude Desktop.
+
+### Codex
+
+Copy the skill from `docs/skills/layerling-mcp-skill` into your Codex skills folder, enter the server in your Codex configuration using `docs/mcp/codex-config.example.toml`, and restart Codex.
+
+The detailed instructions for all three are in the [README on GitHub](https://github.com/henmedia/layerling/blob/main/README.md#layerling-mcp-skill).
+
+## What the AI can do
+
+The AI works with the same functions as you, through the same path as your operation in the editor. New layerling functions get their MCP action right away. The tools:
+
+| Tool | What it does |
+| --- | --- |
+| `layerling_list_editors` | lists the open editor tabs |
+| `layerling_read_scene` | reads scene, selection, units and the exact dimensions of all objects |
+| `layerling_list_objects` | lists all objects with dimensions, position, rotation and id |
+| `layerling_select_objects` | selects objects |
+| `layerling_delete_objects` | deletes objects |
+| `layerling_create_shape` | creates a shape: box, cylinder, text (also curved), thread, gear, sketch body and all the others |
+| `layerling_import_mesh` | brings a triangle mesh into the design |
+| `layerling_update_object` | changes dimensions, position, colour, name, solid or hole and everything else that makes up the shape |
+| `layerling_align_objects` | aligns objects with each other |
+| `layerling_lay_flat` | lays an object with one face on the plate |
+| `layerling_open_group` | opens a group so its parts can be changed one by one |
+| `layerling_close_group` | closes it again ("Done") or cancels |
+| `layerling_group_objects` | groups objects |
+| `layerling_ungroup_objects` | dissolves groups |
+| `layerling_boolean_cut` | cuts solids with holes |
+| `layerling_separate_parts` | splits a shape with loose parts |
+| `layerling_list_edges` | lists the real CAD edges of an object |
+| `layerling_apply_edge_treatment` | chamfers or fillets chosen edges |
+| `layerling_hollow_object` | hollows a body with an even wall |
+| `layerling_array_objects` | multiplies in a row or on a circle |
+| `layerling_inspect_errors` | shows the last message and the last error |
+| `layerling_capture_image` | takes a picture of the view: front, top, side and more |
+
+That lets the AI check itself: it creates something, takes a picture, looks and improves.
+
+## An example
+
+You say: "Build me a round box 60 mm across, 40 mm high with a 2.5 mm wall, open at the top, plus a flat lid with 'Tea' written in an arc." The AI creates the cylinders, hollows one, puts the curved text on the lid and takes pictures at the end to see whether it fits.
+
+> **Tip:** Give the AI concrete dimensions and tell it what the part is for ("holder for a 12 mm rod, fits a Bambu Lab A1"). Then it makes more sensible decisions. And watch it build: you can step in yourself at any time, because it is the same editor.

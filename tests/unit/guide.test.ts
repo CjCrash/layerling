@@ -1,0 +1,170 @@
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import {
+  loadMessages,
+  parseFrontMatter,
+  readChapters,
+  readShortcutGroups,
+  renderBlocks,
+  renderInline,
+  slugify,
+  webpSize,
+} from "../../scripts/build-guide.mjs";
+import { tools } from "../../scripts/layerling-mcp-tools.mjs";
+import { GUIDE_CHAPTERS, guideChapterForShape, guideHref } from "@/lib/guideLinks";
+
+const root = join(__dirname, "..", "..");
+const LANGUAGES = ["de", "en"] as const;
+
+async function contextFor(language: "de" | "en") {
+  return {
+    language,
+    messages: await loadMessages(language),
+    imageSize: () => null,
+    references: { uiKeys: new Set<string>(), shots: new Set<string>(), chapters: new Set<string>() },
+  };
+}
+
+describe("guide markdown", () => {
+  it("takes button names from the interface's own wording", async () => {
+    const context = await contextFor("de");
+    const html = renderInline("Klicke auf {{ui:editor.tool.group}}.", context);
+    expect(html).toContain("„Gruppieren“");
+    const english = renderInline("Click {{ui:editor.tool.group}}.", await contextFor("en"));
+    expect(english).toContain("“Group”");
+  });
+
+  it("stops on a name the interface does not have", async () => {
+    expect(() => renderInline("{{ui:no.such.key}}", { language: "de", messages: {} })).toThrow(/Unknown interface text/);
+  });
+
+  it("understands keys, code, links and chapter links", async () => {
+    const context = await contextFor("de");
+    const html = renderInline("[[Strg]]+[[Z]] und `npm run dev` und [Kapitel](chapter:formen) und [x](https://example.com)", context);
+    expect(html).toContain("<kbd>Strg</kbd>+<kbd>Z</kbd>");
+    expect(html).toContain("<code>npm run dev</code>");
+    expect(html).toContain('href="/anleitung/formen.html"');
+    expect(html).toContain('rel="noopener"');
+  });
+
+  it("escapes what is not markup", async () => {
+    const html = renderInline("a < b & c", await contextFor("en"));
+    expect(html).toBe("a &lt; b &amp; c");
+  });
+
+  it("builds headings, lists, tables, tips and pictures", async () => {
+    const context = await contextFor("en");
+    const { html, headings } = renderBlocks(
+      ["## First step", "", "- one", "- two", "  continued", "", "1. a", "2. b", "", "| A | B |", "| - | - |", "| 1 | 2 |", "", "> **Tip:** careful", "", "![Caption](shot:some-picture)"].join("\n"),
+      context,
+    );
+    expect(headings).toEqual([{ id: "first-step", text: "First step" }]);
+    expect(html).toContain('<h2 id="first-step">');
+    expect(html).toContain("<ul><li>one</li><li>two continued</li></ul>");
+    expect(html).toContain("<ol><li>a</li><li>b</li></ol>");
+    expect(html).toContain("<th>A</th>");
+    expect(html).toContain('<aside class="tip">');
+    expect(html).toContain('src="/guide/img/some-picture.webp"');
+    expect(context.references.shots.has("some-picture")).toBe(true);
+  });
+
+  it("reads front matter, with or without quotes", () => {
+    expect(parseFrontMatter("---\ntitle: \"A: b\"\nsummary: Text\n---\nBody").meta).toEqual({ title: "A: b", summary: "Text" });
+  });
+
+  it("turns umlauts into plain ids", () => {
+    expect(slugify("Körper & Aussparungen")).toBe("koerper-aussparungen");
+  });
+
+  it("reads the size of a WebP picture", () => {
+    const directory = join(root, "docs", "guide", "images", "de");
+    const file = readdirSync(directory).find((name) => name.endsWith(".webp"));
+    if (!file) return;
+    const size = webpSize(readFileSync(join(directory, file)));
+    expect(size?.width).toBeGreaterThan(100);
+    expect(size?.height).toBeGreaterThan(100);
+  });
+});
+
+describe("guide content", () => {
+  it("has the same chapters in both languages", async () => {
+    const [de, en] = await Promise.all(LANGUAGES.map((language) => readChapters(language)));
+    expect(de.length).toBeGreaterThan(10);
+    expect(en.map((chapter: { number: string }) => chapter.number)).toEqual(de.map((chapter: { number: string }) => chapter.number));
+    for (const chapter of [...de, ...en]) {
+      expect(chapter.title, chapter.file).not.toBe(chapter.slug);
+      expect(chapter.summary, chapter.file).not.toBe("");
+    }
+  });
+
+  it("uses only interface names, chapters and pictures that exist", async () => {
+    for (const language of LANGUAGES) {
+      const chapters = await readChapters(language);
+      const slugs = new Set(chapters.map((chapter: { slug: string }) => chapter.slug));
+      for (const chapter of chapters) {
+        const context = await contextFor(language);
+        const { html } = renderBlocks(chapter.body, { ...context, shortcutsHtml: "" });
+        const where = `${language}/${chapter.file}`;
+        expect(html, where).not.toMatch(/\{\{|\}\}/);
+        for (const target of context.references.chapters) expect(slugs.has(target), `${where}: chapter ${target}`).toBe(true);
+        for (const shot of context.references.shots) {
+          expect(existsSync(join(root, "docs", "guide", "images", language, `${shot}.webp`)), `${where}: picture ${shot}`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("shows the same pictures in both languages", async () => {
+    const shots = async (language: "de" | "en") => {
+      const names = new Set<string>();
+      for (const chapter of await readChapters(language)) {
+        for (const match of chapter.body.matchAll(/\(shot:([\w-]+)\)/g)) names.add(match[1]);
+      }
+      return [...names].sort();
+    };
+    expect(await shots("en")).toEqual(await shots("de"));
+  });
+
+  it("has a scene for every picture", async () => {
+    const scenes = readFileSync(join(root, "scripts", "guide-scenes.mjs"), "utf8");
+    const taken = new Set([...scenes.matchAll(/ctx\.shot\("([\w-]+)"/g)].map((match) => match[1]));
+    for (const chapter of await readChapters("de")) {
+      for (const match of chapter.body.matchAll(/\(shot:([\w-]+)\)/g)) {
+        expect(taken.has(match[1]), `no scene takes the picture ${match[1]}`).toBe(true);
+      }
+    }
+  });
+
+  it("names every MCP tool in the AI chapter, in both languages", async () => {
+    for (const language of LANGUAGES) {
+      const chapter = (await readChapters(language)).find((entry: { slug: string }) => entry.slug === (language === "de" ? "ki-mit-mcp" : "ai-with-mcp"));
+      expect(chapter, language).toBeDefined();
+      for (const tool of tools) expect(chapter.body, `${language}: ${tool.name}`).toContain(`\`${tool.name}\``);
+    }
+  });
+
+  it("reads the shortcut table from the program", async () => {
+    const groups = await readShortcutGroups();
+    expect(groups.length).toBeGreaterThan(6);
+    expect(groups.flatMap((group: { entries: unknown[] }) => group.entries).length).toBeGreaterThan(30);
+  });
+
+  it("has a chapter behind every question mark in the program", async () => {
+    for (const language of LANGUAGES) {
+      const slugs = new Set((await readChapters(language)).map((chapter: { slug: string }) => chapter.slug));
+      for (const [name, files] of Object.entries(GUIDE_CHAPTERS)) {
+        expect(slugs.has(files[language]), `${language}: ${name} -> ${files[language]}`).toBe(true);
+      }
+    }
+  });
+
+  it("opens the chapter that fits a shape", () => {
+    expect(guideHref("de", "solids")).toBe("/anleitung/koerper-und-aussparungen.html");
+    expect(guideHref("en")).toBe("/guide/index.html");
+    expect(guideChapterForShape({ kind: "text" })).toBe("text");
+    expect(guideChapterForShape({ kind: "thread" })).toBe("threads");
+    expect(guideChapterForShape({ kind: "box", groupedShapes: [{}] })).toBe("solids");
+    expect(guideChapterForShape({ kind: "cylinder" })).toBe("shapes");
+  });
+});

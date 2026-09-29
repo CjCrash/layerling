@@ -1,5 +1,6 @@
 "use client";
 
+import { GuideHelpLink } from "@/components/GuideHelpLink";
 import { Check, X } from "lucide-react";
 import { EdgeModifierSlider } from "@/components/workplane/EdgeModifierPanel";
 import { t } from "@/lib/i18n";
@@ -44,7 +45,10 @@ export function ArrayPanel({
           <strong>{title}</strong>
           <span>{t("array.subtitle")}</span>
         </div>
-        <button type="button" aria-label={t("array.cancel")} onClick={onCancel}><X size={20} /></button>
+        <div className="panel-header-actions">
+          <GuideHelpLink chapter="select" />
+          <button type="button" aria-label={t("array.cancel")} onClick={onCancel}><X size={20} /></button>
+        </div>
       </div>
 
       <div className="edge-modifier-target">

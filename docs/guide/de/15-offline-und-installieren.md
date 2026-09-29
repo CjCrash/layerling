@@ -1,0 +1,44 @@
+---
+title: Als App installieren, ohne Internet arbeiten und selbst hosten
+summary: layerling wie ein normales Programm starten, auch ohne Netz – und wie du es auf einem eigenen Rechner betreibst.
+---
+
+## Als App installieren
+
+layerling lässt sich wie ein normales Programm installieren. Es bekommt dann ein eigenes Symbol und ein eigenes Fenster ohne Adressleiste. Nach dem ersten Besuch startet es auch **ohne Internet**. Deine Entwürfe bleiben dabei auf deinem Rechner.
+
+Auf der Startseite erscheint dafür ein Hinweis mit {{ui:installHint.install}}, wenn dein Browser es kann. Sonst:
+
+- **Chrome und Edge:** Klicke auf das Installieren-Symbol rechts in der Adressleiste, oder wähle im Browsermenü „Als App installieren“.
+- **Safari am Mac:** Menü „Ablage“, dann „Zum Dock hinzufügen“.
+- **Safari auf dem iPhone und iPad:** Teilen-Symbol, dann „Zum Home-Bildschirm“.
+- **Firefox:** kann keine Apps installieren. layerling startet dort aber trotzdem offline im Tab.
+
+Den Hinweis auf der Startseite kannst du mit {{ui:installHint.dismiss}} schließen.
+
+## Aktualisierungen
+
+Wenn es eine neuere Fassung gibt, zeigt layerling das auf der Startseite an. Über {{ui:dashboard.updateBannerLink}} liest du nach, was sich geändert hat. Die Versionsnummer steht unten rechts. Nach einem Neuladen der Seite hast du die neue Fassung.
+
+## Sprache und Aussehen
+
+Die Sprache stellst du oben rechts ein, Deutsch oder Englisch. Das Farbschema daneben bietet {{ui:theme.short.system}} (folgt dem Betriebssystem), {{ui:theme.short.light}}, {{ui:theme.short.dark}} und {{ui:theme.short.graphite}}, ein neutrales Dunkelgrau.
+
+## Selbst betreiben
+
+layerling ist freie Software (AGPL-3.0) und lässt sich auf einem eigenen Rechner oder Server betreiben, etwa in der Werkstatt, im Verein oder in der Schule. Dafür gibt es mehrere Wege, die in der [README auf GitHub](https://github.com/henmedia/layerling/blob/main/README.de.md#loslegen) beschrieben sind:
+
+- **Der Schnellstart unter Windows:** Eine einzige Zeile in PowerShell installiert alles und legt eine Verknüpfung auf dem Desktop an.
+- **Docker:** Für NAS-Geräte und Heimserver, ohne dass Node.js installiert sein muss.
+- **Statischer Export:** Das Ergebnis besteht aus reinen Dateien, die jeder Webserver ausliefern kann. Mit einem beschreibbaren Ordner `store` neben der `index.html` und PHP auf dem Server wird daraus auch die gemeinsame Ablage für Entwürfe.
+
+Die MCP-Brücke für KI-Assistenten gibt es nur beim Entwicklungsserver, siehe [Mit einer KI bauen](chapter:ki-mit-mcp).
+
+## Hilfe und Rückmeldung
+
+- Im Editor liegt im Bereich {{ui:editor.group.help}} die {{ui:editor.guide}} mit den wichtigsten Handgriffen und die Übersicht der [Tastenkürzel](chapter:tastenkuerzel). Die Kurzanleitung verweist bei jedem Abschnitt mit einem Fragezeichen auf das passende Kapitel hier.
+
+![Die Kurzanleitung im Editor. Oben führt ein Knopf zur ausführlichen Anleitung, jeder Abschnitt hat ein Fragezeichen.](shot:quick-guide)
+
+- Fragen, Wünsche und Fehlermeldungen sind im [Forum](https://forum.drucktipps3d.de/forum/board/127-layerling/) und auf [GitHub](https://github.com/henmedia/layerling/discussions) willkommen.
+- Was sich in welcher Version geändert hat, steht in den Versionshinweisen, die du unten auf der Startseite und im Editor findest.

@@ -33,4 +33,15 @@ describe("offline copy of layerling", () => {
     expect(source).toContain('"abc123"');
     expect(source).toContain('["/","/manifold.wasm"]');
   });
+
+  it("keeps the guide's pages for offline use but not its pictures", () => {
+    const paths = precachePaths([
+      "anleitung/index.html",
+      "anleitung/formen.html",
+      "anleitung/img/editor-overview.webp",
+      "guide/shapes.html",
+      "guide/img/editor-overview.webp",
+    ]);
+    expect(paths).toEqual(["/anleitung/formen.html", "/anleitung/index.html", "/guide/shapes.html"]);
+  });
 });

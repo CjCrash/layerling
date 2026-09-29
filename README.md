@@ -30,6 +30,8 @@
 
 <p align="center"><em>layerling in the browser</em></p>
 
+<p align="center"><a href="https://layerling.com/guide/index.html"><strong>User guide</strong></a>, step by step and with pictures</p>
+
 ## Who It Is For
 
 You own a 3D printer. You want a part that fits something, not a career in CAD.
@@ -239,6 +241,8 @@ host-side port on one of them (e.g. `"3100:3000"`).
 | `npm run test:e2e` | End-to-end tests |
 | `npm run build` | Production build (`npm run start` serves it) |
 | `npm run export` | Static export for plain web hosting |
+| `npm run guide` | Build the user guide pages from `docs/guide` (the export and `npm run dev` do this too) |
+| `npm run guide:images` | Retake the guide's pictures from the running program (needs `npm run dev -- -p 3010`; see `docs/guide/README.md`) |
 | `npm run printers:update` | Refresh the printer presets from OrcaSlicer's profiles |
 | `npm run mcp:layerling` | Start the MCP server for AI clients (see below) |
 

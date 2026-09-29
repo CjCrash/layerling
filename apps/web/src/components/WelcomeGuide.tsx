@@ -56,7 +56,9 @@ export function WelcomeGuideBody({ tr }: { tr: Translate }) {
           ))}
         </ul>
       </div>
-      <p className="dashboard-welcome-help">{tr("welcome.help")}</p>
+      <p className="dashboard-welcome-help">
+        {tr("welcome.help")} <a href={tr("welcome.guideUrl")}>{tr("welcome.guideLink")}</a>.
+      </p>
     </>
   );
 }

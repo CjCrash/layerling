@@ -30,6 +30,8 @@
 
 <p align="center"><em>layerling im Browser</em></p>
 
+<p align="center"><a href="https://layerling.com/anleitung/index.html"><strong>Anleitung</strong></a>, Schritt für Schritt und mit Bildern</p>
+
 ## Für wen das gedacht ist
 
 Du hast einen 3D-Drucker. Du willst ein Teil, das passt – keine Laufbahn als CAD-Konstrukteur.
@@ -247,6 +249,8 @@ den Host-Port bei einem der beiden (z. B. `"3100:3000"`).
 | `npm run typecheck` | TypeScript prüfen |
 | `npm run test` | Unit-Tests |
 | `npm run test:e2e` | End-to-End-Tests |
+| `npm run guide` | Die Seiten der Anleitung aus `docs/guide` bauen (Export und `npm run dev` tun das auch) |
+| `npm run guide:images` | Die Bilder der Anleitung neu aus dem laufenden Programm aufnehmen (braucht `npm run dev -- -p 3010`; siehe `docs/guide/README.md`) |
 | `npm run build` | Produktions-Build (`npm run start` liefert ihn aus) |
 | `npm run export` | Statischer Export für einfaches Webhosting |
 | `npm run printers:update` | Druckervorlagen aus den OrcaSlicer-Profilen auffrischen |

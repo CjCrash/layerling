@@ -1,5 +1,6 @@
 "use client";
 
+import { GuideHelpLink } from "@/components/GuideHelpLink";
 import { useEffect, useState, type CSSProperties } from "react";
 import { Check, LoaderCircle, Minus, Plus, RotateCcw, X } from "lucide-react";
 import { displayStepFromMillimeters, displayToMillimeters, formatMeasurementNumber, lengthDisplayUnit, millimetersToDisplay, parseMeasurementInput } from "@/lib/measurementUnits";
@@ -222,7 +223,10 @@ export function EdgeModifierPanel({
           <strong>{title}</strong>
           <span>{edgeModifierSelectionStatus(prepared, selectedCount, availableCount)}</span>
         </div>
-        <button type="button" aria-label={kind === "fillet" ? t("edge.cancelFillet") : t("edge.cancelChamfer")} onClick={onCancel}><X size={20} /></button>
+        <div className="panel-header-actions">
+          <GuideHelpLink chapter="edges" />
+          <button type="button" aria-label={kind === "fillet" ? t("edge.cancelFillet") : t("edge.cancelChamfer")} onClick={onCancel}><X size={20} /></button>
+        </div>
       </div>
 
       <div className={`edge-modifier-target ${groupedCount > 0 ? "grouped" : ""}`}>

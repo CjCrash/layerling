@@ -828,7 +828,7 @@ export function SketchWorkspace({
 
   return (
     <main className="sketch-workspace-stage">
-      <div className="sketch-mode-badge">{operation === "revolve" ? "Revolve sketch" : "Sketch view"}</div>
+      <div className="sketch-mode-badge">{operation === "revolve" ? t("sketch.modeBadgeRevolve") : t("sketch.modeBadge")}</div>
       {operation === "revolve" ? <SketchRevolvePreview positions={revolvePreviewPositions} /> : null}
       <div className="camera-controls sketch-camera-controls" aria-label={t("sketch.viewControls")}>
         <button aria-label={t("sketch.resetView")} onClick={() => { setZoom(1); setPan({ x: 0, z: 0 }); }}><Home size={28} /></button>

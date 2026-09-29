@@ -1,5 +1,7 @@
 "use client";
 
+import { GuideHelpLink } from "@/components/GuideHelpLink";
+import { guideChapterForShape } from "@/lib/guideLinks";
 import { ChevronDown, ChevronUp, LockKeyhole, LockKeyholeOpen, Split } from "lucide-react";
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { ToolbarHideSelectedIcon } from "@/components/icons";
@@ -1456,6 +1458,7 @@ export function ShapeInspector({
         {/* One long word ("Schwalbenschwanz") cannot wrap; it gets a smaller size instead. */}
         <strong className={displayShapeName(shape).split(/\s+/).some((word) => word.length > 14) ? "long-word" : undefined}>{displayShapeName(shape)}</strong>
         <div className="inspector-header-actions">
+          <GuideHelpLink chapter={guideChapterForShape(shape)} className="inspector-help-link" iconSize={31} strokeWidth={2.4} />
           <button className={locked ? "inspector-header-icon active" : "inspector-header-icon"} aria-label={locked ? t("outliner.unlock") : t("outliner.lock")} onClick={() => onUpdate({ locked: !locked })}>
             {locked ? <LockKeyhole size={31} strokeWidth={2.4} /> : <LockKeyholeOpen size={31} strokeWidth={2.4} />}
           </button>

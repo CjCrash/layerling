@@ -11026,3 +11026,96 @@ html[data-theme="dark"] .open-group-cancel {
   color: #f1e4d3;
   border-color: rgba(227, 181, 122, 0.45);
 }
+
+/* Question marks that open the matching chapter of the user guide. They take
+   the colour of whatever they sit in, so every theme keeps them readable. */
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.guide-help-link {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: inherit;
+  border-radius: 7px;
+  opacity: 0.6;
+  text-decoration: none;
+}
+
+.guide-help-link:hover,
+.guide-help-link:focus-visible {
+  background: rgba(127, 127, 127, 0.16);
+  opacity: 1;
+}
+
+.workspace-modal-header .panel-header-actions button,
+.top-action-panel header .panel-header-actions button {
+  display: grid;
+  place-items: center;
+}
+
+.shape-menu-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.shape-menu-title .guide-help-link,
+.guide-modal h3 .guide-help-link,
+.outliner-help-link {
+  width: 24px;
+  height: 24px;
+}
+
+.guide-modal h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.guide-full-link {
+  margin: 0 0 14px;
+}
+
+.guide-full-link a {
+  display: inline-block;
+  padding: 7px 14px;
+  color: #fff;
+  background: #ad6206;
+  border-radius: 8px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.inspector-help-link {
+  width: 34px;
+  height: 38px;
+  color: #6f5840;
+  opacity: 1;
+}
+
+.guide-modal .workspace-modal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.guide-footer-link {
+  padding: 6px 12px;
+  color: #fff;
+  background: #ad6206;
+  border-radius: 8px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+html[data-theme="dark"] .inspector-help-link {
+  color: #ece2d1;
+}

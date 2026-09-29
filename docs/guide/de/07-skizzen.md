@@ -1,0 +1,63 @@
+---
+title: Skizzen: vom Umriss zum Körper
+summary: Einen flachen Umriss zeichnen, Ecken runden oder fasen und daraus einen Körper ziehen oder drehen.
+---
+
+Nicht alles lässt sich aus Grundformen zusammensetzen. Für Teile mit eigener Kontur, etwa einen Halter, ein Zahnprofil oder eine Vase, zeichnest du zuerst den **Umriss** und machst dann einen Körper daraus. Dafür gibt es den Skizzenmodus.
+
+## Eine Skizze beginnen
+
+Wechsle oben von {{ui:editor.modeGeometry}} auf {{ui:editor.modeSketch}}. Klicke im Menüband auf {{ui:sketch.to3d}} und wähle, was aus dem Umriss werden soll:
+
+- **{{ui:sketch.extrude}}:** Der Umriss wird in die Höhe gezogen, wie eine Ausstechform.
+- **{{ui:sketch.revolve}}:** Der Umriss wird um eine Achse gedreht, wie bei einer Drehbank. So entstehen Vasen, Becher, Kegel und alles, was rund ist.
+
+Danach zeigt der Editor ein Blatt mit Gitter. Das ist deine Zeichenfläche.
+
+## Zeichnen
+
+Das Menüband des Skizzenmodus ist in Bereiche geteilt:
+
+- **Zeichnen:** {{ui:sketch.line}} setzt gerade Abschnitte: Punkte nacheinander anklicken. Die {{ui:sketch.bezier}} spannst du an ihren Griffen: Punkt anklicken und ziehen. Die {{ui:sketch.smooth}} legt einen fließenden Verlauf durch die Punkte, die du anklickst. Um den Umriss zu schließen, klickst du am Ende wieder auf den ersten Punkt.
+- **Formen:** {{ui:sketch.addShape}} bietet fertige Umrisse: {{ui:sketch.rectangle}}, {{ui:sketch.circle}}, {{ui:sketch.ellipse}}, {{ui:sketch.halfCircle}}, {{ui:sketch.pieSlice}}, {{ui:sketch.boltCircle}} (eine Scheibe mit Bohrungen), {{ui:sketch.triangle}} und {{ui:sketch.hexagon}}. Wähle eine aus und ziehe einen Rahmen auf.
+- **Auswahl:** {{ui:sketch.select}} verschiebt Punkte und Linien. {{ui:sketch.refine}}: Ein Klick auf einen Abschnitt setzt einen Punkt, ein Klick auf einen Punkt entfernt ihn. Dazu kommen {{ui:sketch.erase}} und das Einfügen eines Vorlagenbilds ({{ui:sketch.addImage}}).
+- **Verlauf:** {{ui:sketch.undo}} und {{ui:sketch.redo}}.
+- **Prüfen:** {{ui:sketch.measure}} misst den Abstand zwischen zwei Punkten.
+
+Ein Körper entsteht nur aus einem **geschlossenen** Umriss.
+
+![Ein L-förmiger Umriss. An jeder Kante steht ihre Länge in Millimetern.](shot:sketch-outline)
+
+## Ecken runden oder fasen
+
+Klicke auf einen Eckpunkt und wähle {{ui:sketch.filletCorner}} oder {{ui:sketch.chamferCorner}}. Es erscheint ein kleines Feld für den {{ui:sketch.filletRadius}} beziehungsweise den {{ui:sketch.chamferDistance}}. Trage das Maß ein und bestätige mit dem Haken. Das geht für Ecken zwischen zwei geraden Linien.
+
+![Die Ecke oben rechts wird mit 12 mm Radius verrundet.](shot:sketch-fillet)
+
+## Ein Körper daraus machen
+
+Klicke auf {{ui:sketch.finishSketch}}. Der Umriss steht als Körper auf der Arbeitsebene und trägt den Namen „Skizzenkörper“. In seinen Einstellungen änderst du die Höhe, die Farbe und alles Weitere wie bei jeder anderen Form.
+
+![Aus dem Umriss ist ein Körper geworden. Die Ecke ist gerundet.](shot:sketch-result)
+
+Mit {{ui:inspector.editSketch}} kehrst du jederzeit in die Skizze zurück, um sie zu ändern. Kantenbearbeitungen, die du an dem Körper schon gemacht hast, gehen dabei allerdings verloren, weil die Kanten neu entstehen.
+
+### Rotieren
+
+Beim Rotieren zeichnest du den halben Querschnitt **links von der Achse**, die in der Skizze eingezeichnet ist. Daneben siehst du eine 3D-Vorschau der Drehung. Sie zeigt sofort, wie der Körper aussieht. Der Umriss muss geschlossen sein. Zum Schluss klickst du auf {{ui:sketch.finishRevolve}}.
+
+## Ein Bild als Vorlage
+
+Mit {{ui:sketch.addImage}} legst du ein Foto oder eine Zeichnung unter die Skizze und zeichnest sie nach. Du kannst die Größe, die Deckkraft und die Lage einstellen. Sobald das Bild richtig liegt, sperrst du es mit [[L]], damit du es beim Zeichnen nicht versehentlich verschiebst.
+
+## Tasten im Skizzenmodus
+
+| Taste | Wirkung |
+| --- | --- |
+| [[Esc]] | Linienzug beenden, Auswahl aufheben |
+| [[Entf]] | gewähltes Element löschen |
+| [[Strg]]+[[Z]] | rückgängig |
+| [[R]] | geschlossene Skizze um 45° drehen |
+| [[L]] | Vorlagenbild sperren oder entsperren |
+
+> **Tipp:** Zeichne so wenig Punkte wie nötig. Ein Umriss mit wenigen, sauber gesetzten Punkten ergibt einen glatteren Körper als ein Gewirr aus vielen.

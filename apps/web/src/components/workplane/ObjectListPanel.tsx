@@ -1,5 +1,6 @@
 "use client";
 
+import { GuideHelpLink } from "@/components/GuideHelpLink";
 import { useMemo, useState, useRef, useEffect, type KeyboardEvent, type MouseEvent } from "react";
 import { ChevronDown, ChevronRight, Eye, EyeOff, FolderOpen, Layers, ListTree, Lock, Pencil, Search, Unlock, X } from "lucide-react";
 import { useLanguage } from "@/lib/useLanguage";
@@ -127,6 +128,7 @@ export function ObjectListPanel({
           <strong>{t("outliner.title")}</strong>
           <span className="outliner-count-badge">{shapes.length}</span>
         </div>
+        <GuideHelpLink chapter="select" className="outliner-help-link" />
         <button
           className="outliner-close-button"
           type="button"

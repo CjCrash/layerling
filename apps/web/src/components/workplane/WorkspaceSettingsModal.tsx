@@ -1,5 +1,6 @@
 "use client";
 
+import { GuideHelpLink } from "@/components/GuideHelpLink";
 import { Box as BoxIcon, ChevronDown, Grid3X3, History, Palette, RotateCcw, Ruler, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -508,9 +509,12 @@ export function WorkspaceSettingsModal({
       <div className="workspace-modal-card" onPointerDown={(event) => event.stopPropagation()}>
         <header className="workspace-modal-header">
           <strong>{t("workspace.title")}</strong>
-          <button aria-label={t("workspace.close")} onClick={onClose}>
-            <X size={18} />
-          </button>
+          <div className="panel-header-actions">
+            <GuideHelpLink chapter="view" />
+            <button aria-label={t("workspace.close")} onClick={onClose}>
+              <X size={18} />
+            </button>
+          </div>
         </header>
 
         <div className="workspace-modal-layout">
