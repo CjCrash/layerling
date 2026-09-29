@@ -3,7 +3,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   loadMessages,
+  parseEnv,
   parseFrontMatter,
+  renderFooter,
   readChapters,
   readShortcutGroups,
   renderBlocks,
@@ -84,6 +86,24 @@ describe("guide markdown", () => {
     const size = webpSize(readFileSync(join(directory, file)));
     expect(size?.width).toBeGreaterThan(100);
     expect(size?.height).toBeGreaterThan(100);
+  });
+});
+
+describe("guide footer", () => {
+  it("reads the settings of an installation, ignoring comments", () => {
+    expect(parseEnv(["# NEXT_PUBLIC_A=x", "NEXT_PUBLIC_IMPRINT_URL=/impressum.html", "", 'B="q"'].join("\n"))).toEqual({ NEXT_PUBLIC_IMPRINT_URL: "/impressum.html", B: "q" });
+  });
+
+  it("shows the legal links of the installation from any folder, and leaves out what is not set", async () => {
+    const messages = await loadMessages("de");
+    const full = renderFooter({ language: "de", messages, version: "9.9.9", environment: { NEXT_PUBLIC_IMPRINT_URL: "/impressum.html", NEXT_PUBLIC_PRIVACY_URL: "/datenschutz.html", NEXT_PUBLIC_SPONSOR_URL: "https://example.org/spende" } });
+    expect(full).toContain('href="/impressum.html">Impressum');
+    expect(full).toContain('href="/datenschutz.html">Datenschutz');
+    expect(full).toContain("https://example.org/spende");
+    expect(full).toContain("v9.9.9");
+    const bare = renderFooter({ language: "en", messages: await loadMessages("en"), version: "1.0.0", environment: {} });
+    expect(bare).not.toMatch(/Imprint|Privacy|impressum/i);
+    expect(bare).toContain("Discussions");
   });
 });
 

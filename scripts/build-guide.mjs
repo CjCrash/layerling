@@ -54,6 +54,54 @@ export const GUIDE_LANGUAGES = {
   },
 };
 
+/** KEY=VALUE lines of an env file; comments and empty lines are skipped. */
+export function parseEnv(text) {
+  const values = {};
+  for (const line of text.split(/\r?\n/)) {
+    const match = /^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line);
+    if (match) values[match[1]] = match[2].replace(/^"(.*)"$/, "$1");
+  }
+  return values;
+}
+
+async function readEnvironment() {
+  let file = {};
+  try {
+    file = parseEnv(await readFile(join(root, "apps", "web", ".env.local"), "utf8"));
+  } catch {
+    // no local settings: the guide then shows only what every installation has
+  }
+  return { ...file, ...process.env };
+}
+
+const SOURCE_CODE = "https://github.com/henmedia/layerling";
+
+/**
+ * The footer of the program, for the guide's pages: the same links from the
+ * same settings (apps/web/.env.local), so an installation shows its own legal
+ * notice and privacy policy here too. Entries that are not set are left out.
+ * The addresses start with "/", so they hold from any folder.
+ */
+export function renderFooter({ language, messages, environment, version }) {
+  const link = (href, label, extra = "") => `<a href="${escapeHtml(href)}"${extra}>${escapeHtml(label)}</a>`;
+  const external = ' rel="noopener"';
+  const fallback = language === "de" ? { imprint: "Impressum", privacy: "Datenschutz" } : { imprint: "Imprint", privacy: "Privacy Policy" };
+  const left = [];
+  const sponsorUrl = environment.NEXT_PUBLIC_SPONSOR_URL?.trim();
+  if (sponsorUrl) left.push(link(sponsorUrl, environment.NEXT_PUBLIC_SPONSOR_LABEL?.trim() || messages["dashboard.sponsor"], external));
+  left.push(link(GUIDE_LANGUAGES[language].forumUrl, messages["dashboard.forum"], external));
+  const imprintUrl = environment.NEXT_PUBLIC_IMPRINT_URL?.trim();
+  if (imprintUrl) left.push(link(imprintUrl, environment.NEXT_PUBLIC_IMPRINT_LABEL?.trim() || fallback.imprint));
+  const privacyUrl = environment.NEXT_PUBLIC_PRIVACY_URL?.trim();
+  if (privacyUrl) left.push(link(privacyUrl, environment.NEXT_PUBLIC_PRIVACY_LABEL?.trim() || fallback.privacy));
+  const right = [
+    link(SOURCE_CODE, messages["dashboard.projectOnGitHub"], external),
+    link(`${SOURCE_CODE}/releases`, (messages["dashboard.releaseNotes"] ?? "").replace("{version}", version), external),
+  ];
+  const group = (items) => `<div>${items.join('<span class="dot" aria-hidden="true">&middot;</span>')}</div>`;
+  return `<footer class="site-footer">${group(left)}${group(right)}</footer>`;
+}
+
 export function escapeHtml(text) {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -338,7 +386,11 @@ th { color: var(--muted); font-size: 12px; letter-spacing: 0.06em; text-transfor
 .cards a:hover { border-color: var(--accent); }
 .cards b { display: block; margin-bottom: 2px; }
 .cards span { color: var(--muted); font-size: 14px; line-height: 1.45; display: block; }
-footer.note { max-width: 1100px; margin: 0 auto; padding: 0 16px 40px; color: var(--muted); font-size: 14px; }
+footer.note { max-width: 1100px; margin: 0 auto; padding: 0 16px 12px; color: var(--muted); font-size: 14px; }
+.site-footer { max-width: 1100px; margin: 0 auto; padding: 14px 16px 40px; border-top: 1px solid var(--edge); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 24px; color: var(--muted); font-size: 13px; }
+.site-footer a { color: var(--muted); text-decoration: none; }
+.site-footer a:hover { color: var(--accent); text-decoration: underline; }
+.site-footer .dot { margin: 0 8px; }
 @media (max-width: 820px) {
   .shell { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   nav.chapters { position: static; }
@@ -351,7 +403,7 @@ footer.note { max-width: 1100px; margin: 0 auto; padding: 0 16px 40px; color: va
 
 const THEME_SCRIPT = `try{var t=localStorage.getItem("layerling.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else if(t==="graphite")document.documentElement.dataset.theme="dark"}catch(e){}`;
 
-function pageShell({ language, title, description, path, alternates, chapters, current, body, switchHref }) {
+function pageShell({ language, title, description, path, alternates, chapters, current, body, switchHref, footer }) {
   const strings = GUIDE_LANGUAGES[language];
   const nav = chapters
     .map((chapter) => `<li><a href="/${strings.dir}/${chapter.slug}.html"${chapter.slug === current ? ' aria-current="page"' : ""}>${escapeHtml(chapter.title)}</a></li>`)
@@ -388,6 +440,7 @@ ${body}
       </main>
     </div>
     <footer class="note">${escapeHtml(strings.sourceNote)} <a href="${strings.forumUrl}" rel="noopener">${escapeHtml(strings.forum)}</a>.</footer>
+    ${footer}
   </body>
 </html>
 `;
@@ -415,6 +468,8 @@ export async function loadMessages(language) {
 export async function buildGuide({ log = console.log } = {}) {
   const result = { pages: [], warnings: [] };
   const shortcutGroups = await readShortcutGroups();
+  const environment = await readEnvironment();
+  const version = JSON.parse(await readFile(join(root, "package.json"), "utf8")).version;
   const chaptersByLanguage = {};
   for (const language of Object.keys(GUIDE_LANGUAGES)) chaptersByLanguage[language] = await readChapters(language);
 
@@ -424,6 +479,7 @@ export async function buildGuide({ log = console.log } = {}) {
     const otherStrings = GUIDE_LANGUAGES[otherLanguage];
     const messages = await loadMessages(language);
     const shortcutsHtml = renderShortcuts(shortcutGroups, messages, language);
+    const footer = renderFooter({ language, messages, environment, version });
     const outputRoot = join(publicDirectory, strings.dir);
     await rm(outputRoot, { recursive: true, force: true });
     await mkdir(join(outputRoot, "img"), { recursive: true });
@@ -469,7 +525,7 @@ export async function buildGuide({ log = console.log } = {}) {
       const body = `<h1>${escapeHtml(chapter.title)}</h1>\n<p class="lead">${escapeHtml(chapter.summary)}</p>\n${toc}\n${rendered.html}\n${pager}`;
       const page = pageShell({
         language, title: `${chapter.title} - ${strings.site}`, description: chapter.summary, path, alternates, chapters,
-        current: chapter.slug, body, switchHref: other ? `/${otherStrings.dir}/${other.slug}.html` : `/${otherStrings.dir}/index.html`,
+        current: chapter.slug, body, footer, switchHref: other ? `/${otherStrings.dir}/${other.slug}.html` : `/${otherStrings.dir}/index.html`,
       });
       await writeFile(join(outputRoot, `${chapter.slug}.html`), page);
       result.pages.push({ path, alternates });
@@ -481,7 +537,7 @@ export async function buildGuide({ log = console.log } = {}) {
     const indexPath = `/${strings.dir}/index.html`;
     const indexPage = pageShell({
       language, title: strings.site, description: strings.overviewLead, path: indexPath,
-      alternates: { [language]: indexPath, [otherLanguage]: `/${otherStrings.dir}/index.html` }, chapters, current: "",
+      alternates: { [language]: indexPath, [otherLanguage]: `/${otherStrings.dir}/index.html` }, chapters, current: "", footer,
       body: `<h1>${escapeHtml(strings.site)}</h1>\n<p class="lead">${escapeHtml(strings.overviewLead)}</p>\n<ul class="cards">${cards}</ul>`,
       switchHref: `/${otherStrings.dir}/index.html`,
     });
