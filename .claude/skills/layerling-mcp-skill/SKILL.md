@@ -63,6 +63,7 @@ Useful tools:
 - `layerling_import_mesh`: import STL-style mesh data into the editor.
 - `layerling_update_object`: set exact dimensions, position, color, name, hole state, `rotation`/`rotationX`/`rotationZ`, `locked`/`hidden`, and the same shape settings `layerling_create_shape` takes - the side count of a cylinder, the diameter of a thread, the turns of a spring, the taper of a box, the lettering of a text. A locked object refuses every change until the same call passes `locked: false`. Changing a thread's diameter moves its width and depth with it, and a head that sat at its standard height moves to the standard for the new size.
 - `layerling_align_objects`: align two or more ids using the same logic as the editor Alignment button.
+- `layerling_lay_flat`: turn objects so a face rests on the workplane, like the editor's Lay flat tool. Pass `face` (`bottom`/`top`/`left`/`right`/`front`/`back`, a side of the object's own box in its current turn) or `normal` `[x, y, z]` in world coordinates; both snap to the nearest real face. Several ids turn together and keep their spacing.
 - `layerling_group_objects`: group selected ids using the normal layerling group/boolean path.
 - `layerling_boolean_cut`: pass `solidIds` and `holeIds`; the result replaces the operands.
 - `layerling_ungroup_objects`: restore grouped children while preserving edited child geometry.

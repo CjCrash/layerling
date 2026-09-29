@@ -3033,6 +3033,85 @@ function boundsForShapes(shapes: WorkplaneShape[]): Cuboid {
   return boundsForCuboids(bounds);
 }
 
+/** A side of an object's own box, named as MCP names it, in the object's unturned frame. */
+const LAY_FLAT_SIDES = {
+  bottom: [0, -1, 0],
+  top: [0, 1, 0],
+  left: [-1, 0, 0],
+  right: [1, 0, 0],
+  back: [0, 0, -1],
+  front: [0, 0, 1],
+} as const;
+type LayFlatSide = keyof typeof LAY_FLAT_SIDES;
+
+/**
+ * The outward normal of the real face of a body that points closest to
+ * `direction` - so a rough direction, or a side of the box, lands an actual
+ * face flat and not a tilt between two. Mesh winding is not always
+ * consistent, so "outward" is taken as away from the body's centre; a face
+ * never counts the wrong way round (the bottom never passes for the top).
+ */
+function nearestFaceNormal(shape: WorkplaneShape, direction: THREE.Vector3): THREE.Vector3 | null {
+  const mesh = meshForShape(shape);
+  const wanted = direction.clone().normalize();
+  const centre = new THREE.Vector3();
+  mesh.vertices.forEach(([x, y, z]) => centre.add(new THREE.Vector3(x, y, z)));
+  if (mesh.vertices.length) centre.divideScalar(mesh.vertices.length);
+  const ab = new THREE.Vector3();
+  const ac = new THREE.Vector3();
+  let best: THREE.Vector3 | null = null;
+  let bestScore = -Infinity;
+  mesh.faces.forEach(([ia, ib, ic]) => {
+    const a = mesh.vertices[ia];
+    const b = mesh.vertices[ib];
+    const c = mesh.vertices[ic];
+    if (!a || !b || !c) return;
+    ab.set(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+    ac.set(c[0] - a[0], c[1] - a[1], c[2] - a[2]);
+    const normal = ab.clone().cross(ac);
+    if (normal.lengthSq() < 1e-12) return;
+    normal.normalize();
+    const middle = new THREE.Vector3((a[0] + b[0] + c[0]) / 3 - centre.x, (a[1] + b[1] + c[1]) / 3 - centre.y, (a[2] + b[2] + c[2]) / 3 - centre.z);
+    if (normal.dot(middle) < 0) normal.negate();
+    const score = normal.dot(wanted);
+    if (score > bestScore + 1e-9) {
+      bestScore = score;
+      best = normal;
+    }
+  });
+  return best;
+}
+
+/**
+ * Turns `movable` so the face with outward `normal` rests on the workplane -
+ * the shortest turn, one pivot for a group so it keeps its spacing - and moves
+ * them down onto it together. The same step the "Lay flat" tool takes after a
+ * click on a face.
+ */
+function laidFlatShapes(shapes: WorkplaneShape[], movable: WorkplaneShape[], normal: { x: number; y: number; z: number }, workplane: PlacementWorkplane): WorkplaneShape[] {
+  const rotation = layFlatRotation(normal, workplane.normal);
+  const pivot = movable.length > 1 ? selectionCenterOnWorkplane(movable, workplane) : null;
+  const turned = new Map(movable.map((shape) => [
+    shape.id,
+    canonicalizeShape(bakeShapeTransformIntoMesh(canonicalizeShape({ ...shape, ...rotatedGeometryShapePatch(shape, rotation, pivot) }))),
+  ]));
+  // One translation for the whole selection, so it stays together as it lands.
+  const translation = translationToWorkplane(
+    workplane,
+    [...turned.values()].flatMap((shape) => meshForShape(shape).vertices.map(([x, y, z]) => ({ x, y, z }))),
+  );
+  return shapes.map((shape) => {
+    const next = turned.get(shape.id);
+    if (!next) return shape;
+    return {
+      ...next,
+      x: cleanNearZero(next.x + translation.x),
+      z: cleanNearZero(next.z + translation.z),
+      elevation: cleanNearZero((next.elevation ?? 0) + translation.y),
+    };
+  });
+}
+
 function selectionCenterOnWorkplane(shapes: WorkplaneShape[], workplane: PlacementWorkplane) {
   const xAxis = new THREE.Vector3(workplane.xAxis.x, workplane.xAxis.y, workplane.xAxis.z).normalize();
   const yAxis = new THREE.Vector3(workplane.normal.x, workplane.normal.y, workplane.normal.z).normalize();
@@ -9039,31 +9118,7 @@ export function LayerlingEditor({
       setNotice(t("status.selectionLocked"));
       return;
     }
-    const rotation = layFlatRotation(pick.normal, placementWorkplane.normal);
-    const pivot = movable.length > 1 ? selectionCenterOnWorkplane(movable, placementWorkplane) : null;
-    const turned = new Map(movable.map((shape) => [
-      shape.id,
-      canonicalizeShape(bakeShapeTransformIntoMesh(canonicalizeShape({ ...shape, ...rotatedGeometryShapePatch(shape, rotation, pivot) }))),
-    ]));
-    // One translation for the whole selection, so it stays together as it lands.
-    const translation = translationToWorkplane(
-      placementWorkplane,
-      [...turned.values()].flatMap((shape) => meshForShape(shape).vertices.map(([x, y, z]) => ({ x, y, z }))),
-    );
-    commitShapes(
-      shapes.map((shape) => {
-        const next = turned.get(shape.id);
-        if (!next) return shape;
-        return {
-          ...next,
-          x: cleanNearZero(next.x + translation.x),
-          z: cleanNearZero(next.z + translation.z),
-          elevation: cleanNearZero((next.elevation ?? 0) + translation.y),
-        };
-      }),
-      selectedIds,
-      t("status.laidFlat"),
-    );
+    commitShapes(laidFlatShapes(shapes, movable, pick.normal, placementWorkplane), selectedIds, t("status.laidFlat"));
   }, [commitShapes, placementWorkplane, selectedIds, selectedShapes, shapes]);
 
   const centerSelectionOnWorkplane = useCallback(() => {
@@ -9515,7 +9570,9 @@ export function LayerlingEditor({
           const sauber = cleanShapePatch(patch);
           const neugebaut = patchTouchesBodyParameters(sauber) ? rebuiltParametricShape(shape, sauber) : null;
           if (neugebaut) return neugebaut;
-          const patched = { ...shape, ...curvedTextPatch(shape, sauber) };
+          const merged = { ...shape, ...curvedTextPatch(shape, sauber) };
+          // Solid/hole goes through the same rule as the inspector: a mixed group keeps its parts' own state.
+          const patched = typeof sauber.hole === "boolean" ? withHoleMode(merged, sauber.hole, sauber.color) : merged;
           const width = shapeWidth(patched);
           const depth = shapeDepth(patched);
           const canonical = canonicalizeShape({ ...patched, size: Math.max(width, depth) });
@@ -9524,6 +9581,37 @@ export function LayerlingEditor({
         const updated = nextShapes.find((shape) => shape.id === target.id) as WorkplaneShape;
         commitShapes(nextShapes, target.id, t("status.shapeUpdatedMcp", { name: displayShapeName(updated) }));
         return { object: mcpShapeSummary(updated) };
+      }
+
+      if (command.action === "lay_flat") {
+        const requestedIds = mcpStringArray(params.ids ?? params.id);
+        const ids = new Set(requestedIds.length ? requestedIds : selectedIdsRef.current);
+        const all = currentShapes();
+        const movable = all.filter((shape) => ids.has(shape.id));
+        if (movable.length === 0) throw new Error("lay_flat needs ids or a selection");
+        if (movable.some((shape) => shape.locked)) throw new Error("Unlock the objects before laying them flat");
+        const referenceId = typeof params.referenceId === "string" ? params.referenceId : movable[0].id;
+        const reference = movable.find((shape) => shape.id === referenceId) ?? movable[0];
+        const side = typeof params.face === "string" && params.face in LAY_FLAT_SIDES ? params.face as LayFlatSide : null;
+        const rawNormal = Array.isArray(params.normal) ? params.normal : null;
+        let direction: THREE.Vector3 | null = null;
+        if (rawNormal && rawNormal.length === 3 && rawNormal.every((value) => typeof value === "number" && Number.isFinite(value))) {
+          direction = new THREE.Vector3(rawNormal[0] as number, rawNormal[1] as number, rawNormal[2] as number);
+        } else if (side) {
+          // A side of the object's own box, turned the way the object is turned.
+          const [x, y, z] = LAY_FLAT_SIDES[side];
+          direction = new THREE.Vector3(x, y, z).applyQuaternion(quaternionForShape(reference));
+        }
+        if (!direction || direction.lengthSq() < 1e-12) throw new Error("lay_flat needs face (bottom/top/left/right/front/back) or a normal [x, y, z]");
+        const normal = nearestFaceNormal(reference, direction);
+        if (!normal) throw new Error("lay_flat found no face on that object");
+        const nextShapes = laidFlatShapes(all, movable, { x: normal.x, y: normal.y, z: normal.z }, placementWorkplaneRef.current);
+        commitShapes(nextShapes, movable.map((shape) => shape.id), t("status.laidFlat"));
+        const movedIds = new Set(movable.map((shape) => shape.id));
+        return {
+          normal: [normal.x, normal.y, normal.z].map((value) => Number(value.toFixed(4))),
+          objects: nextShapes.filter((shape) => movedIds.has(shape.id)).map(mcpShapeSummary),
+        };
       }
 
       if (command.action === "align_objects") {

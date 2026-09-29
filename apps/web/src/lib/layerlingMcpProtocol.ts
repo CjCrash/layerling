@@ -85,6 +85,7 @@ export type LayerlingMcpCommandName =
   | "import_mesh"
   | "update_object"
   | "align_objects"
+  | "lay_flat"
   | "group_objects"
   | "ungroup_objects"
   | "boolean_cut"

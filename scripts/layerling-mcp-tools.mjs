@@ -250,6 +250,20 @@ export const tools = [
     },
   },
   {
+    name: "layerling_lay_flat",
+    description: "Turn objects so one of their faces rests on the workplane - the editor's Lay flat on face tool. Name a side of the object's own box (face) or give the outward normal of the face in world coordinates (normal); either snaps to the nearest real face. Several objects turn together about their common centre and keep their spacing. One undo step.",
+    inputSchema: {
+      ...editorTargetSchema,
+      properties: {
+        ...editorTargetSchema.properties,
+        ids: { type: "array", items: { type: "string" }, description: "Object ids to lay flat. If omitted, uses the current selection." },
+        face: { type: "string", enum: ["bottom", "top", "left", "right", "front", "back"], description: "Side of the object's own box that should end up on the plate, taken in the object's current turn." },
+        normal: { type: "array", items: { type: "number" }, minItems: 3, maxItems: 3, description: "Outward normal [x, y, z] of the face to put down, in world coordinates (y is up). Wins over face." },
+        referenceId: { type: "string", description: "With several ids: whose face is meant. Defaults to the first id." },
+      },
+    },
+  },
+  {
     name: "layerling_group_objects",
     description: "Group objects by id using Layerling's normal grouping/boolean pipeline.",
     inputSchema: {
