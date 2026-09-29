@@ -110,6 +110,7 @@ export const shapeSettingSchema = {
   textRadius: { type: "number", description: "Curved text only: radius of the circle the baseline follows, in mm (5 to 500)." },
   textSize: { type: "number", description: "Curved text only: letter size in mm. Defaults to the size the straight text had." },
   textInward: { type: "boolean", description: "Curved text only: true runs the line along the bottom of the circle, letters pointing at the centre." },
+  textFlipped: { type: "boolean", description: "Curved text only: true keeps the line where it is on the circle but turns the letters upside down, to be read from the other side." },
 };
 
 export const tools = [

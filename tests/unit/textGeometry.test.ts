@@ -121,6 +121,28 @@ describe("textGeometry", () => {
     expect(box.max.z).toBeLessThan(0);
   });
 
+  it("turns the letters upside down but keeps the line on its side of the circle", () => {
+    const measure = (textFlipped: boolean) => {
+      const shape = mockShape({ text: "HHH", textCurved: true, textRadius: 40, textSize: 10, textFlipped });
+      const geometry = createTextGeometry({ ...shape, ...curvedTextFootprint(shape) });
+      geometry.computeBoundingBox();
+      const position = geometry.getAttribute("position");
+      let inner = Infinity;
+      for (let index = 0; index < position.count; index += 1) {
+        inner = Math.min(inner, Math.hypot(position.getX(index), position.getZ(index)));
+      }
+      return { inner, maxZ: geometry.boundingBox!.max.z };
+    };
+    const upright = measure(false);
+    const flipped = measure(true);
+    // Both along the top of the circle ...
+    expect(upright.maxZ).toBeLessThan(0);
+    expect(flipped.maxZ).toBeLessThan(0);
+    // ... upright stands on the circle and points out, flipped hangs from it towards the centre.
+    expect(upright.inner).toBeCloseTo(40, 0);
+    expect(flipped.inner).toBeLessThan(34);
+  });
+
   it("takes the straight letter size when the curve is switched on, and the box follows", () => {
     const straight = mockShape({ text: "TEXT", width: 86, depth: 28 });
     const patch = curvedTextPatch(straight, { textCurved: true });

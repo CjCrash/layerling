@@ -74,7 +74,10 @@ function buildCurvedText(shape: WorkplaneShape): THREE.BufferGeometry | null {
 
   const advances = chars.map((char) => advanceOf(font, char, size));
   const totalLength = advances.reduce((sum, advance) => sum + advance, 0);
-  const inward = Boolean(shape.textInward);
+  // Upside down: lay the line out the other way round, then turn it half a
+  // circle about the centre - it lands back on the same side of the circle.
+  const flipped = Boolean(shape.textFlipped);
+  const inward = Boolean(shape.textInward) !== flipped;
   const options = textOptions(shape, size);
   const placed: THREE.BufferGeometry[] = [];
 
@@ -105,6 +108,7 @@ function buildCurvedText(shape: WorkplaneShape): THREE.BufferGeometry | null {
   if (!placed.length) return null;
   const merged = mergeGeometries(placed, false);
   placed.forEach((glyph) => glyph.dispose());
+  if (flipped) merged.rotateY(Math.PI);
   merged.computeBoundingBox();
   const box = merged.boundingBox;
   if (box) merged.translate(0, -box.min.y, 0);
@@ -130,7 +134,7 @@ const footprintCache = new Map<string, { width: number; depth: number }>();
 
 /** The width and depth curved text takes at its own radius and letter size. */
 export function curvedTextFootprint(shape: WorkplaneShape): { width: number; depth: number } {
-  const key = JSON.stringify([textOf(shape), shape.font ?? "Multilanguage", curvedSize(shape), curvedRadius(shape), Boolean(shape.textInward), shape.bevel ?? 0]);
+  const key = JSON.stringify([textOf(shape), shape.font ?? "Multilanguage", curvedSize(shape), curvedRadius(shape), Boolean(shape.textInward), Boolean(shape.textFlipped), shape.bevel ?? 0]);
   const cached = footprintCache.get(key);
   if (cached) return cached;
   const geometry = buildCurvedText({ ...shape, height: 1 });
@@ -153,7 +157,7 @@ function straightTextExtent(shape: WorkplaneShape) {
   return extent;
 }
 
-const CURVE_KEYS = ["textCurved", "textRadius", "textInward", "textSize", "text", "font", "bevel"] as const;
+const CURVE_KEYS = ["textCurved", "textRadius", "textInward", "textFlipped", "textSize", "text", "font", "bevel"] as const;
 
 /**
  * Keeps curved text and its box in step. Straight text simply fills its box;

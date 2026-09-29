@@ -1253,6 +1253,13 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
           value: Boolean(shape.textInward),
           onChange: (textInward) => onUpdate({ textInward }),
         },
+        {
+          type: "toggle",
+          id: "textFlipped",
+          label: t("prop.textFlipped"),
+          value: Boolean(shape.textFlipped),
+          onChange: (textFlipped) => onUpdate({ textFlipped }),
+        },
       );
     }
     return properties;

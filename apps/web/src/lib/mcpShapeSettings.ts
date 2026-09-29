@@ -37,5 +37,5 @@ export const MCP_SHAPE_SETTING_KEYS = [
   "cornerFillet", "topBottomFillet", "roundedBoxQuality",
   "bentTubeProfile", "bentTubeInnerProfile", "bentTubeSize", "bentTubeWall", "bentTubeQuality", "bentTubeSegments",
   "text", "font",
-  "textCurved", "textRadius", "textSize", "textInward",
+  "textCurved", "textRadius", "textSize", "textInward", "textFlipped",
 ] as const satisfies readonly (keyof WorkplaneShape)[];

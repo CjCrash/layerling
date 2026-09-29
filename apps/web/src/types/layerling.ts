@@ -142,6 +142,8 @@ export type ShapeCustomization = {
   textSize?: number;
   /** Curved text: run along the bottom of the circle, letters pointing at the centre. */
   textInward?: boolean;
+  /** Curved text: same place on the circle, letters turned upside down (read from the other side). */
+  textFlipped?: boolean;
 };
 
 export type ShapeCustomizationMap = Partial<Record<ShapeKind, ShapeCustomization>>;
@@ -431,6 +433,8 @@ export type WorkplaneShape = {
   textSize?: number;
   /** Curved text: run along the bottom of the circle, letters pointing at the centre. */
   textInward?: boolean;
+  /** Curved text: same place on the circle, letters turned upside down (read from the other side). */
+  textFlipped?: boolean;
   importedMesh?: {
     positions: number[];
     normals?: number[];

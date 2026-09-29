@@ -674,6 +674,7 @@ export function WorkspaceSettingsModal({
                     label={t("workspace.size")}
                     value={workspace.sizePreset}
                     options={WORKSPACE_SIZE_PRESETS.map((preset) => preset.label)}
+                    optionLabel={gridBlockPresetLabel}
                     onChange={setWorkspaceSizePreset}
                   />
                   <div className="workspace-dimensions">

@@ -6137,7 +6137,7 @@ export function LayerlingEditor({
   }, [editorLanguage, setNotice]);
   useEffect(() => {
     if (!cruiseAsset) return;
-    setNotice(t("status.cruisePlace", { name: cruiseAsset.name }), true);
+    setNotice(t("status.cruisePlace", { name: shapeAssetLabel(cruiseAsset) }), true);
   }, [cruiseAsset, editorLanguage, setNotice]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const projectFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -7866,7 +7866,7 @@ export function LayerlingEditor({
         ...shape,
         ...placementPatchForNewShape(shape, placementWorkplane, point ?? placementWorkplane.origin),
       };
-      commitShapes([...shapes, nextShape], nextShape.id, t("status.shapeAdded", { name: asset.name }));
+      commitShapes([...shapes, nextShape], nextShape.id, t("status.shapeAdded", { name: shapeAssetLabel(asset) }));
     },
     [commitShapes, placementWorkplane, shapes],
   );
@@ -8194,12 +8194,12 @@ export function LayerlingEditor({
       const shape = shapes.find((entry) => entry.id === id);
       const lockedAnchor = selectedShapes.find((entry) => entry.locked);
       if (lockedAnchor && lockedAnchor.id !== id) {
-        setNotice(t("status.alignAnchor", { name: lockedAnchor.name }));
+        setNotice(t("status.alignAnchor", { name: displayShapeName(lockedAnchor) }));
         return;
       }
       setAlignAnchorId(id);
       setAlignPreview(null);
-      setNotice(shape ? t("status.alignAnchorNamed", { name: shape.name }) : t("status.alignAnchorSet"));
+      setNotice(shape ? t("status.alignAnchorNamed", { name: displayShapeName(shape) }) : t("status.alignAnchorSet"));
     },
     [selectedIds, selectedShapes, shapes],
   );
@@ -8896,7 +8896,7 @@ export function LayerlingEditor({
     const target = shapes.find((s) => s.id === id);
     if (!target) return;
     const nextLocked = !target.locked;
-    const shapeLabel = target.name?.trim() || t((`shape.${target.kind}`) as MessageKey) || target.kind;
+    const shapeLabel = displayShapeName(target);
     commitShapes(
       shapes.map((s) => (s.id === id ? { ...s, locked: nextLocked } : s)),
       selectedIds,
@@ -8908,7 +8908,7 @@ export function LayerlingEditor({
     const target = shapes.find((s) => s.id === id);
     if (!target) return;
     const nextHidden = !target.hidden;
-    const shapeLabel = target.name?.trim() || t((`shape.${target.kind}`) as MessageKey) || target.kind;
+    const shapeLabel = displayShapeName(target);
     commitShapes(
       shapes.map((s) => (s.id === id ? { ...s, hidden: nextHidden } : s)),
       nextHidden ? selectedIds.filter((selId) => selId !== id) : selectedIds,
@@ -9370,7 +9370,7 @@ export function LayerlingEditor({
           throw new Error(`MCP create_shape does not know a shape called "${rawKind}"`);
         }
         const committedShape = canonicalizeShape(bakeShapeTransformIntoMesh(shape));
-        commitShapes([...currentShapes(), committedShape], committedShape.id, t("status.shapeAddedMcp", { name: committedShape.name }));
+        commitShapes([...currentShapes(), committedShape], committedShape.id, t("status.shapeAddedMcp", { name: displayShapeName(committedShape) }));
         return { object: mcpShapeSummary(committedShape) };
       }
 
@@ -9427,7 +9427,7 @@ export function LayerlingEditor({
           locked: false,
           hidden: false,
         } satisfies WorkplaneShape);
-        commitShapes([...currentShapes(), shape], shape.id, t("status.shapeImportedMcp", { name: shape.name }));
+        commitShapes([...currentShapes(), shape], shape.id, t("status.shapeImportedMcp", { name: displayShapeName(shape) }));
         return { object: mcpShapeSummary(shape) };
       }
 
@@ -9522,7 +9522,7 @@ export function LayerlingEditor({
           return rotationWasRequested ? canonicalizeShape(bakeShapeTransformIntoMesh(canonical)) : canonical;
         });
         const updated = nextShapes.find((shape) => shape.id === target.id) as WorkplaneShape;
-        commitShapes(nextShapes, target.id, t("status.shapeUpdatedMcp", { name: updated.name }));
+        commitShapes(nextShapes, target.id, t("status.shapeUpdatedMcp", { name: displayShapeName(updated) }));
         return { object: mcpShapeSummary(updated) };
       }
 

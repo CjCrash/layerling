@@ -1063,6 +1063,7 @@ function tapeShapeTopologyKey(shape: WorkplaneShape): string {
     textRadius: shape.textRadius,
     textSize: shape.textSize,
     textInward: shape.textInward,
+    textFlipped: shape.textFlipped,
     mesh: [positions.length, positionSample],
     brep: [brep.length, brepSample],
     treatments: shape.edgeTreatments,
@@ -1252,6 +1253,7 @@ function shapeGeometrySignature(shape: WorkplaneShape): string {
     textRadius: shape.textRadius,
     textSize: shape.textSize,
     textInward: shape.textInward,
+    textFlipped: shape.textFlipped,
   });
 }
 
