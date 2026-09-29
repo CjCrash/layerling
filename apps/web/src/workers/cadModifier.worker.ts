@@ -333,9 +333,25 @@ function reconstructParts(cad: OcctKernel, parts: CadModifierMeshPart[]) {
     result = cad.simplify(result);
     result = cad.unifySameDomain(result);
   }
-  result = cad.fixShape(result);
+  const combined = result;
+  // The repair runs on a copy: ShapeFix also rewrites the sub-shapes it
+  // shares with its input, so a body it breaks would be broken for the
+  // fallback below as well.
+  result = cad.fixShape(cad.copy(combined));
   result = cad.simplify(result);
   result = cad.unifySameDomain(result);
+  if (!cadShapeIsValid(cad, result) && cadShapeIsValid(cad, combined)) {
+    // The repair can break a body that was valid to begin with: a filleted
+    // text (several glyph solids with curved fillets) comes back from its
+    // stored BREP valid, and fixShape turns it invalid, so a second edge
+    // treatment on it failed. Keep the body as it was.
+    try {
+      const untouched = cad.unifySameDomain(cad.simplify(combined));
+      result = cadShapeIsValid(cad, untouched) ? untouched : combined;
+    } catch {
+      result = combined;
+    }
+  }
   if (!cadShapeIsValid(cad, result)) throw new Error("The grouped solid could not be repaired into valid topology");
   return result;
 }

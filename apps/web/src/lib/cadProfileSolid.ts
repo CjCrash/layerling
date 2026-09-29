@@ -3,10 +3,11 @@ import type { CadModifierProfileLoop, CadModifierProfilePart, CadModifierProfile
 
 /*
  * Exact solids for catalog shapes that are an outline pushed straight up
- * (star, heart, crescent, slot, polygon, honeycomb, spur gear). The outline arrives as
- * lines and circular or elliptical arcs; the kernel gets real arcs and flat
- * caps, so a star is 22 faces instead of one face per display triangle, and
- * fillets and chamfers on it cost milliseconds instead of seconds.
+ * (star, heart, crescent, slot, polygon, honeycomb, spur gear, text). The
+ * outline arrives as lines, circular or elliptical arcs and Bezier curves; the
+ * kernel gets real curves and flat caps, so a star is 22 faces instead of one
+ * face per display triangle, and fillets and chamfers on it cost milliseconds
+ * instead of seconds.
  *
  * No three.js here: the CAD worker and the kernel tests import this file.
  */
@@ -36,6 +37,8 @@ export function profileLoopBounds(loop: CadModifierProfileLoop) {
   };
   loop.segments.forEach((segment) => {
     add(segment);
+    // A Bezier curve stays inside the hull of its control points.
+    if (segment.kind === "bezier") segment.controls.forEach(add);
     if (segment.kind !== "arc") return;
     const low = Math.min(segment.start, segment.end);
     const high = Math.max(segment.start, segment.end);
@@ -44,6 +47,41 @@ export function profileLoopBounds(loop: CadModifierProfileLoop) {
     }
   });
   return [minX, minZ, maxX, maxZ];
+}
+
+/** Points along a segment from `from`, its end included; curves sampled finely. */
+function segmentPoints(from: Point, segment: CadModifierProfileSegment): Point[] {
+  if (segment.kind === "line") return [{ x: segment.x, z: segment.z }];
+  const steps = 64;
+  const points: Point[] = [];
+  for (let step = 1; step <= steps; step += 1) {
+    const t = step / steps;
+    if (segment.kind === "arc") {
+      points.push(profileArcPoint(segment, segment.start + (segment.end - segment.start) * t));
+    } else {
+      let row: Point[] = [from, ...segment.controls, { x: segment.x, z: segment.z }];
+      while (row.length > 1) row = row.slice(1).map((point, index) => ({ x: row[index].x + (point.x - row[index].x) * t, z: row[index].z + (point.z - row[index].z) * t }));
+      points.push(row[0]);
+    }
+  }
+  return points;
+}
+
+/** Area inside a profile - outer loop minus holes - from finely sampled outlines. */
+export function profileArea(profile: CadModifierProfilePart) {
+  const loopArea = (loop: CadModifierProfileLoop) => {
+    let twice = 0;
+    let current: Point = { x: loop.x, z: loop.z };
+    loop.segments.forEach((segment) => {
+      segmentPoints(current, segment).forEach((point) => {
+        twice += current.x * point.z - point.x * current.z;
+        current = point;
+      });
+    });
+    return Math.abs(twice) / 2;
+  };
+  const [outer, ...holes] = profile.loops;
+  return loopArea(outer) - holes.reduce((total, hole) => total + loopArea(hole), 0);
 }
 
 function profileExtent(profile: CadModifierProfilePart) {
@@ -69,7 +107,9 @@ export function validateCadProfile(profile: CadModifierProfilePart) {
     loop.segments.forEach((segment) => {
       const values = segment.kind === "arc"
         ? [segment.x, segment.z, segment.cx, segment.cz, segment.rx, segment.rz, segment.start, segment.end]
-        : [segment.x, segment.z];
+        : segment.kind === "bezier"
+          ? [segment.x, segment.z, ...segment.controls.flatMap((control) => [control.x, control.z])]
+          : [segment.x, segment.z];
       if (!values.every(Number.isFinite)) throw new Error("The profile outline has an invalid point");
       if (segment.kind === "arc") {
         const sweep = Math.abs(segment.end - segment.start);
@@ -78,6 +118,11 @@ export function validateCadProfile(profile: CadModifierProfilePart) {
         }
         if (!samePoint(profileArcPoint(segment, segment.start), current, tolerance) || !samePoint(profileArcPoint(segment, segment.end), segment, tolerance)) {
           throw new Error("A profile arc does not meet its neighbours");
+        }
+      } else if (segment.kind === "bezier") {
+        if (segment.controls.length < 1 || segment.controls.length > 2) throw new Error("The profile outline has an invalid curve");
+        if ([segment, ...segment.controls].every((point) => samePoint(current, point, tolerance))) {
+          throw new Error("The profile outline has a zero-length curve");
         }
       } else if (samePoint(current, segment, tolerance)) {
         throw new Error("The profile outline has a zero-length line");
@@ -129,6 +174,7 @@ function ellipseArcEdge(cad: OcctKernel, from: Point, arc: ProfileArc, tolerance
 
 function segmentEdge(cad: OcctKernel, from: Point, segment: CadModifierProfileSegment, tolerance: number) {
   if (segment.kind === "line") return cad.makeLineEdge(vec(from), vec(segment));
+  if (segment.kind === "bezier") return cad.makeBezierEdge([vec(from), ...segment.controls.map(vec), vec(segment)]);
   if (Math.abs(segment.rx - segment.rz) <= 1e-9 * Math.max(segment.rx, segment.rz)) {
     return cad.makeArcEdge(vec(from), vec(profileArcPoint(segment, (segment.start + segment.end) / 2)), vec(segment));
   }
@@ -160,13 +206,28 @@ export function profileExtrusionSolid(cad: OcctKernel, profile: CadModifierProfi
   const solids = cad.isSolid(solid) ? [solid] : cad.getSubShapes(solid, "solid");
   if (solids.length !== 1) throw new Error("The profile did not become one solid");
   solid = solids[0];
-  let valid = false;
-  try {
-    valid = Boolean(cad.isValid(solid));
-  } catch {
-    valid = false;
+  const isValid = (candidate: ShapeHandle) => {
+    try {
+      return Boolean(cad.isValid(candidate));
+    } catch {
+      return false;
+    }
+  };
+  if (!isValid(solid)) {
+    // Some font outlines (the "1" of the Rounded face, for one) come out of
+    // the face builder flagged invalid, and the kernel's own repair fixes
+    // them. It is only kept when it did not change the body: its volume has to
+    // match the outline's area times the height - elsewhere the repair can
+    // throw away most of a glyph and still call the rest valid.
+    const repaired = cad.fixShape(solid);
+    const repairedSolids = cad.isSolid(repaired) ? [repaired] : cad.getSubShapes(repaired, "solid");
+    if (repairedSolids.length !== 1 || !isValid(repairedSolids[0])) throw new Error("The profile solid is not valid");
+    const expectedVolume = profileArea(profile) * profile.height;
+    if (!(Math.abs(cad.getVolume(repairedSolids[0]) - expectedVolume) <= 0.005 * expectedVolume)) {
+      throw new Error("The repaired profile solid does not keep the outline's volume");
+    }
+    solid = repairedSolids[0];
   }
-  if (!valid) throw new Error("The profile solid is not valid");
   if (!(cad.getVolume(solid) > 0)) throw new Error("The profile solid is inside out");
   return solid;
 }

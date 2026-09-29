@@ -4,7 +4,8 @@ import { dirname, join } from "node:path";
 import * as THREE from "three";
 import { OcctKernel, type ShapeHandle } from "occt-wasm";
 import type { WorkplaneShape } from "@/types/layerling";
-import { cadModifierProfileForShape, cadProfileExpectation } from "@/lib/cadProfileExtrusion";
+import { cadModifierProfileForShape, cadProfileExpectation, textGlyphProfiles } from "@/lib/cadProfileExtrusion";
+import { loadTextFonts } from "@/lib/textFonts";
 import { cadProfileSolidMismatch, profileExtrusionSolid } from "@/lib/cadProfileSolid";
 import type { CadModifierProfilePart } from "@/lib/cadModifierTypes";
 import { createStarGeometry } from "@/lib/starGeometry";
@@ -14,6 +15,7 @@ import { createSlotGeometry } from "@/lib/slotGeometry";
 import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
 import { createPrismGeometry } from "@/lib/prismGeometry";
 import { createGearGeometry } from "@/lib/gearGeometry";
+import { createTextGeometry, curvedTextFootprint } from "@/lib/textGeometry";
 
 /*
  * Exact profile bodies against the real kernel: each catalog shape becomes a
@@ -65,6 +67,10 @@ function localMesh(source: WorkplaneShape) {
     case "honeycomb":
       geometry = createHoneycombGeometry({ width, depth, height, honeycombCellSize: source.honeycombCellSize, honeycombWallThickness: source.honeycombWallThickness, honeycombFrameWidth: source.honeycombFrameWidth });
       break;
+    case "text":
+      // Straight or curved, exactly as the viewport draws it.
+      geometry = createTextGeometry(source);
+      break;
     case "gear":
       geometry = createGearGeometry({ width, depth, height, teeth: source.teeth, toothSize: source.toothSize, toothWidth: source.toothWidth, centerHoleSize: source.centerHoleSize, gearType: source.gearType });
       break;
@@ -114,6 +120,7 @@ describe("exact profile extrusions with the real OCCT kernel", () => {
   beforeAll(async () => {
     const wasm = join(dirname(fileURLToPath(import.meta.resolve("occt-wasm"))), "occt-wasm.wasm");
     cad = await OcctKernel.init({ wasm });
+    await loadTextFonts();
   });
 
   function profileOf(source: WorkplaneShape) {
@@ -236,6 +243,73 @@ describe("exact profile extrusions with the real OCCT kernel", () => {
     expectExactBody(shape("gear", { width: 60, depth: 40, teeth: 20, toothSize: 4 }), 84);
     expectExactBody(shape("gear", { width: 40, depth: 40, centerHoleSize: 0 }), 50);
     expect(cadModifierProfileForShape(shape("gear", { gearType: "helical" }))).toBeNull();
+  });
+
+  it("builds every glyph of a text as an exact body that takes a fillet on its whole top outline", () => {
+    // Sans has the Hungarian accents (Multilanguage draws a "?" for them).
+    const source = shape("text", { text: "Pécs", font: "Sans", width: 60, depth: 20, height: 5, x: 7, z: -4, rotation: 25 });
+    const glyphs = textGlyphProfiles(source)!;
+    expect(glyphs).toHaveLength(5); // P, é (body and accent), c, s
+    let faces = 0;
+    const box = { xmin: Infinity, zmin: Infinity, xmax: -Infinity, zmax: -Infinity };
+    glyphs.forEach((glyph) => {
+      const solid = placed(glyph.profile!);
+      expect(cad.isValid(solid)).toBe(true);
+      faces += cad.subShapeCount(solid, "face");
+      const bounds = cad.getBoundingBox(solid);
+      box.xmin = Math.min(box.xmin, bounds.xmin);
+      box.zmin = Math.min(box.zmin, bounds.zmin);
+      box.xmax = Math.max(box.xmax, bounds.xmax);
+      box.zmax = Math.max(box.zmax, bounds.zmax);
+      const top = topEdges(solid, 5);
+      expect(top.length).toBeGreaterThan(3);
+      // Around the whole top outline of every glyph. Which sizes OCCT accepts
+      // on font curves varies with the glyph and even with its placement (the
+      // kernel itself reports some results invalid); over 100 glyphs of five
+      // faces 88 take 0.1 mm, 74 take 0.2 mm and 66 take 0.3 mm. This text at
+      // this placement takes 0.2 mm on all five.
+      expect(cad.isValid(cad.fillet(solid, top, 0.2))).toBe(true);
+    });
+    // One face per outline piece plus top and bottom: dozens, not the hundreds of the mesh.
+    expect(faces).toBe(146);
+    // The glyph bodies together sit where the whole display text is.
+    const world = worldMesh(source);
+    const display = cadProfileExpectation(world.vertices, world.faces);
+    [box.xmin - display.bounds[0], box.zmin - display.bounds[2], box.xmax - display.bounds[3], box.zmax - display.bounds[5]].forEach((difference) => {
+      expect(Math.abs(difference)).toBeLessThan(0.05);
+    });
+  });
+
+  it("builds curved text glyph by glyph where the display bends it", () => {
+    const curve = { text: "Pécs 2026", font: "Serif", textCurved: true, textRadius: 25, textSize: 8, height: 3 };
+    // The last one in a box that no longer matches its letters: the display then fits it uniformly.
+    [{}, { textInward: true }, { textFlipped: true }, { textInward: true, textFlipped: true, stretch: 1.2 }].forEach(({ stretch = 1, ...variant }) => {
+      const base = shape("text", { ...curve, ...variant });
+      const footprint = curvedTextFootprint(base);
+      const source = { ...base, width: footprint.width * stretch, depth: footprint.depth * stretch, x: -6, z: 9, rotation: 40 } as WorkplaneShape;
+      const glyphs = textGlyphProfiles(source)!;
+      expect(glyphs).toHaveLength(9); // P, é (body and accent), c, s, 2, 0, 2, 6
+      const box = { xmin: Infinity, zmin: Infinity, xmax: -Infinity, zmax: -Infinity };
+      glyphs.forEach((glyph) => {
+        const solid = placed(glyph.profile!);
+        expect(cad.isValid(solid)).toBe(true);
+        const bounds = cad.getBoundingBox(solid);
+        box.xmin = Math.min(box.xmin, bounds.xmin);
+        box.zmin = Math.min(box.zmin, bounds.zmin);
+        box.xmax = Math.max(box.xmax, bounds.xmax);
+        box.zmax = Math.max(box.zmax, bounds.zmax);
+        // Serif at 8 mm has hairline strokes and a small accent: 0.05 mm goes
+        // round every glyph's whole top outline in all three placements (the
+        // accent refuses 0.1 mm, most glyphs 0.3 mm).
+        expect(cad.isValid(cad.fillet(solid, topEdges(solid, 3), 0.05))).toBe(true);
+      });
+      const world = worldMesh(source);
+      expect(glyphs.reduce((total, glyph) => total + glyph.triangleCount, 0)).toBe(world.faces.length);
+      const display = cadProfileExpectation(world.vertices, world.faces);
+      [box.xmin - display.bounds[0], box.zmin - display.bounds[2], box.xmax - display.bounds[3], box.zmax - display.bounds[5]].forEach((difference) => {
+        expect(Math.abs(difference)).toBeLessThan(0.05);
+      });
+    });
   });
 
   it("puts a turned, mirrored and lifted star exactly where the display mesh is", () => {

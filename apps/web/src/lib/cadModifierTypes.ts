@@ -66,11 +66,14 @@ export type CadModifierPrimitivePart =
  * One piece of a flat outline in the shape's local X/Z plane, running from the
  * end of the previous piece (or the loop's start point) to (x, z). An arc is a
  * piece of the ellipse (cx + rx cos t, cz + rz sin t) from t = start to
- * t = end; with rx === rz it is a circular arc.
+ * t = end; with rx === rz it is a circular arc. A bezier is the Bezier curve
+ * through its start, the control points and (x, z) - quadratic with one
+ * control point, cubic with two, as a font's glyph outlines use them.
  */
 export type CadModifierProfileSegment =
   | { kind: "line"; x: number; z: number }
-  | { kind: "arc"; x: number; z: number; cx: number; cz: number; rx: number; rz: number; start: number; end: number };
+  | { kind: "arc"; x: number; z: number; cx: number; cz: number; rx: number; rz: number; start: number; end: number }
+  | { kind: "bezier"; x: number; z: number; controls: Array<{ x: number; z: number }> };
 
 export type CadModifierProfileLoop = {
   x: number;

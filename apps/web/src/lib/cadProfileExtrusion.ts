@@ -11,6 +11,8 @@ import { normalizeHeartTipFillet } from "@/lib/heartGeometry";
 import { buildCrescentContourPoints, normalizeCrescentQuality, normalizeCrescentThickness, normalizeCrescentTipFillet } from "@/lib/crescentGeometry";
 import { buildHoneycombHoles, normalizeHoneycombCellSize, normalizeHoneycombFrameWidth, normalizeHoneycombWallThickness } from "@/lib/honeycombGeometry";
 import { dovetailOutlineForShape } from "@/lib/dovetailGeometry";
+import { textFont } from "@/lib/textFonts";
+import { buildCurvedText, curvedTextFitScale, curvedTextLayout } from "@/lib/textGeometry";
 import { gearToothPitch, normalizeGearCenterHoleSize, normalizeGearToothSize, normalizeGearToothWidth, normalizeGearTeeth, normalizeGearType } from "@/lib/gearGeometry";
 
 /*
@@ -25,7 +27,7 @@ type Point = { x: number; z: number };
 type Arc = { cx: number; cz: number; rx: number; rz: number; start: number; end: number };
 type Corner = { start: Point; end: Point; arc?: Arc };
 
-export const CAD_PROFILE_SHAPE_KINDS = new Set<WorkplaneShape["kind"]>(["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear", "dovetail"]);
+export const CAD_PROFILE_SHAPE_KINDS = new Set<WorkplaneShape["kind"]>(["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear", "dovetail", "text"]);
 
 function shortestAngleDelta(from: number, to: number) {
   let delta = to - from;
@@ -103,6 +105,7 @@ function mapLoop(loop: CadModifierProfileLoop, sx: number, ox: number, sz: numbe
   const map = (point: Point) => ({ x: point.x * sx + ox, z: point.z * sz + oz });
   const segments = loop.segments.map((segment): CadModifierProfileSegment => {
     if (segment.kind === "line") return { kind: "line", ...map(segment) };
+    if (segment.kind === "bezier") return { kind: "bezier", ...map(segment), controls: segment.controls.map(map) };
     return arcSegment({ cx: segment.cx * sx + ox, cz: segment.cz * sz + oz, rx: segment.rx * sx, rz: segment.rz * sz, start: segment.start, end: segment.end });
   });
   // Keep every joint exactly where the arc beside it starts or ends.
@@ -481,6 +484,141 @@ export function gearProfileLoops(
   return loops;
 }
 
+/** Straight text is laid out at this size and then scaled into its frame (createTextGeometry). */
+const TEXT_GLYPH_SIZE = 20;
+
+type GlyphPath = { curves: Array<THREE.Curve<THREE.Vector2>> };
+
+/**
+ * One closed outline of a glyph with the font's own curves: straight lines and
+ * quadratic or cubic Bezier curves, mapped by `map`. With `straight` (the
+ * Stencil face, drawn with one segment per curve) every curve becomes the line
+ * between its ends, as on screen. Null when the outline has nothing to build.
+ */
+function glyphLoop(path: GlyphPath, map: (point: THREE.Vector2) => Point, straight: boolean): CadModifierProfileLoop | null {
+  const segments: CadModifierProfileSegment[] = [];
+  let start: Point | null = null;
+  let current: Point | null = null;
+  const same = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.z - b.z) <= 1e-9;
+  const lineTo = (point: Point) => {
+    if (current && same(current, point)) return;
+    segments.push({ kind: "line", ...point });
+    current = point;
+  };
+  for (const curve of path.curves) {
+    let points: THREE.Vector2[];
+    if (curve instanceof THREE.LineCurve) points = [curve.v1, curve.v2];
+    else if (curve instanceof THREE.QuadraticBezierCurve) points = [curve.v0, curve.v1, curve.v2];
+    else if (curve instanceof THREE.CubicBezierCurve) points = [curve.v0, curve.v1, curve.v2, curve.v3];
+    else throw new Error("A glyph uses a curve the exact outline does not know");
+    const mapped = points.map(map);
+    if (!start || !current) {
+      start = mapped[0];
+      current = mapped[0];
+    } else if (!same(current, mapped[0])) {
+      lineTo(mapped[0]);
+    }
+    const end = mapped[mapped.length - 1];
+    const controls = mapped.slice(1, -1);
+    if (straight || controls.length === 0) {
+      lineTo(end);
+    } else if (!(same(current as Point, end) && controls.every((control) => same(current as Point, control)))) {
+      segments.push({ kind: "bezier", ...end, controls });
+      current = end;
+    }
+  }
+  if (!start || !current) return null;
+  if (!same(current, start)) lineTo(start);
+  const last = segments[segments.length - 1];
+  // Close exactly on the start point, whichever piece ends the outline.
+  if (last) Object.assign(last, start);
+  return segments.length >= 2 ? { ...(start as Point), segments } : null;
+}
+
+/**
+ * The glyphs of a raised text as exact outlines, in the order createTextGeometry
+ * extrudes them (font.generateShapes), each with the number of triangles its
+ * display mesh gets - which is how the edge tool's glyph pieces are told
+ * apart. Straight text takes its scale and centre from the same sampled
+ * points the display measures; curved text puts each character through the
+ * matrix its display glyph is placed with (curvedTextLayout) and the same fit
+ * into the box. So every glyph lands exactly on its display mesh; only the
+ * curves themselves are exact. Null for bevelled or deformed text (those stay on
+ * the mesh path) or when the font cannot be read.
+ */
+export function textGlyphProfiles(shape: WorkplaneShape) {
+  // Taper, twist and lean reshape the display mesh the outlines are matched
+  // to; such a text, like a baked or already treated one, keeps its mesh.
+  if (shape.kind !== "text" || shape.importedMesh || shape.cadBrep || shapeHasShapeDeform(shape)) return null;
+  const bevel = Math.min(8, Math.max(0, shape.bevel ?? 0));
+  if (bevel > 0) return null;
+  const width = shapeWidth(shape);
+  const depth = shapeDepth(shape);
+  if (![width, depth, shape.height].every((value) => Number.isFinite(value) && value > 0)) return null;
+  const fontName = shape.font ?? "Multilanguage";
+  const curveSegments = fontName === "Stencil" ? 1 : 8;
+  const glyphs: Array<{ glyph: THREE.Shape; map: (point: THREE.Vector2) => Point }> = [];
+  if (shape.textCurved) {
+    // Curved text: every character through the very matrix that places its
+    // display glyph on the circle, then the same fit into the box.
+    const display = buildCurvedText(shape);
+    if (!display) return null;
+    const fit = curvedTextFitScale(shape, display);
+    display.dispose();
+    const { options, glyphs: placed } = curvedTextLayout(shape);
+    placed.forEach(({ char, matrix }) => {
+      const map = (point: THREE.Vector2): Point => {
+        const world = new THREE.Vector3(point.x, point.y, 0).applyMatrix4(matrix);
+        return { x: fit * world.x, z: fit * world.z };
+      };
+      options.font.generateShapes(char, options.size).forEach((glyph) => glyphs.push({ glyph, map }));
+    });
+  } else {
+    const text = (shape.text ?? "TEXT").trim() || " ";
+    const shapes = textFont(fontName).generateShapes(text, TEXT_GLYPH_SIZE);
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    shapes.forEach((glyph) => {
+      const sampled = glyph.extractPoints(curveSegments);
+      [sampled.shape, ...sampled.holes].forEach((points) => points.forEach((point) => {
+        minX = Math.min(minX, point.x);
+        maxX = Math.max(maxX, point.x);
+        minY = Math.min(minY, point.y);
+        maxY = Math.max(maxY, point.y);
+      }));
+    });
+    const scale = Math.min(width / Math.max(1, maxX - minX), depth / Math.max(1, maxY - minY));
+    // Scaled, turned flat (font y becomes -z) and centred, as the display does.
+    const map = (point: THREE.Vector2): Point => ({
+      x: scale * point.x - (scale * (minX + maxX)) / 2,
+      z: -scale * point.y + (scale * (minY + maxY)) / 2,
+    });
+    shapes.forEach((glyph) => glyphs.push({ glyph, map }));
+  }
+  if (glyphs.length === 0) return null;
+  const transform = profileTransformForShape(shape);
+  return glyphs.map(({ glyph, map }) => {
+    const extruded = new THREE.ExtrudeGeometry(glyph, { depth: shape.height, curveSegments, bevelEnabled: false });
+    const triangleCount = extruded.getAttribute("position").count / 3;
+    extruded.dispose();
+    let profile: CadModifierProfilePart | null = null;
+    try {
+      const outer = glyphLoop(glyph, map, curveSegments === 1);
+      const holes = glyph.holes.map((hole) => glyphLoop(hole, map, curveSegments === 1));
+      if (outer && holes.every((hole) => hole !== null)) {
+        const candidate: CadModifierProfilePart = { kind: "extrusion", loops: [outer, ...(holes as CadModifierProfileLoop[])], height: shape.height, transform };
+        validateCadProfile(candidate);
+        profile = candidate;
+      }
+    } catch {
+      profile = null;
+    }
+    return { profile, triangleCount };
+  });
+}
+
 /** Outline loops (and horn roundings) of a supported shape in its local frame, or null. */
 export function cadProfileForShapeKind(shape: WorkplaneShape) {
   const width = shapeWidth(shape);
@@ -502,6 +640,12 @@ export function cadProfileForShapeKind(shape: WorkplaneShape) {
       return { loops: [polygonLoop(dovetailOutlineForShape(shape).map((point) => ({ x: point.x, z: point.y })))] };
     case "gear":
       return normalizeGearType(shape.gearType) === "spur" ? { loops: gearProfileLoops(width, depth, shape) } : null;
+    case "text": {
+      // A text is one body only when it is one glyph; otherwise the edge tool
+      // cuts it into glyph pieces and each piece brings its own outline.
+      const glyphs = textGlyphProfiles(shape);
+      return glyphs?.length === 1 && glyphs[0].profile ? { loops: glyphs[0].profile.loops } : null;
+    }
     default:
       return null;
   }
@@ -567,13 +711,27 @@ export function cadProfileSegmentCount(profile: CadModifierProfilePart) {
 
 /**
  * Past CAD_MODIFIER_EXACT_SEGMENT_LIMIT outline pieces in one request the
- * exact bodies would outgrow the preview timeout; then every profile part goes
- * back to its display mesh and meets the triangle limit, exactly as before.
+ * exact bodies would outgrow the preview timeout. Then profile parts go back
+ * to their display meshes - and meet the triangle limit, exactly as before -
+ * until the rest fits: first those whose mesh is cheapest for the pieces it
+ * saves, so a gear (few triangles per piece) goes before a glyph (many), and
+ * one big honeycomb does not send every other shape of the group back too.
  */
-export function withinExactProfileLimit<M, T extends { profile?: CadModifierProfilePart; profileMesh?: M; mesh?: M }>(parts: T[], limit = CAD_MODIFIER_EXACT_SEGMENT_LIMIT): T[] {
-  const segments = parts.reduce((total, part) => total + (part.profile ? cadProfileSegmentCount(part.profile) : 0), 0);
+export function withinExactProfileLimit<M extends { faces: { length: number } }, T extends { profile?: CadModifierProfilePart; profileMesh?: M; mesh?: M }>(parts: T[], limit = CAD_MODIFIER_EXACT_SEGMENT_LIMIT): T[] {
+  let segments = parts.reduce((total, part) => total + (part.profile ? cadProfileSegmentCount(part.profile) : 0), 0);
   if (segments <= limit) return parts;
-  return parts.map((part) => (part.profile ? { ...part, profile: undefined, profileMesh: undefined, mesh: part.profileMesh } : part));
+  const cost = (part: T) => (part.profileMesh?.faces.length ?? 0) / Math.max(1, cadProfileSegmentCount(part.profile as CadModifierProfilePart));
+  const order = parts
+    .map((part, index) => ({ part, index }))
+    .filter(({ part }) => part.profile)
+    .sort((a, b) => cost(a.part) - cost(b.part) || cadProfileSegmentCount(b.part.profile as CadModifierProfilePart) - cadProfileSegmentCount(a.part.profile as CadModifierProfilePart));
+  const toMesh = new Set<number>();
+  for (const { part, index } of order) {
+    if (segments <= limit) break;
+    segments -= cadProfileSegmentCount(part.profile as CadModifierProfilePart);
+    toMesh.add(index);
+  }
+  return parts.map((part, index) => (toMesh.has(index) ? { ...part, profile: undefined, profileMesh: undefined, mesh: part.profileMesh } : part));
 }
 
 /**

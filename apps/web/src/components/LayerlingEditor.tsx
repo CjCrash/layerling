@@ -112,7 +112,7 @@ import {
 import { workplaneCenteringOffset } from "@/lib/workplaneCentering";
 import { bakeCadMetadataForShapeTransform, cadBrepTransformForShape, cadModifierPrimitiveForAnalyticBox, cadModifierPrimitiveForAnalyticShape, cadModifierPrimitiveForBakedShape } from "@/lib/cadBakeMetadata";
 import { hasOneToOneCadComponentMapping } from "@/lib/cadModifierGroups";
-import { cadModifierProfileForShape, cadProfileExpectation, cadProfileSegmentCount, withinExactProfileLimit } from "@/lib/cadProfileExtrusion";
+import { cadModifierProfileForShape, cadProfileExpectation, cadProfileSegmentCount, textGlyphProfiles, withinExactProfileLimit } from "@/lib/cadProfileExtrusion";
 import {
   CAD_MODIFIER_MAX_SHARP_ANGLE,
   CAD_MODIFIER_REQUEST_TIMEOUT_MS,
@@ -3654,9 +3654,53 @@ function separateMeshParts(shape: WorkplaneShape) {
     .filter((part): part is WorkplaneShape => Boolean(part));
 }
 
+/**
+ * The exact outline of each glyph piece cadModifierSourceParts cuts a text
+ * into, keyed by the piece. The pieces only live for one edge-tool request,
+ * so a WeakMap lets them go with it.
+ */
+const textGlyphProfileByPart = new WeakMap<WorkplaneShape, CadModifierProfilePart>();
+
+/**
+ * Which glyph each triangle of a text's display mesh belongs to: the mesh
+ * lists the glyphs one after another, as three.js extrudes them. Null when
+ * the counts do not add up (then the pieces simply go without outlines).
+ */
+function textGlyphIndexByFace(shape: WorkplaneShape, faceCount: number) {
+  let glyphs: ReturnType<typeof textGlyphProfiles> = null;
+  try {
+    glyphs = textGlyphProfiles(shape);
+  } catch {
+    return null;
+  }
+  if (!glyphs || glyphs.reduce((total, glyph) => total + glyph.triangleCount, 0) !== faceCount) return null;
+  const glyphOfFace = new Array<number>(faceCount);
+  let face = 0;
+  glyphs.forEach((glyph, index) => {
+    for (let count = 0; count < glyph.triangleCount; count += 1) glyphOfFace[face++] = index;
+  });
+  return { glyphs, glyphOfFace };
+}
+
 function cadModifierSourceParts(shape: WorkplaneShape) {
   if (shape.kind !== "text" || shape.importedMesh || shape.cadBrep) return [shape];
-  const glyphParts = separateMeshParts(shape);
+  const mesh = meshForShape(shape);
+  const components = meshFaceComponents(mesh).filter((component) => component.length > 0);
+  if (components.length <= 1) return [shape];
+  const glyphMap = textGlyphIndexByFace(shape, mesh.faces.length);
+  const glyphParts: WorkplaneShape[] = [];
+  components.forEach((component, index) => {
+    const part = meshComponentShape(shape, mesh, component, index, components.length);
+    if (!part) return;
+    // A piece that is exactly one whole glyph gets that glyph's exact outline;
+    // glyphs that touch share a piece, and a glyph that falls apart into
+    // several pieces has none that is all of it - both keep the mesh path.
+    const glyphIndices = glyphMap ? new Set(component.map((face) => glyphMap.glyphOfFace[face])) : null;
+    const glyph = glyphIndices?.size === 1 ? glyphMap?.glyphs[[...glyphIndices][0]] : null;
+    const profile = glyph && glyph.triangleCount === component.length ? glyph.profile : null;
+    if (profile) textGlyphProfileByPart.set(part, profile);
+    glyphParts.push(part);
+  });
   return glyphParts.length > 1 ? glyphParts : [shape];
 }
 
@@ -8457,7 +8501,7 @@ export function LayerlingEditor({
       if (shapeHasShapeDeform(shape)) return { shape, mesh: meshForShape(shape) };
       const primitive = cadModifierPrimitiveForShape(shape);
       if (primitive) return { shape, primitive };
-      const profile = cadModifierProfileForShape(shape);
+      const profile = cadModifierProfileForShape(shape) ?? textGlyphProfileByPart.get(shape);
       if (profile) return { shape, profile, profileMesh: meshForShape(shape) };
       return shape.cadBrep && frame && !preserveNeedsRetessellation
         ? { shape, brep: shape.cadBrep, brepTransform: cadBrepTransformForShape(shape) }
@@ -8548,7 +8592,7 @@ export function LayerlingEditor({
       if (shapeHasShapeDeform(partShape)) return { shape: partShape, mesh: meshForShape(partShape) };
       const primitive = cadModifierPrimitiveForShape(partShape);
       if (primitive) return { shape: partShape, primitive };
-      const profile = cadModifierProfileForShape(partShape);
+      const profile = cadModifierProfileForShape(partShape) ?? textGlyphProfileByPart.get(partShape);
       if (profile) return { shape: partShape, profile, profileMesh: meshForShape(partShape) };
       return partShape.cadBrep && frame && !preserveNeedsRetessellation
         ? { shape: partShape, brep: partShape.cadBrep, brepTransform: cadBrepTransformForShape(partShape) }

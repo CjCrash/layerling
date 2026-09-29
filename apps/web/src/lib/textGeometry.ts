@@ -67,8 +67,13 @@ function curvedSize(shape: WorkplaneShape) {
  * font's baseline (y = 0), so "a", "T", "g" and "." line up exactly as in a
  * straight line - only the line itself is bent. The centre of the circle stays
  * at the origin, so centring the text on a round body puts it concentric.
+ *
+ * Returns the text options and, for every character that draws something, the
+ * matrix that takes its TextGeometry (at the letter size, thickness along +Z) to its
+ * place on the circle. The edge tool puts each glyph's exact outline through
+ * the same matrices, so its CAD bodies land on the drawn letters.
  */
-function buildCurvedText(shape: WorkplaneShape): THREE.BufferGeometry | null {
+export function curvedTextLayout(shape: WorkplaneShape) {
   const text = textOf(shape);
   const radius = curvedRadius(shape);
   const font = textFont(shape.font ?? "Multilanguage");
@@ -90,7 +95,7 @@ function buildCurvedText(shape: WorkplaneShape): THREE.BufferGeometry | null {
   const bandMiddle = capHeightOf(font, size) / 2;
   const inward = Boolean(shape.textInward);
   const options = textOptions(shape, size);
-  const placed: THREE.BufferGeometry[] = [];
+  const glyphs: Array<{ char: string; matrix: THREE.Matrix4 }> = [];
 
   let run = -totalLength / 2;
   ordered.forEach((char, index) => {
@@ -99,28 +104,33 @@ function buildCurvedText(shape: WorkplaneShape): THREE.BufferGeometry | null {
     run += advance;
     if (!char.trim()) return;
 
-    const glyph = new TextGeometry(char, options);
-    // Flat on the workplane: letter height points to -Z, thickness to +Y.
-    glyph.rotateX(-Math.PI / 2);
-    // Centre the advance box on its arc point - horizontally only, the baseline stays at z = 0.
-    glyph.translate(-advance / 2, 0, 0);
-    if (flipped) {
-      glyph.translate(0, 0, bandMiddle);
-      glyph.rotateY(Math.PI);
-      glyph.translate(0, 0, -bandMiddle);
-    }
+    // Built right to left: the first factor is the last step.
+    const matrix = new THREE.Matrix4();
     if (inward) {
       // Along the bottom of the circle, read left to right, letters pointing at the centre.
-      glyph.rotateY(angle);
-      glyph.translate(radius * Math.sin(angle), 0, radius * Math.cos(angle));
+      matrix.makeTranslation(radius * Math.sin(angle), 0, radius * Math.cos(angle)).multiply(new THREE.Matrix4().makeRotationY(angle));
     } else {
       // Along the top of the circle, letters pointing away from the centre.
-      glyph.rotateY(-angle);
-      glyph.translate(radius * Math.sin(angle), 0, -radius * Math.cos(angle));
+      matrix.makeTranslation(radius * Math.sin(angle), 0, -radius * Math.cos(angle)).multiply(new THREE.Matrix4().makeRotationY(-angle));
     }
-    placed.push(glyph);
+    if (flipped) {
+      matrix
+        .multiply(new THREE.Matrix4().makeTranslation(0, 0, -bandMiddle))
+        .multiply(new THREE.Matrix4().makeRotationY(Math.PI))
+        .multiply(new THREE.Matrix4().makeTranslation(0, 0, bandMiddle));
+    }
+    // Centre the advance box on its arc point - horizontally only, the baseline stays at z = 0.
+    matrix.multiply(new THREE.Matrix4().makeTranslation(-advance / 2, 0, 0));
+    // Flat on the workplane: letter height points to -Z, thickness to +Y.
+    matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
+    glyphs.push({ char, matrix });
   });
+  return { options, glyphs };
+}
 
+export function buildCurvedText(shape: WorkplaneShape): THREE.BufferGeometry | null {
+  const { options, glyphs } = curvedTextLayout(shape);
+  const placed = glyphs.map(({ char, matrix }) => new TextGeometry(char, options).applyMatrix4(matrix));
   if (!placed.length) return null;
   const merged = mergeGeometries(placed, false);
   placed.forEach((glyph) => glyph.dispose());
@@ -143,6 +153,17 @@ function symmetricExtent(geometry: THREE.BufferGeometry) {
     width: Math.max(0.1, 2 * Math.max(Math.abs(box.min.x), Math.abs(box.max.x))),
     depth: Math.max(0.1, 2 * Math.max(Math.abs(box.min.z), Math.abs(box.max.z))),
   };
+}
+
+/**
+ * The uniform scale that fits curved text into its box - 1 when the box
+ * already matches (within 1e-3), as it normally does.
+ */
+export function curvedTextFitScale(shape: WorkplaneShape, curved: THREE.BufferGeometry): number {
+  const extent = symmetricExtent(curved);
+  if (!extent) return 1;
+  const scale = Math.min(shapeWidth(shape) / extent.width, shapeDepth(shape) / extent.depth);
+  return Number.isFinite(scale) && Math.abs(scale - 1) > 1e-3 ? scale : 1;
 }
 
 const footprintCache = new Map<string, { width: number; depth: number }>();
@@ -238,11 +259,8 @@ export function createTextGeometry(shape: WorkplaneShape): THREE.BufferGeometry 
     if (!curved) return new THREE.BoxGeometry(0.001, shape.height, 0.001);
     // The box normally matches already; if it does not (older data, a stray
     // width), fit uniformly so the drawing never leaves its own frame.
-    const extent = symmetricExtent(curved);
-    if (extent) {
-      const scale = Math.min(shapeWidth(shape) / extent.width, shapeDepth(shape) / extent.depth);
-      if (Number.isFinite(scale) && Math.abs(scale - 1) > 1e-3) curved.scale(scale, 1, scale);
-    }
+    const scale = curvedTextFitScale(shape, curved);
+    if (scale !== 1) curved.scale(scale, 1, scale);
     curved.computeVertexNormals();
     return curved;
   }

@@ -1,8 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import { loadTextFonts } from "@/lib/textFonts";
+import { createTextGeometry, curvedTextFootprint } from "@/lib/textGeometry";
 import * as THREE from "three";
 import type { WorkplaneShape } from "@/types/layerling";
 import type { CadModifierProfileLoop } from "@/lib/cadModifierTypes";
-import { cadModifierProfileForShape, cadProfileExpectation, cadProfileSegmentCount, closedMeshVolume, withinExactProfileLimit, crescentProfile, gearProfileLoops, heartProfileLoops, honeycombProfileLoops, polygonProfileLoops, slotProfileLoops, starProfileLoops } from "@/lib/cadProfileExtrusion";
+import { cadModifierProfileForShape, cadProfileExpectation, cadProfileSegmentCount, closedMeshVolume, withinExactProfileLimit, crescentProfile, gearProfileLoops, textGlyphProfiles, heartProfileLoops, honeycombProfileLoops, polygonProfileLoops, slotProfileLoops, starProfileLoops } from "@/lib/cadProfileExtrusion";
 import { profileLoopBounds, validateCadProfile } from "@/lib/cadProfileSolid";
 import { cadModifierPrepareTimeoutMs, CAD_MODIFIER_EXACT_SEGMENT_LIMIT, CAD_MODIFIER_MAX_PREPARE_TIMEOUT_MS } from "@/lib/cadModifierRuntime";
 import { createStarGeometry } from "@/lib/starGeometry";
@@ -212,6 +214,153 @@ describe("exact profiles for catalog shapes", () => {
   });
 });
 
+/** Points along a loop, lines by their ends, arcs and Bezier curves finely sampled. */
+function denseLoop(loop: CadModifierProfileLoop) {
+  const points = [{ x: loop.x, z: loop.z }];
+  let current = { x: loop.x, z: loop.z };
+  loop.segments.forEach((segment) => {
+    if (segment.kind === "bezier") {
+      const control = [current, ...segment.controls, { x: segment.x, z: segment.z }];
+      for (let step = 1; step <= 200; step += 1) {
+        const t = step / 200;
+        // de Casteljau
+        let row = control.map((point) => ({ ...point }));
+        while (row.length > 1) row = row.slice(1).map((point, index) => ({ x: row[index].x + (point.x - row[index].x) * t, z: row[index].z + (point.z - row[index].z) * t }));
+        points.push(row[0]);
+      }
+    } else if (segment.kind === "arc") {
+      for (let step = 1; step <= 200; step += 1) {
+        const angle = segment.start + ((segment.end - segment.start) * step) / 200;
+        points.push({ x: segment.cx + segment.rx * Math.cos(angle), z: segment.cz + segment.rz * Math.sin(angle) });
+      }
+    } else {
+      points.push({ x: segment.x, z: segment.z });
+    }
+    current = { x: segment.x, z: segment.z };
+  });
+  return points;
+}
+
+function polygonArea(points: Array<{ x: number; z: number }>) {
+  let twice = 0;
+  points.forEach((point, index) => {
+    const next = points[(index + 1) % points.length];
+    twice += point.x * next.z - next.x * point.z;
+  });
+  return Math.abs(twice) / 2;
+}
+
+describe("exact outlines for raised text", () => {
+  beforeAll(async () => {
+    await loadTextFonts();
+  });
+
+  const fonts = ["Multilanguage", "Sans", "Serif", "Script", "Monospace", "Rounded", "Stencil"];
+  const texts = ["Pécs", "Hello 123", "ŐŰőű@&%8B", "Íjász Ödön"];
+
+  it("gives every glyph of every face its own outline, in the order the display mesh lists them", () => {
+    fonts.forEach((font) => texts.forEach((text) => {
+      const source = shape("text", { text, font, width: 60, depth: 20, height: 5 });
+      const glyphs = textGlyphProfiles(source);
+      expect(glyphs).not.toBeNull();
+      const display = createTextGeometry(source);
+      // The edge tool tells the glyph pieces apart by these counts.
+      expect(glyphs!.reduce((total, glyph) => total + glyph.triangleCount, 0)).toBe(display.getAttribute("position").count / 3);
+      glyphs!.forEach((glyph) => {
+        expect(glyph.profile).not.toBeNull();
+        const kinds = new Set(glyph.profile!.loops.flatMap((loop) => loop.segments.map((segment) => segment.kind)));
+        // Stencil draws every curve as one straight segment; the other faces keep their curves.
+        if (font === "Stencil") expect(kinds.has("bezier")).toBe(false);
+      });
+      if (font !== "Stencil") expect(glyphs!.some((glyph) => glyph.profile!.loops.some((loop) => loop.segments.some((segment) => segment.kind === "bezier")))).toBe(true);
+    }));
+  });
+
+  it("puts the outlines where the display draws the text, with the same area", () => {
+    fonts.forEach((font) => ["Pécs", "Íjász Ödön"].forEach((text) => {
+      const source = shape("text", { text, font, width: 60, depth: 20, height: 5 });
+      const glyphs = textGlyphProfiles(source)!;
+      const display = createTextGeometry(source);
+      display.computeBoundingBox();
+      const box = display.boundingBox as THREE.Box3;
+      const outlines = glyphs.map((glyph) => glyph.profile!.loops.map(denseLoop));
+      const all = outlines.flat(2);
+      const spanX = Math.max(...all.map((point) => point.x)) - Math.min(...all.map((point) => point.x));
+      expect(Math.abs(Math.min(...all.map((point) => point.x)) - box.min.x)).toBeLessThan(0.02 * spanX);
+      expect(Math.abs(Math.max(...all.map((point) => point.x)) - box.max.x)).toBeLessThan(0.02 * spanX);
+      expect(Math.abs(Math.min(...all.map((point) => point.z)) - box.min.z)).toBeLessThan(0.02 * spanX);
+      expect(Math.abs(Math.max(...all.map((point) => point.z)) - box.max.z)).toBeLessThan(0.02 * spanX);
+      // Area of the exact outlines (outer minus holes) against the display mesh's volume / height.
+      const area = outlines.reduce((total, loops) => total + polygonArea(loops[0]) - loops.slice(1).reduce((holes, loop) => holes + polygonArea(loop), 0), 0);
+      const mesh = meshOf(display);
+      const meshArea = closedMeshVolume(mesh.vertices, mesh.faces) / 5;
+      expect(Math.abs(area - meshArea) / meshArea).toBeLessThan(font === "Stencil" ? 1e-6 : 0.01);
+    }));
+  });
+
+  it("follows curved text glyph by glyph: same order, same triangles, on the drawn letters", () => {
+    const variants: Array<Partial<WorkplaneShape>> = [{}, { textInward: true }, { textFlipped: true }, { textInward: true, textFlipped: true }];
+    fonts.forEach((font) => variants.forEach((variant) => {
+      const curved = shape("text", { text: "Íjász 2026", font, height: 4, textCurved: true, textRadius: 20, textSize: 7, ...variant });
+      const footprint = curvedTextFootprint(curved);
+      // As laid out, and once in a box that no longer matches (the display then fits it uniformly).
+      const boxes = variant.textInward && variant.textFlipped ? [footprint, { width: footprint.width * 1.25, depth: footprint.depth * 0.9 }] : [footprint];
+      boxes.forEach((box) => {
+        const source = { ...curved, ...box } as WorkplaneShape;
+        const glyphs = textGlyphProfiles(source)!;
+        const position = createTextGeometry(source).getAttribute("position");
+        expect(glyphs.reduce((total, glyph) => total + glyph.triangleCount, 0)).toBe(position.count / 3);
+        let first = 0;
+        glyphs.forEach((glyph) => {
+          expect(glyph.profile).not.toBeNull();
+          // This glyph's own display triangles: every outline point is one of their corners (to float precision) ...
+          const cell = (value: number) => Math.floor(value / 1e-4);
+          const corners = new Map<string, Array<{ x: number; z: number }>>();
+          for (let vertex = first * 3; vertex < (first + glyph.triangleCount) * 3; vertex += 1) {
+            const corner = { x: position.getX(vertex), z: position.getZ(vertex) };
+            const key = `${cell(corner.x)},${cell(corner.z)}`;
+            const list = corners.get(key);
+            if (list) list.push(corner);
+            else corners.set(key, [corner]);
+          }
+          const nearest = (point: { x: number; z: number }) => {
+            let best = Infinity;
+            for (let dx = -1; dx <= 1; dx += 1) for (let dz = -1; dz <= 1; dz += 1) {
+              (corners.get(`${cell(point.x) + dx},${cell(point.z) + dz}`) ?? []).forEach((corner) => { best = Math.min(best, Math.hypot(corner.x - point.x, corner.z - point.z)); });
+            }
+            return best;
+          };
+          glyph.profile!.loops.forEach((loop) => loop.segments.forEach((segment) => expect(nearest(segment)).toBeLessThan(1e-5)));
+          // ... and the outline encloses the area the display glyph covers.
+          const loops = glyph.profile!.loops.map(denseLoop);
+          const area = polygonArea(loops[0]) - loops.slice(1).reduce((holes, loop) => holes + polygonArea(loop), 0);
+          const vertices: Vec3[] = [];
+          const faces: Vec3[] = [];
+          for (let vertex = first * 3; vertex < (first + glyph.triangleCount) * 3; vertex += 3) {
+            faces.push([vertices.length, vertices.length + 1, vertices.length + 2]);
+            for (let corner = 0; corner < 3; corner += 1) vertices.push([position.getX(vertex + corner), position.getY(vertex + corner), position.getZ(vertex + corner)]);
+          }
+          const meshArea = closedMeshVolume(vertices, faces) / 4;
+          expect(Math.abs(area - meshArea) / meshArea).toBeLessThan(font === "Stencil" ? 1e-5 : 0.02);
+          first += glyph.triangleCount;
+        });
+      });
+    }));
+  }, 20_000);
+
+  it("leaves bevelled text, and text of several glyphs, to the glyph pieces or the mesh", () => {
+    expect(textGlyphProfiles(shape("text", { text: "Pécs", bevel: 2 }))).toBeNull();
+    expect(cadModifierProfileForShape(shape("text", { text: "Pécs" }))).toBeNull();
+    expect(cadModifierProfileForShape(shape("text", { text: "I", width: 10, depth: 20 }))?.loops).toHaveLength(1);
+    expect(cadModifierProfileForShape(shape("text", { text: "O", width: 20, depth: 20 }))?.loops).toHaveLength(2);
+    expect(cadModifierProfileForShape(shape("text", { text: "I", bevel: 1 }))).toBeNull();
+    // Taper, twist and lean reshape the display mesh the glyph outlines are matched to.
+    expect(textGlyphProfiles(shape("text", { text: "Pécs", extrudeTwist: 2 }))).toBeNull();
+    expect(textGlyphProfiles(shape("text", { text: "Pécs", extrudeTopOffsetX: 0.5 }))).toBeNull();
+    expect(textGlyphProfiles(shape("text", { text: "Pécs", taperTopWidth: 57 }))).toBeNull();
+  });
+});
+
 describe("which shapes get an exact profile", () => {
   it("covers the extruded catalog shapes and the spur gear, placed like the display mesh", () => {
     ["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear"].forEach((kind) => {
@@ -247,18 +396,35 @@ describe("which shapes get an exact profile", () => {
     expect(cadModifierProfileForShape(shape("star", { width: Number.NaN }))).toBeNull();
   });
 
-  it("sends big requests back to the display meshes, all or nothing", () => {
+  it("sends only as much of a big request back to the display meshes as it takes, cheapest meshes first", () => {
     const star = cadModifierProfileForShape(shape("star", { starOuterFillet: 2, starInnerFillet: 1 }));
     const bigHoneycomb = cadModifierProfileForShape(shape("honeycomb", { width: 150, depth: 150, height: 3 }));
     const midHoneycomb = cadModifierProfileForShape(shape("honeycomb", { width: 100, depth: 100, height: 3 }));
     expect(cadProfileSegmentCount(star!)).toBe(20);
     expect(cadProfileSegmentCount(midHoneycomb!)).toBeLessThanOrEqual(CAD_MODIFIER_EXACT_SEGMENT_LIMIT);
     expect(cadProfileSegmentCount(bigHoneycomb!)).toBeGreaterThan(CAD_MODIFIER_EXACT_SEGMENT_LIMIT);
-    const mesh = { name: "mesh" };
-    const small = [{ profile: star!, profileMesh: mesh }, { profile: midHoneycomb!, profileMesh: mesh }, { mesh }];
+    const mesh = (triangles: number) => ({ faces: { length: triangles } });
+    const starMesh = mesh(680);
+    const honeycombMesh = mesh(7248);
+    const plain = mesh(12);
+    const small = [{ profile: star!, profileMesh: starMesh }, { profile: midHoneycomb!, profileMesh: mesh(3000) }, { mesh: plain }];
     expect(withinExactProfileLimit(small)).toBe(small);
-    const big = withinExactProfileLimit([{ profile: star!, profileMesh: mesh }, { profile: bigHoneycomb!, profileMesh: mesh }, { mesh }]);
-    expect(big.every((part) => !part.profile && part.mesh === mesh)).toBe(true);
+    // The honeycomb alone is over the limit: it goes back, the star stays exact.
+    const big = withinExactProfileLimit([{ profile: star!, profileMesh: starMesh }, { profile: bigHoneycomb!, profileMesh: honeycombMesh }, { mesh: plain }]);
+    expect(big[0].profile).toBe(star);
+    expect(big[1].profile).toBeUndefined();
+    expect(big[1].mesh).toBe(honeycombMesh);
+    expect(big[2].mesh).toBe(plain);
+    // Over the limit together: the part whose mesh costs least per piece saved goes first.
+    const gear = cadModifierProfileForShape(shape("gear", { width: 90, depth: 90, teeth: 60 }))!;
+    // A plate whose mesh is dear per piece, like a text's (about 25 triangles per piece).
+    const plate = cadModifierProfileForShape(shape("honeycomb", { width: 100, depth: 100, height: 3 }))!;
+    const gearMesh = mesh(cadProfileSegmentCount(gear) * 8);
+    const plateMesh = mesh(cadProfileSegmentCount(plate) * 25);
+    const mixed = withinExactProfileLimit([{ profile: gear, profileMesh: gearMesh }, { profile: plate, profileMesh: plateMesh }]);
+    expect(cadProfileSegmentCount(gear) + cadProfileSegmentCount(plate)).toBeGreaterThan(CAD_MODIFIER_EXACT_SEGMENT_LIMIT);
+    expect(mixed[0].profile).toBeUndefined();
+    expect(mixed[1].profile).toBe(plate);
   });
 
   it("gives exact parts time of their own when the edge tool prepares them", () => {
