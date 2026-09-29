@@ -1093,6 +1093,7 @@ function shapeMaterialSignature(shape: WorkplaneShape): string {
   return JSON.stringify({
     color: shape.color,
     hole: Boolean(shape.hole),
+    transparent: Boolean(shape.transparent),
     imagePlate: shapeResourceId(shape.imagePlate),
     imageData: shape.imagePlate?.dataUrl ?? "",
     sourceFormat: shape.importedMesh?.sourceFormat ?? "",
@@ -1100,7 +1101,7 @@ function shapeMaterialSignature(shape: WorkplaneShape): string {
     cadEdges: shapeResourceId(shape.cadDisplayEdges),
     cadEdgesVersion: shape.cadDisplayEdgesVersion ?? 0,
     cadEdgeDimensions: shape.cadDisplayEdges?.length ? [shapeWidth(shape), shapeDepth(shape), shape.height] : null,
-    groupedMaterials: shape.groupedShapes?.map((child) => [child.id, child.hidden, shapeMaterialSignature(shape.hole ? { ...child, hole: true, color: "#b8c2cc" } : child)]),
+    groupedMaterials: shape.groupedShapes?.map((child) => [child.id, child.hidden, shapeMaterialSignature(groupChildAppearance(shape, child))]),
   });
 }
 
@@ -2556,7 +2557,7 @@ function syncOriginDimensionWorldLines(state: ThreeState, frame: OriginDimension
 
 function syncOriginDimensionOverlay(
   state: ThreeState | null,
-  shape: WorkplaneShape | null,
+  shapes: WorkplaneShape[] | null,
   workplane: PlacementWorkplane,
   accuracy: MeasurementAccuracy,
   theme: ResolvedAppTheme,
@@ -2566,7 +2567,7 @@ function syncOriginDimensionOverlay(
   if (!state) {
     return;
   }
-  const frame = shape ? originFrameForShape(shape, workplane, accuracy) : null;
+  const frame = shapes?.length ? originFrameForShapes(shapes, workplane, accuracy) : null;
   syncOriginDimensionWorldLines(state, frame, theme);
   const rect = state.renderer.domElement.getBoundingClientRect();
   const next = frame && (frame.distanceX !== null || frame.distanceZ !== null)
@@ -2804,12 +2805,19 @@ type OriginDimensionFrame = {
  * auf die Drehung der Form selbst aus, weil der Abstand zum Nullpunkt am
  * Raster gemessen wird, nicht an der Neigung des Objekts.
  */
-function originFrameForShape(shape: WorkplaneShape, workplane: PlacementWorkplane, accuracy: MeasurementAccuracy): OriginDimensionFrame {
+function originFrameForShapes(shapes: WorkplaneShape[], workplane: PlacementWorkplane, accuracy: MeasurementAccuracy): OriginDimensionFrame {
   const origin = new THREE.Vector3(workplane.origin.x, workplane.origin.y, workplane.origin.z);
   const xAxis = new THREE.Vector3(workplane.xAxis.x, workplane.xAxis.y, workplane.xAxis.z).normalize();
   const yAxis = new THREE.Vector3(workplane.normal.x, workplane.normal.y, workplane.normal.z).normalize();
   const zAxis = new THREE.Vector3(workplane.zAxis.x, workplane.zAxis.y, workplane.zAxis.z).normalize();
-  const { min, max } = projectShapeExtent(shape, xAxis, yAxis, zAxis, origin);
+  // Several shapes measure as one: the box around all of them.
+  const min = new THREE.Vector3(Infinity, Infinity, Infinity);
+  const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+  shapes.forEach((shape) => {
+    const extent = projectShapeExtent(shape, xAxis, yAxis, zAxis, origin);
+    min.min(extent.min);
+    max.max(extent.max);
+  });
   const eps = 0.5 * 10 ** -accuracy;
   const distanceX = computeOriginAxisDistance((min.x + max.x) / 2, (max.x - min.x) / 2, eps);
   const distanceZ = computeOriginAxisDistance((min.z + max.z) / 2, (max.z - min.z) / 2, eps);
@@ -3662,16 +3670,22 @@ export function WorkplaneViewport({
     ),
     [],
   );
-  /** Nur bei genau einer ausgewaehlten Form und wenn gerade nichts anderes den Bildschirm belegt - siehe layerling-lineal.md. */
+  /**
+   * Die ausgewaehlten Formen, solange gerade nichts anderes den Bildschirm
+   * belegt - siehe layerling-lineal.md. Mehrere zaehlen zusammen wie ein
+   * Koerper: gemessen wird ihre gemeinsame Umrissbox, wie in Tinkercad.
+   */
   const originDimensionShapeFor = useCallback(
     (shapesList: WorkplaneShape[], ids = selectedIdsRef.current) => {
       if (!originDimensionsEnabledRef.current) return null;
       const rendered = renderSelectionIds(ids);
-      if (rendered.length !== 1) return null;
+      if (rendered.length === 0) return null;
       if (alignModeRef.current || mirrorModeRef.current) return null;
       if (tapeModeRef.current || tapeDeleteModeRef.current || tapeMoveModeRef.current) return null;
       if (transformRef.current || dragRef.current) return null;
-      return shapesList.find((shape) => shape.id === rendered[0] && !shape.hidden) ?? null;
+      const wanted = new Set(rendered);
+      const selected = shapesList.filter((shape) => wanted.has(shape.id) && !shape.hidden);
+      return selected.length ? selected : null;
     },
     [renderSelectionIds],
   );
@@ -8452,7 +8466,7 @@ function syncShapeObjectAppearance(object: THREE.Group, shape: WorkplaneShape, s
       .forEach((child) => {
         const childObject = groupedContent.children.find((entry): entry is THREE.Group => entry instanceof THREE.Group && entry.userData.groupChildId === child.id);
         if (!childObject) return;
-        const childShape = shape.hole ? { ...child, hole: true, color: "#b8c2cc" } : child;
+        const childShape = groupChildAppearance(shape, child);
         syncShapeObjectAppearance(childObject, childShape, selected, updateSurfaceMaterial, onTextureReady);
       });
     object.traverse((child) => {
@@ -9703,12 +9717,26 @@ function releaseSharedShapeGeometry(mesh: THREE.Mesh | THREE.LineSegments) {
   trimSharedShapeGeometryCache();
 }
 
+/** A group hands its hole or see-through state down to every child it draws. */
+function groupChildAppearance(group: WorkplaneShape, child: WorkplaneShape): WorkplaneShape {
+  if (group.hole) return { ...child, hole: true, color: "#b8c2cc" };
+  if (group.transparent) return { ...child, transparent: true };
+  return child;
+}
+
+// A see-through solid keeps its colour. It writes no depth, so what lies
+// behind or inside it - and the faces where it touches another body - stays
+// visible from every side.
+const TRANSPARENT_SOLID_OPACITY = 0.4;
+
 function sharedShapeMaterial(shape: WorkplaneShape) {
+  const seeThrough = !shape.hole && Boolean(shape.transparent);
   const key = JSON.stringify({
     color: shape.hole ? "#b7c0c9" : shape.color,
-    transparent: Boolean(shape.hole),
-    opacity: shape.hole ? (shape.importedMesh ? 0.34 : 0.52) : 1,
+    transparent: Boolean(shape.hole) || seeThrough,
+    opacity: shape.hole ? (shape.importedMesh ? 0.34 : 0.52) : seeThrough ? TRANSPARENT_SOLID_OPACITY : 1,
     roughness: shape.hole ? 0.88 : 0.57,
+    depthWrite: !seeThrough,
     side: "double",
   });
   const cached = sharedShapeMaterialCache.get(key);
@@ -9719,10 +9747,11 @@ function sharedShapeMaterial(shape: WorkplaneShape) {
   }
   const material = new THREE.MeshStandardMaterial({
     color: shape.hole ? "#b7c0c9" : shape.color,
-    transparent: Boolean(shape.hole),
-    opacity: shape.hole ? (shape.importedMesh ? 0.34 : 0.52) : 1,
+    transparent: Boolean(shape.hole) || seeThrough,
+    opacity: shape.hole ? (shape.importedMesh ? 0.34 : 0.52) : seeThrough ? TRANSPARENT_SOLID_OPACITY : 1,
     roughness: shape.hole ? 0.88 : 0.57,
     metalness: 0.02,
+    depthWrite: !seeThrough,
     side: THREE.DoubleSide,
   });
   material.userData.cached = true;
@@ -9830,7 +9859,7 @@ function createShapeObject(
     shape.groupedShapes
       .filter((child) => !child.hidden)
       .forEach((child) => {
-        const childShape = shape.hole ? { ...child, hole: true, color: "#b8c2cc" } : child;
+        const childShape = groupChildAppearance(shape, child);
         const childObject = createShapeObject(childShape, showEdges, onTextureReady, acceleratedPicking);
         childObject.userData.groupChildId = child.id;
         content.add(childObject);

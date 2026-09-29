@@ -202,7 +202,7 @@ export const tools = [
   },
   {
     name: "layerling_update_object",
-    description: "Update one object: exact dimensions, position, color, name, hole state, rotations, locked and hidden state, and everything the shape has beyond its size - the side count of a cylinder, the diameter of a thread, the turns of a spring, the lettering of a text. Changing a thread's diameter or pitch moves width and depth with it.",
+    description: "Update one object: exact dimensions, position, color, name, hole state, see-through display, rotations, locked and hidden state, and everything the shape has beyond its size - the side count of a cylinder, the diameter of a thread, the turns of a spring, the lettering of a text. Changing a thread's diameter or pitch moves width and depth with it.",
     inputSchema: {
       ...editorTargetSchema,
       required: ["id"],
@@ -212,6 +212,7 @@ export const tools = [
         name: { type: "string" },
         color: { type: "string" },
         hole: { type: "boolean" },
+        transparent: { type: "boolean" },
         locked: { type: "boolean" },
         hidden: { type: "boolean" },
         x: { type: "number" },

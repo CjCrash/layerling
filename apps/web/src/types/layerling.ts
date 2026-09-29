@@ -465,6 +465,8 @@ export type WorkplaneShape = {
   groupOperation?: "group" | "intersection";
   locked?: boolean;
   hidden?: boolean;
+  /** Drawn see-through in its own colour, like Tinkercad's "Transparent". Display only - a solid stays a solid. */
+  transparent?: boolean;
 };
 
 /**

@@ -1447,6 +1447,14 @@ export function ShapeInspector({
         </button>
       </div>
       ) : null}
+      {!isNonSolidShapeKind(shape.kind) && !shape.hole ? (
+        <ToggleProperty
+          label={t("inspector.transparent")}
+          value={Boolean(shape.transparent)}
+          disabled={locked}
+          onChange={(transparent) => onUpdate({ transparent: transparent || undefined })}
+        />
+      ) : null}
 
       {colorOpen ? (
         <div className="color-card" aria-label={t("inspector.shapeColor")}>
