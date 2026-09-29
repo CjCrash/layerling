@@ -347,7 +347,7 @@ export function withHoleMode(shape: WorkplaneShape, hole: boolean, parentColor?:
     ...shape,
     hole,
     color,
-    groupedShapes: shape.groupedShapes?.map((child) => withHoleMode(child, hole, parentColor)),
+    groupedShapes: shape.groupedShapes?.map((child) => withHoleMode(child, Boolean(child.hole), parentColor)),
   };
 }
 

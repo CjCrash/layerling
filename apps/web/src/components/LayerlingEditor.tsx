@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Check, Circle as CircleIcon, CloudUpload, Download, Eye, EyeOff, FilePlus2, FolderOpen, Hexagon as HexagonIcon, ListTree, Pencil, Square as SquareIcon, Triangle as TriangleIcon, X } from "lucide-react";
+import { AlertTriangle, Check, Circle as CircleIcon, CloudUpload, Download, Eye, EyeOff, FilePlus2, FolderOpen, Hexagon as HexagonIcon, Info, ListTree, Pencil, Square as SquareIcon, Triangle as TriangleIcon, X } from "lucide-react";
 import { ObjectListPanel } from "@/components/workplane/ObjectListPanel";
 import type manifoldModule from "manifold-3d";
 import type { ManifoldToplevel } from "manifold-3d";
@@ -5603,7 +5603,7 @@ function restoreGroupedChildren(group: WorkplaneShape): WorkplaneShape[] {
       mirrorZ: Boolean(child.mirrorZ) !== Boolean(group.mirrorZ) || undefined,
       hidden: group.hidden ? true : child.hidden,
     };
-    return canonicalizeShape(group.hole ? withHoleMode(restored, true) : restored);
+    return canonicalizeShape(group.hole && !children.some((c) => c.hole) ? withHoleMode(restored, true) : restored);
   });
 }
 
@@ -6654,7 +6654,9 @@ export function LayerlingEditor({
     setEdgeModifier((latest) => latest ? { ...latest, sharpAngle, selectedEdgeIds: [...next], preview: null, busy: next.size > 0, error: next.size ? null : t("edge.selectAtLeastOne") } : latest);
     if (notice) setNotice(notice, true);
   }, []);
-  const exportableShapeCount = useMemo(() => (hasSelection ? selectedShapes : shapes).filter((shape) => !shape.hole).length, [hasSelection, selectedShapes, shapes]);
+  const exportTargetShapes = useMemo(() => (hasSelection ? selectedShapes : shapes), [hasSelection, selectedShapes, shapes]);
+  const exportableShapeCount = useMemo(() => exportTargetShapes.filter((shape) => !shape.hole).length, [exportTargetShapes]);
+  const exportHolesOnly = useMemo(() => exportTargetShapes.length > 0 && exportTargetShapes.every((shape) => shape.hole), [exportTargetShapes]);
   const exportScopeLabel = hasSelection ? "selected" : "total";
   const effectiveAlignAnchorId = useMemo(
     () => effectiveAlignmentAnchorId(selectedShapes, alignAnchorId),
@@ -11179,6 +11181,7 @@ export function LayerlingEditor({
           projectName={projectName}
           shapeCount={exportableShapeCount}
           scopeLabel={exportScopeLabel}
+          onlyHoles={exportHolesOnly}
           onClose={() => setTopPanel(null)}
           onExport={exportDesign}
           onExportLyl={exportLylDesign}
@@ -12152,6 +12155,7 @@ function TopActionPanel({
   projectName,
   shapeCount,
   scopeLabel,
+  onlyHoles,
   onClose,
   onExport,
   onExportLyl,
@@ -12169,6 +12173,7 @@ function TopActionPanel({
   projectName: string;
   shapeCount: number;
   scopeLabel: "selected" | "total";
+  onlyHoles?: boolean;
   onClose: () => void;
   onExport: (format: DirectExportFormat, exportName: string) => void;
   onExportLyl: (exportName: string, historyLimit: LylHistoryLimit, target?: LylExportTarget) => void;
@@ -12331,6 +12336,13 @@ function TopActionPanel({
               ))}
             </div>
           </section>
+
+          {exportFormat !== "lyl" && onlyHoles ? (
+            <div className="export-holes-only-warning" role="status">
+              <Info size={16} aria-hidden="true" />
+              <span>{t("export.holesOnlyWarning")}</span>
+            </div>
+          ) : null}
 
           {exportFormat === "lyl" ? (
             <section className="export-setting-section lyl-history-section">

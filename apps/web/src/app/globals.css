@@ -10272,14 +10272,15 @@ html[data-theme="dark"] .theme-check {
    ========================================================================== */
 .outliner-panel {
   position: absolute;
-  top: 16px;
+  /* below the floating status message, which shares this corner */
+  top: 64px;
   left: 104px;
   z-index: 10;
   display: flex;
   flex-direction: column;
   width: 300px;
   max-width: calc(100vw - 120px);
-  max-height: calc(100vh - 120px);
+  max-height: calc(100% - 96px);
   background: rgba(254, 253, 252, 0.96);
   backdrop-filter: blur(12px);
   border: 1px solid #ede6da;
@@ -10781,4 +10782,37 @@ html[data-theme="dark"] .outliner-rename-input {
 
 html[data-theme="dark"] .outliner-list-wrap::-webkit-scrollbar-thumb {
   background: #443a30;
+}
+
+/* ==========================================================================
+   Export Warning for Hole-Only selections
+   ========================================================================== */
+.export-holes-only-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  color: #8a3b00;
+  background: #fff4e5;
+  border: 1px solid #f0a45a;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.export-holes-only-warning svg {
+  flex: none;
+  color: #d86a00;
+}
+
+html[data-theme="dark"] .export-holes-only-warning {
+  color: #ffc480;
+  background: rgba(180, 85, 0, 0.16);
+  border-color: rgba(240, 164, 90, 0.4);
+}
+
+html[data-theme="dark"] .export-holes-only-warning svg {
+  color: #ffa447;
 }
