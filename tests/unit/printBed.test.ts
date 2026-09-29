@@ -84,6 +84,32 @@ describe("bedOverhangs", () => {
     expect(overhang.right).toBeCloseTo(2);
   });
 
+  it("reports a body taller than the build height", () => {
+    const [overhang] = bedOverhangs([shape({ height: 270 })], 256, 256, 256);
+    expect(overhang.top).toBeCloseTo(14);
+    expect(Math.max(overhang.left, overhang.right, overhang.back, overhang.front)).toBe(0);
+    expect(bedOverhangs([shape({ height: 256 })], 256, 256, 256)).toEqual([]);
+  });
+
+  it("counts height from the lowest body, as the slicer sets the model down", () => {
+    // Floating 100 mm up, but only 200 mm tall: fits.
+    expect(bedOverhangs([shape({ height: 200, elevation: 100 })], 256, 256, 256)).toEqual([]);
+    // Stacked: 150 mm on top of a 150 mm body is 300 mm in all.
+    const stack = bedOverhangs([shape({ id: "low", height: 150 }), shape({ id: "high", height: 150, elevation: 150 })], 256, 256, 256);
+    expect(stack.map((entry) => entry.shape.id)).toEqual(["high"]);
+    expect(stack[0].top).toBeCloseTo(44);
+  });
+
+  it("measures a tipped body by its turned height", () => {
+    // 30 mm tall, 20 wide - laid on its side it is 20 mm tall.
+    expect(bedOverhangs([shape({ height: 300, width: 20, rotationZ: 90 })], 400, 400, 256)).toEqual([]);
+    expect(bedOverhangs([shape({ height: 300, width: 20 })], 400, 400, 256)).toHaveLength(1);
+  });
+
+  it("leaves height alone when no build height is given", () => {
+    expect(bedOverhangs([shape({ height: 900 })], 256, 256)).toEqual([]);
+  });
+
   it("ignores holes, hidden bodies and rulers", () => {
     expect(bedOverhangs([
       shape({ id: "hole", x: 500, hole: true }),

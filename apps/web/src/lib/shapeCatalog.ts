@@ -581,6 +581,29 @@ export function shapeAssetLabel(asset: Pick<ShapeAsset, "id" | "name">): string 
   return key ? t(key) : asset.name;
 }
 
+/** Names the editor itself hands out in English - a sketch, a group, anything made through MCP. */
+const GENERATED_NAME_KEYS: Record<string, MessageKey> = {
+  Group: "shape.group",
+  "Sketch extrusion": "shape.sketchExtrusion",
+  "Sketch revolve": "shape.sketchRevolve",
+  Cube: "shape.box",
+};
+
+/**
+ * The name a person reads. A name somebody typed is theirs and stays as it
+ * is; one of the English names the editor hands out itself ("Box", "Group",
+ * "Sketch extrusion") is shown in the interface language. The stored name
+ * does not change, so switching the language switches these names along.
+ */
+export function displayShapeName(shape: Pick<WorkplaneShape, "name" | "kind">): string {
+  const name = shape.name?.trim() ?? "";
+  const generated = GENERATED_NAME_KEYS[name];
+  if (generated) return t(generated);
+  const asset = toolbarShapeAssets.find((entry) => entry.kind === shape.kind && entry.name === name);
+  if (asset) return shapeAssetLabel(asset);
+  return name || shapeAssetLabel({ id: shape.kind, name: shape.kind });
+}
+
 /**
  * Die Zeile im Formenmenue darf mehr sagen als der Name des Objekts. Hinter
  * "Gewinde" stecken auch Schrauben und Muttern, und wer die sucht, soll den

@@ -150,7 +150,7 @@ import { AppFooter } from "@/components/AppFooter";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { exportLylProject, importLylProject, LYL_CREATED_WITH_VERSION, LYL_MEDIA_TYPE } from "@/lib/lylProject";
-import { makeShapeFromAsset, sceneShape, shapeAssetLabel, shapeAssetMenuLabel, toolbarShapeAssets } from "@/lib/shapeCatalog";
+import { displayShapeName, makeShapeFromAsset, sceneShape, shapeAssetLabel, shapeAssetMenuLabel, toolbarShapeAssets } from "@/lib/shapeCatalog";
 import { importExtensionSupported } from "@/lib/importExtensions";
 import { importedShapeFromStl } from "@/lib/stlImport";
 import { exportMeshesToStl } from "@/lib/stlExport";
@@ -1630,11 +1630,11 @@ function bedOverhangMessage(overhangs: BedOverhang[], printer: string) {
   if (overhangs.length > 1) return t("status.bedOverhangMany", { count: overhangs.length, printer });
   const [overhang] = overhangs;
   const mm = (value: number) => Number(value.toFixed(1));
-  const sides = (["left", "right", "back", "front"] as const)
+  const sides = (["left", "right", "back", "front", "top"] as const)
     .filter((side) => overhang[side] > 0.01)
     .map((side) => t(`bed.side.${side}`, { mm: mm(overhang[side]) }))
     .join(", ");
-  return t("status.bedOverhangOne", { name: overhang.shape.name, printer, sides });
+  return t("status.bedOverhangOne", { name: displayShapeName(overhang.shape), printer, sides });
 }
 
 function edgeTreatmentLabel(feature: NonNullable<WorkplaneShape["edgeTreatments"]>[number]) {
@@ -6075,7 +6075,7 @@ export function LayerlingEditor({
   const [workspaceSettings, setWorkspaceSettings] = useState<WorkplaneWorkspaceSettings>(() => normalizeWorkspaceSettings(initialWorkspace));
   const bedPrinter = printerPresetById(workspaceSettings.printer);
   const overhangs = useMemo(
-    () => bedPrinter ? bedOverhangs(shapes, bedPrinter.width, bedPrinter.depth) : [],
+    () => bedPrinter ? bedOverhangs(shapes, bedPrinter.width, bedPrinter.depth, bedPrinter.height) : [],
     [bedPrinter, shapes],
   );
   const overhangWarning = bedPrinter && overhangs.length > 0 ? bedOverhangMessage(overhangs, `${bedPrinter.vendor} ${bedPrinter.model}`) : null;
@@ -10045,7 +10045,7 @@ export function LayerlingEditor({
         } else {
           await downloadTextFile(projectExportFileName(exportName, "obj"), exportMeshesToObj(fertig), "text/plain");
         }
-        const exportOverhangs = bedPrinter ? bedOverhangs(exportable, bedPrinter.width, bedPrinter.depth) : [];
+        const exportOverhangs = bedPrinter ? bedOverhangs(exportable, bedPrinter.width, bedPrinter.depth, bedPrinter.height) : [];
         if (gescheitert > 0) setNotice(t("status.exportUnionFailed"), true);
         else if (bedPrinter && exportOverhangs.length > 0) setNotice(bedOverhangMessage(exportOverhangs, `${bedPrinter.vendor} ${bedPrinter.model}`), true);
         else if (verschmolzen > 0) setNotice(t("status.exportUnioned", { count: verschmolzen, label }));

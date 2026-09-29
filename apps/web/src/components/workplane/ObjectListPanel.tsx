@@ -4,6 +4,7 @@ import { useMemo, useState, useRef, useEffect, type KeyboardEvent, type MouseEve
 import { ChevronDown, ChevronRight, Eye, EyeOff, Layers, ListTree, Lock, Pencil, Search, Unlock, X } from "lucide-react";
 import { useLanguage } from "@/lib/useLanguage";
 import { t, type MessageKey } from "@/lib/i18n";
+import { displayShapeName } from "@/lib/shapeCatalog";
 import type { WorkplaneShape } from "@/types/layerling";
 
 export interface ObjectListPanelProps {
@@ -50,7 +51,7 @@ export function ObjectListPanel({
   };
 
   const getShapeDisplayName = (shape: WorkplaneShape): string => {
-    if (shape.name?.trim()) return shape.name.trim();
+    if (shape.name?.trim()) return displayShapeName(shape);
     if (shape.groupedShapes?.length) return t("shape.group");
     if (shape.importedMesh) return t("shape.importedMesh");
     const key = `shape.${shape.kind}` as MessageKey;
@@ -70,7 +71,7 @@ export function ObjectListPanel({
   const startRename = (shape: WorkplaneShape, e: MouseEvent) => {
     e.stopPropagation();
     setEditingId(shape.id);
-    setEditingDraft(shape.name ?? getShapeDisplayName(shape));
+    setEditingDraft(getShapeDisplayName(shape));
   };
 
   const commitRename = () => {

@@ -119,6 +119,7 @@ import {
 } from "@/lib/bentTubeGeometry";
 import { displayStepFromMillimeters, displayToMillimeters, formatMeasurementNumber, lengthDisplayUnit, measurementOptionLabel, millimetersToDisplay, parseMeasurementInput, resolveMeasurementInput } from "@/lib/measurementUnits";
 import { t, type MessageKey } from "@/lib/i18n";
+import { displayShapeName } from "@/lib/shapeCatalog";
 import { MAX_DOVETAIL_CLEARANCE, normalizeDovetailClearance, normalizeDovetailNeckWidth } from "@/lib/dovetailGeometry";
 import { useLanguage } from "@/lib/useLanguage";
 import { isNonSolidShapeKind, resizedShapeSize, shapeDepth, shapeHasTaper, shapeOverallFootprintDimensions, shapeSupportsTaper, shapeTaperDimensions, shapeWidth } from "@/lib/workplaneShapes";
@@ -1432,23 +1433,23 @@ export function ShapeInspector({
   }, [isSketchRevolve, shape.id]);
 
   return (
-    <aside ref={inspectorRef} className={`shape-inspector ${isSketchRevolve ? "sketch-revolve-inspector" : ""} ${shape.kind === "gear" ? "gear-inspector" : ""} ${minimized ? "minimized" : ""}`} aria-label={`${shape.name} shape settings`} onPointerDown={(event) => event.stopPropagation()}>
+    <aside ref={inspectorRef} className={`shape-inspector ${isSketchRevolve ? "sketch-revolve-inspector" : ""} ${shape.kind === "gear" ? "gear-inspector" : ""} ${minimized ? "minimized" : ""}`} aria-label={t("inspector.settingsFor", { name: displayShapeName(shape) })} onPointerDown={(event) => event.stopPropagation()}>
       <div className="shape-inspector-header">
         <button
           className="inspector-header-icon"
-          aria-label={minimized ? "Expand shape settings" : "Minimize shape settings"}
+          aria-label={minimized ? t("inspector.expand") : t("inspector.minimize")}
           aria-expanded={!minimized}
           onClick={() => setMinimized((current) => !current)}
         >
           {minimized ? <ChevronDown size={26} strokeWidth={2.8} /> : <ChevronUp size={26} strokeWidth={2.8} />}
         </button>
         {/* One long word ("Schwalbenschwanz") cannot wrap; it gets a smaller size instead. */}
-        <strong className={shape.name.split(/\s+/).some((word) => word.length > 14) ? "long-word" : undefined}>{shape.name}</strong>
+        <strong className={displayShapeName(shape).split(/\s+/).some((word) => word.length > 14) ? "long-word" : undefined}>{displayShapeName(shape)}</strong>
         <div className="inspector-header-actions">
-          <button className={locked ? "inspector-header-icon active" : "inspector-header-icon"} aria-label={locked ? "Unlock shape" : "Lock shape"} onClick={() => onUpdate({ locked: !locked })}>
+          <button className={locked ? "inspector-header-icon active" : "inspector-header-icon"} aria-label={locked ? t("outliner.unlock") : t("outliner.lock")} onClick={() => onUpdate({ locked: !locked })}>
             {locked ? <LockKeyhole size={31} strokeWidth={2.4} /> : <LockKeyholeOpen size={31} strokeWidth={2.4} />}
           </button>
-          <button className={shape.hidden ? "inspector-header-icon active" : "inspector-header-icon"} aria-label={shape.hidden ? "Show shape" : "Hide shape"} onClick={() => onUpdate({ hidden: !shape.hidden })}>
+          <button className={shape.hidden ? "inspector-header-icon active" : "inspector-header-icon"} aria-label={shape.hidden ? t("outliner.show") : t("outliner.hide")} onClick={() => onUpdate({ hidden: !shape.hidden })}>
             <ToolbarHideSelectedIcon />
           </button>
         </div>
@@ -1534,7 +1535,7 @@ export function ShapeInspector({
 
       {shape.sketchProfile && onEditSketch ? (
         <button className="edit-sketch-button" type="button" disabled={locked} onClick={onEditSketch}>
-          Edit sketch
+          {t("inspector.editSketch")}
         </button>
       ) : null}
 
