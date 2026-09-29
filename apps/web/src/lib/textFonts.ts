@@ -32,6 +32,41 @@ export function textFontsLoaded() {
   return loadedFonts !== null;
 }
 
+type GlyphData = { x_min?: number; x_max?: number; ha: number; o?: string };
+
+/**
+ * The typeface with every character it lacks taken from `fallback`, scaled to
+ * its units. The Multilanguage face (helvetiker) has no umlauts, no ß, no é and
+ * no €, and three.js draws "?" for a missing character - "Grüße" came out as
+ * "Gr??e". Sans has them all; a borrowed letter looks a little different, but
+ * it is the letter. Characters the face has are never touched.
+ */
+export function withFallbackGlyphs(data: FontData, fallback: FontData): FontData {
+  const own = data.glyphs as Record<string, GlyphData>;
+  const borrowed = fallback.glyphs as Record<string, GlyphData>;
+  const missing = Object.keys(borrowed).filter((char) => !own[char]);
+  if (missing.length === 0) return data;
+  const scale = (data.resolution ?? 1000) / (fallback.resolution ?? 1000);
+  const scaled = (value: number | undefined) => (value === undefined ? undefined : value * scale);
+  const glyphs: Record<string, GlyphData> = { ...own };
+  for (const char of missing) {
+    const glyph = borrowed[char];
+    glyphs[char] = {
+      x_min: scaled(glyph.x_min),
+      x_max: scaled(glyph.x_max),
+      ha: glyph.ha * scale,
+      o: glyph.o
+        ?.split(" ")
+        .map((token) => (token === "" || Number.isNaN(Number(token)) ? token : String(Number(token) * scale)))
+        .join(" "),
+    };
+  }
+  return { ...data, glyphs } as FontData;
+}
+
+/** Faces that miss common letters borrow them from Sans. */
+const BORROWS_FROM_SANS = new Set(["Multilanguage", "Stencil", "Rounded"]);
+
 export function loadTextFonts(): Promise<void> {
   if (loadedFonts) return Promise.resolve();
   fontsPromise ??= Promise.all(
@@ -40,6 +75,18 @@ export function loadTextFonts(): Promise<void> {
     .then((entries) => {
       const loader = new FontLoader();
       const parsed = new Map<FontData, Font>();
+      const sans = entries.find(([name]) => name === "Sans")?.[1];
+      // Filled once per typeface file, so Multilanguage and Stencil keep sharing one.
+      const filled = new Map<FontData, FontData>();
+      entries = entries.map(([name, data]) => {
+        if (!sans || !BORROWS_FROM_SANS.has(name)) return [name, data] as const;
+        let complete = filled.get(data);
+        if (!complete) {
+          complete = withFallbackGlyphs(data, sans);
+          filled.set(data, complete);
+        }
+        return [name, complete] as const;
+      });
       loadedFonts = Object.fromEntries(entries.map(([name, data]) => {
         let font = parsed.get(data);
         if (!font) {

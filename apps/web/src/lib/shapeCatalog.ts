@@ -311,7 +311,9 @@ export function shapeAssetSpecialDefaults(kind: ShapeKind, dimensions = shapeAss
       honeycombFrameWidth: DEFAULT_HONEYCOMB_FRAME_WIDTH,
     };
   }
-  if (kind === "text") return { text: "TEXT", font: "Multilanguage", bevel: 0, segments: 0 };
+  // New text starts in Sans: Multilanguage lacks umlauts, ß and €. Texts saved
+  // without a font keep reading as Multilanguage, so their look never changes.
+  if (kind === "text") return { text: "TEXT", font: "Sans", bevel: 0, segments: 0 };
   if (kind === "spring") {
     return {
       springTurns: DEFAULT_SPRING_TURNS,
@@ -516,7 +518,14 @@ export function makeShapeFromAsset(
     rotationZ: 0,
     radius: asset.kind === "box" ? 0 : undefined,
     text: asset.kind === "text" ? customization.text ?? "TEXT" : undefined,
-    font: asset.kind === "text" ? customization.font ?? "Multilanguage" : undefined,
+    font: asset.kind === "text" ? customization.font ?? "Sans" : undefined,
+    // Curved text brings its circle along; the caller lays out the box with
+    // curvedTextPatch once the shape exists.
+    textCurved: asset.kind === "text" ? customization.textCurved : undefined,
+    textRadius: asset.kind === "text" ? customization.textRadius : undefined,
+    textSize: asset.kind === "text" ? customization.textSize : undefined,
+    textInward: asset.kind === "text" ? customization.textInward : undefined,
+    textFlipped: asset.kind === "text" ? customization.textFlipped : undefined,
     steps: asset.kind === "box" ? 10 : asset.kind === "sphere" ? customization.steps ?? 24 : asset.kind === "halfSphere" ? customization.steps ?? 32 : undefined,
     sides: asset.kind === "cylinder" || asset.kind === "ellipse" || asset.kind === "slot" || asset.kind === "cone" || asset.kind === "tube" || asset.kind === "ring" ? customization.sides : asset.kind === "roundRoof" ? customization.sides ?? 64 : asset.kind === "pyramid" ? customization.sides ?? 4 : asset.kind === "polygon" ? customization.sides ?? 6 : undefined,
     bevel: asset.kind === "cylinder" || asset.kind === "ellipse" || asset.kind === "slot" ? 0 : asset.kind === "tube" || asset.kind === "ring" ? customization.bevel ?? 4 : asset.kind === "text" ? customization.bevel : undefined,

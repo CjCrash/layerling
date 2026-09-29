@@ -102,7 +102,7 @@ describe("shape catalog", () => {
     const honeycomb = makeShapeFromAsset({ id: "honeycomb", name: "Honeycomb", src: "honeycomb.png", kind: "honeycomb", color: "#0ea5e9" });
     const roundedBox = makeShapeFromAsset({ id: "roundedBox", name: "Rounded Box", src: "roundedBox.png", kind: "roundedBox", color: "#e74c3c" });
 
-    expect(text).toMatchObject({ width: 86, depth: 28, height: 10, text: "TEXT", font: "Multilanguage" });
+    expect(text).toMatchObject({ width: 86, depth: 28, height: 10, text: "TEXT", font: "Sans" });
     expect(sphere).toMatchObject({ size: 22, width: 22, depth: 22, height: 22 });
     expect(torus).toMatchObject({ size: 22, width: 22, depth: 22, height: 5 });
     expect(gear).toMatchObject({
@@ -255,5 +255,18 @@ describe("shape catalog", () => {
       hidden: false,
     });
     expect(created.mirrorX).toBeUndefined();
+  });
+
+  it("keeps the circle of curved text it is given (the MCP create path)", () => {
+    const text = makeShapeFromAsset({ id: "text", name: "Text", src: "text.png", kind: "text", color: "#cf101b" }, undefined, {
+      textCurved: true,
+      textRadius: 25,
+      textSize: 8,
+      textInward: true,
+      textFlipped: true,
+    });
+    expect(text).toMatchObject({ textCurved: true, textRadius: 25, textSize: 8, textInward: true, textFlipped: true });
+    const box = makeShapeFromAsset({ id: "box", name: "Box", src: "box.png", kind: "box", color: "#000" }, undefined, { textCurved: true });
+    expect(box.textCurved).toBeUndefined();
   });
 });
