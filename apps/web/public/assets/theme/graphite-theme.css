@@ -4813,6 +4813,300 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .theme-check {
   color: #f3a452;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-panel {
+  background: rgba(253, 253, 253, 0.96);
+  border: 1px solid #e3e3e3;
+  box-shadow: 0 8px 28px rgba(64, 64, 64, 0.12);
+  color: #404040;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-header {
+  background: rgba(246, 246, 246, 0.98);
+  border-bottom: 1px solid #e3e3e3;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-header-icon {
+  color: #676767;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-count-badge {
+  color: #4f4f4f;
+  background: #e3e3e3;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-close-button {
+  color: #676767;
+  background: transparent;
+  border: none;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-close-button:hover {
+  color: #2e2e2e;
+  background: #dedede;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-search-wrap {
+  border-bottom: 1px solid #e8e8e8;
+  background: #f8f8f8;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-search-icon {
+  color: #808080;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-search-input {
+  color: inherit;
+  background: #ffffff;
+  border: 1px solid #d8d8d8;
+  outline: none;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-search-input:focus {
+  border-color: #d46b08;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-search-clear {
+  color: #808080;
+  background: transparent;
+  border: none;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-search-clear:hover {
+  color: #404040;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-list-wrap::-webkit-scrollbar-thumb {
+  background: #d3d3d3;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-empty-state {
+  color: #787878;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-item {
+  border-bottom: 1px solid rgba(227, 227, 227, 0.5);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-item:last-child {
+  border-bottom: none;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-item:hover {
+  background: rgba(232, 232, 232, 0.6);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-item.selected {
+  background: #ededed;
+  border-color: rgba(220, 160, 90, 0.4);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-item.locked-shape .outliner-shape-name {
+  color: #5c5c5c;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-expand-toggle {
+  color: #676767;
+  background: transparent;
+  border: none;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-expand-toggle:hover {
+  background: #e3e3e3;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-swatch {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-swatch.swatch-hole {
+  background: repeating-linear-gradient(
+    -45deg,
+    #cfd7df,
+    #cfd7df 2px,
+    #9aa5b1 2px,
+    #9aa5b1 4px
+  );
+  border: 1px dashed #7a889b;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-shape-name {
+  color: #2e2e2e;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-shape-kind {
+  color: #787878;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-rename-input {
+  color: inherit;
+  background: #ffffff;
+  border: 1px solid #d46b08;
+  outline: none;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-badge.badge-solid {
+  color: #2b6cb0;
+  background: #ebf8ff;
+  border: 1px solid #bee3f8;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-badge.badge-hole {
+  color: #744210;
+  background: #dfdfdf;
+  border: 1px solid #faf089;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-action-btn {
+  color: #808080;
+  background: transparent;
+  border: none;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-action-btn:hover {
+  color: #2e2e2e;
+  background: #e3e3e3;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-action-btn.active-locked {
+  color: #c05621;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-action-btn.active-hidden {
+  color: #b7791f;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-children-list {
+  background: rgba(239, 239, 239, 0.4);
+  border-top: 1px dashed #e3e3e3;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-child-name {
+  color: #404040;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-panel {
+  background: rgba(32, 32, 32, 0.96);
+  border-color: #3d3d3d;
+  color: #d1d1d1;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-header {
+  background: rgba(28, 28, 28, 0.98);
+  border-color: #3d3d3d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-header-icon {
+  color: #828282;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-count-badge {
+  color: #dddddd;
+  background: #3d3d3d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-close-button {
+  color: #828282;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-close-button:hover {
+  color: #ffffff;
+  background: #3d3d3d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-search-wrap {
+  background: #252525;
+  border-color: #343434;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-search-input {
+  background: #202020;
+  border-color: #3d3d3d;
+  color: #dddddd;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-search-input:focus {
+  border-color: #f6ad55;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-item {
+  border-color: rgba(61, 61, 61, 0.5);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-item:hover {
+  background: rgba(46, 46, 46, 0.6);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-item.selected {
+  background: #353535;
+  border-color: rgba(246, 173, 85, 0.35);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-shape-name {
+  color: #f7fafc;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-shape-kind {
+  color: #6e6e6e;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-expand-toggle {
+  color: #828282;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-expand-toggle:hover {
+  background: #3d3d3d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-action-btn {
+  color: #6e6e6e;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-action-btn:hover {
+  color: #f7fafc;
+  background: #3d3d3d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-action-btn.active-locked {
+  color: #ed8936;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-action-btn.active-hidden {
+  color: #ecc94b;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-badge.badge-solid {
+  color: #63b3ed;
+  background: rgba(49, 130, 206, 0.2);
+  border-color: rgba(99, 179, 237, 0.3);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-badge.badge-hole {
+  color: #f6e05e;
+  background: rgba(214, 158, 46, 0.2);
+  border-color: rgba(246, 224, 94, 0.3);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-children-list {
+  background: rgba(24, 24, 24, 0.5);
+  border-color: #343434;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-child-name {
+  color: #cbd5e0;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-rename-input {
+  background: #202020;
+  border-color: #ed8936;
+  color: #f7fafc;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-list-wrap::-webkit-scrollbar-thumb {
+  background: #3d3d3d;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section-tools,
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section .action-buttons {
   background: var(--toolbar-tile);

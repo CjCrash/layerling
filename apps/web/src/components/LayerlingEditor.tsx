@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertTriangle, Check, Circle as CircleIcon, CloudUpload, Download, Eye, EyeOff, FilePlus2, FolderOpen, Hexagon as HexagonIcon, Pencil, Square as SquareIcon, Triangle as TriangleIcon, X } from "lucide-react";
+import { AlertTriangle, Check, Circle as CircleIcon, CloudUpload, Download, Eye, EyeOff, FilePlus2, FolderOpen, Hexagon as HexagonIcon, ListTree, Pencil, Square as SquareIcon, Triangle as TriangleIcon, X } from "lucide-react";
+import { ObjectListPanel } from "@/components/workplane/ObjectListPanel";
 import type manifoldModule from "manifold-3d";
 import type { ManifoldToplevel } from "manifold-3d";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -6114,6 +6115,7 @@ export function LayerlingEditor({
   const [topPanel, setTopPanel] = useState<TopPanel>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [outlinerOpen, setOutlinerOpen] = useState(false);
   const [stepExporting, setStepExporting] = useState(false);
   const [lylExporting, setLylExporting] = useState(false);
   const [alignMode, setAlignMode] = useState(false);
@@ -8885,6 +8887,38 @@ export function LayerlingEditor({
     );
   }, [commitShapes, hasSelection, selectedIds, selectedShapes, shapes]);
 
+  const toggleOutliner = useCallback(() => {
+    setOutlinerOpen((open) => !open);
+  }, []);
+
+  const toggleShapeLockById = useCallback((id: string) => {
+    const target = shapes.find((s) => s.id === id);
+    if (!target) return;
+    const nextLocked = !target.locked;
+    const shapeLabel = target.name?.trim() || t((`shape.${target.kind}`) as MessageKey) || target.kind;
+    commitShapes(
+      shapes.map((s) => (s.id === id ? { ...s, locked: nextLocked } : s)),
+      selectedIds,
+      nextLocked ? t("status.shapeLocked", { name: shapeLabel }) : t("status.shapeUnlocked", { name: shapeLabel }),
+    );
+  }, [commitShapes, selectedIds, shapes]);
+
+  const toggleShapeHiddenById = useCallback((id: string) => {
+    const target = shapes.find((s) => s.id === id);
+    if (!target) return;
+    const nextHidden = !target.hidden;
+    const shapeLabel = target.name?.trim() || t((`shape.${target.kind}`) as MessageKey) || target.kind;
+    commitShapes(
+      shapes.map((s) => (s.id === id ? { ...s, hidden: nextHidden } : s)),
+      nextHidden ? selectedIds.filter((selId) => selId !== id) : selectedIds,
+      nextHidden ? t("status.shapeHidden", { name: shapeLabel }) : t("status.shapeShown", { name: shapeLabel }),
+    );
+  }, [commitShapes, selectedIds, shapes]);
+
+  const renameShapeById = useCallback((id: string, name: string) => {
+    updateShape(id, { name });
+  }, [updateShape]);
+
   const setSelectionHoleMode = useCallback(
     (hole: boolean) => {
       if (!hasSelection) {
@@ -10733,6 +10767,12 @@ export function LayerlingEditor({
         return;
       }
 
+      if (shortcut && (key === "o" || key === "O") && event.shiftKey) {
+        event.preventDefault();
+        setOutlinerOpen((open) => !open);
+        return;
+      }
+
       const geometryRotationDegrees = geometryRotationDegreesForShortcut(event);
       if (geometryRotationDegrees !== null && hasSelection) {
         event.preventDefault();
@@ -10840,6 +10880,8 @@ export function LayerlingEditor({
           setTopPanel(null);
           setMenuOpen(false);
         }}
+        outlinerOpen={outlinerOpen}
+        onToggleOutliner={toggleOutliner}
         canUndo={!projectInteractionActive && (historyIndex > 0 || Boolean(edgeModifier))}
         canRedo={!projectInteractionActive && historyIndex < history.length - 1}
         canGroup={selectedShapes.length > 1 && selectedShapes.every((shape) => !shape.locked && !isNonSolidShapeKind(shape.kind))}
@@ -10924,6 +10966,17 @@ export function LayerlingEditor({
         }}
       />
       <div className="editor-body">
+        {outlinerOpen ? (
+          <ObjectListPanel
+            shapes={shapes}
+            selectedIds={selectedIds}
+            onSelectShape={selectShape}
+            onToggleLock={toggleShapeLockById}
+            onToggleHidden={toggleShapeHiddenById}
+            onRenameShape={renameShapeById}
+            onClose={() => setOutlinerOpen(false)}
+          />
+        ) : null}
         {toolbarMode === "sketch" && sketchActive ? (
           <SketchWorkspace
             profile={sketchProfile}
@@ -11249,6 +11302,8 @@ function SecondaryToolbar({
   projectName,
   onProjectNameChange,
   onToolbarModeChange,
+  outlinerOpen,
+  onToggleOutliner,
   alignMode,
   canAlign,
   canEdgeModify,
@@ -11319,6 +11374,8 @@ function SecondaryToolbar({
   projectName: string;
   onProjectNameChange?: (name: string) => void;
   onToolbarModeChange: (mode: ToolbarMode) => void;
+  outlinerOpen: boolean;
+  onToggleOutliner: () => void;
   alignMode: boolean;
   canAlign: boolean;
   canEdgeModify: boolean;
@@ -11555,6 +11612,17 @@ function SecondaryToolbar({
   ];
   const visibilityTools = [
     {
+      id: "outliner",
+      label: outlinerOpen ? t("editor.tool.hideOutliner") : t("editor.tool.showOutliner"),
+      icon: ListTree,
+      action: () => {
+        setVisibilityOpen(false);
+        onToggleOutliner();
+      },
+      enabled: true,
+      active: outlinerOpen,
+    },
+    {
       id: "toggle-hidden",
       label: selectionHidden ? t("editor.tool.showSelected") : t("editor.tool.hideSelected"),
       icon: ToolbarHideSelectedIcon,
@@ -11742,6 +11810,18 @@ function SecondaryToolbar({
               aria-label={t("editor.visibilityOptions")}
               style={visibilityMenuPosition}
             >
+              <button
+                className="visibility-dropdown-action"
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setVisibilityOpen(false);
+                  onToggleOutliner();
+                }}
+              >
+                <ListTree size={20} aria-hidden="true" />
+                <strong>{outlinerOpen ? t("visibility.hideOutliner") : t("visibility.showOutliner")}</strong>
+              </button>
               <button
                 className="visibility-dropdown-action"
                 type="button"
