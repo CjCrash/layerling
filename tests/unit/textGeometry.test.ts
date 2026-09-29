@@ -121,26 +121,31 @@ describe("textGeometry", () => {
     expect(box.max.z).toBeLessThan(0);
   });
 
-  it("turns the letters upside down but keeps the line on its side of the circle", () => {
-    const measure = (textFlipped: boolean) => {
-      const shape = mockShape({ text: "HHH", textCurved: true, textRadius: 40, textSize: 10, textFlipped });
+  it("turns the letters upside down in place, the line stays where it is", () => {
+    const measure = (text: string, textFlipped: boolean) => {
+      const shape = mockShape({ text, textCurved: true, textRadius: 40, textSize: 10, textFlipped });
       const geometry = createTextGeometry({ ...shape, ...curvedTextFootprint(shape) });
       geometry.computeBoundingBox();
       const position = geometry.getAttribute("position");
       let inner = Infinity;
+      let outer = 0;
       for (let index = 0; index < position.count; index += 1) {
-        inner = Math.min(inner, Math.hypot(position.getX(index), position.getZ(index)));
+        const distance = Math.hypot(position.getX(index), position.getZ(index));
+        inner = Math.min(inner, distance);
+        outer = Math.max(outer, distance);
       }
-      return { inner, maxZ: geometry.boundingBox!.max.z };
+      return { inner, outer, maxZ: geometry.boundingBox!.max.z };
     };
-    const upright = measure(false);
-    const flipped = measure(true);
-    // Both along the top of the circle ...
-    expect(upright.maxZ).toBeLessThan(0);
+    // Capitals fill the same band either way, above the circle.
+    const upright = measure("HHH", false);
+    const flipped = measure("HHH", true);
     expect(flipped.maxZ).toBeLessThan(0);
-    // ... upright stands on the circle and points out, flipped hangs from it towards the centre.
-    expect(upright.inner).toBeCloseTo(40, 0);
-    expect(flipped.inner).toBeLessThan(34);
+    expect(flipped.inner).toBeCloseTo(upright.inner, 1);
+    expect(flipped.outer).toBeCloseTo(upright.outer, 1);
+    // A descender turns round with its letter: inward upright, outward flipped.
+    expect(measure("HgH", false).inner).toBeLessThan(38);
+    expect(measure("HgH", true).inner).toBeCloseTo(40, 0);
+    expect(measure("HgH", true).outer).toBeGreaterThan(upright.outer + 1);
   });
 
   it("takes the straight letter size when the curve is switched on, and the box follows", () => {

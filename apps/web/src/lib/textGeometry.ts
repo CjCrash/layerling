@@ -45,6 +45,14 @@ function advanceOf(font: Font, char: string, size: number): number {
   return glyph?.ha !== undefined ? (glyph.ha * size) / resolution : size * 0.6;
 }
 
+/** Height of a capital above the baseline - the band a line of text occupies. */
+function capHeightOf(font: Font, size: number): number {
+  const shapes = font.generateShapes("H", size);
+  let top = 0;
+  shapes.forEach((outline) => outline.getPoints().forEach((point) => { top = Math.max(top, point.y); }));
+  return top > 0 ? top : size * 0.7;
+}
+
 function curvedRadius(shape: WorkplaneShape) {
   return clamp(shape.textRadius ?? 30, MIN_TEXT_RADIUS, MAX_TEXT_RADIUS);
 }
@@ -72,17 +80,20 @@ function buildCurvedText(shape: WorkplaneShape): THREE.BufferGeometry | null {
   const maxLength = 2 * Math.PI * radius * MAX_ARC_SHARE;
   if (naturalLength > maxLength) size *= maxLength / naturalLength;
 
-  const advances = chars.map((char) => advanceOf(font, char, size));
-  const totalLength = advances.reduce((sum, advance) => sum + advance, 0);
-  // Upside down: lay the line out the other way round, then turn it half a
-  // circle about the centre - it lands back on the same side of the circle.
+  // Upside down: the straight line turned over before it is bent - the letters
+  // swap order and each turns half round about the middle of the capital band,
+  // so the line keeps its place on the circle and reads from the other side.
   const flipped = Boolean(shape.textFlipped);
-  const inward = Boolean(shape.textInward) !== flipped;
+  const ordered = flipped ? [...chars].reverse() : chars;
+  const advances = ordered.map((char) => advanceOf(font, char, size));
+  const totalLength = advances.reduce((sum, advance) => sum + advance, 0);
+  const bandMiddle = capHeightOf(font, size) / 2;
+  const inward = Boolean(shape.textInward);
   const options = textOptions(shape, size);
   const placed: THREE.BufferGeometry[] = [];
 
   let run = -totalLength / 2;
-  chars.forEach((char, index) => {
+  ordered.forEach((char, index) => {
     const advance = advances[index];
     const angle = (run + advance / 2) / radius;
     run += advance;
@@ -93,6 +104,11 @@ function buildCurvedText(shape: WorkplaneShape): THREE.BufferGeometry | null {
     glyph.rotateX(-Math.PI / 2);
     // Centre the advance box on its arc point - horizontally only, the baseline stays at z = 0.
     glyph.translate(-advance / 2, 0, 0);
+    if (flipped) {
+      glyph.translate(0, 0, bandMiddle);
+      glyph.rotateY(Math.PI);
+      glyph.translate(0, 0, -bandMiddle);
+    }
     if (inward) {
       // Along the bottom of the circle, read left to right, letters pointing at the centre.
       glyph.rotateY(angle);
@@ -108,7 +124,6 @@ function buildCurvedText(shape: WorkplaneShape): THREE.BufferGeometry | null {
   if (!placed.length) return null;
   const merged = mergeGeometries(placed, false);
   placed.forEach((glyph) => glyph.dispose());
-  if (flipped) merged.rotateY(Math.PI);
   merged.computeBoundingBox();
   const box = merged.boundingBox;
   if (box) merged.translate(0, -box.min.y, 0);
