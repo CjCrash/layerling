@@ -6602,6 +6602,17 @@ button {
   border-radius: 8px;
 }
 
+.shape-state-card .check-property {
+  grid-column: 1 / -1;
+  justify-content: center;
+  margin-top: -10px;
+}
+
+.shape-state-card .check-property:has(input:disabled) {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .shape-state-card button {
   display: grid;
   min-width: 0;

@@ -1445,15 +1445,14 @@ export function ShapeInspector({
           <span className="large-hole-swatch" />
           <span>{t("inspector.hole")}</span>
         </button>
-      </div>
-      ) : null}
-      {!isNonSolidShapeKind(shape.kind) && !shape.hole ? (
+        {/* Stays in place for a hole, only greyed out, so the card does not jump. */}
         <ToggleProperty
           label={t("inspector.transparent")}
-          value={Boolean(shape.transparent)}
-          disabled={locked}
+          value={Boolean(shape.transparent) && !shape.hole}
+          disabled={locked || Boolean(shape.hole)}
           onChange={(transparent) => onUpdate({ transparent: transparent || undefined })}
         />
+      </div>
       ) : null}
 
       {colorOpen ? (

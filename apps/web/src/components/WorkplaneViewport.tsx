@@ -10375,7 +10375,10 @@ function addShapeEdgeDecorations(group: THREE.Group, mesh: THREE.Mesh, prepared:
       // Ein Gewinde bei einem Grad Schwelle waere ein Knaeuel aus zehntausenden
       // Linien. Bei 25 Grad bleiben genau die Kanten stehen, die den Gang
       // zeichnen: Kuppe, Grund und die beiden Flanken.
-      const selectedThreshold = shape.importedMesh ? NORMAL_IMPORTED_SELECTION_EDGE_ANGLE : shape.kind === "thread" ? 25 : 1;
+      // Durch einen durchsichtigen Koerper scheinen auch die hinteren Kanten -
+      // bei einem runden Koerper wird jede Facette zu einem Strich. Er zeigt
+      // deshalb nur seine echten Kanten, etwa Deckel- und Bodenrand.
+      const selectedThreshold = shape.importedMesh ? NORMAL_IMPORTED_SELECTION_EDGE_ANGLE : shape.kind === "thread" || (shape.transparent && !shape.hole) ? 25 : 1;
       const edges = new THREE.LineSegments(getEdgesGeometry(shape, prepared, selectedOutline ? selectedThreshold : complexEdges ? 14 : 25), sharedLineMaterial(edgeColor, edgeOpacity));
       edges.userData.complexEdge = complexEdges;
       edges.userData.shapeDecoration = true;
