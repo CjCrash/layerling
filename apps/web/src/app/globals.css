@@ -10266,3 +10266,36 @@ html[data-theme="dark"] .theme-check {
     order: 2;
   }
 }
+
+/* ==========================================================================
+   Export Warning for Hole-Only selections
+   ========================================================================== */
+.export-holes-only-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  color: #8a3b00;
+  background: #fff4e5;
+  border: 1px solid #f0a45a;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.export-holes-only-warning svg {
+  flex: none;
+  color: #d86a00;
+}
+
+html[data-theme="dark"] .export-holes-only-warning {
+  color: #ffc480;
+  background: rgba(180, 85, 0, 0.16);
+  border-color: rgba(240, 164, 90, 0.4);
+}
+
+html[data-theme="dark"] .export-holes-only-warning svg {
+  color: #ffa447;
+}

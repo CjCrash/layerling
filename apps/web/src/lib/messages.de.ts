@@ -838,6 +838,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "export.fullProject": "Ganzer Entwurf",
   "export.scopeSelected": "{count} ausgewählt",
   "export.scopeTotal": "{count} insgesamt",
+  "export.holesOnlyWarning": "Aussparungen können nicht einzeln exportiert werden – bitte mit einem Körper gruppieren.",
   "export.historyTitle": "Gespeicherter Verlauf",
   "export.historyHint": "Wähle, wie viele der letzten Schritte mit dem Entwurf mitreisen",
   "export.historyLabel": "Im LYL gespeicherter Verlauf",

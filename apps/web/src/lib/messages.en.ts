@@ -839,6 +839,7 @@ export const MESSAGES_EN = {
   "export.fullProject": "Full design",
   "export.scopeSelected": "{count} selected",
   "export.scopeTotal": "{count} total",
+  "export.holesOnlyWarning": "Holes cannot be exported on their own – please group them with a solid body.",
   "export.historyTitle": "Saved action history",
   "export.historyHint": "Choose how many recent undo actions travel with the design",
   "export.historyLabel": "Saved LYL action history",

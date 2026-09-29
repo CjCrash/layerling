@@ -317,6 +317,30 @@ describe("workplane shape helpers", () => {
     expect(solid.color).toBe("#35a86b");
   });
 
+  it("behaelt innere Aussparungen und Koerper beim Umschalten einer Gruppe verlustfrei", () => {
+    const group = shape({
+      id: "group-composite",
+      hole: false,
+      color: "#d41721",
+      groupedShapes: [
+        shape({ id: "gear-solid", kind: "gear", hole: false, color: "#d41721" }),
+        shape({ id: "thread-hole", kind: "thread", hole: true, color: "#b8c2cc" }),
+      ],
+    });
+
+    // Umschalten auf Aussparung
+    const groupAsHole = withHoleMode(group, true);
+    expect(groupAsHole.hole).toBe(true);
+    expect(groupAsHole.groupedShapes?.[0].hole).toBe(false); // Zahnrad bleibt Koerper
+    expect(groupAsHole.groupedShapes?.[1].hole).toBe(true);  // Gewindebohrung bleibt Aussparung
+
+    // Zurueckschalten auf Koerper
+    const groupBackToSolid = withHoleMode(groupAsHole, false);
+    expect(groupBackToSolid.hole).toBe(false);
+    expect(groupBackToSolid.groupedShapes?.[0].hole).toBe(false);
+    expect(groupBackToSolid.groupedShapes?.[1].hole).toBe(true);
+  });
+
   it("can resize the body while preserving fillet and chamfer boundary distances", () => {
     const modified = shape({
       kind: "mesh",
