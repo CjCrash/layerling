@@ -4,6 +4,14 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.19.1
+
+- **See-through bodies:** A new checkbox "Transparent" in the inspector, under Solid / Hole, draws a body see-through in its own colour, as in Tinkercad. Bodies behind or inside it and the faces where parts touch stay visible from every side. Display only - it stays a normal solid and exports as one. Saved with the design, and a group passes it on to all its parts. Asked for by Eichhornkobel in the forum.
+- **Origin distances for several bodies:** The distances to the origin now also show when several bodies are selected, measured on the box around all of them. Asked for by Eichhornkobel in the forum.
+- **Wider zoom speed range:** The zoom speed slider in the settings now spans twenty times from slowest to fastest instead of about three; the middle stays as before. The zoom buttons follow the slider too. Contributed by @gogades in #42.
+- **Start in orthographic view:** A new setting "Start editor in perspective view" - switched off, every design opens in orthographic view. It is an app preference and applies to all designs, older ones included. Contributed by @gogades in #44.
+- **Design name always in the toolbar:** The option to hide the design name in the toolbar is gone; the name always shows and can be renamed there. Contributed by @gogades in #43.
+
 ## 1.19.0
 
 - **Lay flat on face:** A new tool under Arrange, next to "Drop to workplane": click a face of the selection and it turns the shortest way so that face rests on the workplane - the best print orientation in one click. Works on slanted faces and for several bodies at once, which keep their spacing. One undo step.
