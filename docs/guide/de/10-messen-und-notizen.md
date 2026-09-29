@@ -31,6 +31,8 @@ Manchmal misst du besser an einem rechten Winkel. Klicke in der Kameraleiste auf
 
 Stehen Körper an einem der Arme, zeigt das Winkellineal automatisch deren Maße an.
 
+Markierst du einen Körper, zeigt das Winkellineal in Grün, wie weit er von der Ecke entfernt ist, entlang beider Arme und in der Höhe. Ein Klick auf eine grüne Zahl öffnet ein Eingabefeld: Tippe den gewünschten Abstand ein, und der Körper rückt genau dorthin. Sind mehrere Körper markiert, zählen sie zusammen wie einer. Gemessen wird ihr gemeinsamer Umriss, und ein eingetippter Wert verschiebt alle gemeinsam, ohne dass sich ihre Lage zueinander ändert.
+
 ## Abstände zum Nullpunkt und beim Verschieben
 
 In den Einstellungen unter {{ui:workspace.appearance}} gibt es zwei Schalter für laufende Maße:

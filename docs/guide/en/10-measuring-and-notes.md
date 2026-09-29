@@ -31,6 +31,8 @@ Sometimes you measure better at a right angle. Click {{ui:camera.cornerRulerTool
 
 If bodies stand at one of the arms, the corner ruler shows their dimensions automatically.
 
+When you select a body, the corner ruler shows in green how far it is from the corner, along both arms and in height. Click a green number to type a distance, and the body moves exactly there. With several bodies selected, they count as one: the ruler measures their shared outline, and a typed value moves them all together without changing their positions relative to each other.
+
 ## Distances to the origin and while moving
 
 In the settings under {{ui:workspace.appearance}} there are two switches for live dimensions:

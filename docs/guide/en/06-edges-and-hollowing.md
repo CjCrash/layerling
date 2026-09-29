@@ -31,6 +31,8 @@ If the size is too large for the edge, layerling says so and suggests a smaller 
 
 A treated body can always be treated again. Select it again and open the tool: under {{ui:edge.featureHistory}} you see what is already on it. {{ui:edge.revertAction}} takes back a single treatment. Note: if newer treatments lie on top, they go with it, and the panel tells you how many.
 
+On a group, say a cylinder with a hole, the treated edge belongs to the finished body, not to one of its parts. So the group becomes a single body, and {{ui:editor.tool.ungroup}} is no longer available. Take the treatment back as described above and the group returns with all its parts. The easiest way is to treat edges last.
+
 > **Good to know:** layerling works with real CAD geometry for fillets and chamfers, not just a triangle mesh. That is why a rounded edge is still a rounded edge in the STEP export.
 
 ## Hollowing bodies
