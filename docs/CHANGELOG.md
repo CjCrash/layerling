@@ -4,6 +4,16 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.21.0
+
+- **Curved text:** Text can now follow a circle ("On arc" in the inspector), along the top or along the bottom of it, with its own radius and letter size. All letters sit on one baseline, as in a straight line; the centre of the circle is the middle of the shape, so centring the text on a round body places it concentric. Pulling a handle scales radius and letter size together. "Upside down" turns the letters over in place, to be read from the other side.
+- **Round and chamfer sketch corners:** In the sketch, a corner point between two straight lines can be rounded with a radius or cut off with a chamfer - from the point menu or the new buttons in the sketch toolbar.
+- **Open group:** A group can be opened from the object list or the inspector. Its parts lie loose on the workplane and can be changed with every tool; "Done" rebuilds the group with its name, colour and solid/hole state, "Cancel" puts it back untouched. Fillets on the whole group are lost on rebuild, which the bar says. Asked for by Fratercula in the forum.
+- **Too tall for the printer:** With a printer chosen, layerling now also warns when a body is taller than the printer's build height, counted from the lowest body, as the slicer sets the model down. The warning reads "does not fit the build volume" and names how much is missing.
+- **German throughout:** Sketches, groups and objects made through MCP no longer show English names ("Sketch extrusion" is now "Skizzenkörper"); "Edit sketch", "Custom" in the workplane size list, the rotate handle's tooltip and the remaining English labels are translated. Names you typed yourself stay as they are.
+- **MCP:** New actions `layerling_lay_flat` (a face of an object onto the plate), `layerling_open_group` and `layerling_close_group`; curved text settings work through MCP, and switching a group between solid and hole follows the same rule as the inspector.
+- **Ids stay short:** Part ids no longer grow each time a group is opened and closed or ungrouped and regrouped.
+
 ## 1.20.0
 
 - **Object list:** A new panel lists every object in the design - open it with the list button under Visibility, from the eye menu, or with Ctrl+Shift+O. A click selects an object, even one hidden behind others; each row can lock, hide or rename its object (pencil or double-click). Groups fold open and show their parts, each marked Solid or Hole. With more than four objects a search box filters by name or shape. Asked for by Fratercula in the forum.
