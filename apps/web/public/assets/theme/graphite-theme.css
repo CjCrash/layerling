@@ -1987,6 +1987,20 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   fill: #2d2d2d;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-dimension-extension {
+  stroke: rgba(90, 57, 23, 0.45);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-dimension-line {
+  fill: none;
+  stroke: #2d2d2d;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-dimension-arrow {
+  fill: #2d2d2d;
+  stroke: none;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .sketch-segment-dimensions.preview rect {
   fill: rgba(255, 255, 255, 0.94);
   stroke: rgba(227, 227, 227, 0.86);
@@ -4578,6 +4592,18 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-grid .major {
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-grid .axis {
   stroke: #d98a38;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-dimension-extension {
+  stroke: rgba(213, 213, 213, 0.45);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-dimension-line {
+  stroke: #d5d5d5;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-dimension-arrow {
+  fill: #d5d5d5;
 }
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-command-button {

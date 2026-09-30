@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronUp, CornerDownRight, Home, Link, Link2Off, LockKeyhole, LockKeyholeOpen, Minus, Plus, Slash, Spline, Split, Trash2, Waves, X } from "lucide-react";
+import { Check, ChevronUp, CornerDownRight, Crosshair, Home, Link, Link2Off, LockKeyhole, LockKeyholeOpen, Minus, Plus, Slash, Spline, Split, Trash2, Waves, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import { SnapGridControl } from "@/components/workplane/ShapeInspector";
 import { SketchRevolvePreview } from "@/components/SketchRevolvePreview";
@@ -199,6 +199,37 @@ function resizeSketchPoints(points: SketchPoint[], bounds: SelectionBounds, hand
   }));
 }
 
+function sketchSelectionBounds(selected: SketchSelection, profile: SketchProfile, images: SketchImage[], pointById: Map<string, SketchPoint>) {
+  if (!selected) return null;
+  const pointIds = selected.kind === "point" ? [selected.id] : selected.kind === "multiple" ? selected.pointIds : [];
+  const segmentIds = selected.kind === "segment" ? [selected.id] : selected.kind === "multiple" ? selected.segmentIds : [];
+  const imageIds = selected.kind === "image" ? [selected.id] : selected.kind === "multiple" ? selected.imageIds ?? [] : [];
+  const extent: Array<{ x: number; z: number }> = [];
+  pointIds.forEach((id) => {
+    const point = pointById.get(id);
+    if (point) extent.push(point);
+  });
+  segmentIds.forEach((id) => {
+    const segment = profile.segments.find((entry) => entry.id === id);
+    const start = segment && pointById.get(segment.startId);
+    const end = segment && pointById.get(segment.endId);
+    if (!segment || !start || !end) return;
+    extent.push(start, end);
+    if (segment.kind !== "line" && start.handleOut && end.handleIn) {
+      for (let index = 1; index < 16; index += 1) extent.push(cubicPoint(start, start.handleOut, end.handleIn, end, index / 16));
+    }
+  });
+  imageIds.forEach((id) => {
+    const image = images.find((entry) => entry.id === id);
+    if (!image) return;
+    extent.push({ x: image.x - image.width / 2, z: image.z - image.depth / 2 }, { x: image.x + image.width / 2, z: image.z + image.depth / 2 });
+  });
+  if (extent.length === 0) return null;
+  const xs = extent.map((point) => point.x);
+  const zs = extent.map((point) => point.z);
+  return { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
+}
+
 function formatDimension(value: number, accuracy: 1 | 2 | 3) {
   const threshold = 0.5 * 10 ** -accuracy;
   return (Math.abs(value) < threshold ? 0 : value).toFixed(accuracy);
@@ -230,6 +261,7 @@ function segmentDimension(segment: SketchSegment, pointById: Map<string, SketchP
     return {
       length: Math.hypot(end.x - start.x, end.z - start.z),
       midpoint: { x: (start.x + end.x) / 2, z: (start.z + end.z) / 2 },
+      tangent: { x: end.x - start.x, z: end.z - start.z },
     };
   }
   let length = 0;
@@ -239,7 +271,65 @@ function segmentDimension(segment: SketchSegment, pointById: Map<string, SketchP
     length += Math.hypot(point.x - previous.x, point.z - previous.z);
     previous = { ...point, id: "curve-sample" };
   }
-  return { length, midpoint: cubicPoint(start, first, second, end, 0.5) };
+  // Cubic derivative at t = 0.5.
+  const tangent = {
+    x: 0.75 * (first.x - start.x) + 1.5 * (second.x - first.x) + 0.75 * (end.x - second.x),
+    z: 0.75 * (first.z - start.z) + 1.5 * (second.z - first.z) + 0.75 * (end.z - second.z),
+  };
+  return { length, midpoint: cubicPoint(start, first, second, end, 0.5), tangent };
+}
+
+type PlaneEdge = { from: { x: number; z: number }; to: { x: number; z: number } };
+
+// Outline of every closed path, curves flattened, for inside/outside tests.
+function closedPathEdges(paths: DisplayPath[]) {
+  const edges: PlaneEdge[] = [];
+  paths.filter((path) => path.closed).forEach((path) => {
+    path.steps.forEach((step) => {
+      const controls = curveControls(step);
+      if (step.segment.kind === "line" || !controls.first || !controls.second) {
+        edges.push({ from: step.from, to: step.to });
+        return;
+      }
+      let previous: { x: number; z: number } = step.from;
+      for (let index = 1; index <= 16; index += 1) {
+        const point = cubicPoint(step.from, controls.first, controls.second, step.to, index / 16);
+        edges.push({ from: previous, to: point });
+        previous = point;
+      }
+    });
+  });
+  return edges;
+}
+
+function isInsideEdges(point: { x: number; z: number }, edges: PlaneEdge[]) {
+  let inside = false;
+  edges.forEach(({ from, to }) => {
+    if ((from.z > point.z) === (to.z > point.z)) return;
+    const crossX = from.x + ((point.z - from.z) / (to.z - from.z)) * (to.x - from.x);
+    if (crossX > point.x) inside = !inside;
+  });
+  return inside;
+}
+
+// Unit normal at `midpoint` pointing away from the sketch body: out of a closed
+// shape when one side is inside it, otherwise away from the sketch's centre.
+function outwardNormal(
+  midpoint: { x: number; z: number },
+  tangent: { x: number; z: number },
+  edges: PlaneEdge[],
+  centroid: { x: number; z: number },
+  probe: number,
+) {
+  const length = Math.hypot(tangent.x, tangent.z);
+  if (length < 1e-9) return null;
+  const normal = { x: -tangent.z / length, z: tangent.x / length };
+  const plusInside = isInsideEdges({ x: midpoint.x + normal.x * probe, z: midpoint.z + normal.z * probe }, edges);
+  const minusInside = isInsideEdges({ x: midpoint.x - normal.x * probe, z: midpoint.z - normal.z * probe }, edges);
+  const flip = plusInside !== minusInside
+    ? plusInside
+    : (midpoint.x - centroid.x) * normal.x + (midpoint.z - centroid.z) * normal.z < 0;
+  return flip ? { x: -normal.x, z: -normal.z } : normal;
 }
 
 function orderedPaths(profile: SketchProfile): DisplayPath[] {
@@ -590,6 +680,14 @@ export function SketchWorkspace({
   }, [pointerAction, profile.images]);
   const pointById = useMemo(() => new Map(displayProfile.points.map((point) => [point.id, point])), [displayProfile.points]);
   const paths = useMemo(() => orderedPaths(displayProfile), [displayProfile]);
+  const closedEdges = useMemo(() => closedPathEdges(paths), [paths]);
+  const profileCentroid = useMemo(() => {
+    const count = Math.max(1, displayProfile.points.length);
+    return {
+      x: displayProfile.points.reduce((sum, point) => sum + point.x, 0) / count,
+      z: displayProfile.points.reduce((sum, point) => sum + point.z, 0) / count,
+    };
+  }, [displayProfile.points]);
   const activePoint = activePointId ? pointById.get(activePointId) ?? null : null;
   const selectedPoint = selected?.kind === "point"
     ? pointById.get(selected.id) ?? null
@@ -794,6 +892,46 @@ export function SketchWorkspace({
     setView((current) => ({ ...current, zoom: clamp(current.zoom / scaled, SKETCH_MIN_ZOOM, SKETCH_MAX_ZOOM) }));
   };
 
+  const resetView = useCallback(() => setView({ zoom: 1, pan: { x: 0, z: 0 } }), []);
+
+  const focusBounds = useMemo(
+    () => sketchSelectionBounds(selected, displayProfile, displayImages, pointById),
+    [displayImages, displayProfile, pointById, selected],
+  );
+
+  // Like the 3D editor's Shift+F: frame the selection with a little room around it.
+  const focusSelection = useCallback(() => {
+    if (!focusBounds) return;
+    const margin = 1.3;
+    const spanX = (focusBounds.maxX - focusBounds.minX) * margin;
+    const spanZ = (focusBounds.maxZ - focusBounds.minZ) * margin;
+    const fit = Math.min(spanX > 0 ? workspace.width / spanX : Infinity, spanZ > 0 ? workspace.depth / spanZ : Infinity);
+    setView({
+      zoom: clamp(Number.isFinite(fit) ? fit : SKETCH_MAX_ZOOM, SKETCH_MIN_ZOOM, SKETCH_MAX_ZOOM),
+      pan: {
+        x: clamp((focusBounds.minX + focusBounds.maxX) / 2, -workspace.width / 2, workspace.width / 2),
+        z: clamp((focusBounds.minZ + focusBounds.maxZ) / 2, -workspace.depth / 2, workspace.depth / 2),
+      },
+    });
+  }, [focusBounds, workspace.depth, workspace.width]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))) return;
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.key.toLowerCase() === "f" && event.shiftKey) {
+        event.preventDefault();
+        focusSelection();
+      } else if (event.key.toLowerCase() === "f" || event.key === "Home") {
+        event.preventDefault();
+        resetView();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [focusSelection, resetView]);
+
   const beginEntityDrag = (event: ReactPointerEvent<SVGElement>, action: PointerAction) => {
     if (event.button !== 0) return;
     event.preventDefault();
@@ -834,6 +972,57 @@ export function SketchWorkspace({
     { id: "se", x: selectedGeometryBounds.maxX, z: selectedGeometryBounds.maxZ },
     { id: "sw", x: selectedGeometryBounds.minX, z: selectedGeometryBounds.maxZ },
   ] : [];
+  // Dimensions of the selected line, or of the lines meeting at the selected point.
+  // Each label starts just off its segment; one that would cover a label placed
+  // before it moves further out along its extension lines until it is clear.
+  const placedPills: Array<{ minX: number; maxX: number; minZ: number; maxZ: number }> = [];
+  const dimensionLayouts = displayProfile.segments.filter((segment) => selected?.kind === "segment"
+    ? segment.id === selected.id
+    : selectedPoint ? segment.startId === selectedPoint.id || segment.endId === selectedPoint.id : false,
+  ).flatMap((segment) => {
+    const dimension = segmentDimension(segment, pointById);
+    const start = pointById.get(segment.startId);
+    const end = pointById.get(segment.endId);
+    if (!dimension || !start || !end) return [];
+    const normal = outwardNormal(dimension.midpoint, dimension.tangent, closedEdges, profileCentroid, 2 * screenUnit);
+    if (!normal) return [];
+    const curved = segment.kind !== "line" && Boolean(start.handleOut && end.handleIn);
+    const label = formatDimension(dimension.length, workspace.accuracy);
+    const pill = dimensionPillSize(label, screenUnit, 18);
+    const anchor = curved ? dimension.midpoint : { x: (start.x + end.x) / 2, z: (start.z + end.z) / 2 };
+    // Far enough out that the level pill clears the segment it measures.
+    const pillReach = Math.abs(normal.x) * pill.width / 2 + Math.abs(normal.z) * pill.height / 2;
+    const padding = 3 * screenUnit;
+    const pillRect = (distance: number) => {
+      const x = anchor.x + normal.x * distance;
+      const z = anchor.z + normal.z * distance;
+      return { minX: x - pill.width / 2 - padding, maxX: x + pill.width / 2 + padding, minZ: z - pill.height / 2 - padding, maxZ: z + pill.height / 2 + padding };
+    };
+    const overlaps = (rect: ReturnType<typeof pillRect>) =>
+      placedPills.some((other) => rect.minX < other.maxX && rect.maxX > other.minX && rect.minZ < other.maxZ && rect.maxZ > other.minZ);
+    let offset = Math.max(34 * screenUnit, pillReach + 14 * screenUnit);
+    for (let guard = 0; guard < 60 && overlaps(pillRect(offset)); guard += 1) offset += 4 * screenUnit;
+    placedPills.push(pillRect(offset));
+    const labelPosition = { x: anchor.x + normal.x * offset, z: anchor.z + normal.z * offset };
+    // Where the dimension runs: both ends of a line, or points along a curve, each
+    // with the outward normal there, so a curve's dimension follows it at `offset`.
+    type Vector = { x: number; z: number };
+    let samples: Array<{ point: Vector; normal: Vector }> = [{ point: start, normal }, { point: end, normal }];
+    if (curved && start.handleOut && end.handleIn) {
+      const curvePoints = Array.from({ length: 33 }, (_, index) => cubicPoint(start, start.handleOut!, end.handleIn!, end, index / 32));
+      const side = -dimension.tangent.z * normal.x + dimension.tangent.x * normal.z >= 0 ? 1 : -1;
+      samples = curvePoints.map((point, index) => {
+        const before = curvePoints[Math.max(0, index - 1)];
+        const after = curvePoints[Math.min(curvePoints.length - 1, index + 1)];
+        const length = Math.hypot(after.x - before.x, after.z - before.z);
+        return {
+          point,
+          normal: length > 1e-9 ? { x: (-(after.z - before.z) / length) * side, z: ((after.x - before.x) / length) * side } : normal,
+        };
+      });
+    }
+    return [{ segment, label, pill, offset, labelPosition, samples }];
+  });
   const referenceFootprints = useMemo(
     () => new Map(referenceShapes.map((shape) => [shape.id, importedMeshFootprint(shape)])),
     [referenceShapes],
@@ -844,7 +1033,16 @@ export function SketchWorkspace({
       <div className="sketch-mode-badge">{operation === "revolve" ? t("sketch.modeBadgeRevolve") : t("sketch.modeBadge")}</div>
       {operation === "revolve" ? <SketchRevolvePreview positions={revolvePreviewPositions} /> : null}
       <div className="camera-controls sketch-camera-controls" aria-label={t("sketch.viewControls")}>
-        <button aria-label={t("sketch.resetView")} onClick={() => setView({ zoom: 1, pan: { x: 0, z: 0 } })}><Home size={28} /></button>
+        <button aria-label={t("sketch.resetView")} aria-keyshortcuts="F" title={t("camera.shortcut", { label: t("sketch.resetView"), keys: "F" })} onClick={resetView}><Home size={28} /></button>
+        <button
+          aria-label={t("camera.focusSelection")}
+          aria-keyshortcuts="Shift+F"
+          title={t("camera.shortcut", { label: t("camera.focusSelection"), keys: "Shift+F" })}
+          disabled={!focusBounds}
+          onClick={focusSelection}
+        >
+          <Crosshair size={28} />
+        </button>
         <button aria-label={t("sketch.zoomIn")} onClick={() => zoomByButton(0.8)}><Plus size={33} /></button>
         <button aria-label={t("sketch.zoomOut")} onClick={() => zoomByButton(1.25)}><Minus size={33} /></button>
       </div>
@@ -1014,15 +1212,33 @@ export function SketchWorkspace({
             />
           ) : null}
           <g className="sketch-segment-dimensions" pointerEvents="none">
-            {selected?.kind === "multiple" ? null : displayProfile.segments.map((segment) => {
-              const dimension = segmentDimension(segment, pointById);
-              if (!dimension) return null;
-              const label = formatDimension(dimension.length, workspace.accuracy);
-              const pill = dimensionPillSize(label, screenUnit, 18);
+            {dimensionLayouts.map(({ segment, label, pill, offset, labelPosition, samples }) => {
+              const shift = ({ point, normal }: (typeof samples)[number], distance: number) => ({ x: point.x + normal.x * distance, z: point.z + normal.z * distance });
+              const gap = 4 * screenUnit;
+              const overshoot = 10 * screenUnit;
+              const arrowLength = 9 * screenUnit;
+              const arrowWidth = 3.5 * screenUnit;
+              const arrowhead = (tip: { x: number; z: number }, from: { x: number; z: number }) => {
+                const length = Math.max(1e-9, Math.hypot(tip.x - from.x, tip.z - from.z));
+                const direction = { x: (tip.x - from.x) / length, z: (tip.z - from.z) / length };
+                const base = { x: tip.x - direction.x * arrowLength, z: tip.z - direction.z * arrowLength };
+                return `M ${tip.x} ${tip.z} L ${base.x - direction.z * arrowWidth} ${base.z + direction.x * arrowWidth} L ${base.x + direction.z * arrowWidth} ${base.z - direction.x * arrowWidth} Z`;
+              };
+              const dimensionLine = samples.map((sample) => shift(sample, offset));
+              const first = samples[0];
+              const last = samples[samples.length - 1];
+              const extensions = [first, last].map((sample) => [shift(sample, gap), shift(sample, offset + overshoot)]);
               return (
-                <g key={`dimension-${segment.id}`} transform={`translate(${dimension.midpoint.x} ${dimension.midpoint.z - labelOffset})`}>
-                  <rect x={-pill.width / 2} y={-pill.height / 2} width={pill.width} height={pill.height} rx={pill.radius} />
-                  <text y={5 * screenUnit} fontSize={13 * screenUnit}>{label}</text>
+                <g key={`dimension-${segment.id}`}>
+                  {extensions.map(([from, to], index) => (
+                    <line key={index} className="sketch-dimension-extension" x1={from.x} y1={from.z} x2={to.x} y2={to.z} />
+                  ))}
+                  <path className="sketch-dimension-line" d={`M ${dimensionLine.map((point) => `${point.x} ${point.z}`).join(" L ")}`} />
+                  <path className="sketch-dimension-arrow" d={`${arrowhead(dimensionLine[0], dimensionLine[1])} ${arrowhead(dimensionLine[dimensionLine.length - 1], dimensionLine[dimensionLine.length - 2])}`} />
+                  <g transform={`translate(${labelPosition.x} ${labelPosition.z})`}>
+                    <rect x={-pill.width / 2} y={-pill.height / 2} width={pill.width} height={pill.height} rx={pill.radius} />
+                    <text y={5 * screenUnit} fontSize={13 * screenUnit}>{label}</text>
+                  </g>
                 </g>
               );
             })}

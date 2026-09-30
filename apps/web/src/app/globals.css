@@ -4974,6 +4974,24 @@ button {
   text-anchor: middle;
 }
 
+.sketch-dimension-extension {
+  stroke: rgba(90, 57, 23, 0.45);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.sketch-dimension-line {
+  fill: none;
+  stroke: #3a2816;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.sketch-dimension-arrow {
+  fill: #3a2816;
+  stroke: none;
+}
+
 .sketch-segment-dimensions.preview rect {
   fill: rgba(255, 255, 255, 0.94);
   stroke: rgba(235, 228, 220, 0.86);
@@ -9813,6 +9831,18 @@ html[data-theme="dark"] .sketch-grid .major {
 
 html[data-theme="dark"] .sketch-grid .axis {
   stroke: #d98a38;
+}
+
+html[data-theme="dark"] .sketch-dimension-extension {
+  stroke: rgba(240, 214, 186, 0.45);
+}
+
+html[data-theme="dark"] .sketch-dimension-line {
+  stroke: #f0d6ba;
+}
+
+html[data-theme="dark"] .sketch-dimension-arrow {
+  fill: #f0d6ba;
 }
 
 html[data-theme="dark"] .sketch-command-button {
