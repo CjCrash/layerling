@@ -4,6 +4,20 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.23.0
+
+- **Teardrop hole:** A new shape for horizontal holes that print without supports: a round part with a point on top, so no layer has to bridge the hole. Width is the diameter, depth the length of the hole, and the tip angle (90 degrees by default, flanks at 45) can be typed in the inspector; a new diameter keeps the angle. Make it a hole and group it with the part.
+- **Counterbore and countersink:** Two cutters for screw heads that sit in the part: a round pocket for a socket-head screw (DIN 912) and a cone for a countersunk screw (DIN 7991). Width is the head diameter, height the whole length, the head end is on top; shaft diameter, pocket depth and cone angle are set in the inspector. The defaults fit an M3 screw. They sit in the shape list in front of the teardrop.
+- **More shapes as exact CAD bodies:** The edge tool now gets real solids for the teardrop, counterbore, countersink, ellipse, oval cylinder, tube, half sphere, round roof and rounded box, instead of display meshes. Edges in the default shapes: ellipse 348 to 6, tube 600 to 6, half sphere 3008 to 2, round roof 387 to 6, rounded box 108 to 24. Fillets and chamfers on them are fast and clean.
+- **STEP export of outline shapes:** Star, heart, crescent, capsule, polygon, honeycomb, spur gear, dovetail, single letters and all the shapes above no longer drop out of a STEP file; they go out as the same exact bodies, holes included. Thread, spring, bent tube and helical gears are still missing.
+- **Side count on the bores:** The teardrop, counterbore and countersink have the same "sides follow the size" switch and slider as a cylinder, in the inspector and in the shape defaults. The guide explains what the side count shapes (view, STL/3MF/OBJ, combining bodies and holes) and where it does not matter (edge tool, STEP).
+- **Fewer triangles for small fillets:** A small fillet already gets a tight chord, and a fixed angle limit on top of it cut every narrow strip into ten rows. The angle now loosens as the chord tightens; fillets of 1 mm and more are unchanged. "Grüße" with a 0.1 mm fillet on all edges went from 242,544 to 30,196 triangles. Faces where the looser angle would let the mesh stray from the exact surface (fillets round a circular edge) are checked and keep the old mesh. Contributed by @plazmabokor (#50).
+- **Sketch zoom like the 3D editor:** The mouse wheel in the sketch zooms towards the pointer and follows the speed from the settings dialog; the plus and minus buttons follow it too. Contributed by @gogades (#49).
+- **Threads and edge treatment:** The message about a thread being too dense for edge treatment now says what to do (treat the edges first, add the thread afterwards), and so do the edges and threads chapters of the guide.
+- **Smaller things:** Star, heart and crescent moved to the end of the shape list, just before the ruler. The inspector header fits long names such as "Tropfenbohrung" on one line. The link to the full guide on the start page is a button of its own now.
+- **MCP:** New shape kinds `teardrop`, `counterbore` and `countersink` with the keys `screwHoleShaft`, `screwHoleHeadDepth` and `screwHoleAngle`; `sides` works on them too.
+- **Guide:** New sections "Teardrop hole" and "Counterbore and countersink" in the threads and mechanics chapter, "How round is round? The side count" in the shapes chapter, and an updated STEP row in the files chapter.
+
 ## 1.22.1
 
 - **Fillets and chamfers on text:** Raised text is now handed to the CAD kernel as its exact letter outlines, curves included, instead of thousands of short straight pieces. Chamfering or rounding all edges of a word now works where it used to be refused as too complex, straight or curved, and the edges come out clean. Contributed by @plazmabokor in #48.
