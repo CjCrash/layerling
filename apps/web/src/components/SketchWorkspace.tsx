@@ -10,10 +10,10 @@ import { useLanguage } from "@/lib/useLanguage";
 import { parseMeasurementInput } from "@/lib/measurementUnits";
 import { WORKPLANE_MAJOR_GRID_INTERVAL } from "@/lib/workplaneGrid";
 import { closestPointOnSketchSegment, type SketchSegmentPlacement } from "@/lib/sketchPointRefinement";
-import { isSketchPanGesture } from "@/lib/sketchPointerControls";
+import { isSketchPanGesture, SKETCH_MAX_ZOOM, SKETCH_WHEEL_ZOOM_BOOST, SKETCH_MIN_ZOOM, sketchWheelZoomFactor, zoomSketchViewAt, type SketchView } from "@/lib/sketchPointerControls";
 import { isSketchPrimitive, type SketchPrimitive } from "@/lib/sketchPrimitives";
 import { mirrorSign, resizedImportedMeshPositions } from "@/lib/workplaneShapes";
-import { DEFAULT_SNAP_GRID, DEFAULT_WORKPLANE_WORKSPACE, normalizeSnapGrid, normalizeWorkspaceSettings } from "@/lib/workplaneSettings";
+import { DEFAULT_SNAP_GRID, DEFAULT_WORKPLANE_WORKSPACE, normalizeSnapGrid, normalizeWorkspaceSettings, orbitControlsZoomSpeed, zoomDistanceScale } from "@/lib/workplaneSettings";
 import type { GridSize, SketchImage, SketchOperation, SketchPoint, SketchProfile, SketchSegment, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 import { selectWholeValue } from "@/lib/numberField";
 
@@ -511,8 +511,8 @@ export function SketchWorkspace({
   const workspace = useMemo(() => normalizeWorkspaceSettings(initialWorkspace, DEFAULT_WORKPLANE_WORKSPACE), [initialWorkspace]);
   const [snap, setSnap] = useState<GridSize>(() => normalizeSnapGrid(initialSnap, DEFAULT_SNAP_GRID));
   const [snapOpen, setSnapOpen] = useState(false);
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, z: 0 });
+  const [view, setView] = useState<SketchView>({ zoom: 1, pan: { x: 0, z: 0 } });
+  const { zoom, pan } = view;
   const [hover, setHover] = useState<{ x: number; z: number } | null>(null);
   const [refinePreview, setRefinePreview] = useState<{ segmentId: string; placement: SketchSegmentPlacement } | null>(null);
   const [pointerAction, setPointerAction] = useState<PointerAction | null>(null);
@@ -711,9 +711,12 @@ export function SketchWorkspace({
       const scaleY = matrix ? Math.max(0.0001, Math.hypot(matrix.c, matrix.d)) : 1;
       const deltaX = event.clientX - pointerAction.clientX;
       const deltaY = event.clientY - pointerAction.clientY;
-      setPan((current) => ({
-        x: clamp(current.x - deltaX / scaleX, -workspace.width / 2, workspace.width / 2),
-        z: clamp(current.z - deltaY / scaleY, -workspace.depth / 2, workspace.depth / 2),
+      setView((current) => ({
+        ...current,
+        pan: {
+          x: clamp(current.pan.x - deltaX / scaleX, -workspace.width / 2, workspace.width / 2),
+          z: clamp(current.pan.z - deltaY / scaleY, -workspace.depth / 2, workspace.depth / 2),
+        },
       }));
       setPointerAction({ ...pointerAction, clientX: event.clientX, clientY: event.clientY });
       return;
@@ -778,7 +781,17 @@ export function SketchWorkspace({
 
   const handleWheel = (event: ReactWheelEvent<SVGSVGElement>) => {
     event.preventDefault();
-    setZoom((current) => clamp(current * (event.deltaY > 0 ? 0.88 : 1.14), 0.75, 6));
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const offset = { x: event.clientX - (bounds.left + bounds.width / 2), y: event.clientY - (bounds.top + bounds.height / 2) };
+    const pixelsPerUnit = Math.min(bounds.width / workspace.width, bounds.height / workspace.depth);
+    const factor = sketchWheelZoomFactor(event, orbitControlsZoomSpeed(workspace.zoomSpeed) * SKETCH_WHEEL_ZOOM_BOOST);
+    setView((current) => zoomSketchViewAt(current, factor, offset, pixelsPerUnit, workspace));
+  };
+
+  // Matches the 3D editor's buttons: a fixed step raised by the configured zoom speed.
+  const zoomByButton = (distanceStep: number) => {
+    const scaled = zoomDistanceScale(distanceStep, workspace.zoomSpeed);
+    setView((current) => ({ ...current, zoom: clamp(current.zoom / scaled, SKETCH_MIN_ZOOM, SKETCH_MAX_ZOOM) }));
   };
 
   const beginEntityDrag = (event: ReactPointerEvent<SVGElement>, action: PointerAction) => {
@@ -831,9 +844,9 @@ export function SketchWorkspace({
       <div className="sketch-mode-badge">{operation === "revolve" ? t("sketch.modeBadgeRevolve") : t("sketch.modeBadge")}</div>
       {operation === "revolve" ? <SketchRevolvePreview positions={revolvePreviewPositions} /> : null}
       <div className="camera-controls sketch-camera-controls" aria-label={t("sketch.viewControls")}>
-        <button aria-label={t("sketch.resetView")} onClick={() => { setZoom(1); setPan({ x: 0, z: 0 }); }}><Home size={28} /></button>
-        <button aria-label={t("sketch.zoomIn")} onClick={() => setZoom((value) => clamp(value * 1.25, 0.75, 6))}><Plus size={33} /></button>
-        <button aria-label={t("sketch.zoomOut")} onClick={() => setZoom((value) => clamp(value / 1.25, 0.75, 6))}><Minus size={33} /></button>
+        <button aria-label={t("sketch.resetView")} onClick={() => setView({ zoom: 1, pan: { x: 0, z: 0 } })}><Home size={28} /></button>
+        <button aria-label={t("sketch.zoomIn")} onClick={() => zoomByButton(0.8)}><Plus size={33} /></button>
+        <button aria-label={t("sketch.zoomOut")} onClick={() => zoomByButton(1.25)}><Minus size={33} /></button>
       </div>
       <section className="sketch-plate-wrap" aria-label="2D sketch plate">
         <svg
