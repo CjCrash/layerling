@@ -1,6 +1,6 @@
 ---
 title: Threads, gears and other parts
-summary: Screws, nuts and tapped holes that fit together, plus gear, spring, bent tube, honeycomb, dovetail and teardrop hole.
+summary: Screws, nuts and tapped holes that fit together, plus gear, spring, bent tube, honeycomb, dovetail, teardrop hole, counterbore and countersink.
 ---
 
 Besides the basic shapes, the library contains some parts that would be tedious to put together yourself. All of them can be changed afterwards in their settings.
@@ -57,3 +57,9 @@ The {{ui:shape.dovetail}} is the joint in which two parts lock into each other a
 A hole lying on its side gets a bridge across its top when printed, and the bridge sags. The {{ui:shape.teardrop}} therefore has a point on top: every layer rests on the one below, and the hole comes out round enough without supports. Set the {{ui:prop.teardropDiameter}} to the size of the hole, about 3.4 mm for an M3 screw, and the {{ui:prop.teardropLength}} long enough to reach through the part. The {{ui:prop.teardropTipAngle}} is 90°, so the flanks meet at 45°. Most printers handle that cleanly; a flatter point needs more height, a steeper one saves it.
 
 Make the teardrop a hole and group it with the part. Its length runs along the depth and the point faces up. For a hole in the other direction, turn it by 90° around the vertical axis.
+
+## Counterbore and countersink
+
+A screw head often should not stand proud. The {{ui:shape.counterbore}} cuts a round pocket for a socket-head screw (DIN 912), the {{ui:shape.countersink}} a cone for a countersunk screw (DIN 7991). Both stand with the head end up: the {{ui:prop.screwHoleHead}} is the diameter of the pocket or the cone, the {{ui:prop.screwHoleShaft}} the bore below it, the {{ui:prop.screwHoleLength}} the whole length. On the counterbore you set the {{ui:prop.screwHoleHeadDepth}}, on the countersink the {{ui:prop.screwHoleAngle}} (90° suits countersunk screws). The defaults fit an M3 screw.
+
+Make the shape a hole and group it with the part. Let its top end a little above the surface the head should sit on, so the pocket opens cleanly. For the pocket of a hex nut, use a {{ui:shape.polygon}} with six sides as a hole.

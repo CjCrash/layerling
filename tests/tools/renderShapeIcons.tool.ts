@@ -12,6 +12,7 @@ import { createCrescentGeometry } from "@/lib/crescentGeometry";
 import { createSlotGeometry } from "@/lib/slotGeometry";
 import { createDovetailGeometry } from "@/lib/dovetailGeometry";
 import { createTeardropGeometry, teardropHeightForTipAngle } from "@/lib/teardropGeometry";
+import { createScrewHoleGeometry } from "@/lib/screwHoleGeometry";
 import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
 import { createRoundedBoxGeometry } from "@/lib/roundedBoxGeometry";
 import { createThreadGeometry } from "@/lib/threadGeometry";
@@ -376,6 +377,22 @@ describe("palette icons", () => {
         height: 8,
         dovetailNeckWidth: 16,
       }),
+    });
+    render({
+      name: "apps/web/public/assets/editor/shape-icons-gray/counterbore.png",
+      height: 12,
+      lay: false,
+      azimuth: 35,
+      elevation: 32,
+      build: () => createScrewHoleGeometry({ kind: "counterbore", width: 16, depth: 16, height: 24, screwHoleShaft: 8, screwHoleHeadDepth: 9 }),
+    });
+    render({
+      name: "apps/web/public/assets/editor/shape-icons-gray/countersink.png",
+      height: 12,
+      lay: false,
+      azimuth: 35,
+      elevation: 32,
+      build: () => createScrewHoleGeometry({ kind: "countersink", width: 16, depth: 16, height: 20, screwHoleShaft: 8, screwHoleAngle: 90 }),
     });
     render({
       // Schraeg von vorn auf die Stirnseite, damit Rundung und Spitze zu sehen sind.

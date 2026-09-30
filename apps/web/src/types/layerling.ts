@@ -22,6 +22,8 @@ export type ShapeKind =
   | "gear"
   | "honeycomb"
   | "dovetail"
+  | "counterbore"
+  | "countersink"
   | "teardrop"
   | "thread"
   | "spring"
@@ -128,6 +130,12 @@ export type ShapeCustomization = {
   dovetailNeckWidth?: number;
   /** Dovetail: gap in mm added on every side when the dovetail is a cut-out (its socket). */
   dovetailClearance?: number;
+  /** Counterbore/countersink: diameter of the shaft below the head in mm. */
+  screwHoleShaft?: number;
+  /** Counterbore: depth of the head pocket in mm. */
+  screwHoleHeadDepth?: number;
+  /** Countersink: opening angle of the cone in degrees. */
+  screwHoleAngle?: number;
   bentTubeProfile?: BentTubeProfile;
   bentTubeInnerProfile?: BentTubeInnerProfile;
   bentTubeSize?: number;
@@ -415,6 +423,12 @@ export type WorkplaneShape = {
   dovetailNeckWidth?: number;
   /** Dovetail: gap in mm added on every side when the dovetail is a cut-out (its socket). */
   dovetailClearance?: number;
+  /** Counterbore/countersink: diameter of the shaft below the head in mm. */
+  screwHoleShaft?: number;
+  /** Counterbore: depth of the head pocket in mm. */
+  screwHoleHeadDepth?: number;
+  /** Countersink: opening angle of the cone in degrees. */
+  screwHoleAngle?: number;
   cornerFillet?: number;
   topBottomFillet?: number;
   roundedBoxQuality?: number;

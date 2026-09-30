@@ -1,6 +1,6 @@
 ---
 title: Gewinde, Zahnräder und andere Bauteile
-summary: Schrauben, Muttern und Gewindelöcher, die zusammenpassen, dazu Zahnrad, Feder, gebogenes Rohr, Wabengitter, Schwalbenschwanz und Tropfenbohrung.
+summary: Schrauben, Muttern und Gewindelöcher, die zusammenpassen, dazu Zahnrad, Feder, gebogenes Rohr, Wabengitter, Schwalbenschwanz, Tropfenbohrung sowie Stufen- und Senkbohrung.
 ---
 
 Die Formenbibliothek enthält neben den Grundformen einige Bauteile, die man sonst mühsam zusammensetzen müsste. Alle lassen sich nachträglich in ihren Einstellungen ändern.
@@ -57,3 +57,9 @@ Der {{ui:shape.dovetail}} ist die Verbindung, bei der zwei Teile ineinander einr
 Ein Loch, das waagerecht im Teil liegt, bekommt beim Drucken oben eine Brücke, und die hängt durch. Die {{ui:shape.teardrop}} hat deshalb oben eine Spitze: Jede Schicht liegt auf der darunter, und das Loch wird ohne Stützen rund genug. Stelle den {{ui:prop.teardropDiameter}} auf das Maß des Lochs, etwa 3,4 mm für eine M3-Schraube, und die {{ui:prop.teardropLength}} so lang, dass sie durch das Teil reicht. Der {{ui:prop.teardropTipAngle}} steht auf 90°, die Flanken laufen also unter 45° zusammen. Das druckt bei den meisten Druckern sauber; flachere Spitzen brauchen mehr Höhe, steilere sparen sie.
 
 Mache die Tropfenbohrung zur Aussparung und gruppiere sie mit dem Teil. Sie liegt mit der Länge in Richtung der Tiefe, die Spitze zeigt nach oben. Für ein Loch in der anderen Richtung drehst du sie um 90° um die senkrechte Achse.
+
+## Stufen- und Senkbohrung
+
+Ein Schraubenkopf soll oft nicht überstehen. Die {{ui:shape.counterbore}} schneidet dafür eine runde Tasche für einen Zylinderkopf (DIN 912), die {{ui:shape.countersink}} einen Kegel für eine Senkkopfschraube (DIN 7991). Beide stehen mit dem Kopf nach oben: Der {{ui:prop.screwHoleHead}} ist der Durchmesser der Tasche oder des Kegels, der {{ui:prop.screwHoleShaft}} die Bohrung darunter, die {{ui:prop.screwHoleLength}} die ganze Länge. Bei der Stufenbohrung stellst du die {{ui:prop.screwHoleHeadDepth}} ein, bei der Senkbohrung den {{ui:prop.screwHoleAngle}} (90° passt zu Senkschrauben). Die Vorgaben passen zu einer M3-Schraube.
+
+Mache die Form zur Aussparung und gruppiere sie mit dem Teil. Lass ihre Oberseite ein Stück über der Fläche enden, auf der der Kopf sitzen soll, damit die Tasche sauber offen ist. Für die Tasche einer Sechskantmutter nimmst du einen {{ui:shape.polygon}} mit sechs Seiten als Aussparung.

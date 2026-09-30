@@ -86,6 +86,18 @@ import {
   DEFAULT_SLOT_HEIGHT,
 } from "@/lib/slotGeometry";
 import {
+  DEFAULT_COUNTERBORE_HEIGHT,
+  DEFAULT_COUNTERBORE_WIDTH,
+  DEFAULT_COUNTERSINK_HEIGHT,
+  DEFAULT_COUNTERSINK_WIDTH,
+  DEFAULT_SCREW_HOLE_ANGLE,
+  DEFAULT_SCREW_HOLE_HEAD_DEPTH,
+  DEFAULT_SCREW_HOLE_SHAFT,
+  normalizeScrewHoleAngle,
+  normalizeScrewHoleHeadDepth,
+  normalizeScrewHoleShaft,
+} from "@/lib/screwHoleGeometry";
+import {
   DEFAULT_TEARDROP_DEPTH,
   DEFAULT_TEARDROP_TIP_ANGLE,
   DEFAULT_TEARDROP_WIDTH,
@@ -157,6 +169,8 @@ const SHAPE_LABEL_KEYS: Record<string, MessageKey> = {
   honeycomb: "shape.honeycomb",
   dovetail: "shape.dovetail",
   teardrop: "shape.teardrop",
+  counterbore: "shape.counterbore",
+  countersink: "shape.countersink",
   thread: "shape.thread",
   spring: "shape.spring",
   polygon: "shape.polygon",
@@ -181,6 +195,8 @@ export const toolbarShapeAssets: ToolbarShapeAsset[] = [
   { id: "torus", name: "Torus", src: "assets/editor/shape-icons-gray/torus.png", menuIcon: "assets/editor/shape-icons-gray/torus.png", kind: "torus", color: "#0098c7" },
   { id: "tube", name: "Tube", src: "assets/editor/shape-icons-gray/tube.png", menuIcon: "assets/editor/shape-icons-gray/tube.png", kind: "tube", color: "#ce7013" },
   { id: "bentTube", name: "Bent Tube", src: "assets/editor/shape-icons-gray/bentTube.png", menuIcon: "assets/editor/shape-icons-gray/bentTube.png", kind: "bentTube", color: "#b5651d" },
+  { id: "counterbore", name: "Counterbore", src: "assets/editor/shape-icons-gray/counterbore.png", menuIcon: "assets/editor/shape-icons-gray/counterbore.png", kind: "counterbore", color: "#5f7a8a" },
+  { id: "countersink", name: "Countersink", src: "assets/editor/shape-icons-gray/countersink.png", menuIcon: "assets/editor/shape-icons-gray/countersink.png", kind: "countersink", color: "#6b8a7a" },
   { id: "teardrop", name: "Teardrop", src: "assets/editor/shape-icons-gray/teardrop.png", menuIcon: "assets/editor/shape-icons-gray/teardrop.png", kind: "teardrop", color: "#7d6a9c" },
   { id: "text", name: "Text", src: "assets/editor/shape-icons-gray/text.png", menuIcon: "assets/editor/shape-icons-gray/text.png", kind: "text", color: "#cf101b" },
   { id: "thread", name: "Thread", src: "assets/editor/shape-icons-gray/thread.png", menuIcon: "assets/editor/shape-icons-gray/thread.png", kind: "thread", color: "#8a98a6" },
@@ -228,6 +244,12 @@ export function shapeAssetDefaultDimensions(kind: ShapeKind) {
   }
   if (kind === "slot") {
     return { width: DEFAULT_SLOT_WIDTH, depth: DEFAULT_SLOT_DEPTH, height: DEFAULT_SLOT_HEIGHT };
+  }
+  if (kind === "counterbore") {
+    return { width: DEFAULT_COUNTERBORE_WIDTH, depth: DEFAULT_COUNTERBORE_WIDTH, height: DEFAULT_COUNTERBORE_HEIGHT };
+  }
+  if (kind === "countersink") {
+    return { width: DEFAULT_COUNTERSINK_WIDTH, depth: DEFAULT_COUNTERSINK_WIDTH, height: DEFAULT_COUNTERSINK_HEIGHT };
   }
   if (kind === "teardrop") {
     return { width: DEFAULT_TEARDROP_WIDTH, depth: DEFAULT_TEARDROP_DEPTH, height: Math.round(teardropHeightForTipAngle(DEFAULT_TEARDROP_WIDTH, DEFAULT_TEARDROP_TIP_ANGLE) * 100) / 100 };
@@ -308,6 +330,12 @@ export function shapeAssetSpecialDefaults(kind: ShapeKind, dimensions = shapeAss
       crescentTipFillet: DEFAULT_CRESCENT_TIP_FILLET,
       crescentQuality: DEFAULT_CRESCENT_QUALITY,
     };
+  }
+  if (kind === "counterbore") {
+    return { screwHoleShaft: DEFAULT_SCREW_HOLE_SHAFT, screwHoleHeadDepth: DEFAULT_SCREW_HOLE_HEAD_DEPTH };
+  }
+  if (kind === "countersink") {
+    return { screwHoleShaft: DEFAULT_SCREW_HOLE_SHAFT, screwHoleAngle: DEFAULT_SCREW_HOLE_ANGLE };
   }
   if (kind === "dovetail") {
     return {
@@ -433,6 +461,9 @@ export function sceneShape(shape: Partial<WorkplaneShape> & Pick<WorkplaneShape,
     honeycombFrameWidth: shape.honeycombFrameWidth,
     dovetailNeckWidth: shape.dovetailNeckWidth,
     dovetailClearance: shape.dovetailClearance,
+    screwHoleShaft: shape.screwHoleShaft,
+    screwHoleHeadDepth: shape.screwHoleHeadDepth,
+    screwHoleAngle: shape.screwHoleAngle,
     cornerFillet: shape.cornerFillet,
     topBottomFillet: shape.topBottomFillet,
     roundedBoxQuality: shape.roundedBoxQuality,
@@ -583,6 +614,9 @@ export function makeShapeFromAsset(
     honeycombFrameWidth: asset.kind === "honeycomb" ? normalizeHoneycombFrameWidth(customization.honeycombFrameWidth ?? DEFAULT_HONEYCOMB_FRAME_WIDTH) : undefined,
     dovetailNeckWidth: asset.kind === "dovetail" ? normalizeDovetailNeckWidth(customization.dovetailNeckWidth, width) : undefined,
     dovetailClearance: asset.kind === "dovetail" ? normalizeDovetailClearance(customization.dovetailClearance ?? DEFAULT_DOVETAIL_CLEARANCE) : undefined,
+    screwHoleShaft: asset.kind === "counterbore" || asset.kind === "countersink" ? normalizeScrewHoleShaft(customization.screwHoleShaft ?? DEFAULT_SCREW_HOLE_SHAFT, width) : undefined,
+    screwHoleHeadDepth: asset.kind === "counterbore" ? normalizeScrewHoleHeadDepth(customization.screwHoleHeadDepth ?? DEFAULT_SCREW_HOLE_HEAD_DEPTH, height) : undefined,
+    screwHoleAngle: asset.kind === "countersink" ? normalizeScrewHoleAngle(customization.screwHoleAngle ?? DEFAULT_SCREW_HOLE_ANGLE) : undefined,
     cornerFillet: asset.kind === "roundedBox" ? normalizeCornerFillet(customization.cornerFillet ?? DEFAULT_ROUNDED_BOX_CORNER_FILLET, Math.min(width, depth) / 2) : undefined,
     topBottomFillet: asset.kind === "roundedBox" ? normalizeTopBottomFillet(customization.topBottomFillet ?? DEFAULT_ROUNDED_BOX_TOP_BOTTOM_FILLET, height / 2) : undefined,
     roundedBoxQuality: asset.kind === "roundedBox" ? normalizeRoundedBoxQuality(customization.roundedBoxQuality ?? DEFAULT_ROUNDED_BOX_QUALITY) : undefined,

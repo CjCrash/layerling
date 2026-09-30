@@ -52,9 +52,11 @@ describe("shape catalog", () => {
     expect(rulerIndex).toBe(kinds.length - 1);
   });
 
-  it("puts the teardrop after the bent tube and text right behind it", () => {
+  it("puts the screw holes and the teardrop after the bent tube, and text right behind them", () => {
     const kinds = toolbarShapeAssets.map((asset) => asset.kind);
-    expect(kinds.indexOf("teardrop")).toBe(kinds.indexOf("bentTube") + 1);
+    expect(kinds.indexOf("counterbore")).toBe(kinds.indexOf("bentTube") + 1);
+    expect(kinds.indexOf("countersink")).toBe(kinds.indexOf("counterbore") + 1);
+    expect(kinds.indexOf("teardrop")).toBe(kinds.indexOf("countersink") + 1);
     expect(kinds.indexOf("text")).toBe(kinds.indexOf("teardrop") + 1);
   });
 

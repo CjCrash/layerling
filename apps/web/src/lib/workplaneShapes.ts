@@ -118,7 +118,7 @@ export function shapeTaperDimensions(shape: WorkplaneShape) {
  * die MCP-Bruecke nicht je ihre eigene fuehren.
  */
 export function shapeSupportsTaper(kind: WorkplaneShape["kind"]) {
-  return kind !== "gear" && kind !== "thread" && kind !== "spring" && kind !== "pyramid" && kind !== "ruler" && kind !== "star" && kind !== "heart" && kind !== "crescent" && kind !== "slot" && kind !== "dovetail" && kind !== "teardrop" && kind !== "honeycomb" && kind !== "roundedBox" && kind !== "bentTube";
+  return kind !== "gear" && kind !== "thread" && kind !== "spring" && kind !== "pyramid" && kind !== "ruler" && kind !== "star" && kind !== "heart" && kind !== "crescent" && kind !== "slot" && kind !== "dovetail" && kind !== "counterbore" && kind !== "countersink" && kind !== "teardrop" && kind !== "honeycomb" && kind !== "roundedBox" && kind !== "bentTube";
 }
 
 /**
@@ -488,6 +488,9 @@ export function workplaneShapesEqual(a: WorkplaneShape, b: WorkplaneShape) {
     a.honeycombFrameWidth === b.honeycombFrameWidth &&
     a.dovetailNeckWidth === b.dovetailNeckWidth &&
     a.dovetailClearance === b.dovetailClearance &&
+    a.screwHoleShaft === b.screwHoleShaft &&
+    a.screwHoleHeadDepth === b.screwHoleHeadDepth &&
+    a.screwHoleAngle === b.screwHoleAngle &&
     a.cornerFillet === b.cornerFillet &&
     a.topBottomFillet === b.topBottomFillet &&
     a.roundedBoxQuality === b.roundedBoxQuality &&

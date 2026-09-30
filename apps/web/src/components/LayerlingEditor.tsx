@@ -23,6 +23,7 @@ import { createCrescentGeometry } from "@/lib/crescentGeometry";
 import { createSlotGeometry } from "@/lib/slotGeometry";
 import { createDovetailGeometry } from "@/lib/dovetailGeometry";
 import { createTeardropGeometry } from "@/lib/teardropGeometry";
+import { createScrewHoleGeometry } from "@/lib/screwHoleGeometry";
 import { decodeClipboardPayload, encodeClipboardPayload, LOCAL_CLIPBOARD_LIMIT, newestClipboard, type ClipboardPayload } from "@/lib/clipboardPayload";
 import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
 import { createRoundedBoxGeometry } from "@/lib/roundedBoxGeometry";
@@ -2378,6 +2379,10 @@ function geometryMeshForShape(shape: WorkplaneShape): MeshData | null {
         height,
         sides: shape.sides,
       });
+      break;
+    case "counterbore":
+    case "countersink":
+      geometry = createScrewHoleGeometry({ kind: shape.kind, width, depth, height, screwHoleShaft: shape.screwHoleShaft, screwHoleHeadDepth: shape.screwHoleHeadDepth, screwHoleAngle: shape.screwHoleAngle });
       break;
     case "teardrop":
       geometry = createTeardropGeometry({ width, depth, height });
