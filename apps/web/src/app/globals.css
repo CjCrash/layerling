@@ -6656,13 +6656,15 @@ button {
 }
 
 .shape-inspector-header strong.long-word {
-  font-size: 15px;
+  padding-left: 6px;
+  margin-right: 4px;
+  font-size: 14px;
 }
 
 .inspector-header-actions {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 4px;
 }
 
 .shape-inspector button {
@@ -6682,7 +6684,7 @@ button {
 
 .inspector-header-icon {
   display: grid;
-  width: 32px;
+  width: 28px;
   height: 38px;
   place-items: center;
   color: #6f5840;

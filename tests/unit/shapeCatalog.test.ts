@@ -41,19 +41,24 @@ describe("shape catalog", () => {
     expect(kinds).toContain("heart");
     expect(kinds).toContain("crescent");
 
-    // The bent tube sits between the straight tube and the star.
-    const tubeIndex = kinds.indexOf("bentTube");
+    // Star, heart and crescent close the list, just before the ruler.
     const starIndex = kinds.indexOf("star");
     const heartIndex = kinds.indexOf("heart");
     const crescentIndex = kinds.indexOf("crescent");
-    const textIndex = kinds.indexOf("text");
-    expect(starIndex).toBe(tubeIndex + 1);
+    const rulerIndex = kinds.indexOf("ruler");
     expect(heartIndex).toBe(starIndex + 1);
     expect(crescentIndex).toBe(heartIndex + 1);
-    expect(textIndex).toBe(crescentIndex + 1);
+    expect(rulerIndex).toBe(crescentIndex + 1);
+    expect(rulerIndex).toBe(kinds.length - 1);
   });
 
-  it("exposes honeycomb, dovetail and teardrop between gear and ruler in the toolbar catalog", () => {
+  it("puts the teardrop after the bent tube and text right behind it", () => {
+    const kinds = toolbarShapeAssets.map((asset) => asset.kind);
+    expect(kinds.indexOf("teardrop")).toBe(kinds.indexOf("bentTube") + 1);
+    expect(kinds.indexOf("text")).toBe(kinds.indexOf("teardrop") + 1);
+  });
+
+  it("exposes honeycomb and dovetail between gear and the decorative shapes in the toolbar catalog", () => {
     const kinds = toolbarShapeAssets.map((asset) => asset.kind);
 
     expect(kinds).toContain("honeycomb");
@@ -61,12 +66,9 @@ describe("shape catalog", () => {
     const gearIndex = kinds.indexOf("gear");
     const honeycombIndex = kinds.indexOf("honeycomb");
     const dovetailIndex = kinds.indexOf("dovetail");
-    const teardropIndex = kinds.indexOf("teardrop");
-    const rulerIndex = kinds.indexOf("ruler");
     expect(honeycombIndex).toBe(gearIndex + 1);
     expect(dovetailIndex).toBe(honeycombIndex + 1);
-    expect(teardropIndex).toBe(dovetailIndex + 1);
-    expect(rulerIndex).toBe(teardropIndex + 1);
+    expect(kinds.indexOf("star")).toBe(dovetailIndex + 1);
   });
 
   it("creates placed shapes from toolbar assets", () => {

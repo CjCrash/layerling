@@ -1481,7 +1481,7 @@ export function ShapeInspector({
           {minimized ? <ChevronDown size={26} strokeWidth={2.8} /> : <ChevronUp size={26} strokeWidth={2.8} />}
         </button>
         {/* One long word ("Schwalbenschwanz") cannot wrap; it gets a smaller size instead. */}
-        <strong className={displayShapeName(shape).split(/\s+/).some((word) => word.length > 14) ? "long-word" : undefined}>{displayShapeName(shape)}</strong>
+        <strong className={displayShapeName(shape).split(/\s+/).some((word) => word.length > 11) ? "long-word" : undefined}>{displayShapeName(shape)}</strong>
         <div className="inspector-header-actions">
           <GuideHelpLink chapter={guideChapterForShape(shape)} className="inspector-help-link" iconSize={31} strokeWidth={2.4} />
           <button className={locked ? "inspector-header-icon active" : "inspector-header-icon"} aria-label={locked ? t("outliner.unlock") : t("outliner.lock")} onClick={() => onUpdate({ locked: !locked })}>
