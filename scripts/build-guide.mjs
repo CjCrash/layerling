@@ -341,7 +341,8 @@ a { color: var(--accent); }
 .brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; margin-right: auto; }
 .brand img { width: 34px; height: 34px; }
 .brand b { font-size: 19px; letter-spacing: -0.03em; }
-.brand span { color: var(--muted); font-size: 13px; font-weight: 600; }
+.brand-text { display: flex; align-items: baseline; gap: 10px; }
+.brand-note { color: var(--muted); font-size: 13px; font-weight: 600; }
 .bar a.button { padding: 7px 14px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 14px; text-decoration: none; }
 .bar a.lang { color: var(--muted); font-size: 14px; font-weight: 600; text-decoration: none; }
 .shell { max-width: 1100px; margin: 0 auto; padding: 24px 16px 72px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 40px; align-items: start; }
@@ -396,7 +397,7 @@ footer.note { max-width: 1100px; margin: 0 auto; padding: 0 16px 12px; color: va
   nav.chapters { position: static; }
   nav.chapters ol { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
   h1 { font-size: 28px; }
-  .brand span { display: none; }
+  .brand-note { display: none; }
 }
 @media print { .bar, nav.chapters, .pager { display: none; } .shell { display: block; } }
 `;
@@ -429,7 +430,7 @@ function pageShell({ language, title, description, path, alternates, chapters, c
   </head>
   <body>
     <header class="bar"><div class="bar-inner">
-      <a class="brand" href="/${strings.dir}/index.html"><img src="/assets/layerling/layerling-logo.svg" alt=""><b>layerling</b><span>${escapeHtml(strings.home)}</span></a>
+      <a class="brand" href="/${strings.dir}/index.html"><img src="/assets/layerling/layerling-logo.svg" alt=""><span class="brand-text"><b>layerling</b><span class="brand-note">${escapeHtml(strings.home)}</span></span></a>
       <a class="lang" href="${switchHref}" hreflang="${language === "de" ? "en" : "de"}" title="${escapeHtml(strings.switchTitle)}">${strings.switchLanguage}</a>
       <a class="button" href="/">${escapeHtml(strings.openEditor)}</a>
     </div></header>
