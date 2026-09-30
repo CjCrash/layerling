@@ -27,7 +27,7 @@ export const DEFAULT_SCREW_HOLE_HEAD_DEPTH = 3.2;
 export const DEFAULT_SCREW_HOLE_ANGLE = 90;
 export const MIN_SCREW_HOLE_ANGLE = 30;
 export const MAX_SCREW_HOLE_ANGLE = 150;
-const SEGMENTS = 48;
+const DEFAULT_SEGMENTS = 48;
 /** The shaft stays at least this much narrower than the head, or the step vanishes. */
 const MAX_SHAFT_SHARE = 0.95;
 const MIN_SHAFT = 0.1;
@@ -67,6 +67,8 @@ export type ScrewHoleGeometryOptions = {
   screwHoleShaft?: number;
   screwHoleHeadDepth?: number;
   screwHoleAngle?: number;
+  /** Corners around the axis; the automatic count for the diameter when left out. */
+  sides?: number;
 };
 
 /** Radius and height of each corner of the outline, from the bottom of the shaft up to the rim of the head. */
@@ -96,6 +98,7 @@ export function screwHoleProfile({ kind, width, height, screwHoleShaft, screwHol
 export function createScrewHoleGeometry(options: ScrewHoleGeometryOptions): THREE.BufferGeometry {
   const profile = screwHoleProfile(options);
   const rings = profile.length;
+  const SEGMENTS = Math.max(3, Math.round(options.sides ?? DEFAULT_SEGMENTS));
   // Width and depth may differ: the round body is stretched along z.
   const stretch = Math.max(0.01, options.depth) / Math.max(0.01, options.width);
   const positions: number[] = [];

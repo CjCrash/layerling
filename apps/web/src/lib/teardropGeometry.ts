@@ -53,7 +53,7 @@ export function teardropTipAngle(width: number, height: number) {
  * at the bottom of the circle to y = height at the tip. When the height is too
  * small for a tip, the outline is squashed to fit it.
  */
-export function teardropContourPoints(width: number, height: number): Point2D[] {
+export function teardropContourPoints(width: number, height: number, circleSegments = TEARDROP_CIRCLE_SEGMENTS): Point2D[] {
   const radius = Math.max(0.005, width / 2);
   const safeHeight = Math.max(0.01, height);
   const rise = Math.max(safeHeight - radius, radius * MIN_TIP_RISE);
@@ -63,7 +63,7 @@ export function teardropContourPoints(width: number, height: number): Point2D[] 
   const arcStart = Math.PI / 2 - tangent; // right tangent point, seen as an angle from +x
   const arcEnd = Math.PI / 2 + tangent; // left tangent point, going the long way round below
   const arcSpan = 2 * Math.PI - (arcEnd - arcStart);
-  const steps = Math.max(8, Math.ceil((TEARDROP_CIRCLE_SEGMENTS * arcSpan) / (2 * Math.PI)));
+  const steps = Math.max(8, Math.ceil((Math.max(3, circleSegments) * arcSpan) / (2 * Math.PI)));
   const squash = safeHeight / naturalHeight;
   const points: Point2D[] = [];
   // Right tangent point, down round the bottom, up to the left tangent point.
@@ -80,12 +80,14 @@ export type TeardropGeometryOptions = {
   width: number;
   depth: number;
   height: number;
+  /** Segments of a full circle for the round part; the arc gets its share. */
+  sides?: number;
 };
 
 /** A closed, watertight teardrop body: the outline pushed along z, centred on the origin, from y = 0 to y = height. */
-export function createTeardropGeometry({ width, depth, height }: TeardropGeometryOptions): THREE.BufferGeometry {
+export function createTeardropGeometry({ width, depth, height, sides }: TeardropGeometryOptions): THREE.BufferGeometry {
   const safeDepth = Math.max(0.01, depth);
-  const contour = teardropContourPoints(width, height);
+  const contour = teardropContourPoints(width, height, sides);
   const count = contour.length;
   const front = safeDepth / 2;
   const back = -safeDepth / 2;

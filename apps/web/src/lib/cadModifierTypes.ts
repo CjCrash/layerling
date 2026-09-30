@@ -96,6 +96,8 @@ export type CadModifierProfilePart = {
    * side).
    */
   kind: "extrusion" | "revolution";
+  /** Extrusion only: round every edge of the two flat ends by this radius (a rounded box). */
+  capFillet?: number;
   /** The first loop is the outer boundary, any further loops are holes. */
   loops: CadModifierProfileLoop[];
   height: number;

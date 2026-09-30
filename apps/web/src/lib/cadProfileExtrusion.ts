@@ -13,6 +13,7 @@ import { buildHoneycombHoles, normalizeHoneycombCellSize, normalizeHoneycombFram
 import { dovetailOutlineForShape } from "@/lib/dovetailGeometry";
 import { teardropExactSection } from "@/lib/teardropGeometry";
 import { screwHoleProfile } from "@/lib/screwHoleGeometry";
+import { DEFAULT_ROUNDED_BOX_CORNER_FILLET, DEFAULT_ROUNDED_BOX_TOP_BOTTOM_FILLET, normalizeCornerFillet, normalizeTopBottomFillet } from "@/lib/roundedBoxGeometry";
 import { textFont } from "@/lib/textFonts";
 import { buildCurvedText, curvedTextFitScale, curvedTextLayout } from "@/lib/textGeometry";
 import { gearToothPitch, normalizeGearCenterHoleSize, normalizeGearToothSize, normalizeGearToothWidth, normalizeGearTeeth, normalizeGearType } from "@/lib/gearGeometry";
@@ -29,7 +30,7 @@ type Point = { x: number; z: number };
 type Arc = { cx: number; cz: number; rx: number; rz: number; start: number; end: number };
 type Corner = { start: Point; end: Point; arc?: Arc };
 
-export const CAD_PROFILE_SHAPE_KINDS = new Set<WorkplaneShape["kind"]>(["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear", "dovetail", "teardrop", "counterbore", "countersink", "text"]);
+export const CAD_PROFILE_SHAPE_KINDS = new Set<WorkplaneShape["kind"]>(["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear", "dovetail", "teardrop", "counterbore", "countersink", "ellipse", "cylinder", "tube", "ring", "halfSphere", "roundRoof", "roundedBox", "text"]);
 
 function shortestAngleDelta(from: number, to: number) {
   let delta = to - from;
@@ -630,7 +631,38 @@ export function textGlyphProfiles(shape: WorkplaneShape) {
 type ProfileFrame = { kind: "extrusion" | "revolution"; height: number; local: THREE.Matrix4 };
 
 /** Outline loops (and horn roundings) of a supported shape in its local frame, or null. */
-export function cadProfileForShapeKind(shape: WorkplaneShape): { loops: CadModifierProfileLoop[]; frame?: ProfileFrame } | null {
+/** A full ellipse (or circle) around the origin as two half arcs, which the kernel builds exactly. */
+function ellipseLoop(rx: number, rz: number): CadModifierProfileLoop {
+  const half = (start: number, end: number): Corner => {
+    const arc: Arc = { cx: 0, cz: 0, rx, rz, start, end };
+    return { start: profileArcPoint(arc, start), end: profileArcPoint(arc, end), arc };
+  };
+  return loopFromCorners([half(0, Math.PI), half(Math.PI, Math.PI * 2)]);
+}
+
+/** A rectangle with all four corners rounded by `radius`, counter-clockwise from the lower right. */
+function roundedRectLoop(width: number, depth: number, radius: number): CadModifierProfileLoop {
+  const hw = width / 2;
+  const hd = depth / 2;
+  if (radius <= 1e-4) return polygonLoop([{ x: hw, z: -hd }, { x: hw, z: hd }, { x: -hw, z: hd }, { x: -hw, z: -hd }]);
+  const corner = (cx: number, cz: number, start: number): Corner => {
+    const arc: Arc = { cx, cz, rx: radius, rz: radius, start, end: start + Math.PI / 2 };
+    return { start: profileArcPoint(arc, arc.start), end: profileArcPoint(arc, arc.end), arc };
+  };
+  return loopFromCorners([
+    corner(hw - radius, -(hd - radius), -Math.PI / 2),
+    corner(hw - radius, hd - radius, 0),
+    corner(-(hw - radius), hd - radius, Math.PI / 2),
+    corner(-(hw - radius), -(hd - radius), Math.PI),
+  ]);
+}
+
+/** Frame that lays an outline built in the profile's x/z plane along the shape's depth: solid (x, e, z) -> local (x, z, depth / 2 - e). */
+function alongDepthFrame(depth: number): ProfileFrame {
+  return { kind: "extrusion", height: depth, local: new THREE.Matrix4().set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, depth / 2, 0, 0, 0, 1) };
+}
+
+export function cadProfileForShapeKind(shape: WorkplaneShape): { loops: CadModifierProfileLoop[]; frame?: ProfileFrame; capFillet?: number } | null {
   const width = shapeWidth(shape);
   const depth = shapeDepth(shape);
   switch (shape.kind) {
@@ -659,8 +691,39 @@ export function cadProfileForShapeKind(shape: WorkplaneShape): { loops: CadModif
       return {
         loops: [loopFromCorners(corners)],
         // solid (x, e, z) -> local (x, z, depth / 2 - e): the profile's z becomes the height, the extrusion runs along the depth
-        frame: { kind: "extrusion", height: depth, local: new THREE.Matrix4().set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, depth / 2, 0, 0, 0, 1) },
+        frame: alongDepthFrame(depth),
       };
+    }
+    case "ellipse":
+      return { loops: [ellipseLoop(width / 2, depth / 2)] };
+    case "cylinder":
+      // A round cylinder is an analytic primitive; only an oval one comes here.
+      return Math.abs(width - depth) > 1e-4 ? { loops: [ellipseLoop(width / 2, depth / 2)] } : null;
+    case "tube":
+    case "ring": {
+      const outerX = width / 2;
+      const outerZ = depth / 2;
+      const wall = Math.min(Math.max(shape.bevel ?? 4, 0.1), Math.max(0.1, Math.min(outerX, outerZ) - 0.1));
+      return { loops: [ellipseLoop(outerX, outerZ), ellipseLoop(Math.max(0.1, outerX - wall), Math.max(0.1, outerZ - wall))] };
+    }
+    case "halfSphere": {
+      // A dome: a quarter ellipse turned around the axis. An oval footprint stays a mesh.
+      if (Math.abs(width - depth) > 1e-4) return null;
+      const rx = width / 2;
+      const ry = shape.height;
+      const loop: CadModifierProfileLoop = { x: 0, z: 0, segments: [{ kind: "line", x: rx, z: 0 }, arcSegment({ cx: 0, cz: 0, rx, rz: ry, start: 0, end: Math.PI / 2 }), { kind: "line", x: 0, z: 0 }] };
+      return { loops: [loop], frame: { kind: "revolution", height: ry, local: new THREE.Matrix4().makeRotationX(-Math.PI / 2) } };
+    }
+    case "roundRoof": {
+      // A half ellipse (radius = half the width, height = the shape's height) pushed along the depth.
+      const radius = width / 2;
+      const loop: CadModifierProfileLoop = { x: -radius, z: 0, segments: [arcSegment({ cx: 0, cz: 0, rx: radius, rz: shape.height, start: Math.PI, end: 0 }), { kind: "line", x: -radius, z: 0 }] };
+      return { loops: [loop], frame: alongDepthFrame(depth) };
+    }
+    case "roundedBox": {
+      const corner = normalizeCornerFillet(shape.cornerFillet ?? DEFAULT_ROUNDED_BOX_CORNER_FILLET, Math.min(width, depth) / 2);
+      const ends = normalizeTopBottomFillet(shape.topBottomFillet ?? DEFAULT_ROUNDED_BOX_TOP_BOTTOM_FILLET, shape.height / 2);
+      return { loops: [roundedRectLoop(width, depth, corner)], capFillet: ends > 1e-4 ? ends : undefined };
     }
     case "counterbore":
     case "countersink": {
@@ -731,6 +794,7 @@ export function cadModifierProfileForShape(shape: WorkplaneShape): CadModifierPr
       height: profile.frame?.height ?? shape.height,
       transform: profileTransformForShape(shape, profile.frame?.local),
     };
+    if (profile.capFillet) part.capFillet = profile.capFillet;
     validateCadProfile(part);
     return part;
   } catch {

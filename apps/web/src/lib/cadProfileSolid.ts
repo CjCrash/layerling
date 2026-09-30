@@ -233,6 +233,16 @@ export function profileExtrusionSolid(cad: OcctKernel, profile: CadModifierProfi
     solid = repairedSolids[0];
   }
   if (!(cad.getVolume(solid) > 0)) throw new Error("The profile solid is inside out");
+  if (profile.capFillet && profile.capFillet > 1e-4 && profile.kind === "extrusion") {
+    // The flat ends of the extrusion: every edge lying in the plane y = 0 or y = height.
+    const edges = cad.getSubShapes(solid, "edge").filter((edge) => {
+      const box = cad.getBoundingBox(edge);
+      return Math.abs(box.ymax - box.ymin) < 1e-6 && (Math.abs(box.ymin) < 1e-6 || Math.abs(box.ymin - profile.height) < 1e-6);
+    });
+    const rounded = cad.fillet(solid, edges, profile.capFillet);
+    if (!cad.isSolid(rounded) || !isValid(rounded) || !(cad.getVolume(rounded) > 0)) throw new Error("The rounded ends of the profile solid are not valid");
+    return rounded;
+  }
   return solid;
 }
 

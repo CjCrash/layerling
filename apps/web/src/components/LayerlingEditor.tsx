@@ -2382,10 +2382,10 @@ function geometryMeshForShape(shape: WorkplaneShape): MeshData | null {
       break;
     case "counterbore":
     case "countersink":
-      geometry = createScrewHoleGeometry({ kind: shape.kind, width, depth, height, screwHoleShaft: shape.screwHoleShaft, screwHoleHeadDepth: shape.screwHoleHeadDepth, screwHoleAngle: shape.screwHoleAngle });
+      geometry = createScrewHoleGeometry({ kind: shape.kind, width, depth, height, screwHoleShaft: shape.screwHoleShaft, screwHoleHeadDepth: shape.screwHoleHeadDepth, screwHoleAngle: shape.screwHoleAngle, sides: roundSideCount(shape.sides, width, depth) });
       break;
     case "teardrop":
-      geometry = createTeardropGeometry({ width, depth, height });
+      geometry = createTeardropGeometry({ width, depth, height, sides: roundSideCount(shape.sides, width, depth) });
       break;
     case "dovetail":
       geometry = createDovetailGeometry({
