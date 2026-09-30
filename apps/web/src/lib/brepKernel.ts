@@ -17,6 +17,12 @@ export type BrepSolid = ReturnType<Brep["box"]>;
 type OcctWasmModule = typeof import("occt-wasm");
 
 let brepReady: Promise<Brep> | null = null;
+let rawKernel: import("occt-wasm").OcctKernel | null = null;
+
+/** The kernel instance behind brepjs once loadBrepWithOcct has finished, for callers that build solids with the kernel's own calls. */
+export function occtKernel() {
+  return rawKernel;
+}
 
 export async function loadBrepWithOcct(): Promise<Brep> {
   // Cache the in-flight/resolved load, but drop a rejected attempt so a transient
@@ -26,10 +32,12 @@ export async function loadBrepWithOcct(): Promise<Brep> {
     const brep = await import("brepjs");
     const occt = (await import(/* webpackIgnore: true */ OCCT_INDEX_URL)) as unknown as OcctWasmModule;
     const kernel = await occt.OcctKernel.init({ wasm: OCCT_WASM_URL });
+    rawKernel = kernel;
     brep.registerKernel("occt-wasm", brep.OcctWasmAdapter.fromKernel(kernel));
     return brep;
   })().catch((error) => {
     brepReady = null;
+    rawKernel = null;
     throw error;
   });
   return brepReady;

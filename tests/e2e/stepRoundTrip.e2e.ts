@@ -11,10 +11,13 @@ vi.mock("@/lib/brepKernel", async () => {
   const { OcctKernel } = await import("occt-wasm");
   const wasm = join(dirname(fileURLToPath(import.meta.resolve("occt-wasm"))), "occt-wasm.wasm");
   let ready: Promise<typeof brep> | null = null;
+  let raw: Awaited<ReturnType<typeof OcctKernel.init>> | null = null;
   return {
+    occtKernel: () => raw,
     loadBrepWithOcct: () =>
       (ready ??= (async () => {
         const kernel = await OcctKernel.init({ wasm });
+        raw = kernel;
         brep.registerKernel("occt-wasm", brep.OcctWasmAdapter.fromKernel(kernel));
         return brep;
       })()),
@@ -129,6 +132,44 @@ describe("STEP export round-trip (real OCCT kernel)", () => {
     expect(skipped.map((s) => s.kind).sort()).toEqual(["mesh", "pyramid"]);
     expect(skipped.find((s) => s.kind === "pyramid")?.reason).toMatch(/no exact B-Rep mapping/i);
     expect(skipped.find((s) => s.kind === "mesh")?.reason).toMatch(/no B-Rep source/i);
+  });
+
+  it("exports outline shapes as exact bodies with the volume their outline predicts", async () => {
+    const ellipse = shape({ kind: "ellipse", name: "Ellipse", x: -60, width: 26, depth: 16, height: 20 });
+    const tube = shape({ kind: "tube", name: "Tube", x: -20, width: 34, depth: 34, height: 28, bevel: 6 });
+    const dome = shape({ kind: "halfSphere", name: "Dome", x: 20, width: 22, depth: 22, height: 11 });
+    const roof = shape({ kind: "roundRoof", name: "Roof", x: 60, width: 20, depth: 30, height: 10 });
+
+    const { blob, exportedCount, skipped } = await exportShapesToStep([ellipse, tube, dome, roof]);
+    expect(exportedCount).toBe(4);
+    expect(skipped).toEqual([]);
+
+    const expected = PI * 13 * 8 * 20 + PI * (17 ** 2 - 11 ** 2) * 28 + (2 / 3) * PI * 11 ** 3 + (PI / 2) * 10 * 10 * 30;
+    expect(near(await reimportVolume(blob), expected)).toBe(true);
+  });
+
+  it("exports a star, a heart and a teardrop instead of skipping them", async () => {
+    const star = shape({ kind: "star", name: "Star", x: -30, width: 20, depth: 20, height: 5 });
+    const heart = shape({ kind: "heart", name: "Heart", x: 0, width: 20, depth: 20, height: 5 });
+    const teardrop = shape({ kind: "teardrop", name: "Teardrop", x: 30, width: 6, depth: 20, height: 3 + 3 * Math.SQRT2 });
+
+    const { blob, exportedCount, skipped } = await exportShapesToStep([star, heart, teardrop]);
+    expect(exportedCount).toBe(3);
+    expect(skipped).toEqual([]);
+    expect(await reimportVolume(blob)).toBeGreaterThan(0);
+  });
+
+  it("cuts a counterbore out of a plate", async () => {
+    const plate = shape({ kind: "box", name: "Plate", width: 20, depth: 20, height: 20 });
+    const bore = shape({ kind: "counterbore", name: "Bore", hole: true, width: 6.4, depth: 6.4, height: 12, elevation: 8.1, screwHoleShaft: 3.4, screwHoleHeadDepth: 3.2 });
+
+    const { blob, exportedCount, skipped } = await exportShapesToStep([plate, bore]);
+    expect(exportedCount).toBe(1);
+    expect(skipped).toEqual([]);
+
+    // Shaft from 8.1 to 16.9, head pocket from 16.9 up to the top of the plate at 20.
+    const expected = 20 * 20 * 20 - PI * 1.7 ** 2 * (16.9 - 8.1) - PI * 3.2 ** 2 * (20 - 16.9);
+    expect(near(await reimportVolume(blob), expected, 0.001)).toBe(true);
   });
 
   it("throws when there is nothing exact to export", async () => {

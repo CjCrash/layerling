@@ -37,6 +37,27 @@ Sobald eine Form ausgewählt ist, erscheinen rechts ihre Einstellungen. Ganz obe
 
 Tippen ist genauer als Ziehen. Alle Zahlenfelder nehmen Millimeter, aber auch Prozent: Wer bei einer Breite von 40 mm „50 %“ eintippt, bekommt 20 mm.
 
+## Wie rund ist rund? Die Seitenzahl
+
+Runde Formen wie Zylinder, Kegel, Rohr, Ellipse oder die Bohrungen haben in den Eigenschaften den Schalter {{ui:prop.sidesFollowSize}} und den Regler {{ui:prop.sides}}. Der Hintergrund: Für die Anzeige und für STL, 3MF und OBJ zeichnet layerling einen Kreis als Vieleck aus vielen kleinen Seiten. Je mehr Seiten, desto glatter, aber desto mehr Dreiecke.
+
+**Wo die Seitenzahl wichtig ist**
+
+- **Beim Export für den Slicer** (STL, 3MF, OBJ). Ein Zylinder mit wenigen Seiten kommt dort als Vieleck an.
+- **Beim Zusammenrechnen von Körpern und Aussparungen.** Eine Bohrung, die aus einer Aussparung mit wenigen Seiten geschnitten wird, ist im fertigen Teil eckig. Das gilt auch für Schraubenlöcher.
+- **In der Anzeige.** Viele sehr feine Formen machen den Editor langsamer.
+
+**Wo sie keine Rolle spielt**
+
+- **Bei Fasen und Verrundungen** ({{ui:editor.tool.chamfer}}, {{ui:editor.tool.fillet}}) und **beim STEP-Export.** Beides arbeitet mit der exakten runden Form, nicht mit dem Vieleck. Das gilt für die meisten runden Formen. Gewinde, Feder und gebogenes Rohr sind noch Dreiecksnetze, dort zählt die Feinheit auch für die Kantenbearbeitung.
+
+**Wie du es einsetzt**
+
+- **Lass {{ui:prop.sidesFollowSize}} eingeschaltet.** Dann wählt layerling die Seitenzahl nach dem Durchmesser, so dass das Vieleck höchstens 0,005 mm vom echten Kreis abweicht, weit unter dem, was ein Drucker auflöst. Kleine Formen bekommen mindestens 24 Seiten, große mehr.
+- **Weniger Seiten** nimmst du, wenn du absichtlich ein Vieleck willst (aber dafür gibt es den {{ui:shape.polygon}}) oder wenn der Editor mit sehr vielen runden Formen träge wird.
+- **Mehr Seiten** brauchst du fast nie. Nur bei sehr großen runden Teilen, wenn du im STL Kanten siehst.
+- **Für Teile, die du nur mit Kanten bearbeitest oder als STEP weitergibst,** ist die Seitenzahl egal.
+
 ## Mit den Griffen arbeiten
 
 Neben den Einstellungen gibt es Griffe an der Form selbst:

@@ -36,6 +36,27 @@ As soon as a shape is selected, its settings appear on the right. At the top is 
 
 Typing is more exact than dragging. All number fields take millimetres, but also percentages: type "50 %" into a width of 40 mm and you get 20 mm.
 
+## How round is round? The side count
+
+Round shapes such as cylinder, cone, tube, ellipse or the bores have the switch {{ui:prop.sidesFollowSize}} and the slider {{ui:prop.sides}} in their properties. The reason: for the view and for STL, 3MF and OBJ, layerling draws a circle as a polygon of many small sides. The more sides, the smoother it is, and the more triangles it takes.
+
+**Where the side count matters**
+
+- **In the export for the slicer** (STL, 3MF, OBJ). A cylinder with few sides arrives there as a polygon.
+- **When bodies and holes are combined.** A bore cut by a hole with few sides is angular in the finished part. That includes screw holes.
+- **In the view.** Many very fine shapes slow the editor down.
+
+**Where it does not matter**
+
+- **For chamfers and fillets** ({{ui:editor.tool.chamfer}}, {{ui:editor.tool.fillet}}) and **for the STEP export.** Both work with the exact round shape, not with the polygon. That holds for most round shapes. Thread, spring and bent tube are still triangle meshes, and there the fineness counts for edge treatment as well.
+
+**How to use it**
+
+- **Leave {{ui:prop.sidesFollowSize}} on.** Then layerling picks the side count from the diameter so that the polygon strays at most 0.005 mm from the true circle, far below what a printer resolves. Small shapes get at least 24 sides, large ones more.
+- **Fewer sides** you take when you want a polygon on purpose (but there is the {{ui:shape.polygon}} for that) or when the editor gets slow with very many round shapes.
+- **More sides** you hardly ever need. Only on very large round parts, when you see edges in the STL.
+- **For parts you only treat with edges or hand on as STEP,** the side count does not matter.
+
 ## Working with the handles
 
 Besides the settings there are handles on the shape itself:

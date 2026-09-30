@@ -9,10 +9,13 @@ vi.mock("@/lib/brepKernel", async () => {
   const { OcctKernel } = await import("occt-wasm");
   const wasm = join(dirname(fileURLToPath(import.meta.resolve("occt-wasm"))), "occt-wasm.wasm");
   let ready: Promise<typeof brep> | null = null;
+  let raw: Awaited<ReturnType<typeof OcctKernel.init>> | null = null;
   return {
+    occtKernel: () => raw,
     loadBrepWithOcct: () =>
       (ready ??= (async () => {
         const kernel = await OcctKernel.init({ wasm });
+        raw = kernel;
         brep.registerKernel("occt-wasm", brep.OcctWasmAdapter.fromKernel(kernel));
         return brep;
       })()),

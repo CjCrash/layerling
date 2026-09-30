@@ -1,7 +1,9 @@
 import type { WorkplaneShape } from "@/types/layerling";
 import { shapeDepth, shapeWidth } from "@/lib/workplaneShapes";
 import { cadBrepTransformForShape } from "@/lib/cadBakeMetadata";
-import { loadBrepWithOcct, type Brep, type BrepSolid } from "@/lib/brepKernel";
+import { loadBrepWithOcct, occtKernel, type Brep, type BrepSolid } from "@/lib/brepKernel";
+import { cadModifierProfileForShape } from "@/lib/cadProfileExtrusion";
+import { profileExtrusionSolid } from "@/lib/cadProfileSolid";
 
 export type SkippedShape = {
   name: string;
@@ -47,17 +49,32 @@ function unsupportedReason(): string {
  *
  * - `primitive`: aus Breite, Tiefe, Hoehe neu gebaut - exakt und billig.
  * - `imported`: die STEP-Quelle, mit der er hereingekommen ist.
+ * - `profile`: ein Umriss, der hochgezogen oder gedreht wird (Stern, Herz,
+ *   Ellipse, Rohr, Halbkugel, Bohrungen ...) - derselbe exakte Koerper, den das
+ *   Kantenwerkzeug bekommt.
  * - `baked`: das B-Rep, das der CAD-Dienst bei einer Kantenbearbeitung
  *   abgelegt hat. Ohne diesen Fall fiel jeder verrundete Koerper heraus: Er
  *   ist danach kein Quader mehr, sondern ein Netz, und ein Netz kann STEP
  *   nicht tragen - obwohl die exakte Form die ganze Zeit danebenlag.
  */
-export type StepSource = "primitive" | "imported" | "baked" | "unsupported";
+export type StepSource = "primitive" | "imported" | "baked" | "profile" | "unsupported";
+
+function hasExactProfile(shape: WorkplaneShape) {
+  try {
+    return cadModifierProfileForShape(shape) !== null;
+  } catch {
+    return false;
+  }
+}
 
 export function stepSourceForShape(shape: WorkplaneShape): StepSource {
   if (shape.kind === "mesh" && shape.importedMesh?.brepStep) return "imported";
-  if (EXACT_KINDS.has(shape.kind)) return "primitive";
+  const oval = (shape.kind === "cylinder" || shape.kind === "cone") && Math.abs(shapeWidth(shape) - shapeDepth(shape)) >= SIZE_EPS;
+  if (EXACT_KINDS.has(shape.kind) && !oval) return "primitive";
   if (shape.cadBrep) return "baked";
+  if (hasExactProfile(shape)) return "profile";
+  // An oval cylinder or cone without a profile: the builder says why it is skipped.
+  if (EXACT_KINDS.has(shape.kind)) return "primitive";
   return "unsupported";
 }
 
@@ -226,6 +243,33 @@ function buildBakedBody(brep: Brep, shape: WorkplaneShape): BuildOutcome {
   return { solid: body };
 }
 
+/**
+ * Ein Koerper aus seinem Umriss: derselbe exakte Koerper, den das
+ * Kantenwerkzeug bekommt (Linien, Boegen, ebene Deckel, gedrehte Schnitte),
+ * hier in die Weltlage gestellt und als B-Rep an brepjs uebergeben.
+ */
+function buildProfileBody(brep: Brep, shape: WorkplaneShape): BuildOutcome {
+  const kernel = occtKernel();
+  const part = cadModifierProfileForShape(shape);
+  if (!kernel || !part) return { skip: unsupportedReason() };
+  try {
+    const local = profileExtrusionSolid(kernel, part);
+    const placed = part.transform ? kernel.transform(local, part.transform) : local;
+    const text = kernel.toBREP(placed);
+    try {
+      if (placed !== local) kernel.release(local);
+      kernel.release(placed);
+    } catch {
+      // A released handle is no reason to lose the export.
+    }
+    const restored = brep.fromBREP(text);
+    if (!restored.ok) return { skip: `exact body failed to load: ${String(restored.error.message ?? restored.error)}` };
+    return { solid: restored.value as unknown as BrepSolid };
+  } catch (error) {
+    return { skip: `exact body could not be built: ${error instanceof Error ? error.message : String(error)}` };
+  }
+}
+
 function describe(shape: WorkplaneShape, reason: string): SkippedShape {
   return { name: shape.name, kind: shape.kind, reason };
 }
@@ -281,7 +325,7 @@ export async function exportShapesToStep(shapes: WorkplaneShape[]): Promise<Step
     }
     // Eine Aussparung wird hier nur aus dem gebaut, was ohne Warten geht; eine
     // eingelesene STEP-Quelle als Bohrer ist kein Fall, der vorkommt.
-    const built = source === "primitive" ? buildExactSolid(brep, shape) : buildBakedBody(brep, shape);
+    const built = source === "primitive" ? buildExactSolid(brep, shape) : source === "profile" ? buildProfileBody(brep, shape) : buildBakedBody(brep, shape);
     if ("skip" in built) {
       skipped.push(describe(shape, `hole ${built.skip}; cut omitted`));
       continue;
@@ -299,6 +343,8 @@ export async function exportShapesToStep(shapes: WorkplaneShape[]): Promise<Step
       built = buildExactSolid(brep, shape);
     } else if (source === "baked") {
       built = buildBakedBody(brep, shape);
+    } else if (source === "profile") {
+      built = buildProfileBody(brep, shape);
     } else {
       const reason = shape.kind === "mesh" ? "imported mesh has no B-Rep source; re-import as STEP to round-trip" : unsupportedReason();
       skipped.push(describe(shape, reason));
