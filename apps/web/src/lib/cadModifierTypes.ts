@@ -82,12 +82,20 @@ export type CadModifierProfileLoop = {
 };
 
 /**
- * A catalog shape whose body is its outline pushed straight up: the CAD worker
+ * A catalog shape whose body is its outline pushed straight up (or a section turned around an axis): the CAD worker
  * builds it as an exact solid (lines, arcs, flat caps) from the shape's own
  * parameters instead of sewing the display mesh back together.
  */
 export type CadModifierProfilePart = {
-  kind: "extrusion";
+  /**
+   * "extrusion": the outline in the local X/Z plane pushed up by `height`.
+   * "revolution": the loop is a half-section (x = distance from the axis,
+   * z = position along it, x >= 0) turned once around the Z axis, `height`
+   * long; the transform stands the axis up. Either way `transform` places the
+   * result on the shape (for the teardrop it also lays the extrusion on its
+   * side).
+   */
+  kind: "extrusion" | "revolution";
   /** The first loop is the outer boundary, any further loops are holes. */
   loops: CadModifierProfileLoop[];
   height: number;

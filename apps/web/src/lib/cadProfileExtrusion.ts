@@ -11,6 +11,8 @@ import { normalizeHeartTipFillet } from "@/lib/heartGeometry";
 import { buildCrescentContourPoints, normalizeCrescentQuality, normalizeCrescentThickness, normalizeCrescentTipFillet } from "@/lib/crescentGeometry";
 import { buildHoneycombHoles, normalizeHoneycombCellSize, normalizeHoneycombFrameWidth, normalizeHoneycombWallThickness } from "@/lib/honeycombGeometry";
 import { dovetailOutlineForShape } from "@/lib/dovetailGeometry";
+import { teardropExactSection } from "@/lib/teardropGeometry";
+import { screwHoleProfile } from "@/lib/screwHoleGeometry";
 import { textFont } from "@/lib/textFonts";
 import { buildCurvedText, curvedTextFitScale, curvedTextLayout } from "@/lib/textGeometry";
 import { gearToothPitch, normalizeGearCenterHoleSize, normalizeGearToothSize, normalizeGearToothWidth, normalizeGearTeeth, normalizeGearType } from "@/lib/gearGeometry";
@@ -27,7 +29,7 @@ type Point = { x: number; z: number };
 type Arc = { cx: number; cz: number; rx: number; rz: number; start: number; end: number };
 type Corner = { start: Point; end: Point; arc?: Arc };
 
-export const CAD_PROFILE_SHAPE_KINDS = new Set<WorkplaneShape["kind"]>(["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear", "dovetail", "text"]);
+export const CAD_PROFILE_SHAPE_KINDS = new Set<WorkplaneShape["kind"]>(["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear", "dovetail", "teardrop", "counterbore", "countersink", "text"]);
 
 function shortestAngleDelta(from: number, to: number) {
   let delta = to - from;
@@ -619,8 +621,16 @@ export function textGlyphProfiles(shape: WorkplaneShape) {
   });
 }
 
+/**
+ * How a profile stands in the shape's own frame when it is not simply pushed
+ * up from the bottom: a turned section, or an extrusion laid on its side.
+ * `local` maps the solid the profile builds (extruded along +y from y = 0, or
+ * turned around the Z axis) into the shape's local frame.
+ */
+type ProfileFrame = { kind: "extrusion" | "revolution"; height: number; local: THREE.Matrix4 };
+
 /** Outline loops (and horn roundings) of a supported shape in its local frame, or null. */
-export function cadProfileForShapeKind(shape: WorkplaneShape) {
+export function cadProfileForShapeKind(shape: WorkplaneShape): { loops: CadModifierProfileLoop[]; frame?: ProfileFrame } | null {
   const width = shapeWidth(shape);
   const depth = shapeDepth(shape);
   switch (shape.kind) {
@@ -638,6 +648,30 @@ export function cadProfileForShapeKind(shape: WorkplaneShape) {
       return { loops: honeycombProfileLoops(width, depth, shape) };
     case "dovetail":
       return { loops: [polygonLoop(dovetailOutlineForShape(shape).map((point) => ({ x: point.x, z: point.y })))] };
+    case "teardrop": {
+      // The outline lives in the front view (x, y); pushed along z it needs the section in the profile's x/z plane, laid on its side.
+      const section = teardropExactSection(width, shape.height);
+      if (!section) return null;
+      const corners: Corner[] = [
+        { start: section.arc.start, end: section.arc.end, arc: section.arc.arc },
+        { start: section.tip, end: section.tip },
+      ];
+      return {
+        loops: [loopFromCorners(corners)],
+        // solid (x, e, z) -> local (x, z, depth / 2 - e): the profile's z becomes the height, the extrusion runs along the depth
+        frame: { kind: "extrusion", height: depth, local: new THREE.Matrix4().set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, depth / 2, 0, 0, 0, 1) },
+      };
+    }
+    case "counterbore":
+    case "countersink": {
+      // Only a round hole is a body of revolution; stretched along z it stays a mesh.
+      if (Math.abs(width - depth) > 1e-6) return null;
+      const points = screwHoleProfile({ kind: shape.kind, width, height: shape.height, screwHoleShaft: shape.screwHoleShaft, screwHoleHeadDepth: shape.screwHoleHeadDepth, screwHoleAngle: shape.screwHoleAngle })
+        .map(({ r, y }) => ({ x: r, z: y }));
+      const section = [{ x: 0, z: points[0].z }, ...points, { x: 0, z: points[points.length - 1].z }];
+      // solid (x, y, z) -> local (x, z, -y): the turned body stands along z, the shape's height runs along y
+      return { loops: [polygonLoop(section)], frame: { kind: "revolution", height: shape.height, local: new THREE.Matrix4().makeRotationX(-Math.PI / 2) } };
+    }
     case "gear":
       return normalizeGearType(shape.gearType) === "spur" ? { loops: gearProfileLoops(width, depth, shape) } : null;
     case "text": {
@@ -656,7 +690,7 @@ export function cadProfileForShapeKind(shape: WorkplaneShape) {
  * same one transformMesh gives the display mesh: turned about the centre,
  * standing on the shape's elevation.
  */
-function profileTransformForShape(shape: WorkplaneShape) {
+function profileTransformForShape(shape: WorkplaneShape, local?: THREE.Matrix4) {
   const centerY = shape.height / 2;
   const matrix = new THREE.Matrix4()
     .makeTranslation(shape.x, (shape.elevation ?? 0) + centerY, shape.z)
@@ -670,6 +704,7 @@ function profileTransformForShape(shape: WorkplaneShape) {
     ))
     .multiply(new THREE.Matrix4().makeScale(mirrorSign(shape.mirrorX), mirrorSign(shape.mirrorY), mirrorSign(shape.mirrorZ)))
     .multiply(new THREE.Matrix4().makeTranslation(0, -centerY, 0));
+  if (local) matrix.multiply(local);
   const transform = cadTransformFromMatrix(matrix);
   const identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0];
   return transform.every((value, index) => Math.abs(value - identity[index]) < 1e-9) ? undefined : transform;
@@ -691,10 +726,10 @@ export function cadModifierProfileForShape(shape: WorkplaneShape): CadModifierPr
     const profile = cadProfileForShapeKind(shape);
     if (!profile) return null;
     const part: CadModifierProfilePart = {
-      kind: "extrusion",
+      kind: profile.frame?.kind ?? "extrusion",
       loops: profile.loops,
-      height: shape.height,
-      transform: profileTransformForShape(shape),
+      height: profile.frame?.height ?? shape.height,
+      transform: profileTransformForShape(shape, profile.frame?.local),
     };
     validateCadProfile(part);
     return part;

@@ -95,7 +95,7 @@ function samePoint(a: Point, b: Point, tolerance: number) {
 
 /** Throws unless every number is finite, every loop closes and every arc ends where it says. */
 export function validateCadProfile(profile: CadModifierProfilePart) {
-  if (profile.kind !== "extrusion") throw new Error(`Unsupported CAD profile: ${String((profile as { kind: unknown }).kind)}`);
+  if (profile.kind !== "extrusion" && profile.kind !== "revolution") throw new Error(`Unsupported CAD profile: ${String((profile as { kind: unknown }).kind)}`);
   if (!Number.isFinite(profile.height) || profile.height <= 0) throw new Error("The profile has no height");
   if (!profile.loops.length) throw new Error("The profile has no outline");
   const tolerance = profileExtent(profile) * 1e-7;
@@ -202,7 +202,10 @@ export function profileExtrusionSolid(cad: OcctKernel, profile: CadModifierProfi
   const [outer, ...holes] = profile.loops;
   let face = cad.makeFace(loopWire(cad, outer, tolerance));
   if (holes.length > 0) face = cad.addHolesInFace(face, holes.map((hole) => loopWire(cad, hole, tolerance)));
-  let solid = cad.extrude(face, 0, profile.height, 0);
+  // A revolution turns its half-section once around the Z axis; the result stands along Z.
+  let solid = profile.kind === "revolution"
+    ? cad.revolve(face, { point: ORIGIN, direction: { x: 0, y: 0, z: 1 } }, TWO_PI)
+    : cad.extrude(face, 0, profile.height, 0);
   const solids = cad.isSolid(solid) ? [solid] : cad.getSubShapes(solid, "solid");
   if (solids.length !== 1) throw new Error("The profile did not become one solid");
   solid = solids[0];
@@ -213,6 +216,7 @@ export function profileExtrusionSolid(cad: OcctKernel, profile: CadModifierProfi
       return false;
     }
   };
+  if (!isValid(solid) && profile.kind === "revolution") throw new Error("The turned profile solid is not valid");
   if (!isValid(solid)) {
     // Some font outlines (the "1" of the Rounded face, for one) come out of
     // the face builder flagged invalid, and the kernel's own repair fixes

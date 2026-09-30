@@ -125,3 +125,23 @@ export function createTeardropGeometry({ width, depth, height }: TeardropGeometr
   geometry.computeBoundingBox();
   return geometry;
 }
+
+/**
+ * The exact outline of a teardrop in its front view (x, y), or null when the
+ * height leaves no room for a tip - there the display mesh squashes the outline
+ * and the mesh stays the body. The arc is the round part from the left
+ * tangent point round the bottom to the right one; the tip closes the loop.
+ */
+export function teardropExactSection(width: number, height: number) {
+  const radius = Math.max(0.005, width / 2);
+  const rise = height - radius;
+  if (!(rise > radius * MIN_TIP_RISE)) return null;
+  const tangent = Math.acos(radius / rise);
+  const start = Math.PI / 2 + tangent;
+  const end = Math.PI / 2 - tangent + Math.PI * 2;
+  const at = (angle: number) => ({ x: radius * Math.cos(angle), z: radius + radius * Math.sin(angle) });
+  return {
+    arc: { start: at(start), end: at(end), arc: { cx: 0, cz: radius, rx: radius, rz: radius, start, end } },
+    tip: { x: 0, z: radius + rise },
+  };
+}
