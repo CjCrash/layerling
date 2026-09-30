@@ -903,11 +903,13 @@ export function SketchWorkspace({
   const focusSelection = useCallback(() => {
     if (!focusBounds) return;
     const margin = 1.3;
-    const spanX = (focusBounds.maxX - focusBounds.minX) * margin;
-    const spanZ = (focusBounds.maxZ - focusBounds.minZ) * margin;
-    const fit = Math.min(spanX > 0 ? workspace.width / spanX : Infinity, spanZ > 0 ? workspace.depth / spanZ : Infinity);
+    // A lone point or a tiny selection has next to no extent; a quarter of the
+    // plate keeps it in context instead of diving straight to the maximum zoom.
+    const minimumSpan = Math.max(workspace.width, workspace.depth) / 4;
+    const spanX = Math.max((focusBounds.maxX - focusBounds.minX) * margin, minimumSpan);
+    const spanZ = Math.max((focusBounds.maxZ - focusBounds.minZ) * margin, minimumSpan);
     setView({
-      zoom: clamp(Number.isFinite(fit) ? fit : SKETCH_MAX_ZOOM, SKETCH_MIN_ZOOM, SKETCH_MAX_ZOOM),
+      zoom: clamp(Math.min(workspace.width / spanX, workspace.depth / spanZ), SKETCH_MIN_ZOOM, SKETCH_MAX_ZOOM),
       pan: {
         x: clamp((focusBounds.minX + focusBounds.maxX) / 2, -workspace.width / 2, workspace.width / 2),
         z: clamp((focusBounds.minZ + focusBounds.maxZ) / 2, -workspace.depth / 2, workspace.depth / 2),
