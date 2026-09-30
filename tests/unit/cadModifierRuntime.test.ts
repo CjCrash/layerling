@@ -10,6 +10,7 @@ import {
   cadModifierPrepareCostMs,
   cadModifierPrepareTimeoutMs,
   cadModifierTessellationDeflection,
+  cadModifierCappedDeflection,
   cadModifierTopologyEdgeIsSelectable,
   cadTransformRequiresGeneralTransform,
   cadModifierTimeoutMessage,
@@ -281,7 +282,9 @@ describe("Vernetzungsfeinheit ueber mehrere Verrundungen hinweg", () => {
     const fein = cadModifierBaseDeflection("fine", 0.5);
     const grob = cadModifierTessellationDeflection("standard", 8, fein);
     expect(grob.linear).toBe(fein.linear);
-    expect(grob.angular).toBe(fein.angular);
+    // Nie groeber als die feinere Stelle - und auch nicht als die neue Operation selbst.
+    expect(grob.angular).toBeLessThanOrEqual(fein.angular);
+    expect(grob.angular).toBeLessThanOrEqual(cadModifierBaseDeflection("standard", 8).angular);
   });
 
   it("lässt eine tatsaechlich feinere neue Operation trotzdem gewinnen", () => {
@@ -292,6 +295,59 @@ describe("Vernetzungsfeinheit ueber mehrere Verrundungen hinweg", () => {
 
   it("verhaelt sich ohne Vorgeschichte wie die Basis-Durchbiegung", () => {
     expect(cadModifierTessellationDeflection("standard", 2)).toEqual(cadModifierBaseDeflection("standard", 2));
+  });
+
+  it("laesst Behandlungen ab der Deckelung (Standard ab 1 mm) genau wie bisher", () => {
+    [1, 2, 10].forEach((amount) => expect(cadModifierBaseDeflection("standard", amount)).toEqual({ linear: 0.05, angular: 0.16 }));
+    [1, 5].forEach((amount) => expect(cadModifierBaseDeflection("fine", amount)).toEqual({ linear: 0.025, angular: 0.1 }));
+    [1.2, 5].forEach((amount) => expect(cadModifierBaseDeflection("draft", amount)).toEqual({ linear: 0.12, angular: 0.35 }));
+  });
+
+  /*
+   * Eine kleine Verrundung hat schon eine enge Sehne (0,01 mm bei 0,2 mm im
+   * Standard); die feste Winkelgrenze von 0,16 rad schnitt jeden schmalen
+   * Verrundungsstreifen zusaetzlich in zehn Reihen - "Grüße" mit 0,1 mm an
+   * allen Kanten kam so im Editor auf 242.544 Dreiecke (jetzt 30.196).
+   */
+  it("lockert die Winkelgrenze, wenn die Sehne enger wird, bis zum OCCT-Standard von 0,5 rad", () => {
+    expect(cadModifierBaseDeflection("standard", 0.1)).toEqual({ linear: 0.01, angular: 0.5 });
+    expect(cadModifierBaseDeflection("standard", 0.5).linear).toBe(0.025);
+    expect(cadModifierBaseDeflection("standard", 0.5).angular).toBeCloseTo(0.32, 12);
+    (["draft", "standard", "fine"] as const).forEach((quality) => {
+      const cap = cadModifierBaseDeflection(quality, 50);
+      [0.05, 0.1, 0.2, 0.3, 0.5, 0.8, 1, 3].forEach((amount) => {
+        const deflection = cadModifierBaseDeflection(quality, amount);
+        expect(deflection.angular).toBeGreaterThanOrEqual(cap.angular);
+        expect(deflection.angular).toBeLessThanOrEqual(0.5);
+        // Unterhalb von 0,5 rad bleibt Winkel x Sehne beim Wert der Deckelung.
+        if (deflection.angular < 0.5) expect(deflection.angular * deflection.linear).toBeCloseTo(cap.angular * cap.linear, 12);
+      });
+    });
+  });
+
+  it("wird nach einer grossen Behandlung auf einer kleinen wieder so fein wie bisher", () => {
+    const klein = cadModifierBaseDeflection("standard", 0.1);
+    expect(cadModifierTessellationDeflection("standard", 2, klein)).toEqual({ linear: 0.01, angular: 0.16 });
+  });
+
+  /*
+   * Auf einem Torus - einer Verrundung um eine Kreiskante - haelt OCCT die
+   * Sehne mit dem lockeren Winkel nicht immer ein; dann vernetzt das
+   * Kantenwerkzeug mit der Winkelgrenze der Deckelung, also genau wie bisher.
+   */
+  it("liefert als Rueckfall die Winkelgrenze der Deckelung bei gleicher Sehne", () => {
+    expect(cadModifierCappedDeflection("standard", cadModifierBaseDeflection("standard", 0.1))).toEqual({ linear: 0.01, angular: 0.16 });
+    expect(cadModifierCappedDeflection("fine", cadModifierBaseDeflection("fine", 0.1))).toEqual({ linear: 0.005, angular: 0.1 });
+    expect(cadModifierCappedDeflection("draft", cadModifierBaseDeflection("draft", 0.1))).toEqual({ linear: 0.03, angular: 0.35 });
+    // Nie lockerer als das, was schon feststand.
+    expect(cadModifierCappedDeflection("standard", { linear: 0.005, angular: 0.1 })).toEqual({ linear: 0.005, angular: 0.1 });
+    expect(cadModifierCappedDeflection("toString" as "standard", { linear: 0.01, angular: 0.5 })).toEqual({ linear: 0.01, angular: 0.16 });
+  });
+
+  it("nimmt fuer unbekannte Qualitaeten den Standard, auch fuer Namen wie toString", () => {
+    ["toString", "constructor", "__proto__", "irgendwas"].forEach((quality) => {
+      expect(cadModifierBaseDeflection(quality as "standard", 0.1)).toEqual(cadModifierBaseDeflection("standard", 0.1));
+    });
   });
 
   it("harmonisiert in der Standardvorgabe mit der feinen Skizzen-Tessellierung", () => {

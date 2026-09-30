@@ -4,7 +4,8 @@ import { OcctKernel, type ShapeHandle } from "occt-wasm";
 import { orientedFaceNormal, shellSolid } from "@/lib/cadShell";
 import type { CadModifierComponentMesh, CadModifierDeflection, CadModifierDisplayEdge, CadModifierEdge, CadModifierMeshPart, CadModifierPrimitivePart, CadModifierProfilePart, CadModifierQuality, CadModifierWorkerRequest, CadModifierWorkerResponse } from "@/lib/cadModifierTypes";
 import { cadProfileSolidMismatch, profileExtrusionSolid } from "@/lib/cadProfileSolid";
-import { CAD_MODIFIER_KERNEL_RESTART_MESSAGE, CAD_MODIFIER_RUNTIME_BASE, cadModifierTessellationDeflection, cadModifierTopologyEdgeIsSelectable, cadTransformRequiresGeneralTransform, isCadModifierKernelExhausted, isCadModifierWasmMemoryFault } from "@/lib/cadModifierRuntime";
+import { meshTreatedBody } from "@/lib/cadMeshAccuracy";
+import { CAD_MODIFIER_KERNEL_RESTART_MESSAGE, CAD_MODIFIER_RUNTIME_BASE, cadModifierCappedDeflection, cadModifierTessellationDeflection, cadModifierTopologyEdgeIsSelectable, cadTransformRequiresGeneralTransform, isCadModifierKernelExhausted, isCadModifierWasmMemoryFault } from "@/lib/cadModifierRuntime";
 
 const HASH_UPPER_BOUND = 2_147_483_647;
 const CAD_EDGE_WIREFRAME_DEFLECTION = 0.035;
@@ -487,8 +488,7 @@ function cadDisplayEdgesFromCollected(edges: CollectedCadEdge[]): CadModifierDis
     .map((edge) => ({ points: edge.points }));
 }
 
-function tessellationOptions(quality: CadModifierQuality, amount: number, minDeflection?: CadModifierDeflection) {
-  const deflection = cadModifierTessellationDeflection(quality, amount, minDeflection);
+function tessellationOptions(deflection: CadModifierDeflection) {
   return { linearDeflection: deflection.linear, angularDeflection: deflection.angular };
 }
 
@@ -593,9 +593,14 @@ async function bearbeiteAnfrage(request: CadModifierWorkerRequest, halter: { cad
     }
     result = componentResults.length === 1 ? componentResults[0] : activeCad.makeCompound(componentResults);
     if (!cadShapeIsValid(activeCad, result)) throw new Error("The chosen size creates invalid or overlapping edge geometry");
-    const options = tessellationOptions(request.quality, request.amount, request.minDeflection);
-    const deflection: CadModifierDeflection = { linear: options.linearDeflection, angular: options.angularDeflection };
-    const mesh = copyCadMesh(activeCad.tessellate(result, options));
+    const loose = cadModifierTessellationDeflection(request.quality, request.amount, request.minDeflection);
+    const meshed = meshTreatedBody(activeCad, [...componentResults], result, loose, cadModifierCappedDeflection(request.quality, loose));
+    // The body may have been replaced by fresh copies, meshed with the old angle.
+    componentResults.splice(0, componentResults.length, ...meshed.components);
+    result = meshed.result;
+    const deflection = meshed.deflection;
+    const options = tessellationOptions(deflection);
+    const mesh = copyCadMesh(meshed.mesh);
     const displayEdges = collectEdges(activeCad, result, 0).displayEdges;
     const brep = activeCad.toBREP(result);
     const components: CadModifierComponentMesh[] = componentResults.map((component, owner) => {
