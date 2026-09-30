@@ -3768,6 +3768,11 @@ button {
   white-space: pre-line;
 }
 
+/* One long word ("Schwalbenschwanz") cannot wrap; it gets a smaller size instead of breaking in the middle. */
+.shape-menu-item span.long-word {
+  font-size: 0.85em;
+}
+
 .action-buttons button {
   box-sizing: border-box;
   display: inline-flex;

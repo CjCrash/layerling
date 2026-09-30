@@ -12105,7 +12105,7 @@ function SecondaryToolbar({
                     onDragEnd={() => setShapesOpen(false)}
                   >
                     <img src={shape.menuIcon} alt="" draggable={false} />
-                    <span>{shapeAssetMenuLabel(shape)}</span>
+                    <span className={shapeAssetMenuLabel(shape).split(/\s+/).some((word) => word.length > 13) ? "long-word" : undefined}>{shapeAssetMenuLabel(shape)}</span>
                   </button>
                 ))}
               </div>
