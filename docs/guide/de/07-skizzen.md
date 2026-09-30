@@ -33,7 +33,7 @@ Ein Körper entsteht nur aus einem **geschlossenen** Umriss.
 
 Klicke auf einen Eckpunkt und wähle {{ui:sketch.filletCorner}} oder {{ui:sketch.chamferCorner}}. Es erscheint ein kleines Feld für den {{ui:sketch.filletRadius}} beziehungsweise den {{ui:sketch.chamferDistance}}. Trage das Maß ein und bestätige mit dem Haken. Das geht für Ecken zwischen zwei geraden Linien.
 
-![Die Ecke oben rechts wird mit 12 mm Radius verrundet.](shot:sketch-fillet)
+![Die Ecke oben links wird mit 12 mm Radius verrundet.](shot:sketch-fillet)
 
 ## Ein Körper daraus machen
 

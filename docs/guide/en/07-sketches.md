@@ -33,7 +33,7 @@ A body comes only from a **closed** outline.
 
 Click a corner point and choose {{ui:sketch.filletCorner}} or {{ui:sketch.chamferCorner}}. A small field appears for the {{ui:sketch.filletRadius}} or the {{ui:sketch.chamferDistance}}. Enter the size and confirm with the check mark. This works for corners between two straight lines.
 
-![The corner at the top right is rounded with a 12 mm radius.](shot:sketch-fillet)
+![The corner at the top left is rounded with a 12 mm radius.](shot:sketch-fillet)
 
 ## Making a body from it
 
