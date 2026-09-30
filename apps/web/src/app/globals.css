@@ -2175,7 +2175,9 @@ button {
 
 /* The guide is the way to learn more, so its link stands apart as a button rather than hiding in the sentence. */
 .dashboard-welcome-guide-link {
-  display: inline-flex;
+  display: flex;
+  align-self: flex-start;
+  width: fit-content;
   align-items: center;
   gap: 8px;
   margin-top: 4px;
