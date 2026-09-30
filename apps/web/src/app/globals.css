@@ -2173,6 +2173,28 @@ button {
   font-size: 13px;
 }
 
+/* The guide is the way to learn more, so its link stands apart as a button rather than hiding in the sentence. */
+.dashboard-welcome-guide-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 9px 16px;
+  border: 1.5px solid #ad5900;
+  border-radius: 8px;
+  background: #fff6ea;
+  color: #8f4700;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.dashboard-welcome-guide-link:hover,
+.dashboard-welcome-guide-link:focus-visible {
+  background: #ad5900;
+  color: #fff;
+}
+
 .preview-grid {
   position: absolute;
   inset: 0;
@@ -9057,6 +9079,18 @@ html[data-theme="dark"] .dashboard-welcome-switch strong {
 
 html[data-theme="dark"] .dashboard-welcome-help {
   color: #a08a71;
+}
+
+html[data-theme="dark"] .dashboard-welcome-guide-link {
+  border-color: #f3a452;
+  background: rgba(243, 164, 82, 0.12);
+  color: #f3a452;
+}
+
+html[data-theme="dark"] .dashboard-welcome-guide-link:hover,
+html[data-theme="dark"] .dashboard-welcome-guide-link:focus-visible {
+  background: #f3a452;
+  color: #241a10;
 }
 
 html[data-theme="dark"] .dashboard-legal-dot {
