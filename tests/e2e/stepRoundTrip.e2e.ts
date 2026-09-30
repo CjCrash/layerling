@@ -148,6 +148,32 @@ describe("STEP export round-trip (real OCCT kernel)", () => {
     expect(near(await reimportVolume(blob), expected)).toBe(true);
   });
 
+  it("exports an oval dome and an oval cone at their drawn size", async () => {
+    const cases = [
+      { source: shape({ kind: "halfSphere", name: "Oval dome", width: 30, depth: 20, height: 10 }), box: [-15, -10, 0, 15, 10, 10] },
+      { source: shape({ kind: "cone", name: "Oval cone", width: 30, depth: 15, height: 15, baseRadius: 15, topRadius: 0 }), box: [-15, -7.5, 0, 15, 7.5, 15] },
+      { source: shape({ kind: "cone", name: "Oval frustum", width: 30, depth: 15, height: 15, baseRadius: 15, topRadius: 4 }), box: [-15, -7.5, 0, 15, 7.5, 15] },
+    ];
+    const { occtKernel } = await import("@/lib/brepKernel");
+    const kernel = occtKernel()!;
+    for (const { source, box } of cases) {
+      const { blob, exportedCount, skipped } = await exportShapesToStep([source]);
+      expect(exportedCount).toBe(1);
+      expect(skipped).toEqual([]);
+      // Measured on a mesh of the re-imported body (the kernel's own box is loose on B-spline
+      // faces), in STEP's Z-up frame: depth along -Y, height along Z.
+      const { positions } = kernel.tessellate(kernel.importStep(await blob.text()), { linearDeflection: 0.01, angularDeflection: 0.2 });
+      const bounds = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+      for (let index = 0; index < positions.length; index += 3) {
+        for (let axis = 0; axis < 3; axis += 1) {
+          bounds[axis] = Math.min(bounds[axis], positions[index + axis]);
+          bounds[axis + 3] = Math.max(bounds[axis + 3], positions[index + axis]);
+        }
+      }
+      bounds.forEach((value, index) => expect(Math.abs(value - box[index])).toBeLessThan(0.02));
+    }
+  });
+
   it("exports a star, a heart and a teardrop instead of skipping them", async () => {
     const star = shape({ kind: "star", name: "Star", x: -30, width: 20, depth: 20, height: 5 });
     const heart = shape({ kind: "heart", name: "Heart", x: 0, width: 20, depth: 20, height: 5 });

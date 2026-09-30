@@ -5,7 +5,9 @@ import * as THREE from "three";
 import type { WorkplaneShape } from "@/types/layerling";
 import type { CadModifierProfileLoop } from "@/lib/cadModifierTypes";
 import { cadModifierProfileForShape, cadProfileExpectation, cadProfileSegmentCount, closedMeshVolume, withinExactProfileLimit, crescentProfile, gearProfileLoops, textGlyphProfiles, heartProfileLoops, honeycombProfileLoops, polygonProfileLoops, slotProfileLoops, starProfileLoops } from "@/lib/cadProfileExtrusion";
-import { profileLoopBounds, validateCadProfile } from "@/lib/cadProfileSolid";
+import { isWholeEllipse, profileLoopBounds, validateCadProfile } from "@/lib/cadProfileSolid";
+import { cadTransformRequiresGeneralTransform } from "@/lib/cadModifierRuntime";
+import { cadTransformToMatrix } from "@/lib/cadBakeMetadata";
 import { cadModifierPrepareTimeoutMs, CAD_MODIFIER_EXACT_SEGMENT_LIMIT, CAD_MODIFIER_MAX_PREPARE_TIMEOUT_MS } from "@/lib/cadModifierRuntime";
 import { createStarGeometry } from "@/lib/starGeometry";
 import { createHeartGeometry } from "@/lib/heartGeometry";
@@ -437,5 +439,59 @@ describe("which shapes get an exact profile", () => {
     // A 150 mm honeycomb: 1,550 outline pieces, measured 26 s - the budget keeps the 2.5x margin.
     expect(cadModifierPrepareTimeoutMs(0, 1, 1_550)).toBeGreaterThanOrEqual(26_000 * 2.5);
     expect(cadModifierPrepareTimeoutMs(0, 1, 1_550)).toBeLessThanOrEqual(CAD_MODIFIER_MAX_PREPARE_TIMEOUT_MS);
+  });
+});
+
+describe("the round shapes' exact parts", () => {
+  /** Where the part's transform puts a point of the solid's own frame. */
+  const placed = (transform: number[] | undefined, x: number, y: number, z: number) =>
+    new THREE.Vector3(x, y, z).applyMatrix4(cadTransformToMatrix(transform)).toArray().map((value) => Number(value.toFixed(9)) + 0);
+
+  it("builds an ellipse as one arc once round, which validation accepts only alone and only in an extrusion", () => {
+    const part = cadModifierProfileForShape(shape("ellipse", { width: 30, depth: 16 }));
+    expect(part?.loops).toHaveLength(1);
+    expect(part?.loops[0].segments).toHaveLength(1);
+    expect(isWholeEllipse(part!.loops[0].segments[0])).toBe(true);
+    expect(part?.loops[0].segments[0]).toMatchObject({ kind: "arc", rx: 15, rz: 8, start: 0, end: Math.PI * 2 });
+    expect(profileLoopBounds(part!.loops[0])).toEqual([-15, -8, 15, 8]);
+    const tube = cadModifierProfileForShape(shape("tube", { width: 30, depth: 16, bevel: 3 }));
+    expect(tube?.loops.map((loop) => loop.segments.length)).toEqual([1, 1]);
+    const whole = part!.loops[0];
+    // Next to other segments, or turned around an axis, a whole ellipse is refused.
+    expect(() => validateCadProfile({ kind: "extrusion", height: 5, loops: [{ ...whole, segments: [...whole.segments, { kind: "line", x: 0, z: 0 }, { kind: "line", x: 15, z: 0 }] }] })).toThrow();
+    expect(() => validateCadProfile({ kind: "revolution", height: 5, loops: [whole] })).toThrow();
+    // A single arc short of once round does not close.
+    expect(() => validateCadProfile({ kind: "extrusion", height: 5, loops: [{ ...whole, segments: [{ ...whole.segments[0], end: Math.PI * 1.5 } as typeof whole.segments[0]] }] })).toThrow();
+  });
+
+  it("turns the sphere's half ellipse around its axis and stretches it to the depth", () => {
+    const round = cadModifierProfileForShape(shape("sphere", { width: 20, depth: 20, height: 30 }));
+    expect(round).toMatchObject({ kind: "revolution", height: 30 });
+    expect(round?.loops[0].segments[0]).toMatchObject({ kind: "arc", cx: 0, cz: 15, rx: 10, rz: 15, start: -Math.PI / 2, end: Math.PI / 2 });
+    // The axis stands up: the section's z becomes the height.
+    expect(placed(round?.transform, 0, 0, 30)).toEqual([0, 30, 0]);
+    expect(round?.transform && cadTransformRequiresGeneralTransform(round.transform)).toBeFalsy();
+    const oval = cadModifierProfileForShape(shape("sphere", { width: 30, depth: 20, height: 16, x: 4, elevation: 2 }));
+    // The section's radius runs along x at full width and along z at depth / width of it.
+    expect(placed(oval?.transform, 15, 0, 8)).toEqual([19, 10, 0]);
+    expect(placed(oval?.transform, 0, 15, 8)).toEqual([4, 10, -10]);
+    expect(cadTransformRequiresGeneralTransform(oval!.transform!)).toBe(true);
+  });
+
+  it("builds an oval half sphere and an oval cone the same way, and leaves the round cone to its primitive", () => {
+    const dome = cadModifierProfileForShape(shape("halfSphere", { width: 30, depth: 20, height: 10 }));
+    expect(dome).toMatchObject({ kind: "revolution", height: 10 });
+    expect(placed(dome?.transform, 0, 15, 0)).toEqual([0, 0, -10]);
+    const frustum = cadModifierProfileForShape(shape("cone", { width: 30, depth: 15, height: 12, baseRadius: 15, topRadius: 4 }));
+    expect(frustum?.kind).toBe("revolution");
+    expect(frustum?.loops[0].segments.map((segment) => [segment.x, segment.z])).toEqual([[15, 0], [4, 12], [0, 12], [0, 0]]);
+    expect(placed(frustum?.transform, 0, 4, 12)).toEqual([0, 12, -2]);
+    const pointed = cadModifierProfileForShape(shape("cone", { width: 30, depth: 15, height: 12 }));
+    expect(pointed?.loops[0].segments.map((segment) => [segment.x, segment.z])).toEqual([[15, 0], [0, 12], [0, 0]]);
+    expect(cadModifierProfileForShape(shape("cone", { width: 20, depth: 20, height: 12 }))).toBeNull();
+    // A cone standing on its tip: the section starts up the side from the axis.
+    const tip = cadModifierProfileForShape(shape("cone", { width: 30, depth: 15, height: 12, baseRadius: 0, topRadius: 5 }));
+    expect(tip?.loops[0].segments.map((segment) => [segment.x, segment.z])).toEqual([[5, 12], [0, 12], [0, 0]]);
+    expect(cadModifierProfileForShape(shape("cone", { width: 30, depth: 15, baseRadius: 0, topRadius: 0 }))).toBeNull();
   });
 });

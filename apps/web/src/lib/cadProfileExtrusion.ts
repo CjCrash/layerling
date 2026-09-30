@@ -30,7 +30,7 @@ type Point = { x: number; z: number };
 type Arc = { cx: number; cz: number; rx: number; rz: number; start: number; end: number };
 type Corner = { start: Point; end: Point; arc?: Arc };
 
-export const CAD_PROFILE_SHAPE_KINDS = new Set<WorkplaneShape["kind"]>(["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear", "dovetail", "teardrop", "counterbore", "countersink", "ellipse", "cylinder", "tube", "ring", "halfSphere", "roundRoof", "roundedBox", "text"]);
+export const CAD_PROFILE_SHAPE_KINDS = new Set<WorkplaneShape["kind"]>(["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear", "dovetail", "teardrop", "counterbore", "countersink", "ellipse", "cylinder", "tube", "ring", "halfSphere", "sphere", "cone", "roundRoof", "roundedBox", "text"]);
 
 function shortestAngleDelta(from: number, to: number) {
   let delta = to - from;
@@ -631,13 +631,23 @@ export function textGlyphProfiles(shape: WorkplaneShape) {
 type ProfileFrame = { kind: "extrusion" | "revolution"; height: number; local: THREE.Matrix4 };
 
 /** Outline loops (and horn roundings) of a supported shape in its local frame, or null. */
-/** A full ellipse (or circle) around the origin as two half arcs, which the kernel builds exactly. */
+/**
+ * A full ellipse (or circle) around the origin, starting at (rx, 0): one arc
+ * once round, which the kernel builds as one closed edge - one rim to pick,
+ * as on the round cylinder, instead of two halves.
+ */
 function ellipseLoop(rx: number, rz: number): CadModifierProfileLoop {
-  const half = (start: number, end: number): Corner => {
-    const arc: Arc = { cx: 0, cz: 0, rx, rz, start, end };
-    return { start: profileArcPoint(arc, start), end: profileArcPoint(arc, end), arc };
-  };
-  return loopFromCorners([half(0, Math.PI), half(Math.PI, Math.PI * 2)]);
+  return { x: rx, z: 0, segments: [arcSegment({ cx: 0, cz: 0, rx, rz, start: 0, end: Math.PI * 2 })] };
+}
+
+/**
+ * Stands a turned section's axis up (section z -> local y), then stretches
+ * local z by `stretch`: a body round in plan made as wide in depth as the
+ * display draws it. The worker applies a stretched placement with a general
+ * transform.
+ */
+function upright(stretch = 1) {
+  return new THREE.Matrix4().makeScale(1, 1, stretch).multiply(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
 }
 
 /** A rectangle with all four corners rounded by `radius`, counter-clockwise from the lower right. */
@@ -707,12 +717,38 @@ export function cadProfileForShapeKind(shape: WorkplaneShape): { loops: CadModif
       return { loops: [ellipseLoop(outerX, outerZ), ellipseLoop(Math.max(0.1, outerX - wall), Math.max(0.1, outerZ - wall))] };
     }
     case "halfSphere": {
-      // A dome: a quarter ellipse turned around the axis. An oval footprint stays a mesh.
-      if (Math.abs(width - depth) > 1e-4) return null;
+      // A dome: a quarter ellipse turned around the axis, stretched to the
+      // depth when the footprint is oval (createBooleanHalfSphereGeometry).
       const rx = width / 2;
       const ry = shape.height;
       const loop: CadModifierProfileLoop = { x: 0, z: 0, segments: [{ kind: "line", x: rx, z: 0 }, arcSegment({ cx: 0, cz: 0, rx, rz: ry, start: 0, end: Math.PI / 2 }), { kind: "line", x: 0, z: 0 }] };
-      return { loops: [loop], frame: { kind: "revolution", height: ry, local: new THREE.Matrix4().makeRotationX(-Math.PI / 2) } };
+      return { loops: [loop], frame: { kind: "revolution", height: ry, local: upright(depth / width) } };
+    }
+    case "sphere": {
+      // SphereGeometry scaled to width, height and depth, standing on y = 0: a
+      // half ellipse from the bottom pole over the equator to the top one,
+      // turned around the axis and stretched to the depth. A round one goes to
+      // the analytic primitive first.
+      const rx = width / 2;
+      const ry = shape.height / 2;
+      const loop: CadModifierProfileLoop = { x: 0, z: 0, segments: [arcSegment({ cx: 0, cz: ry, rx, rz: ry, start: -Math.PI / 2, end: Math.PI / 2 }), { kind: "line", x: 0, z: 0 }] };
+      return { loops: [loop], frame: { kind: "revolution", height: shape.height, local: upright(depth / width) } };
+    }
+    case "cone": {
+      // THREE.CylinderGeometry(topRadius, baseRadius) stretched along Z by
+      // depth / width: its section turned around the axis and stretched the
+      // same way. A round one stays the analytic primitive.
+      if (Math.abs(width - depth) <= 1e-4) return null;
+      // Either end may be a point on the axis (a cone on its tip is drawn too).
+      const base = Math.max(0, shape.baseRadius ?? width / 2);
+      const top = Math.max(0, shape.topRadius ?? 0);
+      if (!(base > 1e-9 || top > 1e-9)) return null;
+      const segments: CadModifierProfileSegment[] = [];
+      if (base > 1e-9) segments.push({ kind: "line", x: base, z: 0 });
+      segments.push({ kind: "line", x: top, z: shape.height });
+      if (top > 1e-9) segments.push({ kind: "line", x: 0, z: shape.height });
+      segments.push({ kind: "line", x: 0, z: 0 });
+      return { loops: [{ x: 0, z: 0, segments }], frame: { kind: "revolution", height: shape.height, local: upright(depth / Math.max(0.001, width)) } };
     }
     case "roundRoof": {
       // A half ellipse (radius = half the width, height = the shape's height) pushed along the depth.
