@@ -14,30 +14,57 @@ export const CAD_MODIFIER_RUNTIME_BASE = occtRuntimeVersion ? `/occt/${occtRunti
 export const SKETCH_CAD_DEFLECTION: CadModifierDeflection = { linear: 0.05, angular: 0.16 };
 
 /**
+ * Per quality: the linear deflection follows the treatment size (amount /
+ * perAmount) between a floor and a cap, and `angular` is the angle limit
+ * that goes with the cap.
+ */
+const TESSELLATION_QUALITY: Record<CadModifierQuality, { linearMin: number; linearMax: number; perAmount: number; angular: number }> = {
+  draft: { linearMin: 0.03, linearMax: 0.12, perAmount: 10, angular: 0.35 },
+  standard: { linearMin: 0.01, linearMax: 0.05, perAmount: 20, angular: 0.16 },
+  fine: { linearMin: 0.005, linearMax: 0.025, perAmount: 40, angular: 0.1 },
+};
+
+/** The loosest angle limit a treatment may get - OCCT's own default. */
+const MAX_ANGULAR_DEFLECTION = 0.5;
+
+function tessellationQuality(quality: CadModifierQuality) {
+  return Object.prototype.hasOwnProperty.call(TESSELLATION_QUALITY, quality) ? TESSELLATION_QUALITY[quality] : TESSELLATION_QUALITY.standard;
+}
+
+/**
  * How finely a single edge treatment tessellates the whole body, before any floor from earlier treatments.
  * Linear deflection represents maximum allowable chordal deviation (sagitta).
  * It is capped strictly so large radii never degenerate into coarse, flat facets (fixing the
  * mesh coarseness reported when large radii run alongside small radii), while small radii
  * scale down cleanly to resolve fine geometry.
+ *
+ * The angle limit loosens as the linear deflection tightens: angular x linear
+ * stays at the value it has at the cap, up to MAX_ANGULAR_DEFLECTION. At the
+ * cap - every treatment of 1 mm and more in standard quality - nothing
+ * changes. A small treatment already gets a tight chord (0.01 mm for a
+ * 0.2 mm fillet), and a fixed 0.16 rad on top of it cut every narrow fillet
+ * strip into ten rows: "Grüße" with a 0.1 mm fillet on all edges came to
+ * 242,544 triangles in the editor, 30,196 with the looser angle. On a torus
+ * the looser angle can let the mesh stray from the chord limit, so the edge
+ * tool checks those faces (meshTreatedBody) and falls back to
+ * cadModifierCappedDeflection.
  */
 export function cadModifierBaseDeflection(quality: CadModifierQuality, amount: number): CadModifierDeflection {
   const safeAmount = Math.max(0.01, Number.isFinite(amount) ? amount : 1);
-  if (quality === "draft") {
-    return {
-      linear: Math.min(0.12, Math.max(0.03, safeAmount / 10)),
-      angular: 0.35,
-    };
-  }
-  if (quality === "fine") {
-    return {
-      linear: Math.min(0.025, Math.max(0.005, safeAmount / 40)),
-      angular: 0.1,
-    };
-  }
-  return {
-    linear: Math.min(0.05, Math.max(0.01, safeAmount / 20)),
-    angular: 0.16,
-  };
+  const settings = tessellationQuality(quality);
+  const linear = Math.min(settings.linearMax, Math.max(settings.linearMin, safeAmount / settings.perAmount));
+  const angular = linear >= settings.linearMax ? settings.angular : Math.min(MAX_ANGULAR_DEFLECTION, (settings.angular * settings.linearMax) / linear);
+  return { linear, angular };
+}
+
+/**
+ * The same deflection with the angle limit the quality has at its cap - what
+ * every treatment got before the angle loosened. The edge tool falls back to
+ * it for a body whose mesh would otherwise stray from a torus face (see
+ * meshTreatedBody), so that body gets exactly its old mesh.
+ */
+export function cadModifierCappedDeflection(quality: CadModifierQuality, deflection: CadModifierDeflection): CadModifierDeflection {
+  return { linear: deflection.linear, angular: Math.min(deflection.angular, tessellationQuality(quality).angular) };
 }
 
 /**
