@@ -28,6 +28,8 @@ Weitere Einstellungen:
 
 Gedruckte Gewinde sind eine Sache für sich. Stelle die Pärchen aus Schraube und Mutter zuerst als Test her, bevor du ein großes Teil druckst, und passe das Spiel an deinen Drucker an.
 
+Willst du an dem Teil, in dem das Gewinde sitzt, Kanten fasen oder verrunden, tu das zuerst und setze das Gewinde danach ein. Ein Gewinde besteht aus sehr vielen Dreiecken, das ist für die Kantenbearbeitung zu viel. Die Kante des Schraubenkopfs brichst du direkt mit der Kopffase in den Eigenschaften.
+
 ## Zahnräder
 
 {{ui:shape.gear}} gibt es als {{ui:gear.spur}}, {{ui:gear.helical}} und {{ui:gear.bevel}}. Du stellst die Zahl der {{ui:prop.teeth}}, die {{ui:prop.toothSize}}, die {{ui:prop.toothWidth}} und die {{ui:prop.centerHole}} ein. Beim Schrägrad kommt der {{ui:prop.helixAngle}} dazu. Zwei Räder, die ineinandergreifen sollen, brauchen dieselbe Zahngröße und Zahnbreite und den passenden Abstand zwischen ihren Mitten.

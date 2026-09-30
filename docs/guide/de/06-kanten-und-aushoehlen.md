@@ -31,7 +31,7 @@ Wenn das Maß zu groß für die Kante ist, sagt layerling das und schlägt einen
 
 Ein behandelter Körper lässt sich jederzeit noch einmal behandeln. Wähle ihn wieder aus und öffne das Werkzeug: Unter {{ui:edge.featureHistory}} steht, was schon darauf liegt. {{ui:edge.revertAction}} nimmt eine einzelne Bearbeitung zurück. Achtung: Liegen neuere Bearbeitungen darüber, gehen sie mit weg, und das Fenster sagt dir, wie viele.
 
-Bei einer Gruppe, etwa einem Zylinder mit einer Bohrung, gehört die bearbeitete Kante zum fertigen Körper, nicht zu einem einzelnen Teil. Deshalb wird aus der Gruppe dabei ein einziger Körper, und {{ui:editor.tool.ungroup}} steht nicht mehr zur Verfügung. Nimmst du die Bearbeitung wie oben beschrieben zurück, ist die Gruppe mit allen Teilen wieder da. Am einfachsten ist es, Kanten erst ganz am Schluss zu bearbeiten.
+Bei einer Gruppe, etwa einem Zylinder mit einer Bohrung, gehört die bearbeitete Kante zum fertigen Körper, nicht zu einem einzelnen Teil. Deshalb wird aus der Gruppe dabei ein einziger Körper, und {{ui:editor.tool.ungroup}} steht nicht mehr zur Verfügung. Nimmst du die Bearbeitung wie oben beschrieben zurück, ist die Gruppe mit allen Teilen wieder da. Am einfachsten ist es, Kanten erst ganz am Schluss zu bearbeiten. Bei Gewinden ist es umgekehrt: Sie bestehen aus sehr vielen Dreiecken und lassen sich nicht zusammen mit dem Körper bearbeiten. Fase oder verrunde den Körper zuerst und setze das Gewinde danach ein.
 
 > **Gut zu wissen:** layerling rechnet bei Rundungen und Fasen mit echter CAD-Geometrie, nicht nur mit einem Dreiecksnetz. Deshalb bleibt eine verrundete Kante auch im STEP-Export eine verrundete Kante.
 

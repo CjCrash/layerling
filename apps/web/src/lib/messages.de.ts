@@ -514,7 +514,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "status.noPrintableSurface": "Das gewählte Objekt hat keine druckbare Oberfläche",
   "status.onlyOnePart": "Das gewählte Objekt besteht nur aus einem zusammenhängenden Teil",
   "status.meshTooDense": "Dieses Netz hat {triangles} Dreiecke. Die Kantenbearbeitung schafft {limit}; darüber rechnet der Kern länger, als jede Wartezeit hergibt. Vereinfache das Netz zuerst.",
-  "status.threadTooDense": "Ein Gewinde besteht aus {triangles} Dreiecken — zu viele für die Kantenbearbeitung, die bei {limit} aufhört. Die Kopffase in den Eigenschaften bricht die Kante des Schraubenkopfs ohne diesen Umweg.",
+  "status.threadTooDense": "Ein Gewinde besteht aus {triangles} Dreiecken — zu viele für die Kantenbearbeitung, die bei {limit} aufhört. Setze das Gewinde deshalb erst nach der Kantenbearbeitung ein: erst Fase oder Verrundung am Körper, dann das Gewinde. Die Kopffase in den Eigenschaften bricht die Kante des Schraubenkopfs ohne diesen Umweg.",
   "status.unlockBeforeGroup": "Entsperre alle gewählten Formen, bevor du gruppierst",
   "status.unlockBeforeSeparate": "Entsperre das Objekt, bevor du Teile trennst",
   "status.unlockBeforeCenter": "Entsperre die Auswahl, bevor du sie zentrierst",

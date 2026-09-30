@@ -515,7 +515,7 @@ export const MESSAGES_EN = {
   "status.noPrintableSurface": "The selected object has no printable surface",
   "status.onlyOnePart": "The selected object has only one connected part",
   "status.meshTooDense": "This mesh has {triangles} triangles. Edge treatment handles {limit}; beyond that the kernel takes longer than any wait is worth. Simplify the mesh first.",
-  "status.threadTooDense": "A thread is built from {triangles} triangles — too many for edge treatment, which stops at {limit}. The head chamfer in the properties breaks the screw head's rim without this detour.",
+  "status.threadTooDense": "A thread is built from {triangles} triangles — too many for edge treatment, which stops at {limit}. So add the thread after the edge treatment: chamfer or round the body first, then the thread. The head chamfer in the properties breaks the screw head's rim without this detour.",
   "status.unlockBeforeGroup": "Unlock every selected shape before grouping",
   "status.unlockBeforeSeparate": "Unlock the object before separating parts",
   "status.unlockBeforeCenter": "Unlock the selection before centering it",
