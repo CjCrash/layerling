@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronUp, CornerDownRight, Home, Link, Link2Off, LockKeyhole, LockKeyholeOpen, Minus, Plus, Slash, Spline, Split, Trash2, Waves, X } from "lucide-react";
+import { Check, ChevronUp, CornerDownRight, Crosshair, Home, Link, Link2Off, LockKeyhole, LockKeyholeOpen, Minus, Plus, Slash, Spline, Split, Trash2, Waves, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import { SnapGridControl } from "@/components/workplane/ShapeInspector";
 import { SketchRevolvePreview } from "@/components/SketchRevolvePreview";
@@ -197,6 +197,37 @@ function resizeSketchPoints(points: SketchPoint[], bounds: SelectionBounds, hand
     handleIn: point.handleIn ? map(point.handleIn) : undefined,
     handleOut: point.handleOut ? map(point.handleOut) : undefined,
   }));
+}
+
+function sketchSelectionBounds(selected: SketchSelection, profile: SketchProfile, images: SketchImage[], pointById: Map<string, SketchPoint>) {
+  if (!selected) return null;
+  const pointIds = selected.kind === "point" ? [selected.id] : selected.kind === "multiple" ? selected.pointIds : [];
+  const segmentIds = selected.kind === "segment" ? [selected.id] : selected.kind === "multiple" ? selected.segmentIds : [];
+  const imageIds = selected.kind === "image" ? [selected.id] : selected.kind === "multiple" ? selected.imageIds ?? [] : [];
+  const extent: Array<{ x: number; z: number }> = [];
+  pointIds.forEach((id) => {
+    const point = pointById.get(id);
+    if (point) extent.push(point);
+  });
+  segmentIds.forEach((id) => {
+    const segment = profile.segments.find((entry) => entry.id === id);
+    const start = segment && pointById.get(segment.startId);
+    const end = segment && pointById.get(segment.endId);
+    if (!segment || !start || !end) return;
+    extent.push(start, end);
+    if (segment.kind !== "line" && start.handleOut && end.handleIn) {
+      for (let index = 1; index < 16; index += 1) extent.push(cubicPoint(start, start.handleOut, end.handleIn, end, index / 16));
+    }
+  });
+  imageIds.forEach((id) => {
+    const image = images.find((entry) => entry.id === id);
+    if (!image) return;
+    extent.push({ x: image.x - image.width / 2, z: image.z - image.depth / 2 }, { x: image.x + image.width / 2, z: image.z + image.depth / 2 });
+  });
+  if (extent.length === 0) return null;
+  const xs = extent.map((point) => point.x);
+  const zs = extent.map((point) => point.z);
+  return { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
 }
 
 function formatDimension(value: number, accuracy: 1 | 2 | 3) {
@@ -794,6 +825,46 @@ export function SketchWorkspace({
     setView((current) => ({ ...current, zoom: clamp(current.zoom / scaled, SKETCH_MIN_ZOOM, SKETCH_MAX_ZOOM) }));
   };
 
+  const resetView = useCallback(() => setView({ zoom: 1, pan: { x: 0, z: 0 } }), []);
+
+  const focusBounds = useMemo(
+    () => sketchSelectionBounds(selected, displayProfile, displayImages, pointById),
+    [displayImages, displayProfile, pointById, selected],
+  );
+
+  // Like the 3D editor's Shift+F: frame the selection with a little room around it.
+  const focusSelection = useCallback(() => {
+    if (!focusBounds) return;
+    const margin = 1.3;
+    const spanX = (focusBounds.maxX - focusBounds.minX) * margin;
+    const spanZ = (focusBounds.maxZ - focusBounds.minZ) * margin;
+    const fit = Math.min(spanX > 0 ? workspace.width / spanX : Infinity, spanZ > 0 ? workspace.depth / spanZ : Infinity);
+    setView({
+      zoom: clamp(Number.isFinite(fit) ? fit : SKETCH_MAX_ZOOM, SKETCH_MIN_ZOOM, SKETCH_MAX_ZOOM),
+      pan: {
+        x: clamp((focusBounds.minX + focusBounds.maxX) / 2, -workspace.width / 2, workspace.width / 2),
+        z: clamp((focusBounds.minZ + focusBounds.maxZ) / 2, -workspace.depth / 2, workspace.depth / 2),
+      },
+    });
+  }, [focusBounds, workspace.depth, workspace.width]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))) return;
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.key.toLowerCase() === "f" && event.shiftKey) {
+        event.preventDefault();
+        focusSelection();
+      } else if (event.key.toLowerCase() === "f" || event.key === "Home") {
+        event.preventDefault();
+        resetView();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [focusSelection, resetView]);
+
   const beginEntityDrag = (event: ReactPointerEvent<SVGElement>, action: PointerAction) => {
     if (event.button !== 0) return;
     event.preventDefault();
@@ -844,7 +915,16 @@ export function SketchWorkspace({
       <div className="sketch-mode-badge">{operation === "revolve" ? t("sketch.modeBadgeRevolve") : t("sketch.modeBadge")}</div>
       {operation === "revolve" ? <SketchRevolvePreview positions={revolvePreviewPositions} /> : null}
       <div className="camera-controls sketch-camera-controls" aria-label={t("sketch.viewControls")}>
-        <button aria-label={t("sketch.resetView")} onClick={() => setView({ zoom: 1, pan: { x: 0, z: 0 } })}><Home size={28} /></button>
+        <button aria-label={t("sketch.resetView")} aria-keyshortcuts="F" title={t("camera.shortcut", { label: t("sketch.resetView"), keys: "F" })} onClick={resetView}><Home size={28} /></button>
+        <button
+          aria-label={t("camera.focusSelection")}
+          aria-keyshortcuts="Shift+F"
+          title={t("camera.shortcut", { label: t("camera.focusSelection"), keys: "Shift+F" })}
+          disabled={!focusBounds}
+          onClick={focusSelection}
+        >
+          <Crosshair size={28} />
+        </button>
         <button aria-label={t("sketch.zoomIn")} onClick={() => zoomByButton(0.8)}><Plus size={33} /></button>
         <button aria-label={t("sketch.zoomOut")} onClick={() => zoomByButton(1.25)}><Minus size={33} /></button>
       </div>
