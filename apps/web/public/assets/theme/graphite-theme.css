@@ -734,6 +734,19 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   color: #656565;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .dashboard-welcome-guide-link {
+  border: 1.5px solid #ad5900;
+  background: #f4f4f4;
+  color: #8f4700;
+  text-decoration: none;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .dashboard-welcome-guide-link:hover,
+:where(html[data-theme="dark"][data-palette="graphite"]) .dashboard-welcome-guide-link:focus-visible {
+  background: #ad5900;
+  color: #fff;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .preview-grid {
   background-image: linear-gradient(rgba(173, 89, 0, 0.19) 1px, transparent 1px),
     linear-gradient(90deg, rgba(173, 89, 0, 0.19) 1px, transparent 1px);
@@ -3846,6 +3859,18 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .dashboard-welcome-swit
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .dashboard-welcome-help {
   color: #787878;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .dashboard-welcome-guide-link {
+  border-color: #f3a452;
+  background: rgba(243, 164, 82, 0.12);
+  color: #f3a452;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .dashboard-welcome-guide-link:hover,
+html[data-theme="dark"]:where([data-palette="graphite"]) .dashboard-welcome-guide-link:focus-visible {
+  background: #f3a452;
+  color: #202020;
 }
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .dashboard-legal-dot {
