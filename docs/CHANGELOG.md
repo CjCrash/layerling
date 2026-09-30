@@ -4,6 +4,12 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Sketch view shortcuts:** `F` or `Home` fits the whole sketch in the view and `Shift+F` zooms to the selection, like in the 3D editor, with a new button next to the home button. The sketch shortcut list and the guide name them. Contributed by @gogades (#51).
+- **Sketch dimensions on selection:** The sketch shows lengths only for the selected line, or for the lines that meet at the selected point, with extension lines and arrows outside the shape; labels move out of each other's way. Before, every length was shown all the time. Contributed by @gogades (#51).
+- **Kernel:** layerling runs on the official occt-wasm 5.4.0 again, which contains the join type for hollowing; the own build from henmedia/occt-wasm is no longer needed.
+
 ## 1.23.0
 
 - **Teardrop hole:** A new shape for horizontal holes that print without supports: a round part with a point on top, so no layer has to bridge the hole. Width is the diameter, depth the length of the hole, and the tip angle (90 degrees by default, flanks at 45) can be typed in the inspector; a new diameter keeps the angle. Make it a hole and group it with the part.

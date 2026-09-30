@@ -444,6 +444,8 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "shortcuts.sketchDelete": "Gewähltes Element löschen",
   "shortcuts.sketchRotate": "Geschlossene Skizze um 45° drehen",
   "shortcuts.sketchLockImage": "Vorlagenbild sperren oder entsperren",
+  "shortcuts.sketchResetView": "Die ganze Skizze ins Bild holen",
+  "shortcuts.sketchFocusSelection": "Auf die Auswahl der Skizze zoomen",
   "shortcuts.edgeApply": "Vorschau anwenden",
   "shortcuts.edgeCancel": "Vorschau verwerfen",
   "editor.modeLabel": "Editor-Modus",

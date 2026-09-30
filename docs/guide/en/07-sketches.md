@@ -22,11 +22,12 @@ The ribbon in sketch mode is divided into areas:
 - **Shapes:** {{ui:sketch.addShape}} offers ready-made outlines: {{ui:sketch.rectangle}}, {{ui:sketch.circle}}, {{ui:sketch.ellipse}}, {{ui:sketch.halfCircle}}, {{ui:sketch.pieSlice}}, {{ui:sketch.boltCircle}} (a disc with holes), {{ui:sketch.triangle}} and {{ui:sketch.hexagon}}. Pick one and drag a frame.
 - **Selection:** {{ui:sketch.select}} moves points and lines. {{ui:sketch.refine}}: a click on a section adds a point, a click on a point removes it. Also there are {{ui:sketch.erase}} and inserting a template image ({{ui:sketch.addImage}}).
 - **History:** {{ui:sketch.undo}} and {{ui:sketch.redo}}.
-- **Inspect:** {{ui:sketch.measure}} measures the distance between two points.
+- **Inspect:** {{ui:sketch.measure}} measures the distance between two points. The sketch also shows dimensions as soon as you click something: the length of a line, or for a point the lengths of the lines that meet there.
+- **View:** [[F]] fits the whole sketch in the view, [[Shift]]+[[F]] zooms to the selection, as in the 3D editor.
 
 A body comes only from a **closed** outline.
 
-![An L-shaped outline. The length of each edge is shown in millimetres.](shot:sketch-outline)
+![An L-shaped outline. At the selected corner point, top left, the lengths of the two lines are shown in millimetres.](shot:sketch-outline)
 
 ## Rounding or chamfering corners
 

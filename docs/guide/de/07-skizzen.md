@@ -22,11 +22,12 @@ Das Menüband des Skizzenmodus ist in Bereiche geteilt:
 - **Formen:** {{ui:sketch.addShape}} bietet fertige Umrisse: {{ui:sketch.rectangle}}, {{ui:sketch.circle}}, {{ui:sketch.ellipse}}, {{ui:sketch.halfCircle}}, {{ui:sketch.pieSlice}}, {{ui:sketch.boltCircle}} (eine Scheibe mit Bohrungen), {{ui:sketch.triangle}} und {{ui:sketch.hexagon}}. Wähle eine aus und ziehe einen Rahmen auf.
 - **Auswahl:** {{ui:sketch.select}} verschiebt Punkte und Linien. {{ui:sketch.refine}}: Ein Klick auf einen Abschnitt setzt einen Punkt, ein Klick auf einen Punkt entfernt ihn. Dazu kommen {{ui:sketch.erase}} und das Einfügen eines Vorlagenbilds ({{ui:sketch.addImage}}).
 - **Verlauf:** {{ui:sketch.undo}} und {{ui:sketch.redo}}.
-- **Prüfen:** {{ui:sketch.measure}} misst den Abstand zwischen zwei Punkten.
+- **Prüfen:** {{ui:sketch.measure}} misst den Abstand zwischen zwei Punkten. Außerdem zeigt die Skizze Maße, sobald du etwas anklickst: bei einer Linie ihre Länge, bei einem Punkt die Längen der Linien, die dort zusammentreffen.
+- **Ansicht:** [[F]] holt die ganze Skizze ins Bild, [[Umschalt]]+[[F]] zoomt auf die Auswahl, wie im 3D-Editor.
 
 Ein Körper entsteht nur aus einem **geschlossenen** Umriss.
 
-![Ein L-förmiger Umriss. An jeder Kante steht ihre Länge in Millimetern.](shot:sketch-outline)
+![Ein L-förmiger Umriss. Am gewählten Eckpunkt oben links stehen die Längen der beiden Linien in Millimetern.](shot:sketch-outline)
 
 ## Ecken runden oder fasen
 

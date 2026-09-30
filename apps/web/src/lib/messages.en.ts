@@ -445,6 +445,8 @@ export const MESSAGES_EN = {
   "shortcuts.sketchDelete": "Delete the selected element",
   "shortcuts.sketchRotate": "Rotate a closed sketch by 45°",
   "shortcuts.sketchLockImage": "Lock or unlock the reference image",
+  "shortcuts.sketchResetView": "Fit the whole sketch in the view",
+  "shortcuts.sketchFocusSelection": "Zoom to the selection in the sketch",
   "shortcuts.edgeApply": "Apply the preview",
   "shortcuts.edgeCancel": "Discard the preview",
   "editor.modeLabel": "Editor mode",
