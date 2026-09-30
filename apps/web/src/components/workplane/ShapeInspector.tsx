@@ -122,6 +122,7 @@ import {
 import { displayStepFromMillimeters, displayToMillimeters, formatMeasurementNumber, lengthDisplayUnit, measurementOptionLabel, millimetersToDisplay, parseMeasurementInput, resolveMeasurementInput } from "@/lib/measurementUnits";
 import { t, type MessageKey } from "@/lib/i18n";
 import { displayShapeName } from "@/lib/shapeCatalog";
+import { MAX_TEARDROP_TIP_ANGLE, MIN_TEARDROP_TIP_ANGLE, normalizeTeardropTipAngle, teardropHeightForTipAngle, teardropTipAngle } from "@/lib/teardropGeometry";
 import { MAX_DOVETAIL_CLEARANCE, normalizeDovetailClearance, normalizeDovetailNeckWidth } from "@/lib/dovetailGeometry";
 import { useLanguage } from "@/lib/useLanguage";
 import { isNonSolidShapeKind, resizedShapeSize, shapeDepth, shapeHasTaper, shapeOverallFootprintDimensions, shapeSupportsTaper, shapeTaperDimensions, shapeWidth } from "@/lib/workplaneShapes";
@@ -658,6 +659,30 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
       },
       { id: "length", label: t("prop.length"), value: depth, min: MIN_SHAPE_SIZE, max: 200, onChange: setDepth },
       { id: "width", label: t("prop.width"), value: width, min: MIN_SHAPE_SIZE, max: 200, onChange: setWidth },
+      { id: "height", label: t("prop.height"), value: shape.height, min: MIN_SHAPE_SIZE, max: 160, onChange: setHeight },
+    ];
+  }
+
+  if (shape.kind === "teardrop") {
+    // Changing the diameter keeps the tip angle, so the point stays where the printer needs it.
+    const tipAngle = teardropTipAngle(width, shape.height);
+    const setDiameter = (value: number) => {
+      const patch = widthPatch(value);
+      patch.height = teardropHeightForTipAngle(patch.width ?? value, Math.min(tipAngle, MAX_TEARDROP_TIP_ANGLE));
+      onUpdate(patch, { resizeAxis: "width" });
+    };
+    return [
+      { id: "width", label: t("prop.teardropDiameter"), value: width, min: MIN_SHAPE_SIZE, max: 160, onChange: setDiameter },
+      { id: "length", label: t("prop.teardropLength"), value: depth, min: MIN_SHAPE_SIZE, max: 160, onChange: setDepth },
+      {
+        id: "teardropTipAngle",
+        label: t("prop.teardropTipAngle"),
+        value: Math.round(Math.min(tipAngle, MAX_TEARDROP_TIP_ANGLE) * 10) / 10,
+        min: MIN_TEARDROP_TIP_ANGLE,
+        max: MAX_TEARDROP_TIP_ANGLE,
+        step: 1,
+        onChange: (value) => onUpdate({ height: teardropHeightForTipAngle(width, normalizeTeardropTipAngle(value)) }, { resizeAxis: "height" }),
+      },
       { id: "height", label: t("prop.height"), value: shape.height, min: MIN_SHAPE_SIZE, max: 160, onChange: setHeight },
     ];
   }

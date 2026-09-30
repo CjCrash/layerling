@@ -20,7 +20,7 @@ What the library offers:
 - **Decorative shapes:** {{ui:shape.star}}, {{ui:shape.heart}} and {{ui:shape.crescent}}.
 - **Lettering:** {{ui:shape.text}}, also along a circular arc. More in [Text](chapter:text).
 - **Mechanics:** {{ui:shape.thread}} (threaded rod, screw, nut and tapped hole), {{ui:shape.spring}} and {{ui:shape.gear}}. More in [Threads and mechanics](chapter:threads-and-mechanics).
-- **For constructions:** {{ui:shape.honeycomb}}, {{ui:shape.dovetail}} and the {{ui:shape.ruler}}, which is only a measuring tool and never shows up in an export.
+- **For constructions:** {{ui:shape.honeycomb}}, {{ui:shape.dovetail}}, the {{ui:shape.teardrop}} for horizontal holes and the {{ui:shape.ruler}}, which is only a measuring tool and never shows up in an export.
 
 ## The shape's settings
 

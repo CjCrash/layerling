@@ -65,7 +65,7 @@ export function zoomDistanceScale(step: number, slider: number): number {
 const snapGridOptions: GridSize[] = ["Off", "0.1 mm", "0.25 mm", "0.5 mm", "1.0 mm", "2.0 mm", "5.0 mm", "Brick"];
 const customizableShapeKinds: ShapeKind[] = [
   "box", "roundedBox", "cylinder", "slot", "ellipse", "sphere", "sketch", "scribble", "cone", "pyramid", "roof", "text", "roundRoof",
-  "halfSphere", "torus", "tube", "bentTube", "star", "heart", "crescent", "gear", "honeycomb", "dovetail", "thread", "spring", "ring", "wedge", "polygon", "icosahedron", "ruler", "mesh",
+  "halfSphere", "torus", "tube", "bentTube", "star", "heart", "crescent", "gear", "honeycomb", "dovetail", "teardrop", "thread", "spring", "ring", "wedge", "polygon", "icosahedron", "ruler", "mesh",
 ];
 
 function numberOrDefault(value: unknown, fallback: number) {

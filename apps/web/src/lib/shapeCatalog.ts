@@ -86,6 +86,12 @@ import {
   DEFAULT_SLOT_HEIGHT,
 } from "@/lib/slotGeometry";
 import {
+  DEFAULT_TEARDROP_DEPTH,
+  DEFAULT_TEARDROP_TIP_ANGLE,
+  DEFAULT_TEARDROP_WIDTH,
+  teardropHeightForTipAngle,
+} from "@/lib/teardropGeometry";
+import {
   DEFAULT_DOVETAIL_CLEARANCE,
   DEFAULT_DOVETAIL_DEPTH,
   DEFAULT_DOVETAIL_HEIGHT,
@@ -150,6 +156,7 @@ const SHAPE_LABEL_KEYS: Record<string, MessageKey> = {
   gear: "shape.gear",
   honeycomb: "shape.honeycomb",
   dovetail: "shape.dovetail",
+  teardrop: "shape.teardrop",
   thread: "shape.thread",
   spring: "shape.spring",
   polygon: "shape.polygon",
@@ -183,6 +190,7 @@ export const toolbarShapeAssets: ToolbarShapeAsset[] = [
   { id: "gear", name: "Gear", src: "assets/editor/gear-types/spur.png", menuIcon: "assets/editor/gear-types/spur.png", kind: "gear", color: "#6f7f8d" },
   { id: "honeycomb", name: "Honeycomb", src: "assets/editor/shape-icons-gray/honeycomb.png", menuIcon: "assets/editor/shape-icons-gray/honeycomb.png", kind: "honeycomb", color: "#0ea5e9" },
   { id: "dovetail", name: "Dovetail", src: "assets/editor/shape-icons-gray/dovetail.png", menuIcon: "assets/editor/shape-icons-gray/dovetail.png", kind: "dovetail", color: "#a0522d" },
+  { id: "teardrop", name: "Teardrop", src: "assets/editor/shape-icons-gray/teardrop.png", menuIcon: "assets/editor/shape-icons-gray/teardrop.png", kind: "teardrop", color: "#7d6a9c" },
   { id: "ruler", name: "Ruler", src: "assets/editor/shape-icons-gray/ruler.png", menuIcon: "assets/editor/shape-icons-gray/ruler.png", kind: "ruler", color: "#f2e4b8" },
 ];
 
@@ -220,6 +228,9 @@ export function shapeAssetDefaultDimensions(kind: ShapeKind) {
   }
   if (kind === "slot") {
     return { width: DEFAULT_SLOT_WIDTH, depth: DEFAULT_SLOT_DEPTH, height: DEFAULT_SLOT_HEIGHT };
+  }
+  if (kind === "teardrop") {
+    return { width: DEFAULT_TEARDROP_WIDTH, depth: DEFAULT_TEARDROP_DEPTH, height: Math.round(teardropHeightForTipAngle(DEFAULT_TEARDROP_WIDTH, DEFAULT_TEARDROP_TIP_ANGLE) * 100) / 100 };
   }
   if (kind === "dovetail") {
     return { width: DEFAULT_DOVETAIL_WIDTH, depth: DEFAULT_DOVETAIL_DEPTH, height: DEFAULT_DOVETAIL_HEIGHT };

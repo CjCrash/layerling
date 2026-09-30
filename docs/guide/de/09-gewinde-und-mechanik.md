@@ -1,6 +1,6 @@
 ---
 title: Gewinde, Zahnräder und andere Bauteile
-summary: Schrauben, Muttern und Gewindelöcher, die zusammenpassen, dazu Zahnrad, Feder, gebogenes Rohr, Wabengitter und Schwalbenschwanz.
+summary: Schrauben, Muttern und Gewindelöcher, die zusammenpassen, dazu Zahnrad, Feder, gebogenes Rohr, Wabengitter, Schwalbenschwanz und Tropfenbohrung.
 ---
 
 Die Formenbibliothek enthält neben den Grundformen einige Bauteile, die man sonst mühsam zusammensetzen müsste. Alle lassen sich nachträglich in ihren Einstellungen ändern.
@@ -49,3 +49,9 @@ Das {{ui:shape.honeycomb}} ist eine Platte mit sechseckigen Aussparungen: leicht
 Der {{ui:shape.dovetail}} ist die Verbindung, bei der zwei Teile ineinander einrasten und sich nur seitlich zusammenschieben lassen. Du stellst die Breite am breiten Ende, die {{ui:prop.dovetailNeckWidth}} und die Länge des Zapfens ein. Kopiere den Zapfen für die Gegenseite und mache die Kopie zur Aussparung: {{ui:prop.dovetailClearance}} sorgt dann für ein wenig Spiel, damit die Verbindung nach dem Druck nicht klemmt.
 
 > **Tipp:** Ein Gewindeloch schneidet sich beim Gruppieren in das Teil, mit dem es sich überlappt. Setze es also ein Stück in das Material hinein und lasse es nicht nur an der Fläche anliegen.
+
+## Tropfenbohrung
+
+Ein Loch, das waagerecht im Teil liegt, bekommt beim Drucken oben eine Brücke, und die hängt durch. Die {{ui:shape.teardrop}} hat deshalb oben eine Spitze: Jede Schicht liegt auf der darunter, und das Loch wird ohne Stützen rund genug. Stelle den {{ui:prop.teardropDiameter}} auf das Maß des Lochs, etwa 3,4 mm für eine M3-Schraube, und die {{ui:prop.teardropLength}} so lang, dass sie durch das Teil reicht. Der {{ui:prop.teardropTipAngle}} steht auf 90°, die Flanken laufen also unter 45° zusammen. Das druckt bei den meisten Druckern sauber; flachere Spitzen brauchen mehr Höhe, steilere sparen sie.
+
+Mache die Tropfenbohrung zur Aussparung und gruppiere sie mit dem Teil. Sie liegt mit der Länge in Richtung der Tiefe, die Spitze zeigt nach oben. Für ein Loch in der anderen Richtung drehst du sie um 90° um die senkrechte Achse.

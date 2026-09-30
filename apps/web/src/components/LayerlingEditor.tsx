@@ -22,6 +22,7 @@ import { createHeartGeometry } from "@/lib/heartGeometry";
 import { createCrescentGeometry } from "@/lib/crescentGeometry";
 import { createSlotGeometry } from "@/lib/slotGeometry";
 import { createDovetailGeometry } from "@/lib/dovetailGeometry";
+import { createTeardropGeometry } from "@/lib/teardropGeometry";
 import { decodeClipboardPayload, encodeClipboardPayload, LOCAL_CLIPBOARD_LIMIT, newestClipboard, type ClipboardPayload } from "@/lib/clipboardPayload";
 import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
 import { createRoundedBoxGeometry } from "@/lib/roundedBoxGeometry";
@@ -2377,6 +2378,9 @@ function geometryMeshForShape(shape: WorkplaneShape): MeshData | null {
         height,
         sides: shape.sides,
       });
+      break;
+    case "teardrop":
+      geometry = createTeardropGeometry({ width, depth, height });
       break;
     case "dovetail":
       geometry = createDovetailGeometry({

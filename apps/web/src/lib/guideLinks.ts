@@ -46,6 +46,7 @@ export function guideChapterForShape(shape: { kind: ShapeKind; groupedShapes?: r
     case "bentTube":
     case "honeycomb":
     case "dovetail":
+    case "teardrop":
       return "threads";
     case "ruler":
       return "measuring";

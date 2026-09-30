@@ -20,7 +20,7 @@ export const editorTargetSchema = {
 export const creatableShapeKinds = [
   "box", "roundedBox", "cube", "cylinder", "slot", "ellipse", "polygon", "sphere", "cone", "pyramid", "wedge",
   "roundRoof", "halfSphere", "torus", "tube", "bentTube", "star", "heart", "crescent", "text", "thread", "spring", "gear",
-  "honeycomb", "dovetail", "ruler", "sketch",
+  "honeycomb", "dovetail", "teardrop", "ruler", "sketch",
 ];
 
 /**
@@ -38,13 +38,13 @@ export const shapeSettingSchema = {
   baseRadius: { type: "number", description: "Cone only: radius at the base." },
   topWidth: { type: "number", description: "Pyramid only: width of the flat top. 0 runs to a point." },
   topDepth: { type: "number", description: "Pyramid only: depth of the flat top. 0 runs to a point." },
-  taperTopWidth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail and pyramid: width of the top face. Setting one value of a face pins the other." },
-  taperTopDepth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail and pyramid: depth of the top face." },
-  taperBottomWidth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail and pyramid: width of the bottom face." },
-  taperBottomDepth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail and pyramid: depth of the bottom face." },
-  extrudeTwist: { type: "number", description: "On every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, pyramid and ruler: rotates the top face relative to the base, in degrees, for a twisted extrusion." },
-  extrudeTopOffsetX: { type: "number", description: "On every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, pyramid and ruler: shifts the top face along the shape's own X axis, in mm, for a leaning extrusion." },
-  extrudeTopOffsetZ: { type: "number", description: "On every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, pyramid and ruler: shifts the top face along the shape's own Z axis, in mm, for a leaning extrusion." },
+  taperTopWidth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, teardrop and pyramid: width of the top face. Setting one value of a face pins the other." },
+  taperTopDepth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, teardrop and pyramid: depth of the top face." },
+  taperBottomWidth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, teardrop and pyramid: width of the bottom face." },
+  taperBottomDepth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, teardrop and pyramid: depth of the bottom face." },
+  extrudeTwist: { type: "number", description: "On every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, teardrop, pyramid and ruler: rotates the top face relative to the base, in degrees, for a twisted extrusion." },
+  extrudeTopOffsetX: { type: "number", description: "On every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, teardrop, pyramid and ruler: shifts the top face along the shape's own X axis, in mm, for a leaning extrusion." },
+  extrudeTopOffsetZ: { type: "number", description: "On every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, teardrop, pyramid and ruler: shifts the top face along the shape's own Z axis, in mm, for a leaning extrusion." },
   teeth: { type: "number", description: "Gear only." },
   toothSize: { type: "number", description: "Gear only." },
   toothWidth: { type: "number", description: "Gear only." },

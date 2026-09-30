@@ -22,6 +22,7 @@ export type ShapeKind =
   | "gear"
   | "honeycomb"
   | "dovetail"
+  | "teardrop"
   | "thread"
   | "spring"
   | "ring"

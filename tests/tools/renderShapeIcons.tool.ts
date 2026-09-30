@@ -11,6 +11,7 @@ import { createHeartGeometry } from "@/lib/heartGeometry";
 import { createCrescentGeometry } from "@/lib/crescentGeometry";
 import { createSlotGeometry } from "@/lib/slotGeometry";
 import { createDovetailGeometry } from "@/lib/dovetailGeometry";
+import { createTeardropGeometry, teardropHeightForTipAngle } from "@/lib/teardropGeometry";
 import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
 import { createRoundedBoxGeometry } from "@/lib/roundedBoxGeometry";
 import { createThreadGeometry } from "@/lib/threadGeometry";
@@ -375,6 +376,15 @@ describe("palette icons", () => {
         height: 8,
         dovetailNeckWidth: 16,
       }),
+    });
+    render({
+      // Schraeg von vorn auf die Stirnseite, damit Rundung und Spitze zu sehen sind.
+      name: "apps/web/public/assets/editor/shape-icons-gray/teardrop.png",
+      height: teardropHeightForTipAngle(16, 90),
+      lay: false,
+      azimuth: 35,
+      elevation: 18,
+      build: () => createTeardropGeometry({ width: 16, depth: 30, height: teardropHeightForTipAngle(16, 90) }),
     });
     render({
       name: "apps/web/public/assets/editor/shape-icons-gray/honeycomb.png",

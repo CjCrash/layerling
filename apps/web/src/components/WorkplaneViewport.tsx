@@ -28,6 +28,7 @@ import { createHeartGeometry } from "@/lib/heartGeometry";
 import { createCrescentGeometry } from "@/lib/crescentGeometry";
 import { createSlotGeometry } from "@/lib/slotGeometry";
 import { createDovetailGeometry } from "@/lib/dovetailGeometry";
+import { createTeardropGeometry } from "@/lib/teardropGeometry";
 import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
 import { createRoundedBoxGeometry } from "@/lib/roundedBoxGeometry";
 import { createBentTubeGeometry } from "@/lib/bentTubeGeometry";
@@ -164,6 +165,7 @@ const SHAPE_KINDS = new Set<ShapeAsset["kind"]>([
   "gear",
   "honeycomb",
   "dovetail",
+  "teardrop",
   "thread",
   "spring",
   "ring",
@@ -1123,7 +1125,7 @@ function polygonSidesForShape(shape: WorkplaneShape) {
 }
 
 function shapeGeometrySignature(shape: WorkplaneShape): string {
-  const taper = shape.kind === "gear" || shape.kind === "thread" || shape.kind === "spring" || shape.kind === "star" || shape.kind === "heart" || shape.kind === "crescent" || shape.kind === "slot" || shape.kind === "dovetail" || shape.kind === "honeycomb" || shape.kind === "roundedBox" || shape.kind === "bentTube" || !shapeHasTaper(shape)
+  const taper = shape.kind === "gear" || shape.kind === "thread" || shape.kind === "spring" || shape.kind === "star" || shape.kind === "heart" || shape.kind === "crescent" || shape.kind === "slot" || shape.kind === "dovetail" || shape.kind === "teardrop" || shape.kind === "honeycomb" || shape.kind === "roundedBox" || shape.kind === "bentTube" || !shapeHasTaper(shape)
     ? null
     : { ...shapeTaperDimensions(shape), baseWidth: shapeWidth(shape), baseDepth: shapeDepth(shape) };
   // Twist/lean reshape the mesh the same way taper does, so a change to
@@ -9979,6 +9981,9 @@ function createShapeObject(
       );
       break;
     }
+    case "teardrop":
+      addMesh(group, sharedShapeGeometry(geometryCacheKey, () => createTeardropGeometry({ width, depth, height })), material, shape);
+      break;
     case "dovetail":
       addMesh(group, sharedShapeGeometry(geometryCacheKey, () => createDovetailGeometry({
         width,
@@ -10402,7 +10407,7 @@ function addShapeEdgeDecorations(group: THREE.Group, mesh: THREE.Mesh, prepared:
   const complexEdges =
     shape.kind === "mesh" ||
     Boolean(shape.importedMesh) ||
-    ["cone", "pyramid", "roof", "roundRoof", "halfSphere", "torus", "tube", "ring", "star", "gear", "wedge", "polygon", "heart", "crescent", "slot", "dovetail", "honeycomb"].includes(shape.kind);
+    ["cone", "pyramid", "roof", "roundRoof", "halfSphere", "torus", "tube", "ring", "star", "gear", "wedge", "polygon", "heart", "crescent", "slot", "dovetail", "teardrop", "honeycomb"].includes(shape.kind);
   const importedTriangleCount = shape.importedMesh?.triangleCount ?? 0;
   const skipHeavyImportedEdges = Boolean(shape.importedMesh) && importedTriangleCount > IMPORTED_SELECTED_EDGE_TRIANGLE_LIMIT;
   if ((group.userData.showEdges || complexEdges) && !skipHeavyImportedEdges) {

@@ -42,7 +42,7 @@ export const LYL_LIMITS = {
 
 const SHAPE_KINDS = new Set([
   "box", "roundedBox", "cylinder", "slot", "ellipse", "sphere", "sketch", "scribble", "cone", "pyramid", "roof", "text", "roundRoof",
-  "halfSphere", "torus", "tube", "bentTube", "star", "heart", "crescent", "gear", "honeycomb", "dovetail", "thread", "spring", "ring", "wedge", "polygon", "icosahedron", "ruler", "mesh",
+  "halfSphere", "torus", "tube", "bentTube", "star", "heart", "crescent", "gear", "honeycomb", "dovetail", "teardrop", "thread", "spring", "ring", "wedge", "polygon", "icosahedron", "ruler", "mesh",
 ]);
 
 const FEATURE_TYPES = new Set([

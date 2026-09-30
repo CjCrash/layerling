@@ -1,6 +1,6 @@
 ---
 title: Threads, gears and other parts
-summary: Screws, nuts and tapped holes that fit together, plus gear, spring, bent tube, honeycomb and dovetail.
+summary: Screws, nuts and tapped holes that fit together, plus gear, spring, bent tube, honeycomb, dovetail and teardrop hole.
 ---
 
 Besides the basic shapes, the library contains some parts that would be tedious to put together yourself. All of them can be changed afterwards in their settings.
@@ -49,3 +49,9 @@ The {{ui:shape.honeycomb}} is a plate with hexagonal holes: light, stiff and nic
 The {{ui:shape.dovetail}} is the joint in which two parts lock into each other and can only be slid together sideways. You set the width at the wide end, the {{ui:prop.dovetailNeckWidth}} and the length of the tail. Copy the tail for the other side and make the copy a hole: {{ui:prop.dovetailClearance}} then gives a little play so the joint does not jam after printing.
 
 > **Tip:** A tapped hole cuts into the part it overlaps when grouped. So put it a bit into the material rather than just touching the surface.
+
+## Teardrop hole
+
+A hole lying on its side gets a bridge across its top when printed, and the bridge sags. The {{ui:shape.teardrop}} therefore has a point on top: every layer rests on the one below, and the hole comes out round enough without supports. Set the {{ui:prop.teardropDiameter}} to the size of the hole, about 3.4 mm for an M3 screw, and the {{ui:prop.teardropLength}} long enough to reach through the part. The {{ui:prop.teardropTipAngle}} is 90°, so the flanks meet at 45°. Most printers handle that cleanly; a flatter point needs more height, a steeper one saves it.
+
+Make the teardrop a hole and group it with the part. Its length runs along the depth and the point faces up. For a hole in the other direction, turn it by 90° around the vertical axis.
