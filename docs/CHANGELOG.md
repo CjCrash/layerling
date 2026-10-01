@@ -6,6 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
+- **More exact round shapes:** The sphere with free width, depth and height, the half sphere with an oval footprint and the cone with an oval footprint (pointed, a frustum, or standing on its tip) now reach the edge tool as exact bodies, not as meshes. The ellipse and the oval cylinder have one edge per rim (3 instead of 6), so one click picks a whole rim. A half sphere tipped over no longer falls back to the mesh, and STEP export keeps the size of stretched bodies. Edges in the editor: half sphere 30 x 20 x 10 from 3,008 to 2, sphere 30 x 20 x 15 from 3,312 to 1. Contributed by @plazmabokor (#52).
 - **Sketch view shortcuts:** `F` or `Home` fits the whole sketch in the view and `Shift+F` zooms to the selection, like in the 3D editor, with a new button next to the home button. The sketch shortcut list and the guide name them. Contributed by @gogades (#51).
 - **Sketch dimensions on selection:** The sketch shows lengths only for the selected line, or for the lines that meet at the selected point, with extension lines and arrows outside the shape; labels move out of each other's way. Before, every length was shown all the time. Contributed by @gogades (#51).
 - **Kernel:** layerling runs on the official occt-wasm 5.4.0 again, which contains the join type for hollowing; the own build from henmedia/occt-wasm is no longer needed.
