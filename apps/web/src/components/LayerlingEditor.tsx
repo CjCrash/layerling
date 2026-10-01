@@ -8464,7 +8464,11 @@ export function LayerlingEditor({
         Math.abs(shapeDepth(shape) - (frame?.depth ?? shapeDepth(shape))) > 1e-6 ||
         Math.abs(shape.height - (frame?.height ?? shape.height)) > 1e-6
       );
-      if (shapeHasShapeDeform(shape)) return { shape, mesh: meshForShape(shape) };
+      if (shapeHasShapeDeform(shape)) {
+        // A tapered or leaning prism is a ruled loft between its ends; anything else deformed keeps its mesh.
+        const lofted = cadModifierProfileForShape(shape);
+        return lofted ? { shape, profile: lofted, profileMesh: meshForShape(shape) } : { shape, mesh: meshForShape(shape) };
+      }
       const primitive = cadModifierPrimitiveForShape(shape);
       if (primitive) return { shape, primitive };
       const profile = cadModifierProfileForShape(shape) ?? textGlyphProfileByPart.get(shape);
@@ -8555,7 +8559,11 @@ export function LayerlingEditor({
         Math.abs(shapeDepth(partShape) - (frame?.depth ?? shapeDepth(partShape))) > 1e-6 ||
         Math.abs(partShape.height - (frame?.height ?? partShape.height)) > 1e-6
       );
-      if (shapeHasShapeDeform(partShape)) return { shape: partShape, mesh: meshForShape(partShape) };
+      if (shapeHasShapeDeform(partShape)) {
+        // A tapered or leaning prism is a ruled loft between its ends; anything else deformed keeps its mesh.
+        const lofted = cadModifierProfileForShape(partShape);
+        return lofted ? { shape: partShape, profile: lofted, profileMesh: meshForShape(partShape) } : { shape: partShape, mesh: meshForShape(partShape) };
+      }
       const primitive = cadModifierPrimitiveForShape(partShape);
       if (primitive) return { shape: partShape, primitive };
       const profile = cadModifierProfileForShape(partShape) ?? textGlyphProfileByPart.get(partShape);

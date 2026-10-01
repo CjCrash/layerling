@@ -107,12 +107,19 @@ export type CadModifierProfilePart = {
    * "sweep": the loops are a cross-section, pushed along the straight pieces
    * of `path` and turned through its bends, the pieces fused into one body;
    * `height` is the length of the centre line.
+   * "loft": the loops are the section at the bottom (y = 0) and `topLoops`
+   * the same section at the top (y = `height`), scaled and shifted - a
+   * tapered or leaning extrusion. Each loop is joined to its partner by
+   * straight lines (a ruled loft), which is exactly what the display's taper
+   * and lean do between the two ends.
    * Either way `transform` places the result on the shape (for the teardrop it
    * also lays the extrusion on its side).
    */
-  kind: "extrusion" | "revolution" | "sweep";
+  kind: "extrusion" | "revolution" | "sweep" | "loft";
   /** Sweep only: the centre line, piece by piece. */
   path?: CadModifierSweepPiece[];
+  /** Loft only: the section at the top, loop for loop and piece for piece the partner of `loops`. */
+  topLoops?: CadModifierProfileLoop[];
   /** Extrusion only: round every edge of the two flat ends by this radius (a rounded box). */
   capFillet?: number;
   /** The first loop is the outer boundary, any further loops are holes. */

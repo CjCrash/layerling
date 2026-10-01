@@ -35,6 +35,8 @@ Sobald eine Form ausgewählt ist, erscheinen rechts ihre Einstellungen. Ganz obe
 - **{{ui:inspector.taper}}:** Oben und unten unterschiedlich groß, zum Beispiel für eine Schräge oder einen Trichter.
 - **{{ui:inspector.twist}}:** Verdreht die Oberseite gegen die Unterseite oder schiebt sie zur Seite. So entstehen gedrehte Säulen und geneigte Türme.
 
+Ein verjüngter oder geneigter Quader, Zylinder, eine Ellipse, ein Vieleck, Rohr oder Ring behält seine exakte Form: Fasen und Rundungen gehen daran wie an der unveränderten Form, und der STEP-Export schreibt sie. Eine verdrehte Form ist für beides noch ein Dreiecksnetz.
+
 Tippen ist genauer als Ziehen. Alle Zahlenfelder nehmen Millimeter, aber auch Prozent: Wer bei einer Breite von 40 mm „50 %“ eintippt, bekommt 20 mm.
 
 ## Wie rund ist rund? Die Seitenzahl

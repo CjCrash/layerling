@@ -106,13 +106,27 @@ export function isWholeEllipse(segment: CadModifierProfileSegment) {
 
 /** Throws unless every number is finite, every loop closes and every arc ends where it says. */
 export function validateCadProfile(profile: CadModifierProfilePart) {
-  if (profile.kind !== "extrusion" && profile.kind !== "revolution" && profile.kind !== "sweep") throw new Error(`Unsupported CAD profile: ${String((profile as { kind: unknown }).kind)}`);
+  if (profile.kind !== "extrusion" && profile.kind !== "revolution" && profile.kind !== "sweep" && profile.kind !== "loft") throw new Error(`Unsupported CAD profile: ${String((profile as { kind: unknown }).kind)}`);
   if (!Number.isFinite(profile.height) || profile.height <= 0) throw new Error("The profile has no height");
   if (!profile.loops.length) throw new Error("The profile has no outline");
   if (profile.kind === "sweep") validateSweepPath(profile.path);
+  if (profile.kind === "loft") {
+    // The top has to be the bottom's partner piece for piece: the loft joins them in that order.
+    const top = profile.topLoops ?? [];
+    const sameShape = top.length === profile.loops.length && top.every((loop, index) => (
+      loop.segments.length === profile.loops[index].segments.length
+      && loop.segments.every((segment, piece) => segment.kind === profile.loops[index].segments[piece].kind)
+    ));
+    if (!sameShape) throw new Error("The loft's top does not match its bottom");
+    validateLoops({ ...profile, kind: "extrusion", loops: top });
+  }
+  validateLoops(profile);
+}
+
+function validateLoops(profile: CadModifierProfilePart) {
   const tolerance = profileExtent(profile) * 1e-7;
   profile.loops.forEach((loop) => {
-    // A loop of one segment is only a whole ellipse, and only in an extrusion or a sweep (a round tube).
+    // A loop of one segment is only a whole ellipse, and only where it is not turned around an axis (an extrusion, a loft or a sweep's round tube).
     const whole = profile.kind !== "revolution" && loop.segments.length === 1 && isWholeEllipse(loop.segments[0]);
     if (!Number.isFinite(loop.x) || !Number.isFinite(loop.z) || (loop.segments.length < 2 && !whole)) {
       throw new Error("The profile outline is incomplete");
@@ -344,9 +358,140 @@ function loopWire(cad: OcctKernel, loop: CadModifierProfileLoop, tolerance: numb
  * plane at y = 0, pushed up to y = height. Throws when anything about it is
  * off - the caller falls back to the display mesh.
  */
+type P3 = { x: number; y: number; z: number };
+
+/** The corners of a straight-sided loop, at height y. */
+function loopCorners(loop: CadModifierProfileLoop, y: number): P3[] {
+  return [loop, ...loop.segments.slice(0, -1)].map((point) => ({ x: point.x, y, z: point.z }));
+}
+
+/** Whether every side between a straight-sided bottom and its top is flat: its four corners in one plane. */
+function sidesAreFlat(profile: CadModifierProfilePart, tolerance: number) {
+  const top = profile.topLoops ?? [];
+  return profile.loops.every((loop, index) => {
+    const lower = loopCorners(loop, 0);
+    const upper = loopCorners(top[index], profile.height);
+    return lower.every((a, corner) => {
+      const next = (corner + 1) % lower.length;
+      const [b, c, d] = [lower[next], upper[next], upper[corner]];
+      const u = { x: b.x - a.x, y: b.y - a.y, z: b.z - a.z };
+      const v = { x: c.x - a.x, y: c.y - a.y, z: c.z - a.z };
+      const n = { x: u.y * v.z - u.z * v.y, y: u.z * v.x - u.x * v.z, z: u.x * v.y - u.y * v.x };
+      const length = Math.hypot(n.x, n.y, n.z);
+      return length > 0 && Math.abs((d.x - a.x) * n.x + (d.y - a.y) * n.y + (d.z - a.z) * n.z) / length <= tolerance;
+    });
+  });
+}
+
+/**
+ * A tapered or leaning prism whose sides all stay flat (a box, or a polygon
+ * scaled evenly), built face by face so that every side is a plane - a
+ * lofted side comes out as a B-spline even when it is flat.
+ */
+function flatLoftSolid(cad: OcctKernel, profile: CadModifierProfilePart, tolerance: number) {
+  const top = profile.topLoops ?? [];
+  const ring = (points: P3[]) => cad.makeWire(points.map((point, index) => cad.makeLineEdge(point, points[(index + 1) % points.length])));
+  const faces: ShapeHandle[] = [];
+  const cap = (loops: CadModifierProfileLoop[], y: number) => {
+    let face = cad.makeFace(ring(loopCorners(loops[0], y)));
+    if (loops.length > 1) face = cad.addHolesInFace(face, loops.slice(1).map((loop) => ring(loopCorners(loop, y))));
+    faces.push(face);
+  };
+  cap(profile.loops, 0);
+  cap(top, profile.height);
+  profile.loops.forEach((loop, index) => {
+    const lower = loopCorners(loop, 0);
+    const upper = loopCorners(top[index], profile.height);
+    lower.forEach((a, corner) => {
+      const next = (corner + 1) % lower.length;
+      faces.push(cad.makeFace(ring([a, lower[next], upper[next], upper[corner]])));
+    });
+  });
+  const sewn = cad.sew(faces, tolerance * 100);
+  const shells = cad.isShell(sewn) ? [sewn] : cad.getSubShapes(sewn, "shell");
+  if (shells.length !== 1) throw new Error(`The tapered sides did not close into one shell (${shells.length})`);
+  // An outline running the other way round sews into a shell facing inwards; made a solid the other way, it faces out.
+  const solid = [shells[0], cad.reverseShape(shells[0])].map((shell) => cad.makeSolid(shell))
+    .find((candidate) => cad.isValid(candidate) && cad.getVolume(candidate) > 0);
+  if (!solid) throw new Error("The tapered sides did not make a valid solid");
+  return solid;
+}
+
+/**
+ * A tapered or leaning extrusion: every loop of the bottom joined to its
+ * partner at the top by straight lines, the openings cut out of the outer
+ * body. A ruled loft between two copies of the same outline, scaled and
+ * shifted, is exactly the body the display's taper and lean draw. A
+ * straight-sided outline whose sides all stay flat is built face by face
+ * instead (flatLoftSolid), so that its sides are planes. A side that does not
+ * stay flat (a slanted edge tapered more across than along) is the ruled
+ * surface between its bottom and top edge - here the loft's own.
+ */
+function loftSolid(cad: OcctKernel, profile: CadModifierProfilePart, tolerance: number) {
+  const top = profile.topLoops ?? [];
+  if ([...profile.loops, ...top].every((loop) => loop.segments.every((segment) => segment.kind === "line")) && sidesAreFlat(profile, tolerance)) {
+    return flatLoftSolid(cad, profile, tolerance);
+  }
+  const lift = [1, 0, 0, 0, 0, 1, 0, profile.height, 0, 0, 1, 0];
+  /*
+   * A whole circle or ellipse is one closed edge, and the kernel starts it
+   * where its major axis points - along x for one end, along z for the other
+   * when the taper turns a wide oval into a narrow one. The ruled loft joins
+   * the two edges start to start, so it would twist a quarter turn. Then both
+   * are split into two halves from the angle 0 and pi: both ends start at
+   * the same point of the outline and every ruling joins a point to its own
+   * partner. Ends built the same way stay one edge each - one rim to pick.
+   */
+  const halves = (loop: CadModifierProfileLoop): CadModifierProfileLoop => {
+    if (loop.segments.length !== 1 || !isWholeEllipse(loop.segments[0])) return loop;
+    const whole = loop.segments[0] as ProfileArc;
+    const at = (angle: number) => profileArcPoint(whole, angle);
+    const first = whole.start;
+    const middle = whole.start + (whole.end - whole.start) / 2;
+    return {
+      ...at(first),
+      segments: [
+        { ...whole, ...at(middle), start: first, end: middle },
+        { ...whole, ...at(whole.end), start: middle, end: whole.end },
+      ],
+    };
+  };
+  // wholeEllipseEdge builds a circle, an ellipse long along z and one long
+  // along x three ways; two ends built the same way start at the same point.
+  const build = (loop: CadModifierProfileLoop) => {
+    const arc = loop.segments[0] as ProfileArc;
+    return sameRadius(arc.rx, arc.rz) ? "circle" : arc.rz > arc.rx ? "along z" : "along x";
+  };
+  const solidOf = (index: number) => {
+    const [lower, upper] = [profile.loops[index], top[index]];
+    const split = lower.segments.length === 1 && isWholeEllipse(lower.segments[0]) && build(lower) !== build(upper);
+    const bottomWire = loopWire(cad, split ? halves(lower) : lower, tolerance);
+    const raw = loopWire(cad, split ? halves(upper) : upper, tolerance);
+    const topWire = cad.transform(raw, lift);
+    const lofted = cad.loft([bottomWire, topWire], true, true);
+    const solids = cad.isSolid(lofted) ? [lofted] : cad.getSubShapes(lofted, "solid");
+    if (solids.length !== 1) throw new Error("A loft did not become one solid");
+    // A loop running clockwise lofts inside out; turned the right way it is the same body.
+    return cad.getVolume(solids[0]) < 0 ? cad.reverseShape(solids[0]) : solids[0];
+  };
+  let solid = solidOf(0);
+  for (let index = 1; index < profile.loops.length; index += 1) {
+    solid = cad.cut(solid, solidOf(index));
+  }
+  const solids = cad.isSolid(solid) ? [solid] : cad.getSubShapes(solid, "solid");
+  if (solids.length !== 1) throw new Error("The loft with its openings did not become one solid");
+  return solids[0];
+}
+
 export function profileExtrusionSolid(cad: OcctKernel, profile: CadModifierProfilePart) {
   validateCadProfile(profile);
   const tolerance = profileExtent(profile) * 1e-6;
+  if (profile.kind === "loft") {
+    const solid = loftSolid(cad, profile, tolerance);
+    if (!cad.isSolid(solid) || !cad.isValid(solid)) throw new Error("The lofted profile solid is not valid");
+    if (!(cad.getVolume(solid) > 0)) throw new Error("The lofted profile solid is inside out");
+    return solid;
+  }
   const [outer, ...holes] = profile.loops;
   let face = cad.makeFace(loopWire(cad, outer, tolerance));
   if (holes.length > 0) face = cad.addHolesInFace(face, holes.map((hole) => loopWire(cad, hole, tolerance)));
