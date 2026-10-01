@@ -239,6 +239,8 @@ Ordner ein Terminal öffnen und mit `npm install` beginnen.
 Dann `http://127.0.0.1:3000/` öffnen. Lass das Terminal offen, solange du die App benutzt; `Strg+C` beendet den
 Entwicklungsserver.
 
+Unter Linux und macOS erledigt `scripts/start-layerling.sh` den täglichen Start: Es aktualisiert zuerst den Ordner (übersprungen, wenn du darin Dateien geändert hast), startet den Server, wartet, bis er antwortet, und öffnet dann den Browser. Aufrufen kannst du es von überall, etwa `~/layerling/scripts/start-layerling.sh`. Es braucht Git und Node.js wie oben. Bisher ist es nur in einer Windows-Shell ausprobiert – wenn es bei dir hakt, sag es bitte in den Diskussionen.
+
 ### Entwickeln in einem Container
 
 Du möchtest Node.js lieber nicht installieren? Entwickle stattdessen in einem Container. Du brauchst eine
