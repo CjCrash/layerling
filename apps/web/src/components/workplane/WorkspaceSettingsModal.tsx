@@ -59,14 +59,13 @@ import { t, type MessageKey } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
 import { measurementOptionLabel, normalizeScaleForUnits, parseMeasurementInput, scaleOptionsForUnits, WORKSPACE_UNIT_OPTIONS } from "@/lib/measurementUnits";
 import { shapeAssetDefaultDimensions, shapeAssetLabel, shapeAssetSpecialDefaults, toolbarShapeAssets } from "@/lib/shapeCatalog";
-import { DEFAULT_WORKPLANE_WORKSPACE, MAX_CUSTOM_SHAPE_DIMENSION, MAX_HIGH_RESOLUTION_SIDES, MAX_HIGH_RESOLUTION_STEPS, MIN_CUSTOM_SHAPE_DIMENSION } from "@/lib/workplaneSettings";
+import { DEFAULT_WORKPLANE_WORKSPACE, MAX_CUSTOM_SHAPE_DIMENSION, MAX_HIGH_RESOLUTION_SIDES, MAX_HIGH_RESOLUTION_STEPS, MIN_CUSTOM_SHAPE_DIMENSION, snapGridForUnits, snapGridOptionsForUnits } from "@/lib/workplaneSettings";
 import type { BentTubeProfile, GearType, GridSize, ShapeCustomization, ShapeKind, ThreadHand, ThreadHead, ThreadProfile, ThreadRole, WorkplaneWorkspaceSettings } from "@/types/layerling";
 import { selectWholeValue } from "@/lib/numberField";
 
 type WorkspaceSettings = WorkplaneWorkspaceSettings;
 type WorkspaceSettingsSection = "appearance" | "measurement" | "workplane" | "shapes" | "history";
 
-const GRID_SIZES: GridSize[] = ["Off", "0.1 mm", "0.25 mm", "0.5 mm", "1.0 mm", "2.0 mm", "5.0 mm", "Brick"];
 const MIN_WORKSPACE_SIZE = 60;
 const MAX_WORKSPACE_SIZE = 2000;
 const MIN_GRID_BLOCK_SIZE = 1;
@@ -635,7 +634,11 @@ export function WorkspaceSettingsModal({
                     value={workspace.units}
                     options={WORKSPACE_UNIT_OPTIONS}
                     optionLabel={measurementOptionLabel}
-                    onChange={(units) => patchWorkspace({ units })}
+                    onChange={(units) => {
+                      patchWorkspace({ units });
+                      const nextSnap = snapGridForUnits(units, snap);
+                      if (nextSnap !== snap) onSnapChange(nextSnap);
+                    }}
                   />
                   <WorkspaceSelect
                     label={t("workspace.scale")}
@@ -653,7 +656,7 @@ export function WorkspaceSettingsModal({
                   <WorkspaceSelect
                     label={t("workspace.snapGrid")}
                     value={snap}
-                    options={GRID_SIZES}
+                    options={snapGridOptionsForUnits(workspace.units)}
                     optionLabel={measurementOptionLabel}
                     onChange={(next) => {
                       setDefaultSaved(false);

@@ -143,11 +143,10 @@ import {
   springWireLimits,
 } from "@/lib/springGeometry";
 import { regularPolygonAspect } from "@/lib/regularPolygonFootprint";
-import { DEFAULT_TAPER_DIMENSION_MAX, MAX_HIGH_RESOLUTION_SIDES, MAX_HIGH_RESOLUTION_STEPS, shapeDimensionLimit } from "@/lib/workplaneSettings";
+import { DEFAULT_TAPER_DIMENSION_MAX, MAX_HIGH_RESOLUTION_SIDES, MAX_HIGH_RESOLUTION_STEPS, shapeDimensionLimit, snapGridOptionsForUnits } from "@/lib/workplaneSettings";
 import type { BentTubeInnerProfile, BentTubeProfile, GearType, GridSize, MeasurementAccuracy, ThreadHead, ThreadProfile, ThreadRole, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 import { selectWholeValue } from "@/lib/numberField";
 
-const GRID_SIZES: GridSize[] = ["Off", "0.1 mm", "0.25 mm", "0.5 mm", "1.0 mm", "2.0 mm", "5.0 mm", "Brick"];
 const MIN_SHAPE_SIZE = 0.01;
 const SOLID_COLORS = [
   "#d41721",
@@ -1794,7 +1793,7 @@ export function ShapeInspector({
         </div>
       ) : null}
       <div className="inspector-snap-dock">
-        <SnapGridControl snap={snap} snapOpen={snapOpen} onSnapChange={onSnapChange} onSnapOpenChange={onSnapOpenChange} />
+        <SnapGridControl units={workspace.units} snap={snap} snapOpen={snapOpen} onSnapChange={onSnapChange} onSnapOpenChange={onSnapOpenChange} />
       </div>
         </>
       ) : null}
@@ -1959,11 +1958,13 @@ function ShapePropertyRows({
 }
 
 export function SnapGridControl({
+  units,
   snap,
   snapOpen,
   onSnapChange,
   onSnapOpenChange,
 }: {
+  units: string;
   snap: GridSize;
   snapOpen: boolean;
   onSnapChange: Dispatch<SetStateAction<GridSize>>;
@@ -1978,7 +1979,7 @@ export function SnapGridControl({
       </button>
       {snapOpen ? (
         <div className="snap-menu">
-          {GRID_SIZES.map((size) => (
+          {snapGridOptionsForUnits(units).map((size) => (
             <button
               key={size}
               className={size === snap ? "selected" : ""}

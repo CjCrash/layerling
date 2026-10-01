@@ -36,7 +36,7 @@ import { createBentTubeGeometry } from "@/lib/bentTubeGeometry";
 import { createThreadGeometry } from "@/lib/threadGeometry";
 import { createSpringGeometry } from "@/lib/springGeometry";
 import { createTextGeometry } from "@/lib/textGeometry";
-import { parseMeasurementInput, resolveMeasurementInput } from "@/lib/measurementUnits";
+import { displayToMillimeters, millimetersToDisplay, parseMeasurementInput, resolveMeasurementInput } from "@/lib/measurementUnits";
 import {
   computeCornerRulerRelativeCoordinates,
   computeCornerRulerShift,
@@ -3855,7 +3855,7 @@ export function WorkplaneViewport({
   const commitMoveDimension = useCallback(
     (axis: MoveDimensionAxis, rawValue: string) => {
       const session = moveDimensionSessionRef.current;
-      const value = parseMeasurementInput(rawValue);
+      const value = parseMeasureMm(rawValue);
       if (!session || !Number.isFinite(value)) {
         return;
       }
@@ -3931,6 +3931,7 @@ export function WorkplaneViewport({
     pendingWorkspaceHydrationFingerprintRef.current = nextFingerprint;
     snapRef.current = nextSnap;
     workspaceRef.current = nextWorkspace;
+    setMeasureUnit(nextWorkspace);
     if (threeRef.current) {
       rebuildWorkplane(threeRef.current, nextWorkspace, resolvedThemeRef.current, placementWorkplaneRef.current, projectNameRef.current);
       constrainCamera(threeRef.current, nextWorkspace);
@@ -4277,6 +4278,7 @@ export function WorkplaneViewport({
     // The plane label carries the project name, so a rename has to redraw it.
     projectNameRef.current = projectName;
     workspaceRef.current = workspace;
+    setMeasureUnit(workspace);
     if (threeRef.current) threeRef.current.palette = appThemePalette(themePreference);
     rebuildWorkplane(threeRef.current, workspace, resolvedTheme, placementWorkplane, projectName);
     rebuildSelectionHelpers(threeRef.current, shapesRef.current, renderSelectionIds(), placementWorkplane);
@@ -5438,8 +5440,8 @@ export function WorkplaneViewport({
           ? sizeFrame?.height ?? shape.height
           : Number.NaN;
     const value = isSizeAxis
-      ? resolveMeasurementInput(edit.value, currentExtent)
-      : parseMeasurementInput(edit.value);
+      ? resolveMeasureMm(edit.value, currentExtent)
+      : parseMeasureMm(edit.value);
     if (edit.axis === "elevation") {
       if (Number.isFinite(value)) {
         const activeWorkplane = placementWorkplaneRef.current;
@@ -5551,7 +5553,7 @@ export function WorkplaneViewport({
     setRulerDimensionEditing(null);
     if (!edit) return;
     const shape = shapesRef.current.find((entry) => entry.id === edit.shapeId);
-    const value = resolveMeasurementInput(edit.value, edit.base);
+    const value = resolveMeasureMm(edit.value, edit.base);
     if (shape && Number.isFinite(value) && value > 0) {
       const nextValue = Math.max(MIN_SHAPE_SIZE, value);
       if (edit.field === "width") {
@@ -5664,7 +5666,7 @@ export function WorkplaneViewport({
     setRulerDuplicateEditing(null);
     if (!edit) return;
     const ruler = shapesRef.current.find((entry) => entry.id === edit.rulerId);
-    const value = parseMeasurementInput(edit.value);
+    const value = parseMeasureMm(edit.value);
     if (ruler && Number.isFinite(value)) {
       const rulerPose = { x: ruler.x, z: ruler.z, rotation: ruler.rotation, length: shapeWidth(ruler), crossWidth: shapeDepth(ruler) };
       const target = pointAlongRuler(rulerPose, edit.baseAlong + value);
@@ -5967,7 +5969,7 @@ export function WorkplaneViewport({
     const wanted = new Set(edit.shapeIds);
     const moved = shapesRef.current.filter((entry) => wanted.has(entry.id));
     const ruler = cornerRulerModelRef.current.find((entry) => entry.id === edit.rulerId);
-    const value = parseMeasurementInput(edit.value);
+    const value = parseMeasureMm(edit.value);
     if (!moved.length || !ruler || !Number.isFinite(value)) return;
 
     const rulerQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, THREE.MathUtils.degToRad(ruler.rotation), 0, "XYZ"));
@@ -7493,7 +7495,7 @@ export function WorkplaneViewport({
 
       {!selectedShape ? (
         <div className="grid-settings">
-          <SnapGridControl snap={snap} snapOpen={snapOpen} onSnapChange={chooseSnapGrid} onSnapOpenChange={setSnapOpen} />
+          <SnapGridControl units={workspace.units} snap={snap} snapOpen={snapOpen} onSnapChange={chooseSnapGrid} onSnapOpenChange={setSnapOpen} />
         </div>
       ) : null}
 
@@ -8738,9 +8740,30 @@ function setSelectionHelpersVisible(state: ThreeState | null, visible: boolean) 
   state.needsRender = true;
 }
 
+// Unit the labels on the workplane are shown and typed in. The overlay code is
+// spread over plain functions, so the current setting lives here instead of
+// being passed through every one of them; the component updates it on render.
+let measureUnit: Pick<WorkplaneWorkspaceSettings, "units" | "scale"> = { units: "Metric (Default)", scale: "1:1 (millimeters)" };
+
+function setMeasureUnit(workspace: Pick<WorkplaneWorkspaceSettings, "units" | "scale">) {
+  measureUnit = { units: workspace.units, scale: workspace.scale };
+}
+
+// Labels take millimetres and print them in the workspace unit.
 function formatMeasure(value: number, accuracy: MeasurementAccuracy = DEFAULT_WORKSPACE.accuracy) {
   const zeroThreshold = 0.5 * 10 ** -accuracy;
-  return cleanNearZero(value, zeroThreshold).toFixed(accuracy);
+  return cleanNearZero(millimetersToDisplay(value, measureUnit), zeroThreshold).toFixed(accuracy);
+}
+
+// What the user types is in the workspace unit; the result is millimetres.
+function parseMeasureMm(raw: string | number) {
+  return displayToMillimeters(parseMeasurementInput(raw), measureUnit);
+}
+
+// A trailing percent scales the current value (millimetres), anything else is a distance.
+function resolveMeasureMm(raw: string | number, currentMm: number) {
+  if (typeof raw === "string" && raw.trim().endsWith("%")) return resolveMeasurementInput(raw, currentMm);
+  return parseMeasureMm(raw);
 }
 
 function makeDimensionMark(

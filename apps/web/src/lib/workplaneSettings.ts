@@ -63,7 +63,20 @@ export function zoomDistanceScale(step: number, slider: number): number {
   return step ** (orbitControlsZoomSpeed(slider) / DEFAULT_ORBIT_ZOOM_SPEED);
 }
 
-const snapGridOptions: GridSize[] = ["Off", "0.1 mm", "0.25 mm", "0.5 mm", "1.0 mm", "2.0 mm", "5.0 mm", "Brick"];
+const METRIC_SNAP_GRIDS: GridSize[] = ["Off", "0.1 mm", "0.25 mm", "0.5 mm", "1.0 mm", "2.0 mm", "5.0 mm", "Brick"];
+const IMPERIAL_SNAP_GRIDS: GridSize[] = ["Off", "1/64 in", "1/32 in", "1/16 in", "1/8 in", "1/4 in", "1/2 in", "1 in"];
+const snapGridOptions: GridSize[] = [...METRIC_SNAP_GRIDS, ...IMPERIAL_SNAP_GRIDS.filter((size) => size !== "Off")];
+
+/** The snap steps offered for a unit system: inch fractions for Imperial, millimetres otherwise. */
+export function snapGridOptionsForUnits(units: string): GridSize[] {
+  return units === "Imperial" ? IMPERIAL_SNAP_GRIDS : METRIC_SNAP_GRIDS;
+}
+
+/** Keeps the current snap step when the unit system offers it, else the usual default (1.0 mm or 1/8 in). */
+export function snapGridForUnits(units: string, snap: GridSize): GridSize {
+  if (snapGridOptionsForUnits(units).includes(snap)) return snap;
+  return units === "Imperial" ? "1/8 in" : DEFAULT_SNAP_GRID;
+}
 const customizableShapeKinds: ShapeKind[] = [
   "box", "roundedBox", "cylinder", "slot", "ellipse", "sphere", "sketch", "scribble", "cone", "pyramid", "roof", "text", "roundRoof",
   "halfSphere", "torus", "tube", "bentTube", "star", "heart", "crescent", "gear", "honeycomb", "dovetail", "counterbore", "countersink", "teardrop", "thread", "spring", "ring", "wedge", "polygon", "icosahedron", "ruler", "mesh",
@@ -290,6 +303,8 @@ export function snapGridStep(size: GridSize) {
   if (size === "Brick") {
     return BRICK_SNAP_STEP;
   }
+  const inch = /^(\d+)(?:\/(\d+))? in$/.exec(size);
+  if (inch) return (Number(inch[1]) / Number(inch[2] ?? 1)) * 25.4;
   return Number.parseFloat(size) || 1;
 }
 
