@@ -18,6 +18,8 @@
 
 .PARAMETER InstallPath
     Where to put (or find) the layerling folder. Defaults to "$env:USERPROFILE\layerling".
+    To choose another place (another drive, say), run the script with this parameter:
+    & ([scriptblock]::Create((irm https://raw.githubusercontent.com/henmedia/layerling/main/scripts/windows-quickstart.ps1))) -InstallPath "D:\3DPrinter\Layerling"
 
 .PARAMETER NoStart
     Install and update everything, but do not start the dev server or open a browser tab.
@@ -121,11 +123,11 @@ try {
 
     Write-Step "Creating a desktop shortcut to start layerling next time..."
     $desktopLauncher = Join-Path ([Environment]::GetFolderPath("Desktop")) "Start layerling.cmd"
+    # The real logic lives in the repo (scripts\start-layerling.cmd), so later fixes arrive
+    # with every update; the desktop file only points at it.
     $launcherContent = @"
 @echo off
-cd /d "$InstallPath"
-start "" "http://127.0.0.1:3000/"
-call npm run dev
+call "$InstallPath\scripts\start-layerling.cmd"
 "@
     Set-Content -Path $desktopLauncher -Value $launcherContent -Encoding ASCII
     Write-Host "Double-click '$desktopLauncher' any time you want to open layerling again -" -ForegroundColor Green
@@ -135,11 +137,18 @@ call npm run dev
         Write-Step "Setup complete. Start layerling with the desktop shortcut, or: npm run dev"
     } else {
         Write-Step "Starting layerling..."
-        Write-Host "Opening http://127.0.0.1:3000/ in your browser in a few seconds." -ForegroundColor Green
+        Write-Host "Opening http://127.0.0.1:3000/ in your browser as soon as the server is ready." -ForegroundColor Green
         Write-Host "Leave this window open while you use layerling. Press Ctrl+C here to stop it." -ForegroundColor Green
         Start-Job -ScriptBlock {
-            Start-Sleep -Seconds 4
-            Start-Process "http://127.0.0.1:3000/"
+            for ($i = 0; $i -lt 90; $i++) {
+                try {
+                    (New-Object Net.Sockets.TcpClient("127.0.0.1", 3000)).Close()
+                    Start-Process "http://127.0.0.1:3000/"
+                    break
+                } catch {
+                    Start-Sleep -Seconds 1
+                }
+            }
         } | Out-Null
         npm run dev
     }

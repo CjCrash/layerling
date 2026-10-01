@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Windows-Start per Desktop-Verknüpfung:** Der Browser öffnet sich erst, wenn der Server antwortet (vorher oft leere Fehlerseite bis zum Neuladen), und die Verknüpfung holt vorher Updates per `git pull` samt `npm install`. Neu: `scripts/start-layerling.cmd`; Installationsordner per `-InstallPath` im README beschrieben (Issue #55).
+
 ## 1.24.0
 
 - **190 printers instead of 54:** The printer list grew by Snapmaker (U1, A250, A350, Artisan, J1) and many more models of the vendors that were already there (Bambu Lab, Prusa, Creality, Elegoo, Anycubic, Qidi, Sovol, Flashforge, Artillery, Voron and others), plus BIQU, Kingroon, Longer, Geeetech, Voxelab, TwoTrees, Comgrow, Eryone, Dremel, InfiMech, Peopoly, Wanhao, Raise3D, UltiMaker, Volumic and RatRig. Bed size and height still come from OrcaSlicer's profiles for the 0.4 mm nozzle. Delta printers with a round bed are not in the list.

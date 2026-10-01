@@ -108,7 +108,15 @@ running it, or download it and run it locally instead of piping it into PowerShe
 
 The one-liner above also leaves a shortcut named **“Start layerling”** on your desktop. Double-click it whenever you
 want to open layerling again – no PowerShell, no re-installing, no re-downloading, just the server starting and your
-browser opening on its own.
+browser opening on its own. It also **updates layerling first** (when the folder has no changes of your own) and opens the
+browser only once the server is really ready. Wanted layerling somewhere else, say on another drive? Run the script with
+the folder you want:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/henmedia/layerling/main/scripts/windows-quickstart.ps1))) -InstallPath "D:\3DPrinter\Layerling"
+```
+
+If your shortcut was made by an older version of the script, run the one-liner once more; it replaces the shortcut with the new one.
 
 Prefer doing it by hand? Open PowerShell and run:
 
