@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { formatFractionalInches, parseMeasurementInput } from "@/lib/measurementUnits";
 import { snapGridForUnits, snapGridOptionsForUnits, snapGridStep } from "@/lib/workplaneSettings";
 
 describe("imperial snap grid", () => {
@@ -22,5 +23,29 @@ describe("imperial snap grid", () => {
     expect(snapGridForUnits("Imperial", "1/4 in")).toBe("1/4 in");
     expect(snapGridForUnits("Metric (Default)", "1/8 in")).toBe("1.0 mm");
     expect(snapGridForUnits("Metric (Default)", "Off")).toBe("Off");
+  });
+});
+
+describe("inch fractions", () => {
+  it("prints mixed numbers like Tinkercad", () => {
+    expect(formatFractionalInches(1.625)).toBe("1⅝");
+    expect(formatFractionalInches(0.1875)).toBe("3/16");
+    expect(formatFractionalInches(2.5)).toBe("2½");
+    expect(formatFractionalInches(1.0625)).toBe("1 1/16");
+    expect(formatFractionalInches(3)).toBe("3");
+    expect(formatFractionalInches(0)).toBe("0");
+    expect(formatFractionalInches(-0.75)).toBe("-¾");
+    expect(formatFractionalInches(0.7874)).toBeNull();
+  });
+
+  it("reads fractions back, typed or printed", () => {
+    expect(parseMeasurementInput("1⅝")).toBeCloseTo(1.625, 10);
+    expect(parseMeasurementInput("1 5/8")).toBeCloseTo(1.625, 10);
+    expect(parseMeasurementInput("1-5/8")).toBeCloseTo(1.625, 10);
+    expect(parseMeasurementInput("3/16")).toBeCloseTo(0.1875, 10);
+    expect(parseMeasurementInput("-¾")).toBeCloseTo(-0.75, 10);
+    expect(parseMeasurementInput("1/0")).toBeNaN();
+    expect(parseMeasurementInput("1,5")).toBe(1.5);
+    expect(parseMeasurementInput("2.25")).toBe(2.25);
   });
 });

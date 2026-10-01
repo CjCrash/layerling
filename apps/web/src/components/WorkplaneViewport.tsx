@@ -36,7 +36,7 @@ import { createBentTubeGeometry } from "@/lib/bentTubeGeometry";
 import { createThreadGeometry } from "@/lib/threadGeometry";
 import { createSpringGeometry } from "@/lib/springGeometry";
 import { createTextGeometry } from "@/lib/textGeometry";
-import { displayToMillimeters, millimetersToDisplay, parseMeasurementInput, resolveMeasurementInput } from "@/lib/measurementUnits";
+import { displayToMillimeters, formatFractionalInches, lengthDisplayUnit, millimetersToDisplay, parseMeasurementInput, resolveMeasurementInput } from "@/lib/measurementUnits";
 import {
   computeCornerRulerRelativeCoordinates,
   computeCornerRulerShift,
@@ -8752,7 +8752,13 @@ function setMeasureUnit(workspace: Pick<WorkplaneWorkspaceSettings, "units" | "s
 // Labels take millimetres and print them in the workspace unit.
 function formatMeasure(value: number, accuracy: MeasurementAccuracy = DEFAULT_WORKSPACE.accuracy) {
   const zeroThreshold = 0.5 * 10 ** -accuracy;
-  return cleanNearZero(millimetersToDisplay(value, measureUnit), zeroThreshold).toFixed(accuracy);
+  const shown = cleanNearZero(millimetersToDisplay(value, measureUnit), zeroThreshold);
+  // Inches read as fractions (1⅝), like Tinkercad; other values keep their decimals.
+  if (lengthDisplayUnit(measureUnit).label === "in") {
+    const fraction = formatFractionalInches(shown);
+    if (fraction !== null) return fraction;
+  }
+  return shown.toFixed(accuracy);
 }
 
 // What the user types is in the workspace unit; the result is millimetres.

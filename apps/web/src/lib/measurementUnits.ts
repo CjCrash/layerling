@@ -76,8 +76,49 @@ export function displayStepFromMillimeters(step: number, workspace: Pick<Workpla
   return step / lengthDisplayUnit(workspace).millimetersPerUnit;
 }
 
+const VULGAR_FRACTIONS: Record<string, number> = { "½": 1 / 2, "¼": 1 / 4, "¾": 3 / 4, "⅛": 1 / 8, "⅜": 3 / 8, "⅝": 5 / 8, "⅞": 7 / 8 };
+const VULGAR_BY_EIGHTHS: Record<number, string> = { 1: "⅛", 2: "¼", 3: "⅜", 4: "½", 5: "⅝", 6: "¾", 7: "⅞" };
+
+/**
+ * Reads an inch fraction as typed or as the labels print it: "5/8", "1 5/8",
+ * "1-5/8", "1⅝". Returns null for anything else so decimals take their usual path.
+ */
+function parseFractionInput(value: string) {
+  const text = value.trim().replace(/ /g, " ");
+  const vulgar = /^(-?)(?:(\d+)[\s-]*)?([½¼¾⅛⅜⅝⅞])$/.exec(text);
+  if (vulgar) return (vulgar[1] ? -1 : 1) * (Number(vulgar[2] ?? 0) + VULGAR_FRACTIONS[vulgar[3]]);
+  const plain = /^(-?)(?:(\d+)[\s-]+)?(\d+)\/(\d+)$/.exec(text);
+  if (!plain || Number(plain[4]) === 0) return null;
+  return (plain[1] ? -1 : 1) * (Number(plain[2] ?? 0) + Number(plain[3]) / Number(plain[4]));
+}
+
+/**
+ * Inches as a mixed number the way Tinkercad prints them: 1.625 becomes "1⅝",
+ * 0.1875 "3/16". Null when the value is not a multiple of 1/64 in, so the
+ * caller falls back to decimals instead of rounding a distance away.
+ */
+export function formatFractionalInches(inches: number) {
+  const sixtyFourths = Math.round(Math.abs(inches) * 64);
+  if (Math.abs(Math.abs(inches) * 64 - sixtyFourths) > 0.032) return null;
+  const sign = inches < 0 && sixtyFourths > 0 ? "-" : "";
+  const whole = Math.floor(sixtyFourths / 64);
+  let numerator = sixtyFourths % 64;
+  if (numerator === 0) return `${sign}${whole}`;
+  let denominator = 64;
+  while (numerator % 2 === 0) {
+    numerator /= 2;
+    denominator /= 2;
+  }
+  if (denominator === 8 || denominator === 4 || denominator === 2) {
+    return `${sign}${whole || ""}${VULGAR_BY_EIGHTHS[(numerator * 8) / denominator]}`;
+  }
+  return `${sign}${whole ? `${whole} ` : ""}${numerator}/${denominator}`;
+}
+
 export function parseMeasurementInput(value: string | number) {
   if (typeof value === "number") return Number.isFinite(value) ? value : Number.NaN;
+  const fraction = parseFractionInput(value);
+  if (fraction !== null) return fraction;
   const compact = value.trim().replace(/[\s\u00a0]/g, "");
   if (!compact) return Number.NaN;
 
