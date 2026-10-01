@@ -106,13 +106,14 @@ export function isWholeEllipse(segment: CadModifierProfileSegment) {
 
 /** Throws unless every number is finite, every loop closes and every arc ends where it says. */
 export function validateCadProfile(profile: CadModifierProfilePart) {
-  if (profile.kind !== "extrusion" && profile.kind !== "revolution") throw new Error(`Unsupported CAD profile: ${String((profile as { kind: unknown }).kind)}`);
+  if (profile.kind !== "extrusion" && profile.kind !== "revolution" && profile.kind !== "sweep") throw new Error(`Unsupported CAD profile: ${String((profile as { kind: unknown }).kind)}`);
   if (!Number.isFinite(profile.height) || profile.height <= 0) throw new Error("The profile has no height");
   if (!profile.loops.length) throw new Error("The profile has no outline");
+  if (profile.kind === "sweep") validateSweepPath(profile.path);
   const tolerance = profileExtent(profile) * 1e-7;
   profile.loops.forEach((loop) => {
-    // A loop of one segment is only a whole ellipse, and only in an extrusion.
-    const whole = profile.kind === "extrusion" && loop.segments.length === 1 && isWholeEllipse(loop.segments[0]);
+    // A loop of one segment is only a whole ellipse, and only in an extrusion or a sweep (a round tube).
+    const whole = profile.kind !== "revolution" && loop.segments.length === 1 && isWholeEllipse(loop.segments[0]);
     if (!Number.isFinite(loop.x) || !Number.isFinite(loop.z) || (loop.segments.length < 2 && !whole)) {
       throw new Error("The profile outline is incomplete");
     }
@@ -144,6 +145,127 @@ export function validateCadProfile(profile: CadModifierProfilePart) {
     });
     if (!samePoint(current, loop, tolerance)) throw new Error("The profile outline is not closed");
   });
+}
+
+/** A sweep's centre line: at least one piece, every number finite, every frame a rigid placement. */
+function validateSweepPath(path: CadModifierProfilePart["path"]) {
+  if (!Array.isArray(path) || path.length === 0) throw new Error("The sweep has no centre line");
+  path.forEach((piece) => {
+    const frame = piece.frame;
+    if (!Array.isArray(frame) || frame.length !== 12 || !frame.every(Number.isFinite)) throw new Error("A sweep piece has an invalid frame");
+    // Columns of the 3x3 part: unit length, square to each other, right-handed.
+    const column = (index: number) => [frame[index], frame[4 + index], frame[8 + index]];
+    const [a, b, c] = [column(0), column(1), column(2)];
+    const dotOf = (p: number[], q: number[]) => p[0] * q[0] + p[1] * q[1] + p[2] * q[2];
+    const determinant = a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0]);
+    if ([dotOf(a, a), dotOf(b, b), dotOf(c, c)].some((value) => Math.abs(value - 1) > 1e-6)
+      || [dotOf(a, b), dotOf(b, c), dotOf(a, c)].some((value) => Math.abs(value) > 1e-6)
+      || Math.abs(determinant - 1) > 1e-6) {
+      throw new Error("A sweep piece frame is not a rigid placement");
+    }
+    if (piece.kind === "straight") {
+      if (!Number.isFinite(piece.length) || piece.length <= 0) throw new Error("A straight sweep piece has no length");
+    } else if (piece.kind === "bend") {
+      if (![...piece.center, ...piece.axis, piece.angle].every(Number.isFinite) || piece.angle <= 0 || piece.angle > TWO_PI) throw new Error("A sweep bend is invalid");
+      if (Math.abs(Math.hypot(...piece.axis) - 1) > 1e-6) throw new Error("A sweep bend axis is not a unit vector");
+    } else {
+      throw new Error("Unknown sweep piece");
+    }
+  });
+}
+
+type V3 = [number, number, number];
+
+/** Rodrigues rotation of v about a unit axis. */
+function turned(v: V3, axis: V3, angle: number): V3 {
+  const c = Math.cos(angle);
+  const sn = Math.sin(angle);
+  const d = (axis[0] * v[0] + axis[1] * v[1] + axis[2] * v[2]) * (1 - c);
+  const k: V3 = [axis[1] * v[2] - axis[2] * v[1], axis[2] * v[0] - axis[0] * v[2], axis[0] * v[1] - axis[1] * v[0]];
+  return [v[0] * c + k[0] * sn + axis[0] * d, v[1] * c + k[1] * sn + axis[1] * d, v[2] * c + k[2] * sn + axis[2] * d];
+}
+
+/** The section planes a piece starts and ends in: a point on each and its normal (the running direction). */
+function pieceEnds(piece: NonNullable<CadModifierProfilePart["path"]>[number]) {
+  const start: V3 = [piece.frame[3], piece.frame[7], piece.frame[11]];
+  const tangent: V3 = [piece.frame[1], piece.frame[5], piece.frame[9]];
+  if (piece.kind === "straight") {
+    return { start: { point: start, normal: tangent }, end: { point: [start[0] + tangent[0] * piece.length, start[1] + tangent[1] * piece.length, start[2] + tangent[2] * piece.length] as V3, normal: tangent } };
+  }
+  const offset = turned([start[0] - piece.center[0], start[1] - piece.center[1], start[2] - piece.center[2]], piece.axis, piece.angle);
+  return {
+    start: { point: start, normal: tangent },
+    end: { point: [piece.center[0] + offset[0], piece.center[1] + offset[1], piece.center[2] + offset[2]] as V3, normal: turned(tangent, piece.axis, piece.angle) },
+  };
+}
+
+/**
+ * The section pushed along each straight piece and turned through each bend,
+ * then joined into one body: every piece's faces except the section faces
+ * where two pieces meet (found by lying in that section's plane, within the
+ * section's reach of the centre line), sewn into one closed shell and merged where faces
+ * continue each other. A round tube becomes cylinders and tori, a polygonal
+ * one planes and cones - analytic faces only.
+ *
+ * Not a boolean union: the pieces only touch at those section faces, and
+ * fusing them could run for minutes - a twelve-segment square tube that does
+ * not touch itself was still running after four minutes at its sixteenth
+ * piece, while sewing takes well under a second. A tube that runs into itself
+ * would need the union, so it never comes here (bentTubeSweep keeps it on the
+ * display mesh).
+ */
+function sweptSolid(cad: OcctKernel, face: ShapeHandle, profile: CadModifierProfilePart, extent: number) {
+  const path = profile.path ?? [];
+  const tolerance = Math.max(1e-7, extent * 1e-7);
+  // How far the section reaches from the centre line. A 180 degree bend ends in
+  // the plane it starts in, on the other side of the bend: a section face has
+  // to lie in the plane and near the plane's point on the centre line.
+  const [minX, minZ, maxX, maxZ] = profileLoopBounds(profile.loops[0]);
+  const reach = Math.hypot(Math.max(Math.abs(minX), Math.abs(maxX)), Math.max(Math.abs(minZ), Math.abs(maxZ))) * (1 + 1e-6) + tolerance;
+  const kept: ShapeHandle[] = [];
+  path.forEach((piece, index) => {
+    const placed = cad.transform(face, piece.frame);
+    const solid = piece.kind === "straight"
+      // The running direction is the frame's local +Y (its second column).
+      ? cad.extrude(placed, piece.frame[1] * piece.length, piece.frame[5] * piece.length, piece.frame[9] * piece.length)
+      : cad.revolve(placed, {
+        point: { x: piece.center[0], y: piece.center[1], z: piece.center[2] },
+        direction: { x: piece.axis[0], y: piece.axis[1], z: piece.axis[2] },
+      }, piece.angle);
+    const ends = pieceEnds(piece);
+    // A section face lies in its plane along every edge - sampled at both ends and the middle, so a
+    // side face of a 180 degree bend (corners in the same plane, arcs not) is not taken for one.
+    const inPlane = (candidate: ShapeHandle, plane: { point: V3; normal: V3 }) => cad.surfaceType(candidate) === "plane"
+      && cad.getSubShapes(candidate, "edge").every((edge) => {
+        const range = cad.curveParameters(edge) as { first: number; last: number };
+        return [range.first, (range.first + range.last) / 2, range.last].every((parameter) => {
+          const point = cad.curvePointAtParam(edge, parameter);
+          const offset = [point.x - plane.point[0], point.y - plane.point[1], point.z - plane.point[2]];
+          return Math.abs(offset[0] * plane.normal[0] + offset[1] * plane.normal[1] + offset[2] * plane.normal[2]) <= tolerance * 10
+            && Math.hypot(offset[0], offset[1], offset[2]) <= reach;
+        });
+      });
+    cad.getSubShapes(solid, "face").forEach((candidate) => {
+      const inner = (index > 0 && inPlane(candidate, ends.start)) || (index < path.length - 1 && inPlane(candidate, ends.end));
+      if (!inner) kept.push(candidate);
+    });
+  });
+  const sewn = cad.sew(kept, tolerance * 100);
+  const shells = cad.isShell(sewn) ? [sewn] : cad.getSubShapes(sewn, "shell");
+  if (shells.length !== 1) throw new Error(`The swept pieces did not close into one shell (${shells.length})`);
+  const solid = cad.makeSolid(shells[0]);
+  // Merging faces that continue each other (a square tube's flat sides along
+  // a bend in their plane) is a nicety: on some tight bends the kernel's
+  // merge fails outright (occt-wasm 5.4.0 traps with "memory access out of
+  // bounds" on a hexagon tube with bends at 1.01 times the minimum radius)
+  // while the sewn solid is valid - then the solid stays as sewn.
+  try {
+    const merged = cad.unifySameDomain(solid);
+    if (cad.isValid(merged)) return merged;
+  } catch {
+    // Keep the sewn solid.
+  }
+  return solid;
 }
 
 function vec(point: Point) {
@@ -231,7 +353,9 @@ export function profileExtrusionSolid(cad: OcctKernel, profile: CadModifierProfi
   // A revolution turns its half-section once around the Z axis; the result stands along Z.
   let solid = profile.kind === "revolution"
     ? cad.revolve(face, { point: ORIGIN, direction: { x: 0, y: 0, z: 1 } }, TWO_PI)
-    : cad.extrude(face, 0, profile.height, 0);
+    : profile.kind === "sweep"
+      ? sweptSolid(cad, face, profile, profileExtent(profile))
+      : cad.extrude(face, 0, profile.height, 0);
   const solids = cad.isSolid(solid) ? [solid] : cad.getSubShapes(solid, "solid");
   if (solids.length !== 1) throw new Error("The profile did not become one solid");
   solid = solids[0];
@@ -242,7 +366,7 @@ export function profileExtrusionSolid(cad: OcctKernel, profile: CadModifierProfi
       return false;
     }
   };
-  if (!isValid(solid) && profile.kind === "revolution") throw new Error("The turned profile solid is not valid");
+  if (!isValid(solid) && profile.kind !== "extrusion") throw new Error("The turned or swept profile solid is not valid");
   if (!isValid(solid)) {
     // Some font outlines (the "1" of the Rounded face, for one) come out of
     // the face builder flagged invalid, and the kernel's own repair fixes

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { drawnRound, EXACT_ROUND_TOLERANCE, ROUND_FROM_HALF_SPHERE_STEPS, ROUND_FROM_ROOF_SIDES, ROUND_FROM_SIDES, ROUND_FROM_SPHERE_STEPS } from "@/lib/roundness";
+import { drawnRound, EXACT_ROUND_TOLERANCE, ROUND_FROM_BENT_TUBE_QUALITY, ROUND_FROM_HALF_SPHERE_STEPS, ROUND_FROM_ROOF_SIDES, ROUND_FROM_SIDES, ROUND_FROM_SPHERE_STEPS } from "@/lib/roundness";
 import { automaticSideCount } from "@/lib/roundSideCount";
 import { DEFAULT_SPHERE_STEPS } from "@/lib/sphereTessellation";
+import { DEFAULT_BENT_TUBE_QUALITY } from "@/lib/bentTubeGeometry";
 import { makeShapeFromAsset, toolbarShapeAssets } from "@/lib/shapeCatalog";
 
 /** Wie weit das Vieleck vom Kreis abweicht - die Pfeilhoehe des Abschnitts. */
@@ -45,6 +46,8 @@ describe("drawn round or drawn with sides", () => {
     expect(DEFAULT_SPHERE_STEPS).toBe(ROUND_FROM_SPHERE_STEPS);
     expect(fresh("halfSphere").steps).toBe(ROUND_FROM_HALF_SPHERE_STEPS);
     expect(fresh("roundRoof").sides).toBe(ROUND_FROM_ROOF_SIDES);
+    expect(fresh("bentTube").bentTubeQuality ?? DEFAULT_BENT_TUBE_QUALITY).toBe(ROUND_FROM_BENT_TUBE_QUALITY);
+    expect(DEFAULT_BENT_TUBE_QUALITY).toBe(ROUND_FROM_BENT_TUBE_QUALITY);
     // Zylinder, Kegel und Rohr folgen heute der Groesse; 96 ist ihre fruehere feste Vorgabe.
     ["cylinder", "cone", "tube"].forEach((kind) => expect(fresh(kind).sides).toBeUndefined());
   });

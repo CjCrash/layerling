@@ -62,7 +62,7 @@ export type StepSource = "primitive" | "imported" | "baked" | "profile" | "unsup
 
 function hasExactProfile(shape: WorkplaneShape) {
   try {
-    return cadModifierProfileForShape(asDesignedRound(shape)) !== null;
+    return cadModifierProfileForShape(asDesignedRound(shape), { designedRound: true }) !== null;
   } catch {
     return false;
   }
@@ -252,7 +252,7 @@ function buildBakedBody(brep: Brep, shape: WorkplaneShape): BuildOutcome {
 function buildProfileBody(brep: Brep, shape: WorkplaneShape): BuildOutcome {
   const kernel = occtKernel();
   // Round shapes go out round, as they always have, whatever their side count.
-  const part = cadModifierProfileForShape(asDesignedRound(shape));
+  const part = cadModifierProfileForShape(asDesignedRound(shape), { designedRound: true });
   if (!kernel || !part) return { skip: unsupportedReason() };
   try {
     const local = profileExtrusionSolid(kernel, part);

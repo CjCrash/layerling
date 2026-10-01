@@ -1,13 +1,14 @@
 import * as THREE from "three";
 import type { WorkplaneShape } from "@/types/layerling";
-import type { CadModifierProfileLoop, CadModifierProfilePart, CadModifierProfileSegment } from "@/lib/cadModifierTypes";
+import type { CadModifierProfileLoop, CadModifierProfilePart, CadModifierProfileSegment, CadModifierSweepPiece } from "@/lib/cadModifierTypes";
 import { profileArcPoint, profileLoopBounds, validateCadProfile } from "@/lib/cadProfileSolid";
 import { cadTransformFromMatrix } from "@/lib/cadBakeMetadata";
 import { CAD_MODIFIER_EXACT_SEGMENT_LIMIT } from "@/lib/cadModifierRuntime";
 import { meshYawDegrees, mirrorSign, shapeDepth, shapeHasShapeDeform, shapeWidth } from "@/lib/workplaneShapes";
 import { regularPolygonFootprintScale } from "@/lib/regularPolygonFootprint";
 import { roundSideCount } from "@/lib/roundSideCount";
-import { drawnRound, ROUND_FROM_HALF_SPHERE_STEPS, ROUND_FROM_ROOF_SIDES, ROUND_FROM_SIDES, ROUND_FROM_SPHERE_STEPS } from "@/lib/roundness";
+import { drawnRound, ROUND_FROM_BENT_TUBE_QUALITY, ROUND_FROM_HALF_SPHERE_STEPS, ROUND_FROM_ROOF_SIDES, ROUND_FROM_SIDES, ROUND_FROM_SPHERE_STEPS } from "@/lib/roundness";
+import { bentTubeLocalPlacement, bentTubePathPieces, bentTubeProfileRadii, bentTubeSelfIntersects, bentTubeSettings, profilePoints as bentTubeProfilePoints } from "@/lib/bentTubeGeometry";
 import { sphereTessellation } from "@/lib/sphereTessellation";
 import { normalizeStarInnerFillet, normalizeStarInnerSize, normalizeStarOuterFillet, normalizeStarPoints } from "@/lib/starGeometry";
 import { normalizeHeartTipFillet } from "@/lib/heartGeometry";
@@ -33,7 +34,7 @@ type Point = { x: number; z: number };
 type Arc = { cx: number; cz: number; rx: number; rz: number; start: number; end: number };
 type Corner = { start: Point; end: Point; arc?: Arc };
 
-export const CAD_PROFILE_SHAPE_KINDS = new Set<WorkplaneShape["kind"]>(["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear", "dovetail", "teardrop", "counterbore", "countersink", "ellipse", "cylinder", "tube", "ring", "halfSphere", "sphere", "cone", "roundRoof", "roundedBox", "text"]);
+export const CAD_PROFILE_SHAPE_KINDS = new Set<WorkplaneShape["kind"]>(["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear", "dovetail", "teardrop", "counterbore", "countersink", "ellipse", "cylinder", "tube", "ring", "halfSphere", "sphere", "cone", "roundRoof", "roundedBox", "text", "bentTube"]);
 
 function shortestAngleDelta(from: number, to: number) {
   let delta = to - from;
@@ -631,7 +632,44 @@ export function textGlyphProfiles(shape: WorkplaneShape) {
  * `local` maps the solid the profile builds (extruded along +y from y = 0, or
  * turned around the Z axis) into the shape's local frame.
  */
-type ProfileFrame = { kind: "extrusion" | "revolution"; height: number; local: THREE.Matrix4 };
+type ProfileFrame = { kind: "extrusion" | "revolution" | "sweep"; height: number; local: THREE.Matrix4; path?: CadModifierSweepPiece[] };
+
+/**
+ * The bent tube: its cross-section swept along straight runs and true
+ * circular bends (bentTubePathPieces), placed in the shape's frame the way
+ * createBentTubeGeometry places the display mesh. A round profile drawn with
+ * fewer corners than the tube's own default keeps the display mesh unless it
+ * is still within EXACT_ROUND_TOLERANCE of the circle - the rule the round
+ * catalog shapes follow (#57) - unless `designedRound` asks for the round
+ * body anyway, as STEP export does.
+ */
+function bentTubeSweep(shape: WorkplaneShape, width: number, depth: number, designedRound = false): { loops: CadModifierProfileLoop[]; frame: ProfileFrame } | null {
+  const settings = bentTubeSettings(shape);
+  const hasRound = settings.profile === "round" || settings.innerProfile === "round";
+  // Designed round (STEP): the circle through the drawn corners, placed where the drawn tube stands.
+  if (hasRound && !designedRound && !drawnRound(shape.bentTubeQuality, ROUND_FROM_BENT_TUBE_QUALITY, settings.quality, settings.size, settings.size)) return null;
+  // A tube that runs into itself overlaps its own pieces; fusing those can
+  // take the kernel minutes (measured: a twelve-piece hexagon tube, still
+  // running after six) - it keeps the display mesh, as before, and the
+  // editor's warning.
+  if (bentTubeSelfIntersects(shape)) return null;
+  const radii = bentTubeProfileRadii(settings);
+  // A profile point (a, b) in the tube's (u, v) section lies at x = b, z = a in the swept section.
+  const section = (kind: typeof settings.profile, radius: number) => (kind === "round"
+    ? ellipseLoop(radius, radius)
+    : polygonLoop(bentTubeProfilePoints(kind, radius, settings.quality).map(([a, b]) => ({ x: b, z: a }))));
+  const loops = [section(settings.profile, radii.outer)];
+  if (settings.innerProfile !== "none" && radii.inner !== null) loops.push(section(settings.innerProfile, radii.inner));
+  const path: CadModifierSweepPiece[] = bentTubePathPieces(settings).map((piece) => (piece.kind === "straight"
+    ? { kind: "straight", frame: piece.frame, length: piece.length }
+    : { kind: "bend", frame: piece.frame, center: [...piece.center], axis: [...piece.axis], angle: piece.angle }));
+  if (!path.length) return null;
+  const length = settings.segments.reduce((total, segment) => total + segment.length + (Math.abs(segment.bendAngle) * Math.PI / 180) * segment.bendRadius, 0);
+  const { centre, factor } = bentTubeLocalPlacement({ ...shape, width, depth, height: shape.height });
+  const local = new THREE.Matrix4().makeScale(factor[0], factor[1], factor[2])
+    .multiply(new THREE.Matrix4().makeTranslation(-centre[0], -centre[1], -centre[2]));
+  return { loops, frame: { kind: "sweep", height: length, local, path } };
+}
 
 /** Outline loops (and horn roundings) of a supported shape in its local frame, or null. */
 /**
@@ -675,10 +713,12 @@ function alongDepthFrame(depth: number): ProfileFrame {
   return { kind: "extrusion", height: depth, local: new THREE.Matrix4().set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, depth / 2, 0, 0, 0, 1) };
 }
 
-export function cadProfileForShapeKind(shape: WorkplaneShape): { loops: CadModifierProfileLoop[]; frame?: ProfileFrame; capFillet?: number } | null {
+export function cadProfileForShapeKind(shape: WorkplaneShape, designedRound = false): { loops: CadModifierProfileLoop[]; frame?: ProfileFrame; capFillet?: number } | null {
   const width = shapeWidth(shape);
   const depth = shapeDepth(shape);
   switch (shape.kind) {
+    case "bentTube":
+      return bentTubeSweep(shape, width, depth, designedRound);
     case "polygon":
       return { loops: polygonProfileLoops(width, depth, shape.sides ?? 6) };
     case "star":
@@ -858,21 +898,23 @@ const SIDED_ROUND_KINDS = new Set<WorkplaneShape["kind"]>(["cylinder", "ellipse"
  * The shape as designed round: a round kind's side or step count left unset,
  * so the exact part is the true curve whatever the display draws. STEP export
  * uses this - it has always written these shapes round, and whether a polygon
- * drawn there should stay one is a question of its own.
+ * drawn there should stay one is a question of its own. The bent tube's
+ * quality also places the body (its box is the drawn tube's), so it is not
+ * reset here; STEP asks for it with `designedRound` instead.
  */
 export function asDesignedRound(shape: WorkplaneShape): WorkplaneShape {
   if (!SIDED_ROUND_KINDS.has(shape.kind)) return shape;
   return { ...shape, sides: undefined, steps: undefined };
 }
 
-export function cadModifierProfileForShape(shape: WorkplaneShape): CadModifierProfilePart | null {
+export function cadModifierProfileForShape(shape: WorkplaneShape, options: { designedRound?: boolean } = {}): CadModifierProfilePart | null {
   if (!CAD_PROFILE_SHAPE_KINDS.has(shape.kind)) return null;
   if (shape.importedMesh || shape.groupedShapes?.length || shape.cadBrep || shape.imagePlate || shapeHasShapeDeform(shape)) return null;
   const width = shapeWidth(shape);
   const depth = shapeDepth(shape);
   if (![width, depth, shape.height].every((value) => Number.isFinite(value) && value > 0)) return null;
   try {
-    const profile = cadProfileForShapeKind(shape);
+    const profile = cadProfileForShapeKind(shape, options.designedRound);
     if (!profile) return null;
     const part: CadModifierProfilePart = {
       kind: profile.frame?.kind ?? "extrusion",
@@ -880,6 +922,7 @@ export function cadModifierProfileForShape(shape: WorkplaneShape): CadModifierPr
       height: profile.frame?.height ?? shape.height,
       transform: profileTransformForShape(shape, profile.frame?.local),
     };
+    if (profile.frame?.path) part.path = profile.frame.path;
     if (profile.capFillet) part.capFillet = profile.capFillet;
     validateCadProfile(part);
     return part;
@@ -891,7 +934,8 @@ export function cadModifierProfileForShape(shape: WorkplaneShape): CadModifierPr
 
 /** Outline pieces of a profile, the measure its kernel cost grows with. */
 export function cadProfileSegmentCount(profile: CadModifierProfilePart) {
-  return profile.loops.reduce((total, loop) => total + loop.segments.length, 0);
+  // A sweep builds its section once per piece of the centre line.
+  return profile.loops.reduce((total, loop) => total + loop.segments.length, 0) * Math.max(1, profile.path?.length ?? 1);
 }
 
 /**

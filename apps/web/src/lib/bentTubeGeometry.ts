@@ -334,7 +334,7 @@ type Profile2D = Array<[number, number]>;
  * vertex count that follows the quality. Points run counter-clockwise in
  * (u, v), whose normal is the running direction.
  */
-function profilePoints(profile: BentTubeProfile, circumradius: number, quality: number): Profile2D {
+export function profilePoints(profile: BentTubeProfile, circumradius: number, quality: number): Profile2D {
   const sides = profileSides(profile, quality);
   const step = (Math.PI * 2) / sides;
   const offset = ((Math.PI / 2 - Math.PI / sides) % step + step) % step;
@@ -349,8 +349,21 @@ function profilePoints(profile: BentTubeProfile, circumradius: number, quality: 
 export type BentTubeProfiles = { outer: Profile2D; inner: Profile2D | null };
 
 export function bentTubeProfiles(settings: BentTubeSettings): BentTubeProfiles {
+  const { profile, innerProfile, quality } = settings;
+  const radii = bentTubeProfileRadii(settings);
+  const outer = profilePoints(profile, radii.outer, quality);
+  if (innerProfile === "none" || radii.inner === null) return { outer, inner: null };
+  return { outer, inner: profilePoints(innerProfile, radii.inner, quality) };
+}
+
+/**
+ * Circumradius of the outer profile and of the opening (null when solid): the
+ * corners of a polygonal profile lie on that circle, and a round profile is
+ * that circle - the display draws it with `quality` corners on it.
+ */
+export function bentTubeProfileRadii(settings: BentTubeSettings): { outer: number; inner: number | null } {
   const { profile, innerProfile, size, wall, quality } = settings;
-  const outer = profilePoints(profile, bentTubeOuterCircumradius(profile, size, quality), quality);
+  const outer = bentTubeOuterCircumradius(profile, size, quality);
   if (innerProfile === "none") return { outer, inner: null };
   let innerCircumradius: number;
   if (innerProfile === profile) {
@@ -363,7 +376,75 @@ export function bentTubeProfiles(settings: BentTubeSettings): BentTubeProfiles {
     // Different profiles: the wall is its thinnest point, at the inner corners.
     innerCircumradius = outerInradius(profile, size, quality) - wall;
   }
-  return { outer, inner: profilePoints(innerProfile, Math.max(MIN_BENT_TUBE_INNER_RADIUS, innerCircumradius), quality) };
+  return { outer, inner: Math.max(MIN_BENT_TUBE_INNER_RADIUS, innerCircumradius) };
+}
+
+/**
+ * One piece of the centre line for the exact body: a straight run or a bend.
+ * `frame` is a 3x4 matrix, row by row, that sets a section drawn in the X/Z
+ * plane at the start of the piece: local X runs along the profile's v axis,
+ * local Y along the running direction and local Z along u, so a profile point
+ * (a, b) in (u, v) is drawn at x = b, z = a. The matrix keeps handedness
+ * (det +1). A bend turns the section about `axis` through `center` by
+ * `angle` radians, right-handed - the same rotation bentTubeStations applies.
+ */
+export type BentTubePathPiece =
+  | { kind: "straight"; frame: number[]; length: number }
+  | { kind: "bend"; frame: number[]; center: Vec3; axis: Vec3; angle: number };
+
+/**
+ * The centre line as straight runs and true circular bends, walked exactly as
+ * bentTubeStations walks it; the exact body is the section pushed along each
+ * run and turned through each bend.
+ */
+export function bentTubePathPieces(settings: BentTubeSettings): BentTubePathPiece[] {
+  let point: Vec3 = [0, 0, 0];
+  let tangent: Vec3 = [1, 0, 0];
+  let bendDirection: Vec3 = [0, 0, -1];
+  let u: Vec3 = [0, 0, -1];
+  let v: Vec3 = [0, 1, 0];
+  const pieces: BentTubePathPiece[] = [];
+  const frame = () => [
+    v[0], tangent[0], u[0], point[0],
+    v[1], tangent[1], u[1], point[1],
+    v[2], tangent[2], u[2], point[2],
+  ];
+  settings.segments.forEach((segment) => {
+    bendDirection = normalize(rotate(bendDirection, tangent, (segment.roll * Math.PI) / 180));
+    if (segment.length > STATION_EPSILON) {
+      pieces.push({ kind: "straight", frame: frame(), length: segment.length });
+      point = add(point, scale(tangent, segment.length));
+    }
+    if (Math.abs(segment.bendAngle) > 1e-9) {
+      const toward = segment.bendAngle < 0 ? scale(bendDirection, -1) : bendDirection;
+      const axis = normalize(cross(tangent, toward));
+      const center = add(point, scale(toward, segment.bendRadius));
+      const total = (Math.abs(segment.bendAngle) * Math.PI) / 180;
+      pieces.push({ kind: "bend", frame: frame(), center, axis, angle: total });
+      point = add(center, rotate(sub(point, center), axis, total));
+      tangent = normalize(rotate(tangent, axis, total));
+      u = normalize(rotate(u, axis, total));
+      v = normalize(rotate(v, axis, total));
+      bendDirection = normalize(rotate(bendDirection, axis, total));
+    }
+  });
+  return pieces;
+}
+
+/**
+ * How the body built in its own frame (path from the origin) is placed in the
+ * shape's local frame: moved so the box is centred in X and Z and rests on
+ * y = 0, and stretched to the shape's width, height and depth - exactly what
+ * createBentTubeGeometry does to the display mesh.
+ */
+export function bentTubeLocalPlacement(options: BentTubeGeometryOptions) {
+  const mesh = buildBentTubeMesh(bentTubeSettings(options));
+  const { min, max } = boundsOf(mesh.positions, mesh.outerVertexCount);
+  const natural: Vec3 = [Math.max(1e-6, max[0] - min[0]), Math.max(1e-6, max[1] - min[1]), Math.max(1e-6, max[2] - min[2])];
+  return {
+    centre: [(min[0] + max[0]) / 2, min[1], (min[2] + max[2]) / 2] as Vec3,
+    factor: [Math.max(0.01, options.width) / natural[0], Math.max(0.01, options.height) / natural[1], Math.max(0.01, options.depth) / natural[2]] as Vec3,
+  };
 }
 
 function signedArea(points: Profile2D) {
@@ -500,6 +581,7 @@ export type BentTubeGeometryOptions = BentTubeShapeFields & {
  * and stretched to the shape's box (1:1 as long as the box is the natural size).
  */
 function localFrame(mesh: BentTubeMesh, width: number, depth: number, height: number) {
+  // bentTubeLocalPlacement computes the same centre and factor for the exact body.
   const { min, max } = boundsOf(mesh.positions, mesh.outerVertexCount);
   const natural: Vec3 = [Math.max(1e-6, max[0] - min[0]), Math.max(1e-6, max[1] - min[1]), Math.max(1e-6, max[2] - min[2])];
   const factor: Vec3 = [Math.max(0.01, width) / natural[0], Math.max(0.01, height) / natural[1], Math.max(0.01, depth) / natural[2]];
