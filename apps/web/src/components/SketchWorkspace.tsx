@@ -281,10 +281,10 @@ function segmentDimension(segment: SketchSegment, pointById: Map<string, SketchP
 
 type PlaneEdge = { from: { x: number; z: number }; to: { x: number; z: number } };
 
-// Outline of every closed path, curves flattened, for inside/outside tests.
-function closedPathEdges(paths: DisplayPath[]) {
+// Outline of the given paths with curves flattened, for inside/outside and crossing tests.
+function pathEdges(paths: DisplayPath[]) {
   const edges: PlaneEdge[] = [];
-  paths.filter((path) => path.closed).forEach((path) => {
+  paths.forEach((path) => {
     path.steps.forEach((step) => {
       const controls = curveControls(step);
       if (step.segment.kind === "line" || !controls.first || !controls.second) {
@@ -300,6 +300,12 @@ function closedPathEdges(paths: DisplayPath[]) {
     });
   });
   return edges;
+}
+
+function segmentsCross(a: { x: number; z: number }, b: { x: number; z: number }, c: { x: number; z: number }, d: { x: number; z: number }) {
+  const side = (origin: { x: number; z: number }, to: { x: number; z: number }, point: { x: number; z: number }) =>
+    (to.x - origin.x) * (point.z - origin.z) - (to.z - origin.z) * (point.x - origin.x);
+  return (side(c, d, a) > 0) !== (side(c, d, b) > 0) && (side(a, b, c) > 0) !== (side(a, b, d) > 0);
 }
 
 function isInsideEdges(point: { x: number; z: number }, edges: PlaneEdge[]) {
@@ -680,7 +686,8 @@ export function SketchWorkspace({
   }, [pointerAction, profile.images]);
   const pointById = useMemo(() => new Map(displayProfile.points.map((point) => [point.id, point])), [displayProfile.points]);
   const paths = useMemo(() => orderedPaths(displayProfile), [displayProfile]);
-  const closedEdges = useMemo(() => closedPathEdges(paths), [paths]);
+  const closedEdges = useMemo(() => pathEdges(paths.filter((path) => path.closed)), [paths]);
+  const allEdges = useMemo(() => pathEdges(paths), [paths]);
   const profileCentroid = useMemo(() => {
     const count = Math.max(1, displayProfile.points.length);
     return {
@@ -903,11 +910,13 @@ export function SketchWorkspace({
   const focusSelection = useCallback(() => {
     if (!focusBounds) return;
     const margin = 1.3;
-    const spanX = (focusBounds.maxX - focusBounds.minX) * margin;
-    const spanZ = (focusBounds.maxZ - focusBounds.minZ) * margin;
-    const fit = Math.min(spanX > 0 ? workspace.width / spanX : Infinity, spanZ > 0 ? workspace.depth / spanZ : Infinity);
+    // A lone point or a tiny selection has next to no extent; a quarter of the
+    // plate keeps it in context instead of diving straight to the maximum zoom.
+    const minimumSpan = Math.max(workspace.width, workspace.depth) / 4;
+    const spanX = Math.max((focusBounds.maxX - focusBounds.minX) * margin, minimumSpan);
+    const spanZ = Math.max((focusBounds.maxZ - focusBounds.minZ) * margin, minimumSpan);
     setView({
-      zoom: clamp(Number.isFinite(fit) ? fit : SKETCH_MAX_ZOOM, SKETCH_MIN_ZOOM, SKETCH_MAX_ZOOM),
+      zoom: clamp(Math.min(workspace.width / spanX, workspace.depth / spanZ), SKETCH_MIN_ZOOM, SKETCH_MAX_ZOOM),
       pan: {
         x: clamp((focusBounds.minX + focusBounds.maxX) / 2, -workspace.width / 2, workspace.width / 2),
         z: clamp((focusBounds.minZ + focusBounds.maxZ) / 2, -workspace.depth / 2, workspace.depth / 2),
@@ -984,34 +993,27 @@ export function SketchWorkspace({
     const start = pointById.get(segment.startId);
     const end = pointById.get(segment.endId);
     if (!dimension || !start || !end) return [];
-    const normal = outwardNormal(dimension.midpoint, dimension.tangent, closedEdges, profileCentroid, 2 * screenUnit);
-    if (!normal) return [];
+    const preferred = outwardNormal(dimension.midpoint, dimension.tangent, closedEdges, profileCentroid, 2 * screenUnit);
+    if (!preferred) return [];
     const curved = segment.kind !== "line" && Boolean(start.handleOut && end.handleIn);
     const label = formatDimension(dimension.length, workspace.accuracy);
     const pill = dimensionPillSize(label, screenUnit, 18);
     const anchor = curved ? dimension.midpoint : { x: (start.x + end.x) / 2, z: (start.z + end.z) / 2 };
     // Far enough out that the level pill clears the segment it measures.
-    const pillReach = Math.abs(normal.x) * pill.width / 2 + Math.abs(normal.z) * pill.height / 2;
-    const padding = 3 * screenUnit;
-    const pillRect = (distance: number) => {
-      const x = anchor.x + normal.x * distance;
-      const z = anchor.z + normal.z * distance;
-      return { minX: x - pill.width / 2 - padding, maxX: x + pill.width / 2 + padding, minZ: z - pill.height / 2 - padding, maxZ: z + pill.height / 2 + padding };
-    };
-    const overlaps = (rect: ReturnType<typeof pillRect>) =>
-      placedPills.some((other) => rect.minX < other.maxX && rect.maxX > other.minX && rect.minZ < other.maxZ && rect.maxZ > other.minZ);
-    let offset = Math.max(34 * screenUnit, pillReach + 14 * screenUnit);
-    for (let guard = 0; guard < 60 && overlaps(pillRect(offset)); guard += 1) offset += 4 * screenUnit;
-    placedPills.push(pillRect(offset));
-    const labelPosition = { x: anchor.x + normal.x * offset, z: anchor.z + normal.z * offset };
+    const pillReach = Math.abs(preferred.x) * pill.width / 2 + Math.abs(preferred.z) * pill.height / 2;
+    const baseOffset = Math.max(34 * screenUnit, pillReach + 14 * screenUnit);
+    const gap = 4 * screenUnit;
+    const overshoot = 10 * screenUnit;
     // Where the dimension runs: both ends of a line, or points along a curve, each
-    // with the outward normal there, so a curve's dimension follows it at `offset`.
+    // with the normal there on the chosen side, so a curve's dimension follows it.
     type Vector = { x: number; z: number };
-    let samples: Array<{ point: Vector; normal: Vector }> = [{ point: start, normal }, { point: end, normal }];
-    if (curved && start.handleOut && end.handleIn) {
-      const curvePoints = Array.from({ length: 33 }, (_, index) => cubicPoint(start, start.handleOut!, end.handleIn!, end, index / 32));
+    const curvePoints = curved && start.handleOut && end.handleIn
+      ? Array.from({ length: 33 }, (_, index) => cubicPoint(start, start.handleOut!, end.handleIn!, end, index / 32))
+      : null;
+    const samplesFor = (normal: Vector): Array<{ point: Vector; normal: Vector }> => {
+      if (!curvePoints) return [{ point: start, normal }, { point: end, normal }];
       const side = -dimension.tangent.z * normal.x + dimension.tangent.x * normal.z >= 0 ? 1 : -1;
-      samples = curvePoints.map((point, index) => {
+      return curvePoints.map((point, index) => {
         const before = curvePoints[Math.max(0, index - 1)];
         const after = curvePoints[Math.min(curvePoints.length - 1, index + 1)];
         const length = Math.hypot(after.x - before.x, after.z - before.z);
@@ -1020,7 +1022,47 @@ export function SketchWorkspace({
           normal: length > 1e-9 ? { x: (-(after.z - before.z) / length) * side, z: ((after.x - before.x) / length) * side } : normal,
         };
       });
-    }
+    };
+    // How badly a side is obstructed: sketch lines crossed by the extension lines
+    // (and the midpoint's), and a curve offset past its own centre, which turns the
+    // dimension inside out - a small hole has no room for a dimension inside it.
+    const obstruction = (normal: Vector) => {
+      const samples = samplesFor(normal);
+      const rays = [samples[0], { point: anchor, normal }, samples[samples.length - 1]].map(({ point, normal: direction }) => [
+        { x: point.x + direction.x * gap, z: point.z + direction.z * gap },
+        { x: point.x + direction.x * (baseOffset + overshoot), z: point.z + direction.z * (baseOffset + overshoot) },
+      ]);
+      let crossings = 0;
+      rays.forEach(([from, to]) => allEdges.forEach((edge) => {
+        if (segmentsCross(from, to, edge.from, edge.to)) crossings += 1;
+      }));
+      const inverted = samples.slice(1).some((sample, index) => {
+        const previous = samples[index];
+        const along = { x: sample.point.x - previous.point.x, z: sample.point.z - previous.point.z };
+        const offsetAlong = {
+          x: along.x + (sample.normal.x - previous.normal.x) * baseOffset,
+          z: along.z + (sample.normal.z - previous.normal.z) * baseOffset,
+        };
+        return along.x * offsetAlong.x + along.z * offsetAlong.z < 0;
+      });
+      return crossings + (inverted ? 1000 : 0);
+    };
+    const opposite = { x: -preferred.x, z: -preferred.z };
+    const preferredObstruction = obstruction(preferred);
+    const normal = preferredObstruction > 0 && obstruction(opposite) < preferredObstruction ? opposite : preferred;
+    const padding = 3 * screenUnit;
+    const pillRect = (distance: number) => {
+      const x = anchor.x + normal.x * distance;
+      const z = anchor.z + normal.z * distance;
+      return { minX: x - pill.width / 2 - padding, maxX: x + pill.width / 2 + padding, minZ: z - pill.height / 2 - padding, maxZ: z + pill.height / 2 + padding };
+    };
+    const overlaps = (rect: ReturnType<typeof pillRect>) =>
+      placedPills.some((other) => rect.minX < other.maxX && rect.maxX > other.minX && rect.minZ < other.maxZ && rect.maxZ > other.minZ);
+    let offset = baseOffset;
+    for (let guard = 0; guard < 60 && overlaps(pillRect(offset)); guard += 1) offset += 4 * screenUnit;
+    placedPills.push(pillRect(offset));
+    const labelPosition = { x: anchor.x + normal.x * offset, z: anchor.z + normal.z * offset };
+    const samples = samplesFor(normal);
     return [{ segment, label, pill, offset, labelPosition, samples }];
   });
   const referenceFootprints = useMemo(
