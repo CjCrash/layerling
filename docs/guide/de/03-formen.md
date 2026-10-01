@@ -50,8 +50,8 @@ Runde Formen wie Zylinder, Kegel, Rohr, Ellipse oder die Bohrungen haben in den 
 **Wo sie keine Rolle spielt**
 
 - **Beim STEP-Export.** Er schreibt die runde Form, nicht das Vieleck.
-- **Bei Fasen und Verrundungen** ({{ui:editor.tool.chamfer}}, {{ui:editor.tool.fillet}}), solange die Form rund bleibt. Das ist der Fall, wenn du keine Seitenzahl eingestellt hast, wenn die Zahl mindestens so hoch ist wie der Vorgabewert der Form oder wenn das Vieleck höchstens {{value:EXACT_ROUND_TOLERANCE}} mm vom Kreis abweicht. Der Vorgabewert ist {{value:ROUND_FROM_SIDES}} Seiten bei Zylinder, Ellipse, Rohr und Kegel, {{value:ROUND_FROM_ROOF_SIDES}} beim {{ui:shape.roundRoof}}, {{value:ROUND_FROM_SPHERE_STEPS}} Schritte bei der {{ui:shape.sphere}} und {{value:ROUND_FROM_HALF_SPHERE_STEPS}} bei der {{ui:shape.halfSphere}}.
-- **Gewinde, Feder und gebogenes Rohr** sind noch Dreiecksnetze, dort zählt die Feinheit auch für die Kantenbearbeitung.
+- **Bei Fasen und Verrundungen** ({{ui:editor.tool.chamfer}}, {{ui:editor.tool.fillet}}), solange die Form rund bleibt. Das ist der Fall, wenn du keine Seitenzahl eingestellt hast, wenn die Zahl mindestens so hoch ist wie der Vorgabewert der Form oder wenn das Vieleck höchstens {{value:EXACT_ROUND_TOLERANCE}} mm vom Kreis abweicht. Der Vorgabewert ist {{value:ROUND_FROM_SIDES}} Seiten bei Zylinder, Ellipse, Rohr und Kegel, {{value:ROUND_FROM_ROOF_SIDES}} beim {{ui:shape.roundRoof}}, {{value:ROUND_FROM_SPHERE_STEPS}} Schritte bei der {{ui:shape.sphere}}, {{value:ROUND_FROM_HALF_SPHERE_STEPS}} bei der {{ui:shape.halfSphere}} und eine {{ui:prop.quality}} von {{value:ROUND_FROM_BENT_TUBE_QUALITY}} bei einem runden {{ui:shape.bentTube}}.
+- **Gewinde und Feder** sind noch Dreiecksnetze, dort zählt die Feinheit auch für die Kantenbearbeitung.
 
 **Wo sie wieder wichtig wird**
 

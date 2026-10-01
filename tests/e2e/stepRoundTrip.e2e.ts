@@ -186,6 +186,24 @@ describe("STEP export round-trip (real OCCT kernel)", () => {
     expect(Math.abs(await reimportVolume(blob) - expected) / expected).toBeLessThan(0.01);
   });
 
+  it("exports a bent tube as its exact swept body instead of skipping it", async () => {
+    const { bentTubeNaturalDimensions, normalizedBentTubeFields } = await import("@/lib/bentTubeGeometry");
+    const fields = normalizedBentTubeFields({ bentTubeSize: 10, bentTubeWall: 1.5, bentTubeSegments: [{ length: 25, bendAngle: 90, bendRadius: 15, roll: 0 }, { length: 25, bendAngle: 0, bendRadius: 15, roll: 0 }] });
+    const natural = bentTubeNaturalDimensions(fields);
+    const tube = shape({ kind: "bentTube", name: "Bent tube", ...fields, width: natural.width, depth: natural.depth, height: natural.height, size: natural.size });
+    // Drawn with twelve corners it still goes out round, like every round shape - placed where the drawn tube stands.
+    const coarseFields = normalizedBentTubeFields({ ...fields, bentTubeQuality: 12 });
+    const coarseNatural = bentTubeNaturalDimensions(coarseFields);
+    const coarse = shape({ kind: "bentTube", name: "Coarse bent tube", x: 80, ...coarseFields, width: coarseNatural.width, depth: coarseNatural.depth, height: coarseNatural.height, size: coarseNatural.size });
+
+    const { blob, exportedCount, skipped } = await exportShapesToStep([tube, coarse]);
+    expect(exportedCount).toBe(2);
+    expect(skipped).toEqual([]);
+    // Section times centre line (25 + a quarter of 15 + 25), twice.
+    const expected = 2 * PI * (5 ** 2 - 3.5 ** 2) * (50 + (PI / 2) * 15);
+    expect(near(await reimportVolume(blob), expected, 1e-4)).toBe(true);
+  });
+
   it("exports a star, a heart and a teardrop instead of skipping them", async () => {
     const star = shape({ kind: "star", name: "Star", x: -30, width: 20, depth: 20, height: 5 });
     const heart = shape({ kind: "heart", name: "Heart", x: 0, width: 20, depth: 20, height: 5 });

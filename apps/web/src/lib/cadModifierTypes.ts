@@ -82,6 +82,18 @@ export type CadModifierProfileLoop = {
 };
 
 /**
+ * One piece of a sweep's centre line (the bent tube). `frame` is a 3x4 matrix,
+ * row by row, that places the section - drawn in the X/Z plane - at the start
+ * of the piece, with local +Y the running direction; it keeps handedness. A
+ * straight piece pushes the placed section `length` along that direction, a
+ * bend turns it `angle` radians about `axis` through `center` (right-handed).
+ * All in the frame the part's `transform` then places.
+ */
+export type CadModifierSweepPiece =
+  | { kind: "straight"; frame: number[]; length: number }
+  | { kind: "bend"; frame: number[]; center: [number, number, number]; axis: [number, number, number]; angle: number };
+
+/**
  * A catalog shape whose body is its outline pushed straight up (or a section turned around an axis): the CAD worker
  * builds it as an exact solid (lines, arcs, flat caps) from the shape's own
  * parameters instead of sewing the display mesh back together.
@@ -91,11 +103,16 @@ export type CadModifierProfilePart = {
    * "extrusion": the outline in the local X/Z plane pushed up by `height`.
    * "revolution": the loop is a half-section (x = distance from the axis,
    * z = position along it, x >= 0) turned once around the Z axis, `height`
-   * long; the transform stands the axis up. Either way `transform` places the
-   * result on the shape (for the teardrop it also lays the extrusion on its
-   * side).
+   * long; the transform stands the axis up.
+   * "sweep": the loops are a cross-section, pushed along the straight pieces
+   * of `path` and turned through its bends, the pieces fused into one body;
+   * `height` is the length of the centre line.
+   * Either way `transform` places the result on the shape (for the teardrop it
+   * also lays the extrusion on its side).
    */
-  kind: "extrusion" | "revolution";
+  kind: "extrusion" | "revolution" | "sweep";
+  /** Sweep only: the centre line, piece by piece. */
+  path?: CadModifierSweepPiece[];
   /** Extrusion only: round every edge of the two flat ends by this radius (a rounded box). */
   capFillet?: number;
   /** The first loop is the outer boundary, any further loops are holes. */
