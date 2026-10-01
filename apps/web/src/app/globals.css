@@ -2953,10 +2953,6 @@ button {
   min-width: 104px;
 }
 
-.sketch-measure-section {
-  min-width: 58px;
-}
-
 .sketch-start-section {
   min-width: 360px;
 }
@@ -3286,7 +3282,6 @@ button {
 .toolbar-section[data-group="help"] { --group-color: var(--group-help); }
 .toolbar-section[data-group="draw"],
 .toolbar-section[data-group="select"],
-.toolbar-section[data-group="inspect"],
 .toolbar-section[data-group="finish"],
 .toolbar-section[data-group="create"] { --group-color: var(--group-sketch); }
 
