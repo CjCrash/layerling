@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Crosshair, Cuboid, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, Rows3, Ruler, RulerDimensionLine, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crosshair, Cuboid, FlipHorizontal, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, RotateCcw, Rows3, Ruler, RulerDimensionLine, Slice, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type DragEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type SetStateAction, type WheelEvent as ReactWheelEvent } from "react";
+import { computeSectionPlaneVector, DEFAULT_SECTION_SETTINGS, getSectionBounds, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
 import * as THREE from "three";
 import { Brush, Evaluator, HOLLOW_INTERSECTION } from "three-bvh-csg";
 import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
@@ -36,7 +37,7 @@ import { createBentTubeGeometry } from "@/lib/bentTubeGeometry";
 import { createThreadGeometry } from "@/lib/threadGeometry";
 import { createSpringGeometry } from "@/lib/springGeometry";
 import { createTextGeometry } from "@/lib/textGeometry";
-import { formatLengthMm, parseLengthMm, parseMeasurementInput, resolveLengthMm, setLengthUnit } from "@/lib/measurementUnits";
+import { formatLengthMm, lengthDisplayUnit, parseLengthMm, parseMeasurementInput, resolveLengthMm, setLengthUnit } from "@/lib/measurementUnits";
 import {
   computeCornerRulerRelativeCoordinates,
   computeCornerRulerShift,
@@ -389,6 +390,8 @@ type ThreeState = {
   lastOverlaySync: number;
   lastViewCubeSync: number;
   rotationHandleSides: RotationHandleSides | null;
+  sectionPlane: THREE.Plane | null;
+  sectionPlaneHelper: THREE.Group | null;
   disposeInteractionListeners: () => void;
   resize: () => void;
 };
@@ -3615,6 +3618,12 @@ export function WorkplaneViewport({
   const [originDimensionOverlay, setOriginDimensionOverlay] = useState<OriginDimensionOverlayData | null>(null);
   const [originDimensionsEnabled, setOriginDimensionsEnabled] = useState(true);
   const [startInPerspective, setStartInPerspective] = useState(true);
+  const [sectionViewOpen, setSectionViewOpen] = useState(false);
+  const [sectionSettings, setSectionSettings] = useState<SectionPlaneSettings>(DEFAULT_SECTION_SETTINGS);
+  const sectionSettingsRef = useRef(sectionSettings);
+  sectionSettingsRef.current = sectionSettings;
+  const sectionViewOpenRef = useRef(sectionViewOpen);
+  sectionViewOpenRef.current = sectionViewOpen;
   const hostRef = useRef<HTMLDivElement | null>(null);
   const threeRef = useRef<ThreeState | null>(null);
   const shapesRef = useRef(shapes);
@@ -4445,6 +4454,11 @@ export function WorkplaneViewport({
       disposeChildren(state.moveDimensionLayer);
       disposeChildren(state.originDimensionLayer);
       disposeChildren(state.modifierLayer);
+      if (state.sectionPlaneHelper) {
+        state.scene.remove(state.sectionPlaneHelper);
+        disposeObject(state.sectionPlaneHelper);
+        state.sectionPlaneHelper = null;
+      }
       state.renderer.dispose();
       host.replaceChildren();
       if (window.layerlingCaptureCanvas) {
@@ -5830,6 +5844,7 @@ export function WorkplaneViewport({
 
     const intersections = state.raycaster.intersectObjects(state.shapeLayer.children, true);
     const hit = intersections.find((entry) => {
+      if (state.sectionPlane && state.sectionPlane.distanceToPoint(entry.point) < -0.001) return false;
       const shapeId = entry.object.userData.shapeId;
       if (typeof shapeId !== "string") return false;
       const shape = shapesRef.current.find((candidate) => candidate.id === shapeId);
@@ -5868,7 +5883,10 @@ export function WorkplaneViewport({
 
     const hit = state.raycaster
       .intersectObjects(state.shapeLayer.children, true)
-      .find((entry) => entry.object instanceof THREE.Mesh && entry.face && typeof entry.object.userData.shapeId === "string");
+      .find((entry) => {
+        if (state.sectionPlane && state.sectionPlane.distanceToPoint(entry.point) < -0.001) return false;
+        return entry.object instanceof THREE.Mesh && entry.face && typeof entry.object.userData.shapeId === "string";
+      });
     if (!hit?.face) return null;
 
     const surface = hit.object as THREE.Mesh<THREE.BufferGeometry>;
@@ -5934,6 +5952,7 @@ export function WorkplaneViewport({
     state.raycaster.setFromCamera(state.pointer, state.camera);
     state.raycaster.layers.set(RENDER_LAYER_SHAPES);
     const hit = state.raycaster.intersectObjects(state.shapeLayer.children, true).find((entry) => {
+      if (state.sectionPlane && state.sectionPlane.distanceToPoint(entry.point) < -0.001) return false;
       const shapeId = entry.object.userData.shapeId;
       if (typeof shapeId !== "string") return false;
       const shape = shapesRef.current.find((candidate) => candidate.id === shapeId);
@@ -7066,6 +7085,9 @@ export function WorkplaneViewport({
   const toggleTapeTools = useCallback(() => {
     const next = !tapeToolsOpen;
     setTapeToolsOpen(next);
+    if (next) {
+      setSectionViewOpen(false);
+    }
     setTapeActive(false);
     tapeDeleteModeRef.current = false;
     setTapeDeleteMode(false);
@@ -7107,6 +7129,7 @@ export function WorkplaneViewport({
   const collapseCameraControls = useCallback(() => {
     setCameraControlsCollapsed(true);
     setTapeToolsOpen(false);
+    setSectionViewOpen(false);
     setTapeActive(false);
     tapeDeleteModeRef.current = false;
     setTapeDeleteMode(false);
@@ -7114,6 +7137,101 @@ export function WorkplaneViewport({
     setTapeMoveMode(false);
     tapePointDragRef.current = null;
   }, [setTapeActive]);
+
+  const syncSectionClippingState = useCallback((settings: SectionPlaneSettings) => {
+    const state = threeRef.current;
+    if (!state) return;
+
+    if (!settings.enabled) {
+      if (state.sectionPlane) {
+        applySectionClipping(state, null);
+      }
+      updateSectionPlaneHelper(state, settings, workspaceRef.current);
+      return;
+    }
+
+    const { normal, constant } = computeSectionPlaneVector(settings);
+    if (!state.sectionPlane) {
+      const plane = new THREE.Plane(new THREE.Vector3(normal.x, normal.y, normal.z), constant);
+      applySectionClipping(state, plane);
+    } else {
+      state.sectionPlane.normal.set(normal.x, normal.y, normal.z);
+      state.sectionPlane.constant = constant;
+      applySectionClipping(state, state.sectionPlane);
+    }
+    updateSectionPlaneHelper(state, settings, workspaceRef.current);
+  }, []);
+
+  useEffect(() => {
+    syncSectionClippingState(sectionSettings);
+  }, [sectionSettings, syncSectionClippingState]);
+
+  const toggleSectionView = useCallback(() => {
+    setSectionViewOpen((current) => {
+      const next = !current;
+      if (next) {
+        setTapeToolsOpen(false);
+        if (!sectionSettingsRef.current.enabled) {
+          const bounds = getSectionBounds(shapesRef.current, sectionSettingsRef.current.axis, workspaceRef.current.width, workspaceRef.current.depth);
+          setSectionSettings((prev) => ({
+            ...prev,
+            enabled: true,
+            offset: bounds.center,
+          }));
+        }
+      }
+      return next;
+    });
+  }, []);
+
+  const handleToggleSectionEnabled = useCallback((enabled: boolean) => {
+    setSectionSettings((prev) => {
+      const next = { ...prev, enabled };
+      if (enabled && prev.offset === 0) {
+        const bounds = getSectionBounds(shapesRef.current, prev.axis, workspaceRef.current.width, workspaceRef.current.depth);
+        next.offset = bounds.center;
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSelectSectionAxis = useCallback((axis: SectionPlaneAxis) => {
+    const bounds = getSectionBounds(shapesRef.current, axis, workspaceRef.current.width, workspaceRef.current.depth);
+    setSectionSettings((prev) => ({
+      ...prev,
+      axis,
+      offset: bounds.center,
+    }));
+  }, []);
+
+  const handleToggleSectionFlip = useCallback(() => {
+    setSectionSettings((prev) => ({
+      ...prev,
+      flipped: !prev.flipped,
+    }));
+  }, []);
+
+  const handleSectionOffsetChange = useCallback((offset: number) => {
+    setSectionSettings((prev) => ({
+      ...prev,
+      offset,
+    }));
+  }, []);
+
+  const handleResetSectionToCenter = useCallback(() => {
+    const bounds = getSectionBounds(shapesRef.current, sectionSettingsRef.current.axis, workspaceRef.current.width, workspaceRef.current.depth);
+    setSectionSettings((prev) => ({
+      ...prev,
+      offset: bounds.center,
+    }));
+  }, []);
+
+  const handleToggleShowSectionPlane = useCallback((showPlane: boolean) => {
+    setSectionSettings((prev) => ({
+      ...prev,
+      showPlane,
+    }));
+  }, []);
 
   const handleTapePointPointerDown = useCallback(
     (event: ReactPointerEvent<SVGCircleElement>, pointId: string) => {
@@ -7245,6 +7363,9 @@ export function WorkplaneViewport({
         event.preventDefault();
         cornerRulerModeRef.current = false;
         setCornerRulerMode(false);
+      } else if (event.key === "Escape" && sectionViewOpenRef.current) {
+        event.preventDefault();
+        setSectionViewOpen(false);
       } else if (shortcutView) {
         event.preventDefault();
         setViewCubeFace(shortcutView);
@@ -7274,7 +7395,7 @@ export function WorkplaneViewport({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [focusSelection, onWorkplaneModeChange, resetView, tapeToolsOpen, setPlacementWorkplaneAtSelection, setTapeActive, setViewCubeFace, togglePlacementWorkplane, toggleProjection, zoomCamera]);
+  }, [focusSelection, onWorkplaneModeChange, resetView, tapeToolsOpen, sectionViewOpen, setPlacementWorkplaneAtSelection, setTapeActive, setViewCubeFace, togglePlacementWorkplane, toggleProjection, zoomCamera]);
 
   return (
     <main className="workplane-stage">
@@ -7390,6 +7511,134 @@ export function WorkplaneViewport({
               >
                 <Ruler size={24} strokeWidth={2.15} aria-hidden="true" />
               </button>
+            </div>
+            <div className="section-control-group">
+              <button
+                className={`section-trigger ${sectionViewOpen || sectionSettings.enabled ? "active" : ""}`}
+                aria-label={t("camera.sectionView")}
+                title={t("camera.sectionView")}
+                aria-expanded={sectionViewOpen}
+                aria-controls="section-tool-popover"
+                onClick={toggleSectionView}
+              >
+                <Slice size={23} strokeWidth={2.15} aria-hidden="true" />
+              </button>
+              {sectionViewOpen ? (
+                <div id="section-tool-popover" className="section-tool-popover" aria-label={t("camera.sectionView")}>
+                  <div className="section-popover-header">
+                    <span className="section-popover-title">{t("camera.sectionView")}</span>
+                    <button
+                      type="button"
+                      className={`section-toggle-btn ${sectionSettings.enabled ? "active" : ""}`}
+                      onClick={() => handleToggleSectionEnabled(!sectionSettings.enabled)}
+                      aria-pressed={sectionSettings.enabled}
+                      title={sectionSettings.enabled ? t("camera.sectionActive") : t("camera.sectionInactive")}
+                    >
+                      {sectionSettings.enabled ? t("camera.sectionActive") : t("camera.sectionInactive")}
+                    </button>
+                    <button
+                      type="button"
+                      className="section-popover-close"
+                      aria-label={t("workspace.close")}
+                      title={t("workspace.close")}
+                      onClick={() => setSectionViewOpen(false)}
+                    >
+                      <X size={16} strokeWidth={2.4} aria-hidden="true" />
+                    </button>
+                  </div>
+
+                  {sectionSettings.enabled ? (
+                    <>
+                      <div className="section-popover-axis-row">
+                        <span className="section-label">{t("camera.sectionAxis")}</span>
+                        <div className="section-axis-buttons" role="radiogroup" aria-label={t("camera.sectionAxis")}>
+                          {(["x", "y", "z"] as const).map((ax) => (
+                            <button
+                              key={ax}
+                              type="button"
+                              role="radio"
+                              aria-checked={sectionSettings.axis === ax}
+                              className={`section-axis-btn ${sectionSettings.axis === ax ? "active" : ""}`}
+                              onClick={() => handleSelectSectionAxis(ax)}
+                              title={t(ax === "x" ? "camera.sectionAxisX" : ax === "y" ? "camera.sectionAxisY" : "camera.sectionAxisZ")}
+                            >
+                              {ax.toUpperCase()}
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          className={`section-flip-btn ${sectionSettings.flipped ? "active" : ""}`}
+                          onClick={handleToggleSectionFlip}
+                          aria-pressed={sectionSettings.flipped}
+                          title={t("camera.sectionFlip")}
+                          aria-label={t("camera.sectionFlip")}
+                        >
+                          <FlipHorizontal size={17} strokeWidth={2.2} aria-hidden="true" />
+                        </button>
+                      </div>
+
+                      {(() => {
+                        const bounds = getSectionBounds(shapes, sectionSettings.axis, workspace.width, workspace.depth);
+                        return (
+                          <div className="section-popover-slider-row">
+                            <span className="section-label">{t("camera.sectionOffset")}</span>
+                            <div className="section-slider-container">
+                              <input
+                                type="range"
+                                className="section-slider"
+                                min={bounds.min}
+                                max={bounds.max}
+                                step={bounds.step}
+                                value={sectionSettings.offset}
+                                onChange={(e) => handleSectionOffsetChange(parseFloat(e.target.value))}
+                                aria-label={t("camera.sectionOffset")}
+                              />
+                              <div className="section-number-wrap">
+                                <input
+                                  type="number"
+                                  className="section-number-input"
+                                  min={bounds.min}
+                                  max={bounds.max}
+                                  step={bounds.step}
+                                  value={Math.round(sectionSettings.offset * 10) / 10}
+                                  onChange={(e) => {
+                                    const val = parseFloat(e.target.value);
+                                    if (!Number.isNaN(val)) handleSectionOffsetChange(val);
+                                  }}
+                                  aria-label={t("camera.sectionOffset")}
+                                />
+                                <span className="section-unit">{lengthDisplayUnit(workspace).label}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      <div className="section-popover-footer">
+                        <button
+                          type="button"
+                          className="section-action-btn"
+                          onClick={handleResetSectionToCenter}
+                          title={t("camera.sectionResetHint")}
+                          aria-label={t("camera.sectionReset")}
+                        >
+                          <RotateCcw size={14} strokeWidth={2.2} aria-hidden="true" />
+                          <span>{t("camera.sectionReset")}</span>
+                        </button>
+                        <label className="section-checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={sectionSettings.showPlane}
+                            onChange={(e) => handleToggleShowSectionPlane(e.target.checked)}
+                          />
+                          <span>{t("camera.sectionShowPlane")}</span>
+                        </label>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </>
         )}
@@ -7621,6 +7870,7 @@ export function WorkplaneViewport({
 
 function createThreeScene(host: HTMLDivElement): ThreeState {
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance", preserveDrawingBuffer: false });
+  renderer.localClippingEnabled = true;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(host.clientWidth, host.clientHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -7754,6 +8004,8 @@ function createThreeScene(host: HTMLDivElement): ThreeState {
     lastOverlaySync: 0,
     lastViewCubeSync: 0,
     rotationHandleSides: null,
+    sectionPlane: null,
+    sectionPlaneHelper: null,
     disposeInteractionListeners: () => {},
     resize,
   };
@@ -8654,6 +8906,135 @@ function syncShapeObjectAppearance(object: THREE.Group, shape: WorkplaneShape, s
   freezeStaticObjectMatrices(object);
 }
 
+function applySectionClipping(state: ThreeState | null, plane: THREE.Plane | null) {
+  if (!state) return;
+  state.sectionPlane = plane;
+  const planes = plane ? [plane] : null;
+
+  state.shapeLayer.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    if (mesh.material) {
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      materials.forEach((mat) => {
+        if (!mat) return;
+        const hadPlanes = Boolean(mat.clippingPlanes && mat.clippingPlanes.length > 0);
+        const willHavePlanes = Boolean(planes && planes.length > 0);
+        mat.clippingPlanes = planes;
+        mat.clipShadows = true;
+        if (hadPlanes !== willHavePlanes) {
+          mat.needsUpdate = true;
+        }
+      });
+    }
+  });
+
+  sharedShapeMaterialCache.forEach((entry) => {
+    entry.material.clippingPlanes = planes;
+    entry.material.clipShadows = true;
+    entry.material.needsUpdate = true;
+  });
+
+  sharedLineMaterialCache.forEach((mat) => {
+    mat.clippingPlanes = planes;
+    mat.needsUpdate = true;
+  });
+
+  state.needsRender = true;
+}
+
+function updateSectionPlaneHelper(
+  state: ThreeState,
+  settings: SectionPlaneSettings,
+  workspace: WorkspaceSettings,
+) {
+  if (!settings.enabled || !settings.showPlane) {
+    if (state.sectionPlaneHelper) {
+      state.scene.remove(state.sectionPlaneHelper);
+      disposeObject(state.sectionPlaneHelper);
+      state.sectionPlaneHelper = null;
+      state.needsRender = true;
+    }
+    return;
+  }
+
+  const bounds = new THREE.Box3();
+  state.shapeRecords.forEach((record) => {
+    if (!record.shape.hidden) bounds.expandByObject(record.object);
+  });
+
+  const center = bounds.isEmpty()
+    ? new THREE.Vector3(0, 20, 0)
+    : bounds.getCenter(new THREE.Vector3());
+  const size = bounds.isEmpty()
+    ? new THREE.Vector3(workspace.width, 40, workspace.depth)
+    : bounds.getSize(new THREE.Vector3());
+
+  const spanX = Math.max(size.x * 1.3, workspace.width * 0.85, 80);
+  const spanY = Math.max(size.y * 1.3, 50);
+  const spanZ = Math.max(size.z * 1.3, workspace.depth * 0.85, 80);
+
+  let helper = state.sectionPlaneHelper;
+  if (!helper) {
+    helper = new THREE.Group();
+    helper.name = "SectionPlaneHelper";
+
+    const quadGeom = new THREE.PlaneGeometry(1, 1);
+    const quadMat = new THREE.MeshBasicMaterial({
+      color: "#00b4d8",
+      transparent: true,
+      opacity: 0.15,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const quad = new THREE.Mesh(quadGeom, quadMat);
+    quad.name = "SectionPlaneQuad";
+
+    const borderGeom = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-0.5, -0.5, 0),
+      new THREE.Vector3(0.5, -0.5, 0),
+      new THREE.Vector3(0.5, 0.5, 0),
+      new THREE.Vector3(-0.5, 0.5, 0),
+    ]);
+    const borderMat = new THREE.LineBasicMaterial({
+      color: "#00b4d8",
+      transparent: true,
+      opacity: 0.85,
+      linewidth: 1.5,
+      depthWrite: false,
+    });
+    const border = new THREE.LineLoop(borderGeom, borderMat);
+    border.name = "SectionPlaneBorder";
+
+    helper.add(quad);
+    helper.add(border);
+    setObjectRenderLayer(helper, RENDER_LAYER_HELPERS);
+    state.scene.add(helper);
+    state.sectionPlaneHelper = helper;
+  }
+
+  const quad = helper.getObjectByName("SectionPlaneQuad") as THREE.Mesh;
+  const border = helper.getObjectByName("SectionPlaneBorder") as THREE.LineLoop;
+
+  if (settings.axis === "x") {
+    helper.position.set(settings.offset, center.y, center.z);
+    helper.rotation.set(0, Math.PI / 2, 0);
+    quad.scale.set(spanZ, spanY, 1);
+    border.scale.set(spanZ, spanY, 1);
+  } else if (settings.axis === "y") {
+    helper.position.set(center.x, settings.offset, center.z);
+    helper.rotation.set(-Math.PI / 2, 0, 0);
+    quad.scale.set(spanX, spanZ, 1);
+    border.scale.set(spanX, spanZ, 1);
+  } else {
+    helper.position.set(center.x, center.y, settings.offset);
+    helper.rotation.set(0, 0, 0);
+    quad.scale.set(spanX, spanY, 1);
+    border.scale.set(spanX, spanY, 1);
+  }
+
+  state.needsRender = true;
+}
+
 function rebuildShapes(
   state: ThreeState | null,
   shapes: WorkplaneShape[],
@@ -8684,6 +9065,9 @@ function rebuildShapes(
       syncCutPreviewOverlays(state, visibleShapes);
     }
     rebuildSelectionHelpers(state, shapes, selectedIds, workplane);
+    if (state.sectionPlane) {
+      applySectionClipping(state, state.sectionPlane);
+    }
     state.needsRender = true;
     return;
   }
@@ -8755,6 +9139,9 @@ function rebuildShapes(
   }
 
   rebuildSelectionHelpers(state, shapes, selectedIds, workplane);
+  if (state.sectionPlane) {
+    applySectionClipping(state, state.sectionPlane);
+  }
   state.needsRender = true;
 }
 
@@ -9556,7 +9943,10 @@ function pickRotationPivot(state: ThreeState, clientX: number, clientY: number):
   state.raycaster.layers.set(RENDER_LAYER_SHAPES);
   const hit = state.raycaster
     .intersectObjects(state.shapeLayer.children, true)
-    .find((entry) => entry.object instanceof THREE.Mesh && entry.faceIndex !== undefined && entry.faceIndex !== null && typeof entry.object.userData.shapeId === "string");
+    .find((entry) => {
+      if (state.sectionPlane && state.sectionPlane.distanceToPoint(entry.point) < -0.001) return false;
+      return entry.object instanceof THREE.Mesh && entry.faceIndex !== undefined && entry.faceIndex !== null && typeof entry.object.userData.shapeId === "string";
+    });
   if (!hit || hit.faceIndex === undefined || hit.faceIndex === null) return null;
 
   const mesh = hit.object as THREE.Mesh<THREE.BufferGeometry>;
@@ -9586,7 +9976,10 @@ function pickLayFlatFace(state: ThreeState, clientX: number, clientY: number): L
   state.raycaster.layers.set(RENDER_LAYER_SHAPES);
   const hit = state.raycaster
     .intersectObjects(state.shapeLayer.children, true)
-    .find((entry) => entry.object instanceof THREE.Mesh && entry.face && typeof entry.object.userData.shapeId === "string");
+    .find((entry) => {
+      if (state.sectionPlane && state.sectionPlane.distanceToPoint(entry.point) < -0.001) return false;
+      return entry.object instanceof THREE.Mesh && entry.face && typeof entry.object.userData.shapeId === "string";
+    });
   if (!hit || !hit.face) return null;
   const mesh = hit.object as THREE.Mesh<THREE.BufferGeometry>;
   mesh.updateWorldMatrix(true, false);

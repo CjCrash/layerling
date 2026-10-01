@@ -2276,6 +2276,146 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   box-shadow: inset 3px 0 0 #dc3f36;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-tool-popover {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(207, 207, 207, 0.94);
+  box-shadow: 0 10px 28px rgba(61, 61, 61, 0.18), 0 2px 8px rgba(61, 61, 61, 0.1);
+  color: #313131;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-popover-title {
+  color: inherit;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .camera-controls .section-tool-popover .section-toggle-btn {
+  border: 1px solid #c8c8c8;
+  background: #efefef;
+  color: #606060;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .camera-controls .section-tool-popover .section-toggle-btn.active {
+  background: #d27009;
+  border-color: #b75e05;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(210, 112, 9, 0.35);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .camera-controls .section-tool-popover .section-popover-close {
+  border: none;
+  background: transparent;
+  color: #6e6e6e;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .camera-controls .section-tool-popover .section-popover-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #252525;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-label {
+  color: #606060;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-axis-buttons {
+  background: #e3e3e3;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .camera-controls .section-tool-popover .section-axis-btn {
+  border: none;
+  background: transparent;
+  color: #555555;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .camera-controls .section-tool-popover .section-axis-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+  color: #252525;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .camera-controls .section-tool-popover .section-axis-btn.active {
+  background: #ffffff;
+  color: #d27009;
+  box-shadow: 0 1px 3px rgba(61, 61, 61, 0.15);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .camera-controls .section-tool-popover .section-flip-btn {
+  border: 1px solid #d3d3d3;
+  background: #f9f9f9;
+  color: #555555;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .camera-controls .section-tool-popover .section-flip-btn:hover {
+  background: #ececec;
+  color: #252525;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .camera-controls .section-tool-popover .section-flip-btn.active {
+  background: #f3f3f3;
+  border-color: #f0a256;
+  color: #d27009;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-slider {
+  background: transparent;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-slider::-webkit-slider-runnable-track {
+  background: #d6d6d6;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-slider::-webkit-slider-thumb {
+  background: #ffffff;
+  border: 2px solid #d27009;
+  box-shadow: 0 1px 4px rgba(50, 50, 50, 0.2);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-slider::-moz-range-track {
+  background: #d6d6d6;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-slider::-moz-range-thumb {
+  background: #ffffff;
+  border: 2px solid #d27009;
+  box-shadow: 0 1px 4px rgba(50, 50, 50, 0.2);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-number-wrap {
+  background: #efefef;
+  border: 1px solid #d3d3d3;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-number-input {
+  border: none;
+  background: transparent;
+  color: inherit;
+  outline: none;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-unit {
+  color: #6e6e6e;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-popover-footer {
+  border-top: 1px solid #e3e3e3;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .camera-controls .section-tool-popover .section-action-btn {
+  border: 1px solid #d3d3d3;
+  background: #f9f9f9;
+  color: #555555;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .camera-controls .section-tool-popover .section-action-btn:hover {
+  background: #ececec;
+  color: #252525;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-checkbox-label {
+  color: #606060;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-checkbox-label input[type="checkbox"] {
+  accent-color: #d27009;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .workplane-plane {
   background: #fafafa;
 }
@@ -4108,6 +4248,7 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .top-action-panel,
 html[data-theme="dark"]:where([data-palette="graphite"]) .edge-modifier-panel,
 html[data-theme="dark"]:where([data-palette="graphite"]) .camera-controls,
 html[data-theme="dark"]:where([data-palette="graphite"]) .tape-tool-popover,
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-tool-popover,
 html[data-theme="dark"]:where([data-palette="graphite"]) .snap-menu {
   color: #e1e1e1;
   background: rgba(36, 36, 36, 0.97);
@@ -4245,6 +4386,88 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .camera-controls button
   color: #f5f5f5;
   background: rgba(67, 67, 67, 0.9);
   border-color: #575757;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-tool-popover .section-toggle-btn {
+  border-color: #464646;
+  background: #2f2f2f;
+  color: #b0b0b0;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-tool-popover .section-popover-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-label {
+  color: #858585;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-axis-buttons {
+  background: #282828;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-tool-popover .section-axis-btn {
+  color: #aaaaaa;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-tool-popover .section-axis-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-tool-popover .section-axis-btn.active {
+  background: #3a3a3a;
+  color: #ff9d3b;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-tool-popover .section-flip-btn {
+  border-color: #464646;
+  background: #2e2e2e;
+  color: #aaaaaa;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-tool-popover .section-flip-btn:hover {
+  background: #3a3a3a;
+  color: #ffffff;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-tool-popover .section-flip-btn.active {
+  background: #373737;
+  border-color: #bd6a17;
+  color: #ff9d3b;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-slider::-webkit-slider-runnable-track {
+  background: #3f3f3f;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-slider::-moz-range-track {
+  background: #3f3f3f;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-number-wrap {
+  background: #2c2c2c;
+  border-color: #464646;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-popover-footer {
+  border-top-color: #3d3d3d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-tool-popover .section-action-btn {
+  border-color: #464646;
+  background: #2e2e2e;
+  color: #aaaaaa;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-tool-popover .section-action-btn:hover {
+  background: #3a3a3a;
+  color: #ffffff;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-checkbox-label {
+  color: #858585;
 }
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .shape-inspector {
