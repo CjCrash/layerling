@@ -34,6 +34,19 @@ describe("printer presets", () => {
     }
   });
 
+  it("cover the common vendors, Snapmaker included", () => {
+    expect(PRINTER_PRESETS.length).toBeGreaterThanOrEqual(150);
+    const vendors = new Set(PRINTER_PRESETS.map((preset) => preset.vendor));
+    for (const vendor of ["Bambu Lab", "Prusa", "Creality", "Elegoo", "Anycubic", "Snapmaker", "BIQU", "Voron"]) {
+      expect(vendors.has(vendor)).toBe(true);
+    }
+    expect(printerPresetById("snapmaker-u1")).toMatchObject({ vendor: "Snapmaker", model: "U1", width: 270, depth: 270 });
+    expect(printerPresetById("snapmaker-artisan")).toMatchObject({ width: 400, depth: 400, height: 400 });
+    expect(printerPresetById("snapmaker-a350")).toMatchObject({ width: 320, depth: 350 });
+    expect(printerPresetById("creality-ender-5")).toMatchObject({ width: 220, depth: 220, height: 300 });
+    expect(printerPresetById("qidi-x-plus-5")).toMatchObject({ width: 320, depth: 320, height: 300 });
+  });
+
   it("are found by id", () => {
     expect(printerPresetById("bambu-lab-a1")).toMatchObject({ vendor: "Bambu Lab", model: "A1", width: 256, depth: 256, height: 256 });
     expect(printerPresetById("prusa-mk4")).toMatchObject({ width: 250, depth: 210 });
