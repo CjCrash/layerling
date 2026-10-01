@@ -103,6 +103,10 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
     shortcuts: [
       { combos: ["Esc"], label: "shortcuts.sketchEscape" },
       { combos: ["Delete", "Backspace"], label: "shortcuts.sketchDelete" },
+      { combos: ["Ctrl+C"], label: "shortcuts.copy" },
+      { combos: ["Ctrl+X"], label: "shortcuts.cut" },
+      { combos: ["Ctrl+V"], label: "shortcuts.paste" },
+      { combos: ["Ctrl+D"], label: "shortcuts.duplicate" },
       { combos: ["Ctrl+Z"], label: "shortcuts.undo" },
       { combos: ["Ctrl+Shift+Z", "Ctrl+Y"], label: "shortcuts.redo" },
       { combos: ["R"], label: "shortcuts.sketchRotate" },

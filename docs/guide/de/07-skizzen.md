@@ -21,6 +21,7 @@ Das Menüband des Skizzenmodus ist in Bereiche geteilt:
 - **Zeichnen:** {{ui:sketch.line}} setzt gerade Abschnitte: Punkte nacheinander anklicken. Die {{ui:sketch.bezier}} spannst du an ihren Griffen: Punkt anklicken und ziehen. Die {{ui:sketch.smooth}} legt einen fließenden Verlauf durch die Punkte, die du anklickst. Um den Umriss zu schließen, klickst du am Ende wieder auf den ersten Punkt.
 - **Formen:** {{ui:sketch.addShape}} bietet fertige Umrisse: {{ui:sketch.rectangle}}, {{ui:sketch.circle}}, {{ui:sketch.ellipse}}, {{ui:sketch.halfCircle}}, {{ui:sketch.pieSlice}}, {{ui:sketch.boltCircle}} (eine Scheibe mit Bohrungen), {{ui:sketch.triangle}} und {{ui:sketch.hexagon}}. Wähle eine aus und ziehe einen Rahmen auf.
 - **Auswahl:** {{ui:sketch.select}} verschiebt Punkte und Linien. {{ui:sketch.refine}}: Ein Klick auf einen Abschnitt setzt einen Punkt, ein Klick auf einen Punkt entfernt ihn. Dazu kommen {{ui:sketch.erase}} und das Einfügen eines Vorlagenbilds ({{ui:sketch.addImage}}).
+- **Zwischenablage:** {{ui:editor.tool.copy}}, {{ui:editor.tool.paste}}, {{ui:editor.tool.duplicate}} und {{ui:editor.tool.delete}} wirken auf die gewählten Punkte, Linien und Bilder, wie im 3D-Editor; [[Strg]]+[[X]] schneidet aus. Eingefügtes und Dupliziertes landet mit 10 mm Abstand neben dem Original, an einer freien Stelle, an der es keine vorhandene Linie berührt, so dass es nie mit dem Bestehenden verbunden wird. Es bleibt ausgewählt, so dass du es gleich an seinen Platz ziehen kannst.
 - **Verlauf:** {{ui:sketch.undo}} und {{ui:sketch.redo}}.
 - **Ansicht:** [[F]] holt die ganze Skizze ins Bild, [[Umschalt]]+[[F]] zoomt auf die Auswahl, wie im 3D-Editor. Das {{ui:camera.tapeTools}} in der Seitenleiste misst den Abstand zwischen zwei Punkten. Außerdem zeigt die Skizze Maße, sobald du etwas anklickst: bei einer Linie ihre Länge, bei einem Punkt die Längen der Linien, die dort zusammentreffen.
 
@@ -56,6 +57,10 @@ Mit {{ui:sketch.addImage}} legst du ein Foto oder eine Zeichnung unter die Skizz
 | --- | --- |
 | [[Esc]] | Linienzug beenden, Auswahl aufheben |
 | [[Entf]] | gewähltes Element löschen |
+| [[Strg]]+[[C]] | Auswahl kopieren |
+| [[Strg]]+[[X]] | Auswahl ausschneiden |
+| [[Strg]]+[[V]] | einfügen |
+| [[Strg]]+[[D]] | Auswahl duplizieren |
 | [[Strg]]+[[Z]] | rückgängig |
 | [[R]] | geschlossene Skizze um 45° drehen |
 | [[L]] | Vorlagenbild sperren oder entsperren |
