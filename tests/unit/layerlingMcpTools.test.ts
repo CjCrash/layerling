@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 // @ts-expect-error - die Brücke ist einfaches JavaScript und trägt keine Typen.
-import { creatableShapeKinds, shapeSettingSchema, tools } from "../../scripts/layerling-mcp-tools.mjs";
+import { creatableShapeKinds, shapeSettingSchema, threadProfiles, threadSizeNames, tools } from "../../scripts/layerling-mcp-tools.mjs";
 import { toolbarShapeAssets } from "@/lib/shapeCatalog";
 import { MCP_SHAPE_SETTING_KEYS } from "@/lib/mcpShapeSettings";
+import { THREAD_SIZES } from "@/lib/threadGeometry";
+import { THREAD_PROFILES } from "@/lib/threadProfiles";
 
 /*
  * Die Formenliste steht an zwei Stellen: im Katalog, aus dem das Formenmenü und
@@ -83,5 +85,25 @@ describe("the settings both shape tools accept", () => {
       .filter(([, value]) => !/(only|Cylinder|Sphere|Tube|Pyramid|Cone|Gear|Thread|Spring|Text)/i.test(value.description ?? ""))
       .map(([key]) => key);
     expect(vague).toEqual([]);
+  });
+});
+
+describe("the thread sizes and profiles the MCP bridge offers", () => {
+  it("offers exactly the editor's profiles", () => {
+    expect(threadProfiles).toEqual([...THREAD_PROFILES]);
+    const schema = shapeSettingSchema as Record<string, { enum?: string[] }>;
+    expect(schema.threadProfile.enum).toEqual([...THREAD_PROFILES]);
+  });
+
+  it("offers exactly the sizes of the editor's size menu, by the same names", () => {
+    expect(threadSizeNames).toEqual(THREAD_SIZES.map((size) => size.id));
+  });
+
+  it("takes threadSize in both shape tools", () => {
+    for (const name of ["layerling_create_shape", "layerling_update_object"]) {
+      const property = toolByName(name).inputSchema.properties?.threadSize as { enum?: string[]; description?: string };
+      expect(property?.enum).toEqual(threadSizeNames);
+      expect(property?.description).toMatch(/^Thread only/);
+    }
   });
 });

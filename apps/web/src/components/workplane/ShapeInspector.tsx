@@ -52,6 +52,8 @@ import {
   threadPitchLimits,
   threadSettings,
   threadSizeFor,
+  threadSizeById,
+  threadProfileForSize,
   threadUsesInchPitch,
   threadsPerInchToPitch,
   type ThreadSettings,
@@ -205,6 +207,7 @@ const THREAD_PROFILE_OPTIONS: Array<{ value: ThreadProfile; label: MessageKey }>
   { value: "v", label: "thread.profileV" },
   { value: "trapezoidal", label: "thread.profileTrapezoidal" },
   { value: "round", label: "thread.profileRound" },
+  { value: "whitworth", label: "thread.profileWhitworth" },
 ];
 
 type RangePropertyConfig = {
@@ -970,7 +973,7 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
       ...THREAD_SIZE_GROUPS.flatMap((group) => group.sizes.map((size) => ({
         value: size.id,
         label: size.id,
-        group: group.series === "metric" ? t("thread.systemMetric") : group.series,
+        group: group.series === "metric" ? t("thread.systemMetric") : group.series === "G" ? t("thread.systemPipe") : group.series,
       }))),
       { value: "custom", label: t("thread.customSize") },
     ];
@@ -1053,8 +1056,10 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
         value: standard ? standard.id : "custom",
         options: sizeOptions,
         onChange: (value) => {
-          const chosen = THREAD_SIZE_GROUPS.flatMap((group) => group.sizes).find((size) => size.id === value);
-          if (chosen) applyThread({ diameter: chosen.diameter, pitch: chosen.pitch });
+          const chosen = threadSizeById(value);
+          // Eine G-Groesse bringt ihr Whitworth-Profil mit, eine M-, UNC- oder
+          // UNF-Groesse das Spitzgewinde; Trapez und Rund bleiben stehen.
+          if (chosen) applyThread({ diameter: chosen.diameter, pitch: chosen.pitch, profile: threadProfileForSize(chosen, settings.profile) });
         },
       },
       {
@@ -1108,7 +1113,9 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
     properties.push(
       inchPitch
         ? {
-          id: "pitch",
+          // Eine eigene Kennung: unter "pitch" galt die Gangzahl als Laenge,
+          // trug "mm" und wurde in einem Zoll-Arbeitsbereich umgerechnet.
+          id: "threadsPerInch",
           label: t("prop.threadsPerInch"),
           value: pitchToThreadsPerInch(settings.pitch),
           min: Math.max(4, Math.ceil(pitchToThreadsPerInch(pitchLimits.max))),
@@ -1399,7 +1406,7 @@ export function ShapeInspector({
       ? properties.filter((property) => ["threadSize", "diameter", "threadLength", "headHeight", "headChamfer"].includes(property.id))
       : properties;
   const threadProperties = isThread
-    ? properties.filter((property) => ["pitch", "threadHand", "threadProfile", "clearance", "chamfer", "quality"].includes(property.id))
+    ? properties.filter((property) => ["pitch", "threadsPerInch", "threadHand", "threadProfile", "clearance", "chamfer", "quality"].includes(property.id))
     : [];
   const gearTeethProperties = shape.kind === "gear"
     ? properties.filter((property) => ["teeth", "toothSize", "toothWidth"].includes(property.id))

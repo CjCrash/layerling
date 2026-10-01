@@ -236,8 +236,11 @@ export type GearType = "spur" | "helical" | "bevel";
 export type ThreadRole = "rod" | "screw" | "nut" | "bore";
 export type ThreadHead = "cylinder" | "countersunk" | "hex";
 export type ThreadHand = "right" | "left";
-/** Die Zahnform: scharfe ISO-Spitze, flache Trapezflanke oder rundes Profil. */
-export type ThreadProfile = "v" | "trapezoidal" | "round";
+/**
+ * Die Zahnform: scharfe ISO-Spitze, flache Trapezflanke, rundes Profil oder
+ * das Whitworth-Profil der G-Rohrgewinde (55 Grad, Kuppe und Grund gerundet).
+ */
+export type ThreadProfile = "v" | "trapezoidal" | "round" | "whitworth";
 
 export type SketchRevolveSettings = {
   startAngle: number;

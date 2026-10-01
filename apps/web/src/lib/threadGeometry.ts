@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { ThreadHand, ThreadHead, ThreadProfile, ThreadRole } from "@/types/layerling";
+import { isThreadProfile } from "@/lib/threadProfiles";
 
 export const DEFAULT_THREAD_ROLE: ThreadRole = "rod";
 export const DEFAULT_THREAD_HEAD: ThreadHead = "cylinder";
@@ -21,8 +22,9 @@ export const MIN_THREAD_QUALITY = 12;
 export const MAX_THREAD_QUALITY = 96;
 
 /**
- * Ein Gewinde kann viele Gaenge haben, und jeder Gang kostet vier Reihen
- * Punkte. Ohne Deckel liefe ein M2 ueber 100 mm in die Hunderttausende, also
+ * Ein Gewinde kann viele Gaenge haben, und jeder Gang kostet so viele Reihen
+ * Punkte, wie sein Profil Punkte hat - vier beim Spitzgewinde, mehr bei den
+ * gerundeten. Ohne Deckel liefe ein M2 ueber 100 mm in die Hunderttausende, also
  * wird die Zahl der Spalten gesenkt, bevor die Punktzahl entgleist.
  */
 const MAX_THREAD_VERTICES = 140000;
@@ -38,7 +40,8 @@ function finite(value: number | undefined, fallback: number) {
 /** Wie weit Durchmesser und Steigung von der Norm abweichen duerfen und trotzdem als Normgroesse gelten. */
 const SIZE_MATCH_TOLERANCE = 0.001;
 
-export type ThreadSystem = "metric" | "inch";
+/** "pipe" ist das Whitworth-Rohrgewinde G: Durchmesser in Millimetern, Steigung in Gaengen je Zoll. */
+export type ThreadSystem = "metric" | "inch" | "pipe";
 
 export type ThreadSizeSpec = {
   /** Bleibt unuebersetzt: "M6" heisst in jeder Sprache M6. */
@@ -46,6 +49,8 @@ export type ThreadSizeSpec = {
   system: ThreadSystem;
   diameter: number;
   pitch: number;
+  /** Das Profil, das die Norm dieser Reihe vorschreibt. */
+  profile: ThreadProfile;
   /** Schluesselweite des Innensechskants. */
   socket: number;
   /** Zylinderkopf nach ISO 4762. */
@@ -64,7 +69,7 @@ export type ThreadSizeSpec = {
  * auch zu einer gekauften M6 passt; fuer freie Durchmesser rechnet
  * `derivedSizeSpec` dieselben Verhaeltnisse nach.
  */
-const METRIC_SIZES: readonly ThreadSizeSpec[] = [
+const METRIC_SIZES: readonly ThreadSizeSpec[] = ([
   { id: "M2", system: "metric", diameter: 2, pitch: 0.4, socket: 1.5, headDiameter: 3.8, headHeight: 2, acrossFlats: 4, nutHeight: 1.6, countersunkDiameter: 3.8 },
   { id: "M2.5", system: "metric", diameter: 2.5, pitch: 0.45, socket: 2, headDiameter: 4.5, headHeight: 2.5, acrossFlats: 5, nutHeight: 2, countersunkDiameter: 4.7 },
   { id: "M3", system: "metric", diameter: 3, pitch: 0.5, socket: 2.5, headDiameter: 5.5, headHeight: 3, acrossFlats: 5.5, nutHeight: 2.4, countersunkDiameter: 6 },
@@ -74,7 +79,7 @@ const METRIC_SIZES: readonly ThreadSizeSpec[] = [
   { id: "M8", system: "metric", diameter: 8, pitch: 1.25, socket: 6, headDiameter: 13, headHeight: 8, acrossFlats: 13, nutHeight: 6.5, countersunkDiameter: 16 },
   { id: "M10", system: "metric", diameter: 10, pitch: 1.5, socket: 8, headDiameter: 16, headHeight: 10, acrossFlats: 16, nutHeight: 8, countersunkDiameter: 20 },
   { id: "M12", system: "metric", diameter: 12, pitch: 1.75, socket: 10, headDiameter: 18, headHeight: 12, acrossFlats: 18, nutHeight: 10, countersunkDiameter: 24 },
-];
+] satisfies Omit<ThreadSizeSpec, "profile">[]).map((size) => ({ ...size, profile: "v" as const }));
 
 const MILLIMETRES_PER_INCH = 25.4;
 
@@ -131,27 +136,100 @@ function inchSpec(row: InchSizeRow, threadsPerInch: number, series: "UNC" | "UNF
     acrossFlats: inches(row.acrossFlats),
     nutHeight: inches(row.nutHeight),
     countersunkDiameter: inches(row.countersunkDiameter),
+    profile: "v",
   };
 }
 
 const INCH_COARSE_SIZES: readonly ThreadSizeSpec[] = INCH_ROWS.map((row) => inchSpec(row, row.coarse, "UNC"));
 const INCH_FINE_SIZES: readonly ThreadSizeSpec[] = INCH_ROWS.map((row) => inchSpec(row, row.fine, "UNF"));
 
+/**
+ * Kopf- und Mutternmasse fuer einen Durchmesser, zu dem keine Norm sie
+ * vorgibt: freie Durchmesser und die Rohrgewinde.
+ */
+function proportionalHeadSizes(diameter: number) {
+  return {
+    socket: diameter * 0.55,
+    headDiameter: diameter * 1.6,
+    headHeight: diameter,
+    acrossFlats: diameter * 1.6,
+    nutHeight: diameter * 0.85,
+    countersunkDiameter: diameter * 2,
+  };
+}
+
+/**
+ * Whitworth-Rohrgewinde G (BSPP), zylindrisch, nach ISO 228-1: Fittings,
+ * Wasser, Gas, Hydraulik und Pneumatik. Die Groesse ist die Nennweite des
+ * Rohrs, nicht der Gewindedurchmesser - G1 misst aussen 33,249 mm. Die
+ * Aussendurchmesser stehen hier in Millimetern, wie in der Tabelle der Norm;
+ * die Steigung in Gaengen je Zoll.
+ *
+ * Aufgenommen sind die Groessen der Norm bis G4. Die Zwischengroessen 1 3/8,
+ * 1 5/8 und 1 7/8 aus alten britischen Tabellen stehen nicht in ISO 228-1 und
+ * fehlen deshalb. Die kegeligen Gewinde R, Rc und Rp nach ISO 7-1 sind eine
+ * eigene Sache und gehoeren nicht hierher.
+ *
+ * ISO 228-1 legt nur das Gewinde fest. Kopf und Mutter bekommen deshalb
+ * dieselben Verhaeltnisse wie ein freier Durchmesser.
+ */
+const PIPE_ROWS: ReadonlyArray<{ label: string; diameter: number; threadsPerInch: number }> = [
+  { label: "1/16", diameter: 7.723, threadsPerInch: 28 },
+  { label: "1/8", diameter: 9.728, threadsPerInch: 28 },
+  { label: "1/4", diameter: 13.157, threadsPerInch: 19 },
+  { label: "3/8", diameter: 16.662, threadsPerInch: 19 },
+  { label: "1/2", diameter: 20.955, threadsPerInch: 14 },
+  { label: "5/8", diameter: 22.911, threadsPerInch: 14 },
+  { label: "3/4", diameter: 26.441, threadsPerInch: 14 },
+  { label: "7/8", diameter: 30.201, threadsPerInch: 14 },
+  { label: "1", diameter: 33.249, threadsPerInch: 11 },
+  { label: "1 1/8", diameter: 37.897, threadsPerInch: 11 },
+  { label: "1 1/4", diameter: 41.91, threadsPerInch: 11 },
+  { label: "1 1/2", diameter: 47.803, threadsPerInch: 11 },
+  { label: "1 3/4", diameter: 53.746, threadsPerInch: 11 },
+  { label: "2", diameter: 59.614, threadsPerInch: 11 },
+  { label: "2 1/4", diameter: 65.71, threadsPerInch: 11 },
+  { label: "2 1/2", diameter: 75.184, threadsPerInch: 11 },
+  { label: "2 3/4", diameter: 81.534, threadsPerInch: 11 },
+  { label: "3", diameter: 87.884, threadsPerInch: 11 },
+  { label: "3 1/2", diameter: 100.33, threadsPerInch: 11 },
+  { label: "4", diameter: 113.03, threadsPerInch: 11 },
+];
+
+const PIPE_SIZES: readonly ThreadSizeSpec[] = PIPE_ROWS.map((row) => ({
+  id: `G${row.label}`,
+  system: "pipe",
+  diameter: row.diameter,
+  pitch: MILLIMETRES_PER_INCH / row.threadsPerInch,
+  ...proportionalHeadSizes(row.diameter),
+  profile: "whitworth",
+}));
+
 export const THREAD_SIZE_GROUPS: ReadonlyArray<{ series: string; sizes: readonly ThreadSizeSpec[] }> = [
   { series: "metric", sizes: METRIC_SIZES },
   { series: "UNC", sizes: INCH_COARSE_SIZES },
   { series: "UNF", sizes: INCH_FINE_SIZES },
+  { series: "G", sizes: PIPE_SIZES },
 ];
 
 export const THREAD_SIZES: readonly ThreadSizeSpec[] = THREAD_SIZE_GROUPS.flatMap((group) => group.sizes);
 
+/** Die Schraubengewinde - alles ausser den Rohrgewinden. */
+const SCREW_SIZES: readonly ThreadSizeSpec[] = [...METRIC_SIZES, ...INCH_COARSE_SIZES, ...INCH_FINE_SIZES];
+
+function pipeSizeAt(diameter: number) {
+  return PIPE_SIZES.find((size) => Math.abs(size.diameter - diameter) < SIZE_MATCH_TOLERANCE) ?? null;
+}
+
 /**
  * Ob die Steigung als Gaenge je Zoll abgefragt wird. Entschieden wird das am
  * Durchmesser, nicht an der gewaehlten Groesse: so bleibt das Feld stehen,
- * waehrend man die Gangzahl von einem Normwert wegdreht.
+ * waehrend man die Gangzahl von einem Normwert wegdreht. Auch das
+ * Rohrgewinde zaehlt seine Gaenge je Zoll.
  */
 export function threadUsesInchPitch(diameter: number) {
-  return INCH_ROWS.some((row) => Math.abs(row.diameter * MILLIMETRES_PER_INCH - diameter) < SIZE_MATCH_TOLERANCE);
+  return INCH_ROWS.some((row) => Math.abs(row.diameter * MILLIMETRES_PER_INCH - diameter) < SIZE_MATCH_TOLERANCE)
+    || pipeSizeAt(diameter) !== null;
 }
 
 /** Aus Millimetern Steigung werden Gaenge je Zoll - und zurueck. */
@@ -164,17 +242,14 @@ export function threadsPerInchToPitch(threadsPerInch: number) {
 }
 
 function derivedSizeSpec(diameter: number): ThreadSizeSpec {
+  const pipe = pipeSizeAt(diameter);
   return {
     id: "",
-    system: threadUsesInchPitch(diameter) ? "inch" : "metric",
+    system: pipe ? "pipe" : threadUsesInchPitch(diameter) ? "inch" : "metric",
     diameter,
     pitch: defaultThreadPitch(diameter),
-    socket: diameter * 0.55,
-    headDiameter: diameter * 1.6,
-    headHeight: diameter,
-    acrossFlats: diameter * 1.6,
-    nutHeight: diameter * 0.85,
-    countersunkDiameter: diameter * 2,
+    ...proportionalHeadSizes(diameter),
+    profile: pipe ? pipe.profile : DEFAULT_THREAD_PROFILE,
   };
 }
 
@@ -190,10 +265,34 @@ export function threadSizeSpec(diameter: number, pitch: number): ThreadSizeSpec 
   return threadSizeFor(diameter, pitch) ?? derivedSizeSpec(diameter);
 }
 
-/** Die Regelsteigung des naechstgelegenen Normdurchmessers. */
+/** Die Normgroesse unter ihrem Namen aus dem Menue ("M6", "1/4\"-20 UNC", "G1/2"), oder nichts. */
+export function threadSizeById(id: string): ThreadSizeSpec | null {
+  return THREAD_SIZES.find((size) => size.id === id) ?? null;
+}
+
+/**
+ * Das Profil nach der Wahl einer Normgroesse. Die beiden Normprofile tauschen
+ * sich gegeneinander aus: eine G-Groesse macht aus dem Spitzgewinde das
+ * Whitworth-Profil, eine M-, UNC- oder UNF-Groesse wieder das Spitzgewinde.
+ * Ein Trapez- oder Rundprofil hat jemand bewusst fuer den Druck gewaehlt -
+ * das bleibt stehen.
+ */
+export function threadProfileForSize(size: ThreadSizeSpec, current: ThreadProfile): ThreadProfile {
+  return current === "v" || current === "whitworth" ? size.profile : current;
+}
+
+/**
+ * Die Regelsteigung des naechstgelegenen Normdurchmessers. Gesucht wird unter
+ * den Schraubengewinden: die Rohrgewinde reichen von 7,7 bis 113 mm und liegen
+ * damit mitten zwischen den Schraubengroessen, und ein freies M9 oder M13
+ * bekaeme sonst die Steigung eines Rohrs. Nur wer den Durchmesser einer G-Groesse genau trifft,
+ * bekommt deren Steigung.
+ */
 export function defaultThreadPitch(diameter: number) {
-  let nearest = THREAD_SIZES[0];
-  for (const size of THREAD_SIZES) {
+  const pipe = pipeSizeAt(diameter);
+  if (pipe) return pipe.pitch;
+  let nearest = SCREW_SIZES[0];
+  for (const size of SCREW_SIZES) {
     if (Math.abs(size.diameter - diameter) < Math.abs(nearest.diameter - diameter)) nearest = size;
   }
   return nearest.pitch;
@@ -212,7 +311,7 @@ export function normalizeThreadHand(value?: string): ThreadHand {
 }
 
 export function normalizeThreadProfile(value?: string): ThreadProfile {
-  return value === "trapezoidal" || value === "round" ? value : DEFAULT_THREAD_PROFILE;
+  return isThreadProfile(value) ? value : DEFAULT_THREAD_PROFILE;
 }
 
 export function normalizeThreadDiameter(value?: number) {
@@ -470,7 +569,7 @@ export function threadNaturalFootprint(settings: ThreadSettings) {
  * Jedes Profil ist eine Punktfolge ueber eine Steigung: `u` in [0,1) ist die
  * axiale Lage, `level` 1 = Aussendurchmesser (Kuppe), 0 = Kerndurchmesser
  * (Grund). Zwischen den Punkten wird linear interpoliert, nach dem letzten
- * Punkt zurueck auf den ersten bei u=1 - das gilt fuer alle drei Profile,
+ * Punkt zurueck auf den ersten bei u=1 - das gilt fuer alle Profile,
  * weil jedes bei u=0 an der Kuppe beginnt.
  */
 type ThreadProfilePoint = { u: number; level: number };
@@ -526,11 +625,69 @@ const ROUND_PROFILE: ThreadProfileSpecification = {
   }),
 };
 
+/*
+ * Whitworth-Profil nach ISO 228-1 (und BS 84): 55 Grad Flankenwinkel, das
+ * scharfe Dreieck hat die Hoehe H = P / (2 tan 27,5 Grad) = 0,960491 P. Oben
+ * und unten ist je ein Sechstel davon abgenommen, also bleibt die Tiefe
+ * h = 2/3 H = 0,640327 P. Kuppe und Grund sind mit demselben Radius gerundet,
+ * der tangential in die Flanken laeuft; aus der Kappung H/6 folgt
+ * r = (H/6) / (1/sin 27,5 Grad - 1) = 0,137329 P. Die Zahlen werden hier aus
+ * dem Winkel gerechnet, ein Test haelt sie gegen die Werte der Norm.
+ *
+ * Jeder der beiden Boegen (je 125 Grad) wird mit acht Sehnen abgetastet. Die
+ * groesste Abweichung vom Bogen ist r (1 - cos 7,8125 Grad) = 0,0013 P, bei
+ * G1 (P = 2,309 mm) also 0,003 mm. Bei vier Sehnen waere die Abweichung noch
+ * klein genug, aber zwei Sehnen stiessen unter 31 Grad aneinander, ueber der
+ * Knickgrenze der Normalen (20 Grad): Kuppe und Grund saehen kantig aus statt
+ * rund. Acht Sehnen stossen unter 15,6 Grad aneinander.
+ */
+const WHITWORTH_HALF_ANGLE = (27.5 * Math.PI) / 180;
+const WHITWORTH_HEIGHT_PER_PITCH = 1 / (2 * Math.tan(WHITWORTH_HALF_ANGLE));
+const WHITWORTH_DEPTH_PER_PITCH = (2 / 3) * WHITWORTH_HEIGHT_PER_PITCH;
+const WHITWORTH_RADIUS_PER_PITCH = (WHITWORTH_HEIGHT_PER_PITCH / 6) / (1 / Math.sin(WHITWORTH_HALF_ANGLE) - 1);
+const WHITWORTH_ARC_SEGMENTS = 8;
+
+function whitworthProfile(): ThreadProfileSpecification {
+  const depth = WHITWORTH_DEPTH_PER_PITCH;
+  const radius = WHITWORTH_RADIUS_PER_PITCH;
+  // Der Bogen endet dort, wo seine Tangente die Flanke ist: 90 - 27,5 Grad von der Mitte.
+  const arcEnd = Math.PI / 2 - WHITWORTH_HALF_ANGLE;
+  const step = (2 * arcEnd) / WHITWORTH_ARC_SEGMENTS;
+  const half = WHITWORTH_ARC_SEGMENTS / 2;
+  // Kuppe um u = 0 (und u = 1), Grund um u = 1/2; level = Hoehe / Tiefe.
+  const crest = (angle: number) => ({ u: radius * Math.sin(angle), level: (depth - radius + radius * Math.cos(angle)) / depth });
+  const root = (angle: number) => ({ u: 0.5 + radius * Math.sin(angle), level: (radius - radius * Math.cos(angle)) / depth });
+  const points: ThreadProfilePoint[] = [];
+  for (let index = 0; index <= half; index += 1) points.push(crest(index * step));
+  for (let index = -half; index <= half; index += 1) points.push(root(index * step));
+  for (let index = -half; index < 0; index += 1) {
+    const point = crest(index * step);
+    points.push({ u: 1 + point.u, level: point.level });
+  }
+  return { depthPerPitch: depth, points };
+}
+
+const WHITWORTH_PROFILE = whitworthProfile();
+
 function threadProfileSpec(profile: ThreadProfile): ThreadProfileSpecification {
   if (profile === "trapezoidal") return TRAPEZOIDAL_PROFILE;
   if (profile === "round") return ROUND_PROFILE;
+  if (profile === "whitworth") return WHITWORTH_PROFILE;
   return V_PROFILE;
 }
+
+/** Tiefe und Punktfolge eines Profils, fuer Tests und Auskunft. */
+export function threadProfileShape(profile: ThreadProfile): Readonly<ThreadProfileSpecification> {
+  return threadProfileSpec(profile);
+}
+
+/** Die Kennzahlen des Whitworth-Profils, in Steigungen. */
+export const WHITWORTH_PROFILE_CONSTANTS = {
+  flankAngleDegrees: 55,
+  heightPerPitch: WHITWORTH_HEIGHT_PER_PITCH,
+  depthPerPitch: WHITWORTH_DEPTH_PER_PITCH,
+  radiusPerPitch: WHITWORTH_RADIUS_PER_PITCH,
+} as const;
 
 function wrapUnit(value: number) {
   return ((value % 1) + 1) % 1;

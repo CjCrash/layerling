@@ -16,12 +16,14 @@ Choose {{ui:shape.thread}} in the shape library. Under {{ui:inspector.threadRole
 
 ![A screw with a cylinder head. On the right: kind and head shape, further down size, pitch and profile.](shot:thread-screw)
 
-You pick the size under {{ui:prop.threadSize}} from a list: metric from M2 to M12, plus the inch sizes UNC and UNF from No. 4 to 1 inch. If you choose {{ui:thread.customSize}}, you set {{ui:prop.diameter}} and {{ui:prop.pitch}} yourself. For an inch size the field asks for {{ui:prop.threadsPerInch}} instead of the pitch in millimetres.
+You pick the size under {{ui:prop.threadSize}} from a list: metric from M2 to M12, the inch sizes UNC and UNF from No. 4 to 1 inch, and the pipe threads G1/16 to G4. If you choose {{ui:thread.customSize}}, you set {{ui:prop.diameter}} and {{ui:prop.pitch}} yourself. For an inch size or a G size the field asks for {{ui:prop.threadsPerInch}} instead of the pitch in millimetres.
+
+The G sizes are the parallel Whitworth pipe threads to ISO 228-1, found on fittings for water, gas, hydraulics and pneumatics. The size names the pipe, not the thread: a G1 measures 33.249 mm across the thread. Choosing a G size sets the profile to {{ui:thread.profileWhitworth}}, and choosing a metric or inch size sets it back to {{ui:thread.profileV}}. A {{ui:thread.profileTrapezoidal}} or {{ui:thread.profileRound}} profile you picked yourself stays. The standard only defines the thread, so the head of a screw and a nut on a G size get the same proportions as on a diameter you set yourself. The tapered pipe threads R, Rc and Rp are not included.
 
 More settings:
 
 - **{{ui:prop.threadHand}}:** {{ui:thread.right}} or {{ui:thread.left}}.
-- **{{ui:prop.threadProfile}}:** {{ui:thread.profileV}} is the standard profile. {{ui:thread.profileTrapezoidal}} and {{ui:thread.profileRound}} have flat crests and roots. That usually prints more reliably because no thin tips result.
+- **{{ui:prop.threadProfile}}:** {{ui:thread.profileV}} is the standard profile of metric and inch threads, {{ui:thread.profileWhitworth}} that of the G pipe threads: 55° with rounded crests and roots. {{ui:thread.profileTrapezoidal}} and {{ui:thread.profileRound}} have flat crests and roots. That usually prints more reliably because no thin tips result.
 - **{{ui:prop.clearance}}:** For nut and tapped hole, the room that makes sure a printed pair really turns. The coarser your printer works, the more clearance the pair needs.
 - **{{ui:prop.chamfer}}, {{ui:prop.headChamfer}} and {{ui:prop.rimChamfer}}:** Chamfers at the ends so the thread starts cleanly and the head has no sharp edge.
 - **{{ui:prop.quality}}:** How finely the thread is calculated. Higher is more exact, but slower.
