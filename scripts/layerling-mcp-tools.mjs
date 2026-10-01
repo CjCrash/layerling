@@ -24,6 +24,35 @@ export const creatableShapeKinds = [
 ];
 
 /**
+ * Die Zahnformen und die Normgroessen der Gewinde. Der Editor fuehrt sie in
+ * `threadProfiles.ts` und `threadGeometry.ts`; ein Test schlaegt fehl, sobald
+ * diese Ansage davon abweicht.
+ */
+export const threadProfiles = ["v", "trapezoidal", "round", "whitworth"];
+
+export const threadSizeNames = [
+  "M2", "M2.5", "M3", "M4", "M5", "M6", "M8", "M10", "M12",
+  "#4-40 UNC", "#6-32 UNC", "#8-32 UNC", "#10-24 UNC", "1/4\"-20 UNC", "5/16\"-18 UNC", "3/8\"-16 UNC", "7/16\"-14 UNC", "1/2\"-13 UNC", "5/8\"-11 UNC", "3/4\"-10 UNC", "1\"-8 UNC",
+  "#4-48 UNF", "#6-40 UNF", "#8-36 UNF", "#10-32 UNF", "1/4\"-28 UNF", "5/16\"-24 UNF", "3/8\"-24 UNF", "7/16\"-20 UNF", "1/2\"-20 UNF", "5/8\"-18 UNF", "3/4\"-16 UNF", "1\"-12 UNF",
+  "G1/16", "G1/8", "G1/4", "G3/8", "G1/2", "G5/8", "G3/4", "G7/8", "G1", "G1 1/8", "G1 1/4", "G1 1/2", "G1 3/4",
+  "G2", "G2 1/4", "G2 1/2", "G2 3/4", "G3", "G3 1/2", "G4",
+];
+
+/**
+ * Eine Normgroesse beim Namen - kein Wert, der am Objekt steht, sondern eine
+ * Abkuerzung fuer Durchmesser, Steigung und Profil. Deshalb steht sie nicht in
+ * `shapeSettingSchema`, sondern daneben in beiden Werkzeugen; die Auskunft
+ * meldet sie in `settings.threadSize`, wenn ein Gewinde eine Normgroesse hat.
+ */
+export const threadSizeSetting = {
+  threadSize: {
+    type: "string",
+    enum: threadSizeNames,
+    description: "Thread only: a standard size by name, as the editor's size menu lists it. Sets threadDiameter and threadPitch; if those come along (as in a settings block read back), they must match the size. A G size is a Whitworth pipe thread (BSPP, ISO 228-1, for fittings, water, gas, hydraulics and pneumatics): G1/2 is 20.955 mm with 14 threads per inch. It switches a v profile to whitworth, and an M, UNC or UNF size switches whitworth back to v; trapezoidal and round stay, and a threadProfile in the same call wins.",
+  },
+};
+
+/**
  * Was eine Form ausser Lage und Mass ausmacht. Anlegen und Aendern nehmen
  * dieselben Felder - sonst entstuende wieder etwas, das sich hinterher nicht
  * mehr anfassen laesst. Jeder Wert wird im Editor gegen dieselben Grenzen
@@ -55,8 +84,8 @@ export const shapeSettingSchema = {
   threadRole: { type: "string", enum: ["rod", "screw", "nut", "bore"], description: "Thread only. A bore becomes a cutter that threads the part it is grouped with." },
   threadHead: { type: "string", enum: ["cylinder", "countersunk", "hex"], description: "Thread only, and only for a screw." },
   threadHand: { type: "string", enum: ["right", "left"], description: "Thread only." },
-  threadProfile: { type: "string", enum: ["v", "trapezoidal", "round"], description: "Thread only: tooth shape. \"v\" is the sharp 60-degree ISO default; trapezoidal and round both leave a flat crest and root, which prints more reliably." },
-  threadDiameter: { type: "number", description: "Thread only, in millimetres: 6 is an M6. Width and depth follow it, they are not set separately." },
+  threadProfile: { type: "string", enum: threadProfiles, description: "Thread only: tooth shape. \"v\" is the sharp 60-degree ISO default (M, UNC, UNF); trapezoidal and round both leave a flat crest and root, which prints more reliably; \"whitworth\" is the 55-degree profile with rounded crest and root of the G pipe threads (ISO 228-1)." },
+  threadDiameter: { type: "number", description: "Thread only, in millimetres: 6 is an M6, 20.955 a G1/2 pipe thread. Width and depth follow it, they are not set separately. For a standard size, threadSize is simpler." },
   threadPitch: { type: "number", description: "Thread only, in millimetres per turn: an M6 runs 1.0 as standard." },
   threadClearance: { type: "number", description: "Thread only, for nuts and tapped holes: how much room the thread leaves so a printed pair still turns." },
   threadQuality: { type: "number", description: "Thread only: columns around the circumference." },
@@ -184,6 +213,7 @@ export const tools = [
         rotationX: { type: "number" },
         rotationZ: { type: "number" },
         ...shapeSettingSchema,
+        ...threadSizeSetting,
       },
     },
   },
@@ -234,6 +264,7 @@ export const tools = [
         rotationX: { type: "number" },
         rotationZ: { type: "number" },
         ...shapeSettingSchema,
+        ...threadSizeSetting,
       },
     },
   },

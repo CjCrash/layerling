@@ -16,12 +16,14 @@ Wähle {{ui:shape.thread}} in der Formenbibliothek. Unter {{ui:inspector.threadR
 
 ![Eine Schraube mit Zylinderkopf. Rechts stehen Art und Kopfform, weiter unten Größe, Steigung und Profil.](shot:thread-screw)
 
-Die Größe suchst du bei {{ui:prop.threadSize}} aus einer Liste: metrisch von M2 bis M12, dazu die Zollgrößen UNC und UNF von Nr. 4 bis 1 Zoll. Wählst du {{ui:thread.customSize}}, bestimmst du {{ui:prop.diameter}} und {{ui:prop.pitch}} selbst. Bei einer Zollgröße fragt das Feld nach {{ui:prop.threadsPerInch}} statt nach der Steigung in Millimetern.
+Die Größe suchst du bei {{ui:prop.threadSize}} aus einer Liste: metrisch von M2 bis M12, die Zollgrößen UNC und UNF von Nr. 4 bis 1 Zoll und die Rohrgewinde G1/16 bis G4. Wählst du {{ui:thread.customSize}}, bestimmst du {{ui:prop.diameter}} und {{ui:prop.pitch}} selbst. Bei einer Zoll- oder G-Größe fragt das Feld nach {{ui:prop.threadsPerInch}} statt nach der Steigung in Millimetern.
+
+Die G-Größen sind die zylindrischen Whitworth-Rohrgewinde nach ISO 228-1, wie sie an Fittings für Wasser, Gas, Hydraulik und Pneumatik sitzen. Die Größe nennt das Rohr, nicht das Gewinde: Ein G1 misst über das Gewinde 33,249 mm. Wählst du eine G-Größe, wechselt das Profil auf {{ui:thread.profileWhitworth}}, eine metrische oder Zollgröße stellt es wieder auf {{ui:thread.profileV}}. Ein {{ui:thread.profileTrapezoidal}} oder {{ui:thread.profileRound}}, das du selbst gewählt hast, bleibt. Die Norm legt nur das Gewinde fest; Schraubenkopf und Mutter bekommen bei einer G-Größe dieselben Verhältnisse wie bei einem selbst gewählten Durchmesser. Die kegeligen Rohrgewinde R, Rc und Rp sind nicht dabei.
 
 Weitere Einstellungen:
 
 - **{{ui:prop.threadHand}}:** {{ui:thread.right}} oder {{ui:thread.left}}.
-- **{{ui:prop.threadProfile}}:** {{ui:thread.profileV}} ist das genormte Profil. {{ui:thread.profileTrapezoidal}} und {{ui:thread.profileRound}} haben flache Spitzen und Täler. Das druckt sich meist zuverlässiger, weil keine dünnen Spitzen entstehen.
+- **{{ui:prop.threadProfile}}:** {{ui:thread.profileV}} ist das genormte Profil der metrischen und Zollgewinde, {{ui:thread.profileWhitworth}} das der G-Rohrgewinde: 55° mit gerundeten Spitzen und Tälern. {{ui:thread.profileTrapezoidal}} und {{ui:thread.profileRound}} haben flache Spitzen und Täler. Das druckt sich meist zuverlässiger, weil keine dünnen Spitzen entstehen.
 - **{{ui:prop.clearance}}:** Bei Mutter und Gewindeloch der Spielraum, der dafür sorgt, dass ein gedrucktes Paar sich wirklich dreht. Je gröber dein Drucker arbeitet, desto mehr Spiel braucht das Paar.
 - **{{ui:prop.chamfer}}, {{ui:prop.headChamfer}} und {{ui:prop.rimChamfer}}:** Fasen an den Enden, damit das Gewinde sauber anläuft und der Kopf keine scharfe Kante hat.
 - **{{ui:prop.quality}}:** Wie fein das Gewinde berechnet wird. Höher ist genauer, aber langsamer.

@@ -8,6 +8,7 @@ import { normalizeNotes } from "@/lib/workplaneNotes";
 import { importedShapeFromStl } from "@/lib/stlImport";
 import { importedShapeFromSvg } from "@/lib/svgImport";
 import { importedShapeFrom3mf } from "@/lib/threemfImport";
+import { isThreadProfile } from "@/lib/threadProfiles";
 import { normalizeSnapGrid, normalizeWorkspaceSettings } from "@/lib/workplaneSettings";
 import type { CadDisplayEdge, GridSize, ProjectAsset, ProjectAssetSourceFormat, SketchOperation, SketchRevolveSettings, WorkplaneNote, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 
@@ -1087,7 +1088,7 @@ function validateShapeDefinition(definition: Record<string, unknown>, label: str
     if (definition.threadHand !== undefined && definition.threadHand !== "right" && definition.threadHand !== "left") {
       throw new Error(`${label}.threadHand is invalid`);
     }
-    if (definition.threadProfile !== undefined && !["v", "trapezoidal", "round"].includes(definition.threadProfile as string)) {
+    if (definition.threadProfile !== undefined && !isThreadProfile(definition.threadProfile)) {
       throw new Error(`${label}.threadProfile is invalid`);
     }
     if (definition.threadDiameter !== undefined) {

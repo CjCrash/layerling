@@ -1,4 +1,6 @@
-import type { WorkplaneShape } from "@/types/layerling";
+import type { ThreadProfile, WorkplaneShape } from "@/types/layerling";
+import { isThreadProfile } from "@/lib/threadProfiles";
+import { normalizeThreadProfile, THREAD_SIZES, threadProfileForSize, threadSettings, threadSizeById, threadSizeFor } from "@/lib/threadGeometry";
 
 /**
  * Die formeigenen Werte, die eine Zusammenfassung sonst verschweigt: Ohne sie
@@ -40,3 +42,44 @@ export const MCP_SHAPE_SETTING_KEYS = [
   "text", "font",
   "textCurved", "textRadius", "textSize", "textInward", "textFlipped",
 ] as const satisfies readonly (keyof WorkplaneShape)[];
+
+/**
+ * `threadSize` aus der Bruecke: eine Normgroesse beim Namen, die hier in
+ * Durchmesser, Steigung und Profil aufgeloest wird, bevor der Editor die Werte
+ * wie jede andere Gewindeangabe prueft. Das Profil folgt derselben Regel wie
+ * das Groessenmenue (`threadProfileForSize`); ein gueltiges `threadProfile` im
+ * selben Aufruf geht vor.
+ *
+ * Durchmesser und Steigung daneben sind erlaubt, solange sie zur Groesse
+ * passen - so schickt ein Client den `settings`-Block, den er gelesen hat,
+ * unveraendert zurueck. Passen sie nicht, ist das ein Widerspruch, den
+ * niemand still aufloesen sollte.
+ */
+export function mcpThreadSizeParams(params: Record<string, unknown>, currentProfile: ThreadProfile): Record<string, unknown> {
+  const requested = params.threadSize;
+  if (requested === undefined) return params;
+  if (typeof requested !== "string") throw new Error("threadSize must be the name of a standard size, for example \"M6\" or \"G1/2\"");
+  const size = threadSizeById(requested.trim());
+  if (!size) throw new Error(`Unknown threadSize "${requested}". Known sizes: ${THREAD_SIZES.map((entry) => entry.id).join(", ")}`);
+  if (params.threadDiameter !== undefined || params.threadPitch !== undefined) {
+    const diameter = params.threadDiameter ?? size.diameter;
+    const pitch = params.threadPitch ?? size.pitch;
+    const matches = typeof diameter === "number" && typeof pitch === "number" && threadSizeFor(diameter, pitch)?.id === size.id;
+    if (!matches) {
+      throw new Error(`threadSize "${size.id}" is ${size.diameter} mm with a pitch of ${size.pitch} mm, but threadDiameter or threadPitch in the same call say otherwise. Send threadSize alone, or threadDiameter and threadPitch without it.`);
+    }
+  }
+  return {
+    ...params,
+    threadDiameter: size.diameter,
+    threadPitch: size.pitch,
+    threadProfile: isThreadProfile(params.threadProfile) ? params.threadProfile : threadProfileForSize(size, normalizeThreadProfile(currentProfile)),
+  };
+}
+
+/** Der Name der Normgroesse eines Gewindes, wie ihn das Menue zeigt - oder nichts bei freien Werten. */
+export function mcpThreadSizeName(shape: Pick<WorkplaneShape, "kind" | "threadDiameter" | "threadPitch">): string | undefined {
+  if (shape.kind !== "thread") return undefined;
+  const settings = threadSettings(shape);
+  return threadSizeFor(settings.diameter, settings.pitch)?.id;
+}

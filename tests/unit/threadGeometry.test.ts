@@ -21,6 +21,7 @@ import {
   threadHeadChamferLimits,
   normalizeThreadHeadChamfer,
 } from "@/lib/threadGeometry";
+import { THREAD_PROFILES } from "@/lib/threadProfiles";
 import type { ThreadRole } from "@/types/layerling";
 
 type Position = {
@@ -518,7 +519,11 @@ describe("thread geometry", () => {
     expect(threadSettings({ threadRole: "screw", threadDiameter: 6, threadPitch: 1 }).headChamfer).toBe(0);
   });
 
-  it.each<["trapezoidal" | "round", ThreadRole, number]>([
+  it.each<["trapezoidal" | "round" | "whitworth", ThreadRole, number]>([
+    ["whitworth", "rod", 20],
+    ["whitworth", "screw", 24],
+    ["whitworth", "nut", 5],
+    ["whitworth", "bore", 14],
     ["trapezoidal", "rod", 20],
     ["trapezoidal", "screw", 24],
     ["trapezoidal", "nut", 5],
@@ -563,7 +568,7 @@ describe("thread geometry", () => {
 
   it("carries every thread profile through a saved package", async () => {
     const asset = toolbarShapeAssets.find((entry) => entry.kind === "thread");
-    for (const threadProfile of ["v", "trapezoidal", "round"] as const) {
+    for (const threadProfile of THREAD_PROFILES) {
       const shape = makeShapeFromAsset(asset!, { x: 0, z: 0 }, { threadProfile });
       const shapes = [shape];
       const bytes = await exportLylProject({

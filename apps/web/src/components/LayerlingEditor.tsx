@@ -32,7 +32,7 @@ import { createPrismGeometry } from "@/lib/prismGeometry";
 import { createBooleanHalfSphereGeometry, createBooleanHollowCylinderGeometry, createBooleanRoundRoofGeometry } from "@/lib/roundBodyGeometry";
 import { createPyramidGeometry } from "@/lib/pyramidGeometry";
 import { roundSideCount } from "@/lib/roundSideCount";
-import { createThreadGeometry, defaultThreadHeadHeight, normalizeThreadHeadHeight, threadNaturalFootprint, threadSettings } from "@/lib/threadGeometry";
+import { createThreadGeometry, DEFAULT_THREAD_PROFILE, defaultThreadHeadHeight, normalizeThreadHeadHeight, threadNaturalFootprint, threadSettings } from "@/lib/threadGeometry";
 import { createSpringGeometry } from "@/lib/springGeometry";
 import { createTextGeometry, curvedTextPatch } from "@/lib/textGeometry";
 import { canApplySketchCornerTreatment } from "@/lib/sketchFilletChamfer";
@@ -163,7 +163,7 @@ import { exportMeshesTo3mf, THREE_MF_MEDIA_TYPE } from "@/lib/threemfExport";
 import { importedShapeFromSvg, invalidSvgMeshReason } from "@/lib/svgImport";
 import { toSvgProjection, type SvgProjectionLayer } from "@/lib/svgExport";
 import { DEFAULT_TAPER_DIMENSION_MAX, keyboardNudgeStep, normalizeShapeCustomizations, normalizeSnapGrid, normalizeWorkspaceSettings, shapeDimensionLimit, workplaneSettingsFingerprint } from "@/lib/workplaneSettings";
-import { MCP_SHAPE_SETTING_KEYS } from "@/lib/mcpShapeSettings";
+import { MCP_SHAPE_SETTING_KEYS, mcpThreadSizeName, mcpThreadSizeParams } from "@/lib/mcpShapeSettings";
 import { createNoteId, detachNotesFromMissingShapes, normalizeNotes, NOTE_COUNT_LIMIT, NOTE_TEXT_LIMIT } from "@/lib/workplaneNotes";
 import {
   normalizePlacementWorkplane,
@@ -5744,6 +5744,10 @@ function mcpShapeSettings(shape: WorkplaneShape): Record<string, string | number
     settings.sides = roundSideCount(undefined, shapeWidth(shape), shapeDepth(shape));
     settings.sidesFollowSize = true;
   }
+  // Durchmesser und Steigung sagen einer KI nicht, dass hier ein G1/2 steht;
+  // der Name aus dem Groessenmenue sagt es, und er laesst sich zuruecksenden.
+  const threadSize = mcpThreadSizeName(shape);
+  if (threadSize) settings.threadSize = threadSize;
   return Object.keys(settings).length > 0 ? settings : undefined;
 }
 
@@ -9527,6 +9531,9 @@ export function LayerlingEditor({
             rotationZ: mcpNumber(params.rotationZ, 0),
           });
         } else if (asset) {
+          // Eine Normgroesse beim Namen wird zuerst zu Durchmesser, Steigung
+          // und Profil - danach geht alles den gewohnten Weg.
+          const shapeParams = asset.kind === "thread" ? mcpThreadSizeParams(params, DEFAULT_THREAD_PROFILE) : params;
           // Welche Formen es gibt, sagt der Katalog - dieselbe Quelle wie das
           // Formenmenue. Eine eigene Aufzaehlung hier waere nur die naechste
           // Stelle, an der eine neue Form vergessen wird. Fehlende Werte fuellt
@@ -9537,7 +9544,7 @@ export function LayerlingEditor({
             { ...asset, name, color },
             { x, z, elevation },
             {
-              ...mcpShapeCustomization(asset.kind, params),
+              ...mcpShapeCustomization(asset.kind, shapeParams),
               width: requestedWidth,
               depth: requestedDepth,
               height: requestedHeight,
@@ -9552,7 +9559,7 @@ export function LayerlingEditor({
             hole: typeof params.hole === "boolean" ? params.hole : shape.threadRole === "bore",
           };
           if (shape.kind === "thread") {
-            shape = applyMcpThreadSettings(shape, params, true);
+            shape = applyMcpThreadSettings(shape, shapeParams, true);
           }
           shape = { ...shape, ...mcpTaperPatch(shape, params, shapeDimensionLimit(workspaceSettingsRef.current, shape.kind, DEFAULT_TAPER_DIMENSION_MAX)) };
           shape = { ...shape, ...mcpExtrudeDeformPatch(shape, params) };
@@ -9659,7 +9666,8 @@ export function LayerlingEditor({
         // Alles Formeigene in einem Zug, mit denselben Grenzen wie im
         // Merkmalsfeld: Seitenzahl, Kegelradien, Zahnrad, Gewinde, Feder,
         // Beschriftung. Was die Art gar nicht kennt, faellt dabei weg.
-        const settings = mcpShapeCustomization(target.kind, params);
+        const shapeParams = target.kind === "thread" ? mcpThreadSizeParams(params, threadSettings(target).profile) : params;
+        const settings = mcpShapeCustomization(target.kind, shapeParams);
         (Object.keys(settings) as (keyof ShapeCustomization)[]).forEach((key) => {
           const value = settings[key];
           if (value !== undefined) Object.assign(patch, { [key]: value });
@@ -9685,7 +9693,7 @@ export function LayerlingEditor({
           // Kopf, der bisher auf seinem Normmass stand, wandert mit.
           const before = threadSettings(target);
           const headWasStandard = Math.abs(before.headHeight - defaultThreadHeadHeight(before)) < 1e-6;
-          const threaded = applyMcpThreadSettings({ ...target, ...patch }, params, headWasStandard);
+          const threaded = applyMcpThreadSettings({ ...target, ...patch }, shapeParams, headWasStandard);
           Object.assign(patch, {
             threadRole: threaded.threadRole,
             threadHead: threaded.threadHead,
