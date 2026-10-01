@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSketchPanGesture, SKETCH_MANUAL_MAX_ZOOM, SKETCH_MAX_ZOOM, sketchWheelZoomFactor, zoomSketchViewAt } from "@/lib/sketchPointerControls";
+import { isSketchPanGesture, sketchWheelZoomFactor, zoomSketchViewAt } from "@/lib/sketchPointerControls";
 
 describe("sketch pointer controls", () => {
   it("pans with the middle mouse button", () => {
@@ -34,13 +34,8 @@ describe("sketch pointer controls", () => {
     expect(under(next).z).toBeCloseTo(under(view).z);
   });
 
-  it("zooms past the Shift+F framing limit", () => {
-    const view = { zoom: SKETCH_MAX_ZOOM, pan: { x: 0, z: 0 } };
-    expect(zoomSketchViewAt(view, 2, { x: 0, y: 0 }, 3, { width: 400, depth: 400 }).zoom).toBe(SKETCH_MAX_ZOOM * 2);
-  });
-
   it("leaves the pan alone once the zoom limit is reached", () => {
-    const view = { zoom: SKETCH_MANUAL_MAX_ZOOM, pan: { x: 5, z: 5 } };
+    const view = { zoom: 6, pan: { x: 5, z: 5 } };
     expect(zoomSketchViewAt(view, 2, { x: 100, y: 100 }, 3, { width: 400, depth: 400 })).toEqual(view);
   });
 });

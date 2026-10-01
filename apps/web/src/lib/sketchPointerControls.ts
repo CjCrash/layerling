@@ -11,11 +11,7 @@ export function isSketchPanGesture(event: SketchPointerModifiers) {
 export type SketchView = { zoom: number; pan: { x: number; z: number } };
 
 export const SKETCH_MIN_ZOOM = 0.75;
-// Cap for Shift+F framing, so focusing a small selection keeps some context.
 export const SKETCH_MAX_ZOOM = 6;
-// Manual zoom (wheel, buttons) can go much further, like the 3D editor; the
-// cap only guards against runaway values.
-export const SKETCH_MANUAL_MAX_ZOOM = 10000;
 
 // The 3D editor's wheel step moves the camera toward its orbit target, which
 // usually magnifies nearby geometry more than the step itself. A flat 2D scale
@@ -53,7 +49,7 @@ export function zoomSketchViewAt(
   pixelsPerUnit: number,
   bounds: { width: number; depth: number },
 ): SketchView {
-  const zoom = Math.min(SKETCH_MANUAL_MAX_ZOOM, Math.max(SKETCH_MIN_ZOOM, view.zoom * factor));
+  const zoom = Math.min(SKETCH_MAX_ZOOM, Math.max(SKETCH_MIN_ZOOM, view.zoom * factor));
   if (!(pixelsPerUnit > 0) || zoom === view.zoom) return { zoom, pan: view.pan };
   const shift = 1 / view.zoom - 1 / zoom;
   return {
