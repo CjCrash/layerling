@@ -6,6 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
+- **Few-sided round shapes keep their flat faces in the edge tool:** A cylinder with 6 sides is now a hexagonal bar for chamfers and fillets, not a round cylinder. Shapes stay round when no side count is set, when it reaches the shape's default or when the polygon is within 0.05 mm of the circle. STEP export is unchanged. Also fixed: turned few-sided prisms (hexagon, pentagon, triangle) sat a little off the angle shown in the viewport. The guide chapter on the side count says so (PR #57, thanks plazmabokor).
 - **Copy, cut, paste and duplicate in the sketch:** The sketch ribbon has a new "Clipboard" group (copy, paste, duplicate, delete) and the usual shortcuts Ctrl+C, Ctrl+X, Ctrl+V and Ctrl+D work on selected points, lines and template images. A pasted or duplicated copy lands on the nearest free spot beside the original instead of on top of it, so its lines are not welded to the original's (PR #56, thanks gogades).
 - **Measure tool in the sketch sits in the side bar:** The ruler button in the sketch moved from the ribbon (group "Inspect") to the side bar, with the same icon as in the 3D editor, and a second click switches it off again (PR #58, thanks gogades).
 - **Start script for Linux and macOS:** `scripts/start-layerling.sh` updates the checkout, starts the server, waits for it and then opens the browser, like the Windows shortcut does. Tried on Debian Linux and in a Windows shell; macOS is untested. `PORT=3100` picks another port.

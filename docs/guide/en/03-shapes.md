@@ -48,7 +48,13 @@ Round shapes such as cylinder, cone, tube, ellipse or the bores have the switch 
 
 **Where it does not matter**
 
-- **For chamfers and fillets** ({{ui:editor.tool.chamfer}}, {{ui:editor.tool.fillet}}) and **for the STEP export.** Both work with the exact round shape, not with the polygon. That holds for most round shapes. Thread, spring and bent tube are still triangle meshes, and there the fineness counts for edge treatment as well.
+- **For the STEP export.** It writes the round shape, not the polygon.
+- **For chamfers and fillets** ({{ui:editor.tool.chamfer}}, {{ui:editor.tool.fillet}}) as long as the shape stays round. That is the case when you have not set a side count, when the count is at least the shape's default, or when the polygon strays at most {{value:EXACT_ROUND_TOLERANCE}} mm from the circle. The default is {{value:ROUND_FROM_SIDES}} sides for cylinder, ellipse, tube and cone, {{value:ROUND_FROM_ROOF_SIDES}} for the {{ui:shape.roundRoof}}, {{value:ROUND_FROM_SPHERE_STEPS}} steps for the {{ui:shape.sphere}} and {{value:ROUND_FROM_HALF_SPHERE_STEPS}} for the {{ui:shape.halfSphere}}.
+- **Thread, spring and bent tube** are still triangle meshes, and there the fineness counts for edge treatment as well.
+
+**Where it matters again**
+
+- **For chamfers and fillets on a shape with few sides.** If you set the side count below the default, the edge tool takes the shape as it is drawn: a cylinder with 6 sides stays a hexagonal bar, and the fillet runs round its six edges. That is how you can build, for instance, a nut pocket with rounded corners. For a round shape, leave {{ui:prop.sidesFollowSize}} on.
 
 **How to use it**
 
