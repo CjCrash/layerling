@@ -5607,6 +5607,18 @@ export function WorkplaneViewport({
     if (Object.keys(merged).length > 0) onUpdateShape(shape.id, merged);
   }, [dimensionPatchFor, editingCorner, onUpdateShape]);
 
+  // The 3D view keeps focus on pointer down, so a click beside the boxes never
+  // blurs them; any press outside the pair applies it, as leaving a field would.
+  useEffect(() => {
+    if (!editingCorner) return;
+    const applyOnOutsidePress = (event: PointerEvent) => {
+      if ((event.target as HTMLElement | null)?.dataset?.cornerInput) return;
+      commitCornerEdit();
+    };
+    window.addEventListener("pointerdown", applyOnOutsidePress, true);
+    return () => window.removeEventListener("pointerdown", applyOnOutsidePress, true);
+  }, [commitCornerEdit, editingCorner]);
+
   const cancelCornerEdit = useCallback(() => {
     setEditingCorner(null);
     setPinnedMeasureKey(null);

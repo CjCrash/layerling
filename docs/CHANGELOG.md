@@ -4,6 +4,11 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.26.1
+
+- **Snap grid in inches for designs set to Imperial earlier:** A design or default saved with "Imperial" before 1.26.0 still carried a millimetre snap step; the snap grid then showed "1.0 mm" while its list offered only inch steps. Such a step now becomes 1/8 in when the design opens. Reported by Justin (#65).
+- **Corner boxes no longer stay behind:** The width and depth boxes opened by a click on a corner were left floating when you clicked beside them, dragged the shape or deselected it, and a second pair could appear. Any press outside the boxes now applies what you typed and closes them; dragging, resizing and changing the selection close them too. Reported by Justin (#65).
+
 ## 1.26.0
 
 - **Whitworth pipe threads (G, ISO 228-1):** The thread shape has a fourth size group, "G pipe thread (ISO 228-1)", with the 20 sizes from G 1/16 to G 4, and a new "Whitworth (55°)" profile next to V, trapezoidal and round. Picking a G size switches a V profile to Whitworth, picking an M, UNC or UNF size switches it back; a trapezoidal or round profile you chose stays. For AI assistants `threadProfile` takes `whitworth` and the new `threadSize` sets diameter, pitch and profile by size name (`G1/2`). The guide chapter on threads and the start page mention it. Contributed by @plazmabokor (#61, #59).
