@@ -6,6 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
+- **Videos on the start page:** The welcome guide has a new list "Videos about layerling" with plain links (no embedded player, so nothing is loaded from YouTube until you click). First entry: the 3D Jesus review. The printer count in the guide now says around 190.
 - **Windows desktop shortcut starts properly:** The browser now opens only once the server answers (before, it often showed an error page until you reloaded), and the shortcut first updates layerling with `git pull` plus `npm install`. New: `scripts/start-layerling.cmd`; the README now shows how to choose the install folder with `-InstallPath` (issue #55).
 
 ## 1.24.0
