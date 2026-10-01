@@ -2153,6 +2153,16 @@ button {
   font-size: inherit;
 }
 
+.dashboard-welcome-videos a {
+  color: #8f4700;
+  font-weight: 700;
+}
+
+.dashboard-welcome-video-meta {
+  color: #8a745c;
+  font-size: 13px;
+}
+
 /* Present for search engines and screen readers, out of sight on screen. */
 .visually-hidden {
   position: absolute;
@@ -9113,6 +9123,11 @@ html[data-theme="dark"] .dashboard-welcome-switch strong {
   color: #f3a452;
 }
 
+html[data-theme="dark"] .dashboard-welcome-videos a {
+  color: #f3a452;
+}
+
+html[data-theme="dark"] .dashboard-welcome-video-meta,
 html[data-theme="dark"] .dashboard-welcome-help {
   color: #a08a71;
 }

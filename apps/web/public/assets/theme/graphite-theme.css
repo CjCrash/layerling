@@ -726,6 +726,14 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   color: #414141;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .dashboard-welcome-videos a {
+  color: #8f4700;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .dashboard-welcome-video-meta {
+  color: #656565;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .visually-hidden {
   border: 0;
 }
@@ -3871,6 +3879,11 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .dashboard-welcome-swit
   color: #f3a452;
 }
 
+html[data-theme="dark"]:where([data-palette="graphite"]) .dashboard-welcome-videos a {
+  color: #f3a452;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .dashboard-welcome-video-meta,
 html[data-theme="dark"]:where([data-palette="graphite"]) .dashboard-welcome-help {
   color: #787878;
 }
