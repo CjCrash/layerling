@@ -7167,10 +7167,11 @@ export function WorkplaneViewport({
       } else if (key === "o" && !event.ctrlKey && !event.metaKey && !event.altKey) {
         event.preventDefault();
         toggleProjection();
-      } else if (event.key === "+" || event.key === "=") {
+      } else if ((event.key === "+" || event.key === "=") && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        // With Ctrl or Cmd these are the browser's own page zoom, which the page must not swallow.
         event.preventDefault();
         zoomCamera(0.72);
-      } else if (event.key === "-" || event.key === "_") {
+      } else if ((event.key === "-" || event.key === "_") && !event.ctrlKey && !event.metaKey && !event.altKey) {
         event.preventDefault();
         zoomCamera(1.28);
       }

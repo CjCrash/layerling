@@ -7479,9 +7479,12 @@ button {
   inset: 0;
   z-index: 30;
   display: grid;
+  grid-template-rows: minmax(0, 1fr);
   align-items: start;
   justify-items: center;
   padding-top: 36px;
+  padding-bottom: 16px;
+  box-sizing: border-box;
 }
 
 .workspace-modal-card {
@@ -7489,8 +7492,11 @@ button {
   z-index: 2;
   width: 760px;
   max-width: calc(100vw - 32px);
-  height: min(650px, calc(100vh - 104px));
-  max-height: calc(100vh - 104px);
+  /* Sized to the space the workplane leaves, not to the window: the toolbar can
+     be one row or two, and the page may be zoomed, so a window-based height ran
+     the dialog's footer off the bottom. */
+  height: min(650px, 100%);
+  max-height: 100%;
   overflow: hidden;
   color: #584026;
   background: #fff;
@@ -7536,6 +7542,7 @@ button {
 .workspace-modal-layout {
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   height: calc(100% - 55px);
   min-height: 0;
 }
@@ -7544,7 +7551,9 @@ button {
   display: grid;
   align-content: start;
   gap: 6px;
+  min-height: 0;
   padding: 16px 10px;
+  overflow-y: auto;
   background: #faf7f3;
   border-right: 1px solid #eae3d6;
 }
@@ -8660,8 +8669,8 @@ button {
 
   .workspace-modal-card {
     width: min(760px, calc(100vw - 24px));
-    height: calc(100vh - 112px);
-    max-height: calc(100vh - 112px);
+    height: 100%;
+    max-height: 100%;
   }
 
   .workspace-modal-layout {
@@ -8710,8 +8719,8 @@ button {
 
   .workspace-modal-card {
     width: calc(100vw - 16px);
-    height: calc(100vh - var(--editor-toolbar-height) - var(--editor-footer-height) - 24px);
-    max-height: calc(100vh - var(--editor-toolbar-height) - var(--editor-footer-height) - 24px);
+    height: 100%;
+    max-height: 100%;
   }
 
   .workspace-modal-layout {
