@@ -4,7 +4,7 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
-## Unreleased
+## 1.26.0
 
 - **Whitworth pipe threads (G, ISO 228-1):** The thread shape has a fourth size group, "G pipe thread (ISO 228-1)", with the 20 sizes from G 1/16 to G 4, and a new "Whitworth (55°)" profile next to V, trapezoidal and round. Picking a G size switches a V profile to Whitworth, picking an M, UNC or UNF size switches it back; a trapezoidal or round profile you chose stays. For AI assistants `threadProfile` takes `whitworth` and the new `threadSize` sets diameter, pitch and profile by size name (`G1/2`). The guide chapter on threads and the start page mention it. Contributed by @plazmabokor (#61, #59).
 - **3MF colours reach Bambu Studio and OrcaSlicer:** The 3MF export now also writes the colours as a Materials-extension colour group that every triangle names, which is the form those two read. They show their colour dialog when opening the file and map the body colours onto your filaments; before, all bodies came out in the default colour. Other programs still get the usual colour list per body. Both slicers call the file "not from Bambu", which is harmless (issue #60).
