@@ -4,13 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
-## Unreleased
+## 1.26.1
 
 - **Tapered and leaning shapes stay exact:** A box, cylinder, ellipse, polygon, tube or ring with a taper or lean is now built as an exact body (the straight-sided loft between its bottom and top) instead of a triangle mesh, so the edge tool offers its real edges and fillets it where it used to refuse - a tapered cylinder has 4 selectable edges instead of 200. Twisted shapes, and a tapered sphere or cone, stay a mesh. Also fixed: STEP export wrote a tapered, leaning or twisted box, cylinder, sphere or cone as the plain undeformed shape; it now writes the tapered or leaning body, and skips a twisted one with a message. Contributed by @plazmabokor (#68).
 - **Bent tube as an exact body:** The bent tube is now built as its cross-section pushed along each straight run and turned through each bend - cylinders and tori for a round profile, planes and cones for square, hexagon and octagon - instead of a triangle mesh. The edge tool offers its few real edges (a default tube has 4 instead of 128) and fillets them in well under a second, where many tubes used to be refused, and STEP export now includes it; round tubes go out round. A tube that runs into itself, or a round one drawn visibly coarse, stays a mesh as before. Contributed by @plazmabokor (#66).
-
-## 1.26.1
-
 - **Snap grid in inches for designs set to Imperial earlier:** A design or default saved with "Imperial" before 1.26.0 still carried a millimetre snap step; the snap grid then showed "1.0 mm" while its list offered only inch steps. Such a step now becomes 1/8 in when the design opens. Reported by Justin (#65).
 - **Corner boxes no longer stay behind:** The width and depth boxes opened by a click on a corner were left floating when you clicked beside them, dragged the shape or deselected it, and a second pair could appear. Any press outside the boxes now applies what you typed and closes them; dragging, resizing and changing the selection close them too. Reported by Justin (#65).
 
