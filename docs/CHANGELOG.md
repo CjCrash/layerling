@@ -6,6 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
+- **3MF colours reach Bambu Studio and OrcaSlicer:** The 3MF export now also writes the colours as a Materials-extension colour group that every triangle names, which is the form those two read. They show their colour dialog when opening the file and map the body colours onto your filaments; before, all bodies came out in the default colour. Other programs still get the usual colour list per body. Both slicers call the file "not from Bambu", which is harmless (issue #60).
 - **Own quick guide in sketch mode:** The quick guide (Help group) now shows what matters while sketching - drawing, selecting and editing, clipboard, moving around and measuring, making a body - instead of the 3D editor's sections.
 
 ## 1.25.0

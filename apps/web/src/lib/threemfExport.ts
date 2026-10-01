@@ -25,6 +25,7 @@ export type ThreeMfExportMesh = {
 export const THREE_MF_MEDIA_TYPE = "model/3mf";
 const MODEL_PATH = "3D/3dmodel.model";
 const CORE_NAMESPACE = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02";
+const MATERIAL_NAMESPACE = "http://schemas.microsoft.com/3dmanufacturing/material/2015/02";
 const MODEL_RELATIONSHIP = "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel";
 const DEFAULT_COLOR = "#D97813";
 
@@ -61,10 +62,20 @@ function coordinate(value: number) {
   return Object.is(rounded, -0) ? "0" : String(rounded);
 }
 
+/**
+ * The colours are written twice, on purpose. The core `basematerials` group,
+ * which each object points at, is what most programs read. Bambu Studio and
+ * OrcaSlicer do not read it from files they did not write themselves; they
+ * read the Materials extension's `m:colorgroup`, but only when the triangles
+ * point at it, and then offer to map the colours onto filaments. So every
+ * triangle names the colour group too. A program that knows neither simply
+ * sees the geometry.
+ */
 export function exportMeshesTo3mf(meshes: readonly ThreeMfExportMesh[], metadata: { title?: string } = {}): Uint8Array {
   const colors = [...new Set(meshes.map((mesh) => displayColor(mesh.color)))];
   const objects: string[] = [];
   const items: string[] = [];
+  const colorGroupId = meshes.length + 2; // after the material group (1) and the objects (2...)
 
   meshes.forEach((mesh, index) => {
     const welded = weldMeshVertices(mesh);
@@ -76,10 +87,13 @@ export function exportMeshesTo3mf(meshes: readonly ThreeMfExportMesh[], metadata
         return `<vertex x="${coordinate(x)}" y="${coordinate(y)}" z="${coordinate(z)}"/>`;
       })
       .join("");
-    const triangles = welded.faces.map(([a, b, c]) => `<triangle v1="${a}" v2="${b}" v3="${c}"/>`).join("");
+    const colorIndex = colors.indexOf(displayColor(mesh.color));
+    const triangles = welded.faces
+      .map(([a, b, c]) => `<triangle v1="${a}" v2="${b}" v3="${c}" pid="${colorGroupId}" p1="${colorIndex}"/>`)
+      .join("");
     const name = escapeXml(mesh.name || `Body ${index + 1}`);
     objects.push(
-      `  <object id="${id}" type="model" name="${name}" pid="1" pindex="${colors.indexOf(displayColor(mesh.color))}">` +
+      `  <object id="${id}" type="model" name="${name}" pid="1" pindex="${colorIndex}">` +
         `<mesh><vertices>${vertices}</vertices><triangles>${triangles}</triangles></mesh></object>`,
     );
     items.push(`  <item objectid="${id}"/>`);
@@ -92,12 +106,14 @@ export function exportMeshesTo3mf(meshes: readonly ThreeMfExportMesh[], metadata
   const materials = colors
     .map((color, index) => `<base name="${escapeXml(`Color ${index + 1}`)}" displaycolor="${color}"/>`)
     .join("");
+  const colorGroup = colors.map((color) => `<m:color color="${color}FF"/>`).join("");
   const title = metadata.title?.trim() ? `  <metadata name="Title">${escapeXml(metadata.title.trim())}</metadata>\n` : "";
   const model = `<?xml version="1.0" encoding="UTF-8"?>
-<model unit="millimeter" xml:lang="en-US" xmlns="${CORE_NAMESPACE}">
+<model unit="millimeter" xml:lang="en-US" xmlns="${CORE_NAMESPACE}" xmlns:m="${MATERIAL_NAMESPACE}">
 ${title}  <metadata name="Application">layerling</metadata>
  <resources>
   <basematerials id="1">${materials}</basematerials>
+  <m:colorgroup id="${colorGroupId}">${colorGroup}</m:colorgroup>
 ${objects.join("\n")}
  </resources>
  <build>

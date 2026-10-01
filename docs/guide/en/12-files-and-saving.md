@@ -26,7 +26,7 @@ At the top is the file name, below it you choose the format. You decide whether 
 | Format | For | What to know |
 | --- | --- | --- |
 | **STL** | slicer and 3D printing | A triangle mesh. The simplest and most widespread format. |
-| **3MF** | slicer with colours | Every body stays a part of its own with name and colour. Suited to PrusaSlicer, Bambu Studio, OrcaSlicer and Cura. |
+| **3MF** | slicer with colours | Every body stays a part of its own with name and colour. Suited to PrusaSlicer, Bambu Studio, OrcaSlicer and Cura. Bambu Studio and OrcaSlicer ask on opening how to map the colours onto your filaments, and call the file "not from Bambu" - the message is harmless. |
 | **OBJ** | modelling and exchange | A widely supported mesh format. |
 | **STEP** | a full CAD program | Keeps boxes, cylinders, spheres and cones as exact geometry, and so shapes made from an outline (star, heart, ellipse, tube, half sphere, round roof, rounded box, dovetail, the bores and more), plus fillets and chamfers. Thread, spring and bent tube are still missing. The first STEP export in a session loads the CAD kernel (about 22 MB) once. |
 | **SVG** | laser cutter and plotter | A clean top view in millimetres, including holes and curved outlines. |

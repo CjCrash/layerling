@@ -80,6 +80,24 @@ describe("exportMeshesTo3mf", () => {
     expect([...model.matchAll(/<item objectid="(\d+)"\/>/g)].map((match) => match[1])).toEqual(["2", "3", "4"]);
   });
 
+  it("also writes the colours as a Materials-extension colour group that every triangle names, the way Bambu Studio and OrcaSlicer read them", () => {
+    const { model } = readPackage(exportMeshesTo3mf([
+      cube("Base", "#d97813"),
+      cube("Peg", "#1e88e5", 3),
+    ]));
+
+    expect(model).toContain('xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02"');
+    // Two objects (ids 2 and 3) and the material group (1) come first, so the group is 4.
+    expect(model).toContain('<m:colorgroup id="4"><m:color color="#D97813FF"/><m:color color="#1E88E5FF"/></m:colorgroup>');
+    const triangleColours = [...model.matchAll(/<triangle v1="\d+" v2="\d+" v3="\d+" pid="(\d+)" p1="(\d+)"\/>/g)];
+    expect(triangleColours).toHaveLength(24); // 12 triangles per cube
+    expect(new Set(triangleColours.map((match) => match[1]))).toEqual(new Set(["4"]));
+    expect(triangleColours.slice(0, 12).every((match) => match[2] === "0")).toBe(true);
+    expect(triangleColours.slice(12).every((match) => match[2] === "1")).toBe(true);
+    // The core material group stays for the programs that read that one.
+    expect(model).toContain('name="Peg" pid="1" pindex="1"');
+  });
+
   it("falls back to the default colour for anything that is not #rrggbb", () => {
     const { model } = readPackage(exportMeshesTo3mf([cube("Box", "orange")]));
     expect(model).toContain('displaycolor="#D97813"');
