@@ -4,7 +4,7 @@ import type { CadModifierProfileLoop, CadModifierProfilePart, CadModifierProfile
 import { profileArcPoint, profileLoopBounds, validateCadProfile } from "@/lib/cadProfileSolid";
 import { cadTransformFromMatrix } from "@/lib/cadBakeMetadata";
 import { CAD_MODIFIER_EXACT_SEGMENT_LIMIT } from "@/lib/cadModifierRuntime";
-import { meshYawDegrees, mirrorSign, shapeDepth, shapeHasShapeDeform, shapeWidth } from "@/lib/workplaneShapes";
+import { meshYawDegrees, mirrorSign, shapeDepth, shapeHasShapeDeform, shapeTaperDimensions, shapeWidth } from "@/lib/workplaneShapes";
 import { regularPolygonFootprintScale } from "@/lib/regularPolygonFootprint";
 import { roundSideCount } from "@/lib/roundSideCount";
 import { drawnRound, ROUND_FROM_BENT_TUBE_QUALITY, ROUND_FROM_HALF_SPHERE_STEPS, ROUND_FROM_ROOF_SIDES, ROUND_FROM_SIDES, ROUND_FROM_SPHERE_STEPS } from "@/lib/roundness";
@@ -907,12 +907,64 @@ export function asDesignedRound(shape: WorkplaneShape): WorkplaneShape {
   return { ...shape, sides: undefined, steps: undefined };
 }
 
+/**
+ * Kinds whose body is their outline pushed straight up the whole height. A
+ * taper scales that outline linearly from bottom to top and a lean shifts it
+ * linearly (transformMesh), so every straight line from a bottom point to its
+ * top point stays straight: the body is the ruled loft between the two ends,
+ * exactly. Text is left out - it reaches the edge tool glyph by glyph.
+ */
+const LOFTABLE_KINDS = new Set<WorkplaneShape["kind"]>(["box", "cylinder", "ellipse", "polygon", "tube", "ring"]);
+
+/**
+ * The tapered or leaning shape as a ruled loft between its bottom and top
+ * section, or null. A twist turns the section as it rises, so the sides
+ * become twisted surfaces that no straight line between the ends follows -
+ * that stays on the display mesh.
+ */
+function deformedLoftProfile(shape: WorkplaneShape, width: number, depth: number): CadModifierProfilePart | null {
+  if (!LOFTABLE_KINDS.has(shape.kind)) return null;
+  if (Math.abs(shape.extrudeTwist ?? 0) > 1e-6) return null;
+  let loops: CadModifierProfileLoop[];
+  if (shape.kind === "box") {
+    // A box with a rounded radius (only older files carry one) is drawn round; its loft would not be.
+    if ((shape.radius ?? 0) > 0) return null;
+    loops = [polygonLoop([{ x: -width / 2, z: -depth / 2 }, { x: width / 2, z: -depth / 2 }, { x: width / 2, z: depth / 2 }, { x: -width / 2, z: depth / 2 }])];
+  } else {
+    // A round cylinder has no outline of its own (it is an analytic
+    // primitive); as an ellipse it gets the same circle, or its drawn polygon.
+    const base = cadProfileForShapeKind(shape.kind === "cylinder" ? { ...shape, kind: "ellipse" } : shape);
+    if (!base || base.frame || base.capFillet) return null;
+    loops = base.loops;
+  }
+  const taper = shapeTaperDimensions(shape);
+  const offsetX = shape.extrudeTopOffsetX ?? 0;
+  const offsetZ = shape.extrudeTopOffsetZ ?? 0;
+  const part: CadModifierProfilePart = {
+    kind: "loft",
+    loops: loops.map((loop) => mapLoop(loop, taper.bottomWidth / width, 0, taper.bottomDepth / depth, 0)),
+    topLoops: loops.map((loop) => mapLoop(loop, taper.topWidth / width, offsetX, taper.topDepth / depth, offsetZ)),
+    height: shape.height,
+    transform: profileTransformForShape(shape),
+  };
+  validateCadProfile(part);
+  return part;
+}
+
 export function cadModifierProfileForShape(shape: WorkplaneShape, options: { designedRound?: boolean } = {}): CadModifierProfilePart | null {
-  if (!CAD_PROFILE_SHAPE_KINDS.has(shape.kind)) return null;
-  if (shape.importedMesh || shape.groupedShapes?.length || shape.cadBrep || shape.imagePlate || shapeHasShapeDeform(shape)) return null;
+  if (!CAD_PROFILE_SHAPE_KINDS.has(shape.kind) && !LOFTABLE_KINDS.has(shape.kind)) return null;
+  if (shape.importedMesh || shape.groupedShapes?.length || shape.cadBrep || shape.imagePlate) return null;
   const width = shapeWidth(shape);
   const depth = shapeDepth(shape);
   if (![width, depth, shape.height].every((value) => Number.isFinite(value) && value > 0)) return null;
+  if (shapeHasShapeDeform(shape)) {
+    try {
+      return deformedLoftProfile(shape, width, depth);
+    } catch {
+      return null;
+    }
+  }
+  if (!CAD_PROFILE_SHAPE_KINDS.has(shape.kind)) return null;
   try {
     const profile = cadProfileForShapeKind(shape, options.designedRound);
     if (!profile) return null;

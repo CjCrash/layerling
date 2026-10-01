@@ -387,10 +387,10 @@ describe("which shapes get an exact profile", () => {
     expect(cadModifierProfileForShape(shape("gear", { gearType: "helical" }))).toBeNull();
     expect(cadModifierProfileForShape(shape("gear", { gearType: "bevel" }))).toBeNull();
     expect(cadModifierProfileForShape(shape("text"))).toBeNull();
-    // Only the polygon can be tapered, twisted or leaned; that stays on the mesh.
+    // A twist stays on the mesh; a taper or lean is a loft (tests/unit/taperedLoft.test.ts).
     expect(cadModifierProfileForShape(shape("polygon", { extrudeTwist: 45 }))).toBeNull();
-    expect(cadModifierProfileForShape(shape("polygon", { extrudeTopOffsetX: 5 }))).toBeNull();
-    expect(cadModifierProfileForShape(shape("polygon", { taperTopWidth: 20, taperTopDepth: 20 }))).toBeNull();
+    expect(cadModifierProfileForShape(shape("polygon", { extrudeTopOffsetX: 5 }))?.kind).toBe("loft");
+    expect(cadModifierProfileForShape(shape("polygon", { taperTopWidth: 20, taperTopDepth: 20 }))?.kind).toBe("loft");
     expect(cadModifierProfileForShape(shape("star", { cadBrep: "brep" }))).toBeNull();
     expect(cadModifierProfileForShape(shape("star", { importedMesh: { positions: [0, 0, 0, 1, 0, 0, 0, 1, 0], baseWidth: 1, baseDepth: 1, baseHeight: 1 } } as Partial<WorkplaneShape>))).toBeNull();
     expect(cadModifierProfileForShape(shape("star", { groupedShapes: [shape("box")] }))).toBeNull();

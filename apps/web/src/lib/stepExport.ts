@@ -1,5 +1,5 @@
 import type { WorkplaneShape } from "@/types/layerling";
-import { shapeDepth, shapeWidth } from "@/lib/workplaneShapes";
+import { shapeDepth, shapeHasShapeDeform, shapeWidth } from "@/lib/workplaneShapes";
 import { cadBrepTransformForShape } from "@/lib/cadBakeMetadata";
 import { loadBrepWithOcct, occtKernel, type Brep, type BrepSolid } from "@/lib/brepKernel";
 import { asDesignedRound, cadModifierProfileForShape } from "@/lib/cadProfileExtrusion";
@@ -70,6 +70,10 @@ function hasExactProfile(shape: WorkplaneShape) {
 
 export function stepSourceForShape(shape: WorkplaneShape): StepSource {
   if (shape.kind === "mesh" && shape.importedMesh?.brepStep) return "imported";
+  // A taper or lean is no part of the primitives: the box would go out as a
+  // plain box. A tapered or leaning prism goes out as its loft; a twist, or a
+  // deformed round body, has no exact form yet.
+  if (shapeHasShapeDeform(shape)) return shape.cadBrep ? "baked" : hasExactProfile(shape) ? "profile" : "unsupported";
   const oval = (shape.kind === "cylinder" || shape.kind === "cone") && Math.abs(shapeWidth(shape) - shapeDepth(shape)) >= SIZE_EPS;
   if (EXACT_KINDS.has(shape.kind) && !oval) return "primitive";
   if (shape.cadBrep) return "baked";

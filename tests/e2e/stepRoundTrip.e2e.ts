@@ -204,6 +204,18 @@ describe("STEP export round-trip (real OCCT kernel)", () => {
     expect(near(await reimportVolume(blob), expected, 1e-4)).toBe(true);
   });
 
+  it("exports a tapered and a leaning box as they are drawn, not as plain boxes, and skips a twisted one", async () => {
+    // 30 x 20 at the bottom to 12 x 8 at the top over 15: (h/3)(A1 + A2 + sqrt(A1 A2)) for similar ends.
+    const frustum = shape({ kind: "box", name: "Frustum", x: -40, width: 30, depth: 20, height: 15, taperTopWidth: 12, taperTopDepth: 8 });
+    const leaning = shape({ kind: "box", name: "Leaning", x: 40, width: 10, depth: 10, height: 20, extrudeTopOffsetX: 6 });
+    const twisted = shape({ kind: "box", name: "Twisted", x: 0, z: 60, width: 10, depth: 10, height: 20, extrudeTwist: 45 });
+    const { blob, exportedCount, skipped } = await exportShapesToStep([frustum, leaning, twisted]);
+    expect(exportedCount).toBe(2);
+    expect(skipped.map((entry) => entry.name)).toEqual(["Twisted"]);
+    const expected = (15 / 3) * (600 + 96 + Math.sqrt(600 * 96)) + 10 * 10 * 20;
+    expect(near(await reimportVolume(blob), expected, 1e-4)).toBe(true);
+  });
+
   it("exports a star, a heart and a teardrop instead of skipping them", async () => {
     const star = shape({ kind: "star", name: "Star", x: -30, width: 20, depth: 20, height: 5 });
     const heart = shape({ kind: "heart", name: "Heart", x: 0, width: 20, depth: 20, height: 5 });
