@@ -5342,10 +5342,12 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .open-group-cancel {
   background: rgba(127, 127, 127, 0.16);
 }
 
-:where(html[data-theme="dark"][data-palette="graphite"]) .guide-full-link a {
-  color: #fff;
-  background: #ad6206;
-  text-decoration: none;
+:where(html[data-theme="dark"][data-palette="graphite"]) .guide-videos a {
+  color: #8f4700;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .guide-videos a {
+  color: #f3a452;
 }
 
 :where(html[data-theme="dark"][data-palette="graphite"]) .inspector-help-link {

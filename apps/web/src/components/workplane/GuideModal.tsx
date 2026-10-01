@@ -117,17 +117,16 @@ export function GuideModal({ onClose, sharedStore = false }: { onClose: () => vo
         <div className="workspace-modal-content">
           <div className="workspace-modal-body shortcuts-modal-body">
             <p className="shortcuts-intro">{t("guide.intro")}</p>
-            <p className="guide-full-link">
-              <a href={guideHref(language)} target="_blank" rel="noreferrer">{t("guide.fullGuide")}</a>
-            </p>
-            <p className="guide-full-link">
-              {t("guide.videos")}{" "}
-              {LAYERLING_VIDEOS.map((video) => (
-                <a key={video.url} href={video.url} target="_blank" rel="noopener noreferrer">
-                  {video.title} ({video.lang})
-                </a>
-              ))}
-            </p>
+            <div className="guide-videos">
+              <strong>{t("guide.videos")}</strong>
+              <ul>
+                {LAYERLING_VIDEOS.map((video) => (
+                  <li key={video.url}>
+                    <a href={video.url} target="_blank" rel="noopener noreferrer">{video.title}</a> ({video.lang})
+                  </li>
+                ))}
+              </ul>
+            </div>
             <div className="shortcuts-groups">
               {sections.map((section) => (
                 <section className="shortcuts-group guide-section" key={section.title}>
