@@ -1253,7 +1253,6 @@ html:where([data-theme="dark"][data-palette="graphite"]),
 
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section[data-group="draw"],
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section[data-group="select"],
-:where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section[data-group="inspect"],
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section[data-group="finish"],
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section[data-group="create"] {
   --group-color: var(--group-sketch);
