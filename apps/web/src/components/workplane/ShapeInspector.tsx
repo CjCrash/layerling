@@ -121,7 +121,7 @@ import {
   minBentTubeBendRadius,
   normalizedBentTubeFields,
 } from "@/lib/bentTubeGeometry";
-import { displayStepFromMillimeters, displayToMillimeters, formatMeasurementNumber, lengthDisplayUnit, measurementOptionLabel, millimetersToDisplay, parseMeasurementInput, resolveMeasurementInput } from "@/lib/measurementUnits";
+import { displayStepFromMillimeters, formatFractionalInches, displayToMillimeters, formatMeasurementNumber, lengthDisplayUnit, measurementOptionLabel, millimetersToDisplay, parseMeasurementInput, resolveMeasurementInput } from "@/lib/measurementUnits";
 import { t, type MessageKey } from "@/lib/i18n";
 import { displayShapeName } from "@/lib/shapeCatalog";
 import { MAX_SCREW_HOLE_ANGLE, MIN_SCREW_HOLE_ANGLE, normalizeScrewHoleAngle, normalizeScrewHoleHeadDepth, normalizeScrewHoleShaft } from "@/lib/screwHoleGeometry";
@@ -2022,8 +2022,16 @@ function RangeProperty({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(formatPropertyNumber(controlValue, accuracy, controlStep));
   const unit = isLength ? lengthDisplayUnit(workspace).label : null;
+  // Inches read as fractions (1⅝), like Tinkercad; the slider and typed decimals stay exact.
+  const formatShown = (shown: number) => (unit === "in" ? formatFractionalInches(shown) : formatPropertyNumber(shown, accuracy, controlStep));
   const toModelValue = (nextValue: number) => isLength ? displayToMillimeters(nextValue, workspace) : nextValue;
   const commitDraft = () => {
+    // Leaving the field untouched keeps the exact value, not its rounded reading.
+    if (draft === formatShown(controlValue)) {
+      setEditing(false);
+      onInteractionActiveChange?.(false);
+      return;
+    }
     const next = RELATIVE_SIZE_PROPERTY_IDS.has(id)
       ? resolveMeasurementInput(draft, controlValue)
       : parseMeasurementInput(draft);
@@ -2036,7 +2044,7 @@ function RangeProperty({
   const handleSliderChange = (nextValue: number) => {
     const next = clamp(Number.isFinite(nextValue) ? nextValue : controlMin, controlMin, controlMax);
     onChange(clamp(toModelValue(next), min, max));
-    setDraft(formatPropertyNumber(next, accuracy, controlStep));
+    setDraft(formatShown(next));
   };
   return (
     <label className="range-property" style={{ "--slider-pos": `${position}%` } as CSSProperties}>
@@ -2045,12 +2053,12 @@ function RangeProperty({
         <span className="range-value-control">
           <input
             type="text"
-            value={editing ? draft : formatPropertyNumber(controlValue, accuracy, controlStep)}
+            value={editing ? draft : formatShown(controlValue)}
             disabled={disabled}
-            inputMode="decimal"
+            inputMode={unit === "in" ? "text" : "decimal"}
             onFocus={(event) => {
               onInteractionActiveChange?.(true);
-              setDraft(formatPropertyNumber(controlValue, accuracy, controlStep));
+              setDraft(formatShown(controlValue));
               setEditing(true);
               selectWholeValue(event.currentTarget);
             }}
@@ -2060,7 +2068,7 @@ function RangeProperty({
               if (event.key === "Enter") {
                 event.currentTarget.blur();
               } else if (event.key === "Escape") {
-                setDraft(formatPropertyNumber(controlValue, accuracy, controlStep));
+                setDraft(formatShown(controlValue));
                 setEditing(false);
               }
             }}

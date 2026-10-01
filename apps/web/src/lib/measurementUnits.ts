@@ -94,12 +94,11 @@ function parseFractionInput(value: string) {
 
 /**
  * Inches as a mixed number the way Tinkercad prints them: 1.625 becomes "1⅝",
- * 0.1875 "3/16". Null when the value is not a multiple of 1/64 in, so the
- * caller falls back to decimals instead of rounding a distance away.
+ * 0.1875 "3/16". The value is rounded to the nearest 1/64 in, so this is a
+ * display format; typed decimals keep their exact value underneath.
  */
 export function formatFractionalInches(inches: number) {
   const sixtyFourths = Math.round(Math.abs(inches) * 64);
-  if (Math.abs(Math.abs(inches) * 64 - sixtyFourths) > 0.032) return null;
   const sign = inches < 0 && sixtyFourths > 0 ? "-" : "";
   const whole = Math.floor(sixtyFourths / 64);
   let numerator = sixtyFourths % 64;
@@ -180,4 +179,34 @@ const OPTION_LABEL_KEYS: Record<string, MessageKey> = {
 export function measurementOptionLabel(option: string): string {
   const key = OPTION_LABEL_KEYS[option];
   return key ? t(key) : option;
+}
+
+// Unit that the labels on the workplane are shown and typed in. The overlay
+// code is spread over plain functions, so the current setting lives here
+// instead of being passed through every one of them; the editor updates it
+// whenever the workspace settings change.
+let lengthUnit: Pick<WorkplaneWorkspaceSettings, "units" | "scale"> = { units: "Metric (Default)", scale: "1:1 (millimeters)" };
+
+export function setLengthUnit(workspace: Pick<WorkplaneWorkspaceSettings, "units" | "scale">) {
+  lengthUnit = { units: workspace.units, scale: workspace.scale };
+}
+
+/** Millimetres printed in the workspace unit; inches as fractions (1⅝), like Tinkercad. */
+export function formatLengthMm(value: number, accuracy: number) {
+  const zeroThreshold = 0.5 * 10 ** -accuracy;
+  const shown = millimetersToDisplay(value, lengthUnit);
+  const normalized = Math.abs(shown) < zeroThreshold ? 0 : shown;
+  if (lengthDisplayUnit(lengthUnit).label === "in") return formatFractionalInches(normalized);
+  return normalized.toFixed(accuracy);
+}
+
+/** What the user types is in the workspace unit; the result is millimetres. */
+export function parseLengthMm(raw: string | number) {
+  return displayToMillimeters(parseMeasurementInput(raw), lengthUnit);
+}
+
+/** A trailing percent scales the current value (millimetres), anything else is a distance. */
+export function resolveLengthMm(raw: string | number, currentMm: number) {
+  if (typeof raw === "string" && raw.trim().endsWith("%")) return resolveMeasurementInput(raw, currentMm);
+  return parseLengthMm(raw);
 }

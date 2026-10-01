@@ -35,7 +35,7 @@ describe("inch fractions", () => {
     expect(formatFractionalInches(3)).toBe("3");
     expect(formatFractionalInches(0)).toBe("0");
     expect(formatFractionalInches(-0.75)).toBe("-¾");
-    expect(formatFractionalInches(0.7874)).toBeNull();
+    expect(formatFractionalInches(0.7874)).toBe("25/32");
   });
 
   it("reads fractions back, typed or printed", () => {

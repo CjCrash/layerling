@@ -1,3 +1,5 @@
+import { formatLengthMm } from "@/lib/measurementUnits";
+
 export type MoveDimensionAxis = "x" | "z";
 
 export type MoveDimensionScreenPoint = {
@@ -55,9 +57,7 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export function formatMoveDimension(value: number, accuracy: number) {
-  const zeroThreshold = 0.5 * 10 ** -accuracy;
-  const normalized = Math.abs(value) < zeroThreshold ? 0 : value;
-  return normalized.toFixed(accuracy);
+  return formatLengthMm(value, accuracy);
 }
 
 export function dimensionLabelPosition(

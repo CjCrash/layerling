@@ -36,7 +36,7 @@ import { createBentTubeGeometry } from "@/lib/bentTubeGeometry";
 import { createThreadGeometry } from "@/lib/threadGeometry";
 import { createSpringGeometry } from "@/lib/springGeometry";
 import { createTextGeometry } from "@/lib/textGeometry";
-import { displayToMillimeters, formatFractionalInches, lengthDisplayUnit, millimetersToDisplay, parseMeasurementInput, resolveMeasurementInput } from "@/lib/measurementUnits";
+import { formatLengthMm, parseLengthMm, parseMeasurementInput, resolveLengthMm, setLengthUnit } from "@/lib/measurementUnits";
 import {
   computeCornerRulerRelativeCoordinates,
   computeCornerRulerShift,
@@ -8740,37 +8740,10 @@ function setSelectionHelpersVisible(state: ThreeState | null, visible: boolean) 
   state.needsRender = true;
 }
 
-// Unit the labels on the workplane are shown and typed in. The overlay code is
-// spread over plain functions, so the current setting lives here instead of
-// being passed through every one of them; the component updates it on render.
-let measureUnit: Pick<WorkplaneWorkspaceSettings, "units" | "scale"> = { units: "Metric (Default)", scale: "1:1 (millimeters)" };
-
-function setMeasureUnit(workspace: Pick<WorkplaneWorkspaceSettings, "units" | "scale">) {
-  measureUnit = { units: workspace.units, scale: workspace.scale };
-}
-
-// Labels take millimetres and print them in the workspace unit.
-function formatMeasure(value: number, accuracy: MeasurementAccuracy = DEFAULT_WORKSPACE.accuracy) {
-  const zeroThreshold = 0.5 * 10 ** -accuracy;
-  const shown = cleanNearZero(millimetersToDisplay(value, measureUnit), zeroThreshold);
-  // Inches read as fractions (1⅝), like Tinkercad; other values keep their decimals.
-  if (lengthDisplayUnit(measureUnit).label === "in") {
-    const fraction = formatFractionalInches(shown);
-    if (fraction !== null) return fraction;
-  }
-  return shown.toFixed(accuracy);
-}
-
-// What the user types is in the workspace unit; the result is millimetres.
-function parseMeasureMm(raw: string | number) {
-  return displayToMillimeters(parseMeasurementInput(raw), measureUnit);
-}
-
-// A trailing percent scales the current value (millimetres), anything else is a distance.
-function resolveMeasureMm(raw: string | number, currentMm: number) {
-  if (typeof raw === "string" && raw.trim().endsWith("%")) return resolveMeasurementInput(raw, currentMm);
-  return parseMeasureMm(raw);
-}
+const formatMeasure = formatLengthMm;
+const parseMeasureMm = parseLengthMm;
+const resolveMeasureMm = resolveLengthMm;
+const setMeasureUnit = setLengthUnit;
 
 function makeDimensionMark(
   key: string,
