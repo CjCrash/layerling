@@ -6,7 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
-- **Windows-Start per Desktop-Verknüpfung:** Der Browser öffnet sich erst, wenn der Server antwortet (vorher oft leere Fehlerseite bis zum Neuladen), und die Verknüpfung holt vorher Updates per `git pull` samt `npm install`. Neu: `scripts/start-layerling.cmd`; Installationsordner per `-InstallPath` im README beschrieben (Issue #55).
+- **Windows desktop shortcut starts properly:** The browser now opens only once the server answers (before, it often showed an error page until you reloaded), and the shortcut first updates layerling with `git pull` plus `npm install`. New: `scripts/start-layerling.cmd`; the README now shows how to choose the install folder with `-InstallPath` (issue #55).
 
 ## 1.24.0
 
