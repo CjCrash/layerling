@@ -69,7 +69,7 @@ import { roundSideCount } from "@/lib/roundSideCount";
 import { createPyramidGeometry } from "@/lib/pyramidGeometry";
 import { projectThumbnailDimensions } from "@/lib/projectThumbnail";
 import { makeShapeFromAsset } from "@/lib/shapeCatalog";
-import { canBeginShapeDrag, DEFAULT_SNAP_GRID, DEFAULT_WORKPLANE_WORKSPACE, normalizeSnapGrid, normalizeWorkspaceSettings, orbitControlsZoomSpeed, readWorkspaceDefault, saveWorkspaceDefault, shapeDimensionLimit, snapGridStep as snapStep, workplaneSettingsFingerprint, workspaceHydrationSyncDecision, zoomDistanceScale } from "@/lib/workplaneSettings";
+import { canBeginShapeDrag, DEFAULT_SNAP_GRID, DEFAULT_WORKPLANE_WORKSPACE, normalizeSnapGrid, normalizeWorkspaceSettings, orbitControlsZoomSpeed, readWorkspaceDefault, saveWorkspaceDefault, shapeDimensionLimit, snapGridForUnits, snapGridStep as snapStep, workplaneSettingsFingerprint, workspaceHydrationSyncDecision, zoomDistanceScale } from "@/lib/workplaneSettings";
 import { interiorWorkplaneGridCoordinates, workplaneGridPalette, workplaneLabelLayout, workplaneThemePalette, WORKPLANE_LABEL_ASPECT, WORKPLANE_LINE_ELEVATION, WORKPLANE_MAJOR_GRID_INTERVAL } from "@/lib/workplaneGrid";
 import { cleanNearZero, cleanRotationDegrees, isNonSolidShapeKind, mirroredAxisCount, mirrorSign, preservesEdgeTreatmentSize, proportionalResizeScale, resizedImportedCoordinates, resizedImportedMeshPositions, resizedShapeSize, shapeDepth, shapeExtrudeDeformAt, shapeHasExtrudeDeform, shapeHasShapeDeform, shapeHasTaper, shapeOverallFootprintDimensions, shapeTaperDimensions, shapeTaperScaleAt, shapeWidth, shapeWithParametricSource } from "@/lib/workplaneShapes";
 import { sphereTessellation } from "@/lib/sphereTessellation";
@@ -3924,8 +3924,10 @@ export function WorkplaneViewport({
     }
     const shouldUseSavedDefault = nextKey === "local-workplane" || (initialSnap === undefined && initialWorkspace === undefined);
     const savedDefault = shouldUseSavedDefault ? readSavedWorkspaceDefault(nextKey) : null;
-    const nextSnap = savedDefault?.snap ?? normalizeSnapGrid(initialSnap, DEFAULT_SNAP_GRID);
     const nextWorkspace = savedDefault?.workspace ?? normalizeWorkspaceSettings(initialWorkspace);
+    // Settings saved before the inch steps existed pair Imperial with a
+    // millimetre step, which the unit's own list does not offer.
+    const nextSnap = snapGridForUnits(nextWorkspace.units, savedDefault?.snap ?? normalizeSnapGrid(initialSnap, DEFAULT_SNAP_GRID));
     const nextFingerprint = workplaneSettingsFingerprint(nextWorkspace, nextSnap);
     // Prop hydration must not echo back to the parent. Parent persistence creates
     // new object references even when the values are unchanged, which previously
@@ -4071,6 +4073,7 @@ export function WorkplaneViewport({
       setPinnedMeasureKey(null);
       setEditingDimension(null);
       setEditingRotation(null);
+      setEditingCorner(null);
       setRotationReadout(null);
       setActiveRotationWheel(false);
       setActiveTransformKind(null);
@@ -4267,6 +4270,7 @@ export function WorkplaneViewport({
       setPinnedMeasureKey(null);
       setEditingDimension(null);
       setEditingRotation(null);
+      setEditingCorner(null);
       setRotationReadout(null);
       setActiveRotationWheel(false);
       setActiveTransformKind(null);
@@ -5000,6 +5004,7 @@ export function WorkplaneViewport({
       event.stopPropagation();
       event.currentTarget.setPointerCapture(event.pointerId);
       setEditingRotation(null);
+      setEditingCorner(null);
       setPinnedMeasureKey(measureKeyForHandle(kind, handleKey, transformOverlayRef.current));
       if (kind === "height") {
         setHoverMeasureKey(null);
@@ -5789,11 +5794,13 @@ export function WorkplaneViewport({
       });
     }
     setEditingRotation(null);
+    setEditingCorner(null);
     setActiveRotationWheel(false);
   }, [editingRotation, onUpdateShape]);
 
   const cancelRotationEdit = useCallback(() => {
     setEditingRotation(null);
+    setEditingCorner(null);
     setActiveRotationWheel(false);
   }, []);
 
@@ -6340,6 +6347,7 @@ export function WorkplaneViewport({
         event.preventDefault();
         event.currentTarget.setPointerCapture(event.pointerId);
         setEditingRotation(null);
+        setEditingCorner(null);
         setPinnedMeasureKey(measureKeyForHandle(handle.kind, handle.handleKey, transformOverlayRef.current));
         if (handle.kind === "height") {
           setHoverMeasureKey(null);
@@ -6504,6 +6512,7 @@ export function WorkplaneViewport({
       if (items.length === 0) {
         return;
       }
+      setEditingCorner(null);
       dragRef.current = {
         primaryId: id,
         offsetX: shape.x - point.x,
