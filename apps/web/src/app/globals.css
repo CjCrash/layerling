@@ -2949,6 +2949,10 @@ button {
   min-width: 150px;
 }
 
+.sketch-clipboard-section {
+  min-width: 196px;
+}
+
 .sketch-history-section {
   min-width: 104px;
 }

@@ -148,6 +148,7 @@ import { importedShapeFrom3mf } from "@/lib/threemfImport";
 import { attachProjectAsset, dedupeProjectAssets, projectAssetFromBytes, sourceFormatForFileName } from "@/lib/projectAssets";
 import { findSketchOutlineIntersection } from "@/lib/sketchProfileValidation";
 import { addLineIntersectionPoints, splitSketchSegment } from "@/lib/sketchPointRefinement";
+import { copySketchSelection, freeSketchPasteOffset, pasteSketchClipboard, type SketchClipboard } from "@/lib/sketchClipboard";
 import { applySketchChamfer, applySketchFillet } from "@/lib/sketchFilletChamfer";
 import { buildSketchRevolveMesh, DEFAULT_SKETCH_REVOLVE_SETTINGS, normalizeSketchRevolveSettings, type SketchRevolveMesh } from "@/lib/sketchRevolve";
 import { AppFooter } from "@/components/AppFooter";
@@ -6226,6 +6227,7 @@ export function LayerlingEditor({
   const [sketchProfile, setSketchProfile] = useState<SketchProfile>(() => emptySketchProfile());
   const [sketchHistory, setSketchHistory] = useState<SketchProfile[]>([emptySketchProfile()]);
   const [sketchHistoryIndex, setSketchHistoryIndex] = useState(0);
+  const [sketchClipboard, setSketchClipboard] = useState<SketchClipboard | null>(null);
   const sketchHistoryRef = useRef(sketchHistory);
   const sketchHistoryIndexRef = useRef(sketchHistoryIndex);
   const [sketchActivePointId, setSketchActivePointId] = useState<string | null>(null);
@@ -7687,6 +7689,61 @@ export function LayerlingEditor({
       setSketchSelection(null);
     }
   }, [commitSketchProfile, deleteSketchImage, deleteSketchPoint, deleteSketchSegment, sketchProfile, sketchSelection]);
+
+  const copySketchSelectionToClipboard = useCallback(() => {
+    const copied = copySketchSelection(sketchProfile, sketchSelection);
+    if (!copied) {
+      setNotice(t("status.selectSketchGeometry"));
+      return;
+    }
+    setSketchClipboard(copied);
+    setNotice(t("status.sketchCopied"));
+  }, [sketchProfile, sketchSelection]);
+
+  const cutSketchSelection = useCallback(() => {
+    const copied = copySketchSelection(sketchProfile, sketchSelection);
+    if (!copied) {
+      setNotice(t("status.selectSketchGeometry"));
+      return;
+    }
+    // A locked image refuses to be deleted; cutting it would only copy it.
+    if (copied.images.some((image) => image.locked)) {
+      setNotice(t("status.unlockImageDelete"));
+      return;
+    }
+    setSketchClipboard(copied);
+    deleteSelectedSketchEntity();
+    setNotice(t("status.sketchCut"));
+  }, [deleteSelectedSketchEntity, sketchProfile, sketchSelection]);
+
+  const insertSketchCopy = useCallback((source: SketchClipboard, message: string) => {
+    const { width, depth } = workspaceSettingsRef.current;
+    const plate = { minX: -width / 2, maxX: width / 2, minZ: -depth / 2, maxZ: depth / 2 };
+    const offset = freeSketchPasteOffset(sketchProfile, source, plate);
+    const pasted = pasteSketchClipboard(sketchProfile, source, offset, createLocalId);
+    commitSketchProfile(pasted.profile, message);
+    setSketchActivePointId(null);
+    setSketchSelection({ kind: "multiple", pointIds: pasted.pointIds, segmentIds: pasted.segmentIds, imageIds: pasted.imageIds });
+  }, [commitSketchProfile, sketchProfile]);
+
+  const pasteSketchSelection = useCallback(() => {
+    if (!sketchClipboard) {
+      setNotice(t("status.sketchClipboardEmpty"));
+      return;
+    }
+    insertSketchCopy(sketchClipboard, t("status.sketchPasted"));
+  }, [insertSketchCopy, sketchClipboard]);
+
+  // Like the 3D editor's duplicate, but moved clear of the original: a copy on
+  // top of it would be invisible and welded to it where their lines cross.
+  const duplicateSketchSelection = useCallback(() => {
+    const copied = copySketchSelection(sketchProfile, sketchSelection);
+    if (!copied) {
+      setNotice(t("status.selectSketchGeometry"));
+      return;
+    }
+    insertSketchCopy(copied, t("status.sketchDuplicated"));
+  }, [insertSketchCopy, sketchProfile, sketchSelection]);
 
   const moveSketchPoint = useCallback((id: string, position: { x: number; z: number }) => {
     const current = sketchProfile.points.find((point) => point.id === id);
@@ -10838,6 +10895,18 @@ export function LayerlingEditor({
         } else if (shortcut && key === "y") {
           event.preventDefault();
           sketchRedo();
+        } else if (shortcut && key === "c") {
+          event.preventDefault();
+          copySketchSelectionToClipboard();
+        } else if (shortcut && key === "x") {
+          event.preventDefault();
+          cutSketchSelection();
+        } else if (shortcut && key === "v") {
+          event.preventDefault();
+          pasteSketchSelection();
+        } else if (shortcut && key === "d") {
+          event.preventDefault();
+          duplicateSketchSelection();
         } else if (!shortcut && !event.altKey && (event.code === "KeyR" || key === "r")) {
           event.preventDefault();
           rotateSelectedClosedSketch45();
@@ -11023,18 +11092,22 @@ export function LayerlingEditor({
     commitShapes,
     clearSketchMeasurement,
     copySelected,
+    copySketchSelectionToClipboard,
     noteMode,
     toggleNoteTool,
     cutSelected,
+    cutSketchSelection,
     deleteSelected,
     deleteSelectedSketchEntity,
     duplicateSelected,
+    duplicateSketchSelection,
     dropSelectedToWorkplane,
     groupSelected,
     hasSelection,
     nudgeSelected,
     arrayTool,
     pasteShape,
+    pasteSketchSelection,
     pivotPickMode,
     layFlatPickMode,
     raiseSelected,
@@ -11095,6 +11168,8 @@ export function LayerlingEditor({
         sketchTool={sketchTool}
         sketchCanUndo={sketchHistoryIndex > 0}
         sketchCanRedo={sketchHistoryIndex < sketchHistory.length - 1}
+        sketchHasSelection={sketchSelection !== null}
+        sketchHasClipboard={sketchClipboard !== null}
         canEditSketch={selectedShapes.length === 1 && Boolean(selectedShape?.sketchProfile)}
         canFilletSketchPoint={canFilletSketchPoint}
         sketchCornerDialog={sketchCornerDialog}
@@ -11110,6 +11185,10 @@ export function LayerlingEditor({
           }
           sketchImageInputRef.current?.click();
         }}
+        onSketchCopy={copySketchSelectionToClipboard}
+        onSketchPaste={pasteSketchSelection}
+        onSketchDuplicate={duplicateSketchSelection}
+        onSketchDelete={deleteSelectedSketchEntity}
         onSketchUndo={sketchUndo}
         onSketchRedo={sketchRedo}
         onSketchFinish={finishSketch}
@@ -11538,6 +11617,8 @@ function SecondaryToolbar({
   sketchTool,
   sketchCanUndo,
   sketchCanRedo,
+  sketchHasSelection,
+  sketchHasClipboard,
   canEditSketch,
   canFilletSketchPoint,
   sketchCornerDialog,
@@ -11547,6 +11628,10 @@ function SecondaryToolbar({
   onSketchTool,
   onSketchPrimitive,
   onSketchImage,
+  onSketchCopy,
+  onSketchPaste,
+  onSketchDuplicate,
+  onSketchDelete,
   onSketchUndo,
   onSketchRedo,
   onSketchFinish,
@@ -11613,6 +11698,8 @@ function SecondaryToolbar({
   sketchTool: SketchTool;
   sketchCanUndo: boolean;
   sketchCanRedo: boolean;
+  sketchHasSelection: boolean;
+  sketchHasClipboard: boolean;
   canEditSketch: boolean;
   canFilletSketchPoint?: boolean;
   sketchCornerDialog?: "fillet" | "chamfer" | null;
@@ -11622,6 +11709,10 @@ function SecondaryToolbar({
   onSketchTool: (tool: SketchTool) => void;
   onSketchPrimitive: (primitive: SketchPrimitive) => void;
   onSketchImage: () => void;
+  onSketchCopy: () => void;
+  onSketchPaste: () => void;
+  onSketchDuplicate: () => void;
+  onSketchDelete: () => void;
   onSketchUndo: () => void;
   onSketchRedo: () => void;
   onSketchFinish: () => void;
@@ -11873,6 +11964,12 @@ function SecondaryToolbar({
     { id: "drop", label: t("editor.tool.dropToWorkplane"), icon: ToolbarDropToWorkplaneIcon, action: onDropToWorkplane, enabled: hasSelection },
     { id: "layFlat", label: t("editor.tool.layFlat"), icon: ToolbarLayFlatIcon, action: onLayFlat, enabled: hasSelection, active: layFlatActive },
     { id: "center", label: t("editor.tool.centerOnWorkplane"), icon: ToolbarCenterOnWorkplaneIcon, action: onCenterOnWorkplane, enabled: hasSelection },
+  ];
+  const sketchClipboardTools = [
+    { id: "sketch-copy", label: t("editor.tool.copy"), icon: ToolbarCopyIcon, action: onSketchCopy, enabled: sketchHasSelection },
+    { id: "sketch-paste", label: t("editor.tool.paste"), icon: ToolbarPasteIcon, action: onSketchPaste, enabled: sketchHasClipboard },
+    { id: "sketch-duplicate", label: t("editor.tool.duplicate"), icon: ToolbarDuplicateIcon, action: onSketchDuplicate, enabled: sketchHasSelection },
+    { id: "sketch-delete", label: t("editor.tool.delete"), icon: ToolbarTrashIcon, action: onSketchDelete, enabled: sketchHasSelection },
   ];
   const renderToolButton = (tool: (typeof leftTools)[number] | (typeof visibilityTools)[number] | (typeof combineTools)[number] | (typeof modifyTools)[number] | (typeof arrangeTools)[number]) => {
     const { id, icon: Icon, action, enabled, label } = tool;
@@ -12246,6 +12343,10 @@ function SecondaryToolbar({
                       <SketchReferenceIcon name="erase" />
                     </button>
                   </div>
+                </div>
+                <div className="toolbar-section sketch-clipboard-section" data-group="clipboard">
+                  <div className="toolbar-section-label">{t("editor.group.clipboard")}</div>
+                  <div className="toolbar-section-tools">{sketchClipboardTools.map(renderToolButton)}</div>
                 </div>
                 <div className="toolbar-section sketch-history-section" data-group="history">
                   <div className="toolbar-section-label">{t("editor.group.history")}</div>
