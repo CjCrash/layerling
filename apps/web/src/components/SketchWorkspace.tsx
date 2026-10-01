@@ -16,6 +16,7 @@ import { mirrorSign, resizedImportedMeshPositions } from "@/lib/workplaneShapes"
 import { DEFAULT_SNAP_GRID, DEFAULT_WORKPLANE_WORKSPACE, normalizeSnapGrid, normalizeWorkspaceSettings, orbitControlsZoomSpeed, zoomDistanceScale } from "@/lib/workplaneSettings";
 import type { GridSize, SketchImage, SketchOperation, SketchPoint, SketchProfile, SketchSegment, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 import { selectWholeValue } from "@/lib/numberField";
+import { closedPathAt, cubicPoint, curveControls, isInsideEdges, orderedPaths, pathEdges, type DisplayPath, type PlaneEdge } from "@/lib/sketchPaths";
 
 export type { SketchPrimitive } from "@/lib/sketchPrimitives";
 export type SketchTool = "line" | "bezier" | "smooth" | SketchPrimitive | "select" | "refine" | "erase" | "measure";
@@ -62,8 +63,6 @@ type SketchWorkspaceProps = {
   onCornerDialogChange?: (dialog: "fillet" | "chamfer" | null) => void;
 };
 
-type PathStep = { segment: SketchSegment; from: SketchPoint; to: SketchPoint };
-type DisplayPath = { id: string; points: SketchPoint[]; steps: PathStep[]; closed: boolean };
 type SketchReferenceFootprint = { fillD: string | null; outlineD: string | null };
 type PointerAction =
   | { kind: "bezier"; pointerId: number; origin: { x: number; z: number }; current: { x: number; z: number } }
@@ -72,7 +71,7 @@ type PointerAction =
   | { kind: "resize-selection"; pointerId: number; handle: ResizeHandle; current: { x: number; z: number }; startPoints: SketchPoint[]; bounds: SelectionBounds }
   | { kind: "move-handle"; pointerId: number; pointId: string; handle: "in" | "out"; current: { x: number; z: number } }
   | { kind: "pan"; pointerId: number; clientX: number; clientY: number }
-  | { kind: "marquee"; pointerId: number; origin: { x: number; z: number }; current: { x: number; z: number } }
+  | { kind: "marquee"; pointerId: number; origin: { x: number; z: number }; current: { x: number; z: number }; clientX: number; clientY: number }
   | { kind: "move-image"; pointerId: number; imageId: string; origin: { x: number; z: number }; current: { x: number; z: number }; start: SketchImage }
   | { kind: "resize-image"; pointerId: number; imageId: string; handle: ResizeHandle; current: { x: number; z: number }; start: SketchImage };
 
@@ -244,14 +243,6 @@ function dimensionPillSize(label: string, screenUnit: number, extra = 24) {
   };
 }
 
-function cubicPoint(start: SketchPoint, first: { x: number; z: number }, second: { x: number; z: number }, end: SketchPoint, amount: number) {
-  const inverse = 1 - amount;
-  return {
-    x: inverse ** 3 * start.x + 3 * inverse ** 2 * amount * first.x + 3 * inverse * amount ** 2 * second.x + amount ** 3 * end.x,
-    z: inverse ** 3 * start.z + 3 * inverse ** 2 * amount * first.z + 3 * inverse * amount ** 2 * second.z + amount ** 3 * end.z,
-  };
-}
-
 function segmentDimension(segment: SketchSegment, pointById: Map<string, SketchPoint>) {
   const start = pointById.get(segment.startId);
   const end = pointById.get(segment.endId);
@@ -280,43 +271,10 @@ function segmentDimension(segment: SketchSegment, pointById: Map<string, SketchP
   return { length, midpoint: cubicPoint(start, first, second, end, 0.5), tangent };
 }
 
-type PlaneEdge = { from: { x: number; z: number }; to: { x: number; z: number } };
-
-// Outline of the given paths with curves flattened, for inside/outside and crossing tests.
-function pathEdges(paths: DisplayPath[]) {
-  const edges: PlaneEdge[] = [];
-  paths.forEach((path) => {
-    path.steps.forEach((step) => {
-      const controls = curveControls(step);
-      if (step.segment.kind === "line" || !controls.first || !controls.second) {
-        edges.push({ from: step.from, to: step.to });
-        return;
-      }
-      let previous: { x: number; z: number } = step.from;
-      for (let index = 1; index <= 16; index += 1) {
-        const point = cubicPoint(step.from, controls.first, controls.second, step.to, index / 16);
-        edges.push({ from: previous, to: point });
-        previous = point;
-      }
-    });
-  });
-  return edges;
-}
-
 function segmentsCross(a: { x: number; z: number }, b: { x: number; z: number }, c: { x: number; z: number }, d: { x: number; z: number }) {
   const side = (origin: { x: number; z: number }, to: { x: number; z: number }, point: { x: number; z: number }) =>
     (to.x - origin.x) * (point.z - origin.z) - (to.z - origin.z) * (point.x - origin.x);
   return (side(c, d, a) > 0) !== (side(c, d, b) > 0) && (side(a, b, c) > 0) !== (side(a, b, d) > 0);
-}
-
-function isInsideEdges(point: { x: number; z: number }, edges: PlaneEdge[]) {
-  let inside = false;
-  edges.forEach(({ from, to }) => {
-    if ((from.z > point.z) === (to.z > point.z)) return;
-    const crossX = from.x + ((point.z - from.z) / (to.z - from.z)) * (to.x - from.x);
-    if (crossX > point.x) inside = !inside;
-  });
-  return inside;
 }
 
 // Unit normal at `midpoint` pointing away from the sketch body: out of a closed
@@ -337,61 +295,6 @@ function outwardNormal(
     ? plusInside
     : (midpoint.x - centroid.x) * normal.x + (midpoint.z - centroid.z) * normal.z < 0;
   return flip ? { x: -normal.x, z: -normal.z } : normal;
-}
-
-function orderedPaths(profile: SketchProfile): DisplayPath[] {
-  const pointById = new Map(profile.points.map((point) => [point.id, point]));
-  const adjacency = new Map<string, Array<{ pointId: string; segment: SketchSegment }>>();
-  profile.points.forEach((point) => adjacency.set(point.id, []));
-  const valid = profile.segments.filter((segment) => {
-    if (!pointById.has(segment.startId) || !pointById.has(segment.endId)) return false;
-    adjacency.get(segment.startId)?.push({ pointId: segment.endId, segment });
-    adjacency.get(segment.endId)?.push({ pointId: segment.startId, segment });
-    return true;
-  });
-  const unvisited = new Set(valid.map((segment) => segment.id));
-  const paths: DisplayPath[] = [];
-  while (unvisited.size > 0) {
-    const seedId = unvisited.values().next().value as string;
-    const seed = valid.find((segment) => segment.id === seedId);
-    if (!seed) break;
-    const component = new Set<string>();
-    const queue = [seed.startId, seed.endId];
-    while (queue.length) {
-      const id = queue.pop();
-      if (!id || component.has(id)) continue;
-      component.add(id);
-      adjacency.get(id)?.forEach((edge) => queue.push(edge.pointId));
-    }
-    const startId = [...component].find((id) => (adjacency.get(id)?.filter((edge) => unvisited.has(edge.segment.id)).length ?? 0) === 1) ?? seed.startId;
-    const first = pointById.get(startId);
-    if (!first) break;
-    const points = [first];
-    const steps: PathStep[] = [];
-    let currentId = startId;
-    for (let guard = 0; guard <= valid.length; guard += 1) {
-      const edge = adjacency.get(currentId)?.find((candidate) => unvisited.has(candidate.segment.id));
-      if (!edge) break;
-      const from = pointById.get(currentId);
-      const to = pointById.get(edge.pointId);
-      if (!from || !to) break;
-      unvisited.delete(edge.segment.id);
-      steps.push({ segment: edge.segment, from, to });
-      currentId = to.id;
-      if (currentId === startId) break;
-      points.push(to);
-    }
-    paths.push({ id: seed.id, points, steps, closed: currentId === startId && steps.length >= 3 });
-  }
-  return paths;
-}
-
-function curveControls(step: PathStep) {
-  const forward = step.segment.startId === step.from.id;
-  return {
-    first: forward ? step.from.handleOut : step.from.handleIn,
-    second: forward ? step.to.handleIn : step.to.handleOut,
-  };
 }
 
 function pathData(path: DisplayPath) {
@@ -748,7 +651,7 @@ export function SketchWorkspace({
     return lines;
   }, [gridStep, workspace.depth]);
 
-  const pointFromEvent = (event: { clientX: number; clientY: number }) => {
+  const unsnappedPointFromEvent = (event: { clientX: number; clientY: number }) => {
     const svg = svgRef.current;
     const matrix = svg?.getScreenCTM();
     if (!svg || !matrix) return null;
@@ -756,10 +659,16 @@ export function SketchWorkspace({
     screenPoint.x = event.clientX;
     screenPoint.y = event.clientY;
     const local = screenPoint.matrixTransform(matrix.inverse());
+    return { x: local.x, z: local.y };
+  };
+
+  const pointFromEvent = (event: { clientX: number; clientY: number }) => {
+    const local = unsnappedPointFromEvent(event);
+    if (!local) return null;
     const step = snapStep(snap);
     return {
       x: clamp(snapValue(local.x, step), -workspace.width / 2, workspace.width / 2),
-      z: clamp(snapValue(local.y, step), -workspace.depth / 2, workspace.depth / 2),
+      z: clamp(snapValue(local.z, step), -workspace.depth / 2, workspace.depth / 2),
     };
   };
 
@@ -805,7 +714,7 @@ export function SketchWorkspace({
       setPointerAction({ kind: "bezier", pointerId: event.pointerId, origin: point, current: point });
     } else if (tool === "select") {
       event.currentTarget.setPointerCapture(event.pointerId);
-      setPointerAction({ kind: "marquee", pointerId: event.pointerId, origin: point, current: point });
+      setPointerAction({ kind: "marquee", pointerId: event.pointerId, origin: point, current: point, clientX: event.clientX, clientY: event.clientY });
     } else if (tool === "line" || tool === "smooth" || tool === "measure") {
       onPlanePoint(point);
     }
@@ -842,6 +751,15 @@ export function SketchWorkspace({
       return;
     }
     if (action.kind === "marquee") {
+      // A click without dragging inside a closed shape selects the whole shape.
+      const clicked = Math.hypot(event.clientX - action.clientX, event.clientY - action.clientY) < 4;
+      const clickPoint = clicked ? unsnappedPointFromEvent(event) : null;
+      const shape = clickPoint ? closedPathAt(clickPoint, paths) : null;
+      if (shape) {
+        onSelectMany(shape.points.map((point) => point.id), shape.steps.map((step) => step.segment.id), []);
+        setPointerAction(null);
+        return;
+      }
       const minX = Math.min(action.origin.x, action.current.x);
       const maxX = Math.max(action.origin.x, action.current.x);
       const minZ = Math.min(action.origin.z, action.current.z);
