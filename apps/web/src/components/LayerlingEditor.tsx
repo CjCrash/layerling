@@ -11221,6 +11221,7 @@ export function LayerlingEditor({
             onApplyFillet={applySketchFilletHandler}
             onApplyChamfer={applySketchChamferHandler}
             onClearMeasurement={clearSketchMeasurement}
+            onMeasureTool={() => setActiveSketchTool("measure")}
             cornerDialog={sketchCornerDialog}
             onCornerDialogChange={setSketchCornerDialog}
           />
@@ -12255,14 +12256,6 @@ function SecondaryToolbar({
                     </button>
                     <button className={`toolbar-icon ${sketchCanRedo ? "" : "disabled"}`} type="button" aria-label={t("sketch.redo")} title={t("status.redo")} onClick={onSketchRedo} disabled={!sketchCanRedo}>
                       <ToolbarRedoIcon />
-                    </button>
-                  </div>
-                </div>
-                <div className="toolbar-section sketch-measure-section" data-group="inspect">
-                  <div className="toolbar-section-label">{t("sketch.group.inspect")}</div>
-                  <div className="toolbar-section-tools">
-                    <button className={`toolbar-icon sketch-tool-icon ${sketchTool === "measure" ? "active" : ""}`} type="button" aria-label={t("sketch.measure")} title={t("sketch.measure")} onClick={() => onSketchTool("measure")}>
-                      <SketchReferenceIcon name="measure" />
                     </button>
                   </div>
                 </div>

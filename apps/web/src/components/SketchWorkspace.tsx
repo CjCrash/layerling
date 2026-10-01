@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronUp, CornerDownRight, Crosshair, Home, Link, Link2Off, LockKeyhole, LockKeyholeOpen, Minus, Plus, Slash, Spline, Split, Trash2, Waves, X } from "lucide-react";
+import { Check, ChevronUp, CornerDownRight, Crosshair, Home, Link, Link2Off, LockKeyhole, LockKeyholeOpen, Minus, Plus, RulerDimensionLine, Slash, Spline, Split, Trash2, Waves, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import { SnapGridControl } from "@/components/workplane/ShapeInspector";
 import { SketchRevolvePreview } from "@/components/SketchRevolvePreview";
@@ -57,6 +57,7 @@ type SketchWorkspaceProps = {
   onApplyFillet?: (id: string, radius: number) => void;
   onApplyChamfer?: (id: string, distance: number) => void;
   onClearMeasurement: () => void;
+  onMeasureTool: () => void;
   cornerDialog?: "fillet" | "chamfer" | null;
   onCornerDialogChange?: (dialog: "fillet" | "chamfer" | null) => void;
 };
@@ -600,6 +601,7 @@ export function SketchWorkspace({
   onApplyFillet,
   onApplyChamfer,
   onClearMeasurement,
+  onMeasureTool,
   cornerDialog: propCornerDialog,
   onCornerDialogChange,
 }: SketchWorkspaceProps) {
@@ -1087,6 +1089,15 @@ export function SketchWorkspace({
         </button>
         <button aria-label={t("sketch.zoomIn")} onClick={() => zoomByButton(0.8)}><Plus size={33} /></button>
         <button aria-label={t("sketch.zoomOut")} onClick={() => zoomByButton(1.25)}><Minus size={33} /></button>
+        <button
+          className={tool === "measure" ? "active" : ""}
+          aria-label={t("camera.tapeTools")}
+          title={t("camera.tapeTools")}
+          aria-pressed={tool === "measure"}
+          onClick={onMeasureTool}
+        >
+          <RulerDimensionLine size={26} strokeWidth={2.2} aria-hidden="true" />
+        </button>
       </div>
       <section className="sketch-plate-wrap" aria-label="2D sketch plate">
         <svg
