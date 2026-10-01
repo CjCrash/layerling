@@ -6,6 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
+- **More 3MF files open:** A 3MF whose parts are nested several levels deep, or whose meshes live in separate model files of the package (how Bambu Studio, OrcaSlicer and PrusaSlicer write their projects), was refused with "contains no readable geometry". Both layouts are read now (issue #60).
 - **Few-sided round shapes keep their flat faces in the edge tool:** A cylinder with 6 sides is now a hexagonal bar for chamfers and fillets, not a round cylinder. Shapes stay round when no side count is set, when it reaches the shape's default or when the polygon is within 0.05 mm of the circle. STEP export is unchanged. Also fixed: turned few-sided prisms (hexagon, pentagon, triangle) sat a little off the angle shown in the viewport. The guide chapter on the side count says so (PR #57, thanks plazmabokor).
 - **Copy, cut, paste and duplicate in the sketch:** The sketch ribbon has a new "Clipboard" group (copy, paste, duplicate, delete) and the usual shortcuts Ctrl+C, Ctrl+X, Ctrl+V and Ctrl+D work on selected points, lines and template images. A pasted or duplicated copy lands on the nearest free spot beside the original instead of on top of it, so its lines are not welded to the original's (PR #56, thanks gogades).
 - **Measure tool in the sketch sits in the side bar:** The ruler button in the sketch moved from the ribbon (group "Inspect") to the side bar, with the same icon as in the 3D editor, and a second click switches it off again (PR #58, thanks gogades).

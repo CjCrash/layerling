@@ -86,24 +86,77 @@ function extractObjectMesh(
   }
 }
 
-/** Resolve all <item> references in <build> and gather triangles. */
-function gatherMeshes(doc: Document): number[] {
-  const rawPositions: number[] = [];
+/** One model file of the package, with its objects by id. */
+type ModelPart = { objects: Map<string, Element>; doc: Document };
 
-  // Build an id→<object> map
-  const objectById = new Map<string, Element>();
+/** How deep components may nest before we assume a loop. */
+const MAX_COMPONENT_DEPTH = 16;
+
+function parseModelPart(bytes: Uint8Array): ModelPart {
+  const xml = new TextDecoder("utf-8").decode(bytes);
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  const parseError = doc.querySelector("parsererror");
+  if (parseError) throw new Error(`3MF XML is invalid: ${parseError.textContent?.slice(0, 120)}`);
+  const objects = new Map<string, Element>();
   doc.querySelectorAll("object").forEach((el) => {
     const id = el.getAttribute("id");
-    if (id) objectById.set(id, el);
+    if (id) objects.set(id, el);
   });
+  return { doc, objects };
+}
 
+/** The production extension's p:path, which names another model file of the package. */
+function componentPath(component: Element): string | null {
+  const path = component.getAttribute("p:path") ?? component.getAttributeNS("http://schemas.microsoft.com/3dmanufacturing/production/2015/06", "path");
+  return path ? path.replace(/^\/+/, "").toLowerCase() : null;
+}
+
+/**
+ * Resolve all <item> references in <build> and gather triangles. An object is
+ * either a mesh or a list of components; a component names another object,
+ * in this file or - the way Bambu Studio, OrcaSlicer and PrusaSlicer write
+ * their projects - in another model file of the package (p:path). Components
+ * may nest.
+ */
+function gatherMeshes(files: Record<string, Uint8Array>, mainKey: string, main: ModelPart): number[] {
+  const rawPositions: number[] = [];
+  const parts = new Map<string, ModelPart>([[mainKey.toLowerCase(), main]]);
+  const keyByLowerCase = new Map(Object.keys(files).map((key) => [key.toLowerCase(), key]));
+  const partFor = (path: string): ModelPart | null => {
+    const cached = parts.get(path);
+    if (cached) return cached;
+    const key = keyByLowerCase.get(path);
+    if (!key) return null;
+    const part = parseModelPart(files[key]);
+    parts.set(path, part);
+    return part;
+  };
+
+  const addObject = (part: ModelPart, partPath: string, objectEl: Element, transform: Matrix4x3, depth: number) => {
+    if (depth > MAX_COMPONENT_DEPTH) return;
+    if (objectEl.querySelector(":scope > mesh")) {
+      extractObjectMesh(objectEl, rawPositions, transform);
+      return;
+    }
+    objectEl.querySelectorAll(":scope > components > component").forEach((comp) => {
+      const compId = comp.getAttribute("objectid");
+      if (!compId) return;
+      const externalPath = componentPath(comp);
+      const targetPath = externalPath ?? partPath;
+      const targetPart = externalPath ? partFor(externalPath) : part;
+      const compObj = targetPart?.objects.get(compId);
+      if (!targetPart || !compObj) return;
+      // Component first, then the transform of whatever contains it.
+      addObject(targetPart, targetPath, compObj, combineTransforms(transform, parseMatrix(comp.getAttribute("transform"))), depth + 1);
+    });
+  };
+
+  const mainPath = mainKey.toLowerCase();
   // Process each <item> in <build>
-  const items = doc.querySelectorAll("build > item");
+  const items = main.doc.querySelectorAll("build > item");
   if (items.length === 0) {
     // Fallback: no <build> section, just import all objects with meshes
-    objectById.forEach((objectEl) => {
-      if (objectEl.querySelector("mesh")) extractObjectMesh(objectEl, rawPositions, IDENTITY_M);
-    });
+    main.objects.forEach((objectEl) => addObject(main, mainPath, objectEl, IDENTITY_M, 0));
     return rawPositions;
   }
 
@@ -113,28 +166,14 @@ function gatherMeshes(doc: Document): number[] {
     if (!objectId) continue;
     const transform = parseMatrix(item.getAttribute("transform"));
 
-    const objectEl = objectById.get(objectId);
+    const objectEl = main.objects.get(objectId);
     if (!objectEl) continue;
 
     const objectType = objectEl.getAttribute("type");
     // Skip support / other structural types
     if (objectType && objectType !== "model") continue;
 
-    if (objectEl.querySelector("mesh")) {
-      extractObjectMesh(objectEl, rawPositions, transform);
-    } else {
-      // <components> — resolve recursively (one level deep; spec allows deeper nesting)
-      objectEl.querySelectorAll("components > component").forEach((comp) => {
-        const compId = comp.getAttribute("objectid");
-        if (!compId) return;
-        const compObj = objectById.get(compId);
-        if (!compObj || !compObj.querySelector("mesh")) return;
-        const compTransform = parseMatrix(comp.getAttribute("transform"));
-        // Combine transforms: component first, then item transform
-        const combined = combineTransforms(transform, compTransform);
-        extractObjectMesh(compObj, rawPositions, combined);
-      });
-    }
+    addObject(main, mainPath, objectEl, transform, 0);
   }
 
   return rawPositions;
@@ -178,15 +217,10 @@ export function importedShapeFrom3mf(fileName: string, buffer: ArrayBuffer): Wor
   if (!modelKey) throw new Error("3MF file does not contain 3D/3dmodel.model");
 
   // 3. Parse XML
-  const xml = new TextDecoder("utf-8").decode(files[modelKey]);
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, "application/xml");
-
-  const parseError = doc.querySelector("parsererror");
-  if (parseError) throw new Error(`3MF XML is invalid: ${parseError.textContent?.slice(0, 120)}`);
+  const main = parseModelPart(files[modelKey]);
 
   // 4. Gather all triangles
-  const rawPositions = gatherMeshes(doc);
+  const rawPositions = gatherMeshes(files, modelKey, main);
   if (!rawPositions.length) throw new Error("3MF file contains no readable geometry");
 
   // 5. Build WorkplaneShape (normals computed from triangle positions)
