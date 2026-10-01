@@ -82,9 +82,40 @@ function guideSections(sharedStore: boolean): GuideSection[] {
   ];
 }
 
-export function GuideModal({ onClose, sharedStore = false }: { onClose: () => void; sharedStore?: boolean }) {
+/** Sketch mode has its own tools and keys, so it gets its own short version. */
+function sketchGuideSections(): GuideSection[] {
+  return [
+    {
+      title: "guide.sketchGroup.draw",
+      chapter: "sketches",
+      lines: ["guide.sketch.start", "guide.sketch.draw", "guide.sketchDraw.close"],
+    },
+    {
+      title: "guide.sketchGroup.edit",
+      chapter: "sketches",
+      lines: ["guide.sketchEdit.select", "guide.sketchEdit.corner", "guide.sketch.image"],
+    },
+    {
+      title: "guide.sketchGroup.clipboard",
+      chapter: "sketches",
+      lines: ["guide.sketchClipboard.use"],
+    },
+    {
+      title: "guide.sketchGroup.view",
+      chapter: "sketches",
+      lines: ["guide.sketchView.zoom", "guide.sketchView.measure"],
+    },
+    {
+      title: "guide.sketchGroup.finish",
+      chapter: "sketches",
+      lines: ["guide.sketchFinish.body", "guide.sketchFinish.edit"],
+    },
+  ];
+}
+
+export function GuideModal({ onClose, sharedStore = false, sketchMode = false }: { onClose: () => void; sharedStore?: boolean; sketchMode?: boolean }) {
   const language = useLanguage();
-  const sections = guideSections(sharedStore);
+  const sections = sketchMode ? sketchGuideSections() : guideSections(sharedStore);
   const cardRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {

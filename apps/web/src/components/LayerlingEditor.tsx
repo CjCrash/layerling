@@ -11537,7 +11537,7 @@ export function LayerlingEditor({
       {shortcutsOpen ? (
         <ShortcutsModal sketchMode={toolbarMode === "sketch"} onClose={() => setShortcutsOpen(false)} />
       ) : null}
-      {guideOpen ? <GuideModal sharedStore={sharedProjectsEnabled} onClose={() => setGuideOpen(false)} /> : null}
+      {guideOpen ? <GuideModal sharedStore={sharedProjectsEnabled} sketchMode={toolbarMode === "sketch"} onClose={() => setGuideOpen(false)} /> : null}
       {notice ? (
         <p className="editor-status" role="status" aria-live="polite" title={notice}>
           {notice}
