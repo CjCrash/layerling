@@ -10330,7 +10330,7 @@ html[data-theme="dark"] .shortcuts-or {
   }
 }
 
-@media (max-width: 1343px) {
+@media (max-width: 1351px) {
   :root {
     --toolbar-icon-size: 34px;
   }
@@ -10345,11 +10345,11 @@ html[data-theme="dark"] .shortcuts-or {
   }
 }
 
-/* Below the width even the smallest step needs (about 1222 px) the groups
+/* Below the width even the smallest step needs (1239 px, measured) the groups
    wrap onto a further row instead of scrolling sideways: a scrolling bar
    hides tools and cuts off every menu that hangs beneath it. The bar grows,
    and the editor passes its real height on (see --editor-toolbar-height). */
-@media (max-width: 1221px) {
+@media (max-width: 1238px) {
   .toolbar-mode-content,
   .sketch-toolbar-ribbon {
     flex-wrap: wrap;

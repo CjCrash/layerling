@@ -4907,7 +4907,7 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .shortcuts-or {
   }
 }
 
-@media (max-width: 1343px) {
+@media (max-width: 1351px) {
   :root:where([data-theme="dark"][data-palette="graphite"]) {
     --toolbar-icon-size: 34px;
   }
