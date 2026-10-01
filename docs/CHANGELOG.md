@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Own quick guide in sketch mode:** The quick guide (Help group) now shows what matters while sketching - drawing, selecting and editing, clipboard, moving around and measuring, making a body - instead of the 3D editor's sections.
+
 ## 1.25.0
 
 - **More 3MF files open:** A 3MF whose parts are nested several levels deep, or whose meshes live in separate model files of the package (how Bambu Studio, OrcaSlicer and PrusaSlicer write their projects), was refused with "contains no readable geometry". Both layouts are read now (issue #60).
