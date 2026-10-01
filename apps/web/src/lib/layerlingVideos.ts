@@ -2,6 +2,7 @@
  * Videos by other people about layerling. Plain links, no embeds: an embedded
  * player would contact YouTube as soon as the page opens, and layerling keeps
  * visitors' data to itself. Newest first; `lang` is the spoken language.
+ * The guide has a chapter with the same list: 16-videos.md in docs/guide (both languages).
  */
 export const LAYERLING_VIDEOS = [
   {

@@ -89,6 +89,11 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://layerling.com/guide/offline-and-install.html"/>
   </url>
   <url>
+    <loc>https://layerling.com/anleitung/videos.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://layerling.com/anleitung/videos.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://layerling.com/guide/videos.html"/>
+  </url>
+  <url>
     <loc>https://layerling.com/guide/getting-started.html</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://layerling.com/guide/getting-started.html"/>
     <xhtml:link rel="alternate" hreflang="de" href="https://layerling.com/anleitung/erste-schritte.html"/>
@@ -162,5 +167,10 @@
     <loc>https://layerling.com/guide/offline-and-install.html</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://layerling.com/guide/offline-and-install.html"/>
     <xhtml:link rel="alternate" hreflang="de" href="https://layerling.com/anleitung/offline-und-installieren.html"/>
+  </url>
+  <url>
+    <loc>https://layerling.com/guide/videos.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://layerling.com/guide/videos.html"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://layerling.com/anleitung/videos.html"/>
   </url>
 </urlset>

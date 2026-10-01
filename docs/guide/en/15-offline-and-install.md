@@ -38,7 +38,7 @@ The MCP bridge for AI assistants exists only in the development server, see [Bui
 
 - In the editor, the {{ui:editor.group.help}} area holds the {{ui:editor.guide}} with the most important moves and the overview of [keyboard shortcuts](chapter:shortcuts). Each section of the quick guide has a question mark that leads to the matching chapter here.
 
-![The quick guide in the editor. A button at the top leads to the full guide, and every section has a question mark.](shot:quick-guide)
+![The quick guide in the editor. Videos by others are listed at the top, and every section has a question mark.](shot:quick-guide)
 
 - Questions, wishes and bug reports are welcome in the [forum](https://forum.drucktipps3d.de/forum/board/127-layerling/) and on [GitHub](https://github.com/henmedia/layerling/discussions).
 - What changed in which version is in the release notes, which you find at the bottom of the start page and of the editor.

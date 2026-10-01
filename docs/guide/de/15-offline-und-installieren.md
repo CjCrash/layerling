@@ -38,7 +38,7 @@ Die MCP-Brücke für KI-Assistenten gibt es nur beim Entwicklungsserver, siehe [
 
 - Im Editor liegt im Bereich {{ui:editor.group.help}} die {{ui:editor.guide}} mit den wichtigsten Handgriffen und die Übersicht der [Tastenkürzel](chapter:tastenkuerzel). Die Kurzanleitung verweist bei jedem Abschnitt mit einem Fragezeichen auf das passende Kapitel hier.
 
-![Die Kurzanleitung im Editor. Oben führt ein Knopf zur ausführlichen Anleitung, jeder Abschnitt hat ein Fragezeichen.](shot:quick-guide)
+![Die Kurzanleitung im Editor. Oben stehen Videos von anderen, jeder Abschnitt hat ein Fragezeichen.](shot:quick-guide)
 
 - Fragen, Wünsche und Fehlermeldungen sind im [Forum](https://forum.drucktipps3d.de/forum/board/127-layerling/) und auf [GitHub](https://github.com/henmedia/layerling/discussions) willkommen.
 - Was sich in welcher Version geändert hat, steht in den Versionshinweisen, die du unten auf der Startseite und im Editor findest.
