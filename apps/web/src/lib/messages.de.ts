@@ -338,7 +338,6 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "editor.guide": "Kurzanleitung",
   "guide.title": "Kurzanleitung",
   "guide.close": "Kurzanleitung schließen",
-  "guide.intro": "layerling in Kürze. Alles davon steckt im Menüband darüber - hier steht nur, wo du suchen musst.",
   "guide.footer": "Die Tasten dazu: der Knopf mit der Tastatur daneben.",
   "guide.group.view": "Sich bewegen",
   "guide.view.orbit": "Die rechte Maustaste dreht die Ansicht, die mittlere verschiebt sie, das Rad zoomt. Mit Strg verschiebt auch die linke.",

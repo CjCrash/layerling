@@ -116,7 +116,6 @@ export function GuideModal({ onClose, sharedStore = false }: { onClose: () => vo
         </header>
         <div className="workspace-modal-content">
           <div className="workspace-modal-body shortcuts-modal-body">
-            <p className="shortcuts-intro">{t("guide.intro")}</p>
             <div className="guide-videos">
               <strong>{t("guide.videos")}</strong>
               <ul>

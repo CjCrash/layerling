@@ -339,7 +339,6 @@ export const MESSAGES_EN = {
   "editor.guide": "Quick guide",
   "guide.title": "Quick guide",
   "guide.close": "Close the quick guide",
-  "guide.intro": "The short version of how layerling works. All of it lives in the ribbon above - this page just says where to look.",
   "guide.footer": "The keys for all of this: the keyboard button beside this one.",
   "guide.group.view": "Moving around",
   "guide.view.orbit": "The right mouse button turns the view, the middle one shifts it, the wheel zooms. Ctrl and the left button shift it too.",
