@@ -72,6 +72,7 @@ Neben den Einstellungen gibt es Griffe an der Form selbst:
 - Der **Pfeil oben** ändert die Höhe, der Griff **in der Mitte** hebt die Form an oder senkt sie.
 - Die **gebogenen Pfeile** drehen sie.
 - An den **Zahlen** neben der Form siehst du die Maße. Ein Klick darauf öffnet ein Feld, in das du die gewünschte Zahl tippst.
+- Ein **Klick auf eine Ecke** (ohne zu ziehen) öffnet Breite und Tiefe gemeinsam. Gib die erste Zahl ein, wechsle mit [[Tab]] zur zweiten und übernimm beide mit [[Enter]]. [[Esc]] bricht ab.
 
 Ohne Maus geht es mit der Tastatur: Die Pfeiltasten schieben die Auswahl um einen Rasterschritt, mit [[Umschalt]] um fünf. [[Strg]]+[[↑]] und [[Strg]]+[[↓]] heben und senken sie. [[R]] dreht um 45°, [[Umschalt]]+[[R]] um 22,5°. [[D]] setzt die Auswahl auf die Arbeitsebene ab.
 

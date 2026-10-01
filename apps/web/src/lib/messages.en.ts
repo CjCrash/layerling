@@ -440,6 +440,8 @@ export const MESSAGES_EN = {
   "shortcuts.raise": "Raise or lower the selection",
   "shortcuts.rotate": "Rotate by 45°",
   "transform.rotateHandle": "Drag to rotate",
+  "transform.cornerWidth": "Width",
+  "transform.cornerDepth": "Depth",
   "transform.resize": "Resize",
   "transform.height": "Height",
   "transform.lift": "Lift",

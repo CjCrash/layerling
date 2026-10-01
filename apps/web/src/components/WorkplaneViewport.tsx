@@ -90,6 +90,7 @@ import {
   snappedRotationDelta,
   snappedWheelRotation,
   type DimensionMark,
+  type EditingCorner,
   type EditingDimension,
   type EditingRotation,
   type PinnedRotationWheelView,
@@ -3589,6 +3590,7 @@ export function WorkplaneViewport({
   const [rotationWheelAxis, setRotationWheelAxis] = useState<RotationAxis>("y");
   const [pinnedRotationWheelView, setPinnedRotationWheelView] = useState<PinnedRotationWheelView | null>(null);
   const [editingDimension, setEditingDimension] = useState<EditingDimension>(null);
+  const [editingCorner, setEditingCorner] = useState<EditingCorner>(null);
   const [editingRotation, setEditingRotation] = useState<EditingRotation>(null);
   const [tapeMode, setTapeMode] = useState(false);
   const [tapeDeleteMode, setTapeDeleteMode] = useState(false);
@@ -3643,6 +3645,7 @@ export function WorkplaneViewport({
   const transformRef = useRef<TransformDragState | null>(null);
   const lastResizeAnchorRef = useRef<ResizeAnchorMemory | null>(null);
   const suppressNextLiftEditRef = useRef(false);
+  const suppressNextCornerEditRef = useRef(false);
   const snapRef = useRef(snap);
   const workspaceRef = useRef(workspace);
   const workspaceSettingsKeyRef = useRef(workspaceSettingsKey ?? null);
@@ -5346,6 +5349,13 @@ export function WorkplaneViewport({
     }, 250);
   }, []);
 
+  const suppressCornerEditAfterDrag = useCallback(() => {
+    suppressNextCornerEditRef.current = true;
+    window.setTimeout(() => {
+      suppressNextCornerEditRef.current = false;
+    }, 250);
+  }, []);
+
   const finishTransform = useCallback((event: ReactPointerEvent<Element>) => {
     const transform = transformRef.current;
     if (!transform) {
@@ -5360,6 +5370,9 @@ export function WorkplaneViewport({
     }
     if (transform.kind === "lift" && transform.hasMoved) {
       suppressLiftEditAfterDrag();
+    }
+    if (transform.kind === "scale" && transform.hasMoved) {
+      suppressCornerEditAfterDrag();
     }
     if (transform.kind === "rotate" && transform.hasMoved) {
       suppressNextRotationEditRef.current = true;
@@ -5380,7 +5393,7 @@ export function WorkplaneViewport({
     }
     onInteractionActiveChange?.(false);
     bakeRotatedShapes.forEach((id) => onUpdateShape(id, { bakeTransform: true }));
-  }, [onInteractionActiveChange, onUpdateShape, suppressLiftEditAfterDrag]);
+  }, [onInteractionActiveChange, onUpdateShape, suppressCornerEditAfterDrag, suppressLiftEditAfterDrag]);
 
   const beginDimensionEdit = useCallback((mark: DimensionMark) => {
     const id = selectedIdsRef.current[0];
@@ -5422,6 +5435,83 @@ export function WorkplaneViewport({
     });
   }, []);
 
+  // The patch a typed width, depth or height makes to a shape, or null when the
+  // text is not a usable size. Shared by the single mark and the corner pair.
+  const dimensionPatchFor = useCallback((shape: WorkplaneShape, axis: "width" | "depth" | "height", text: string): Partial<WorkplaneShape> | null => {
+    const sizeFrame = selectionFrameForShapes([shape], [shape.id]);
+    const currentExtent = axis === "width"
+      ? sizeFrame?.width ?? shapeWidth(shape)
+      : axis === "depth"
+        ? sizeFrame?.depth ?? shapeDepth(shape)
+        : sizeFrame?.height ?? shape.height;
+    const value = resolveMeasureMm(text, currentExtent);
+    if (!(Number.isFinite(value) && value > 0)) return null;
+    const id = shape.id;
+    const isCornerRulerMidpoint = cornerRulerModelRef.current[0]?.mode === "midpoint";
+    const customLimit = workspaceRef.current.shapeCustomizations[shape.kind]?.maxDimension;
+    const nextValue = Math.min(customLimit ?? Number.POSITIVE_INFINITY, Math.max(MIN_SHAPE_SIZE, value));
+    const anchor = isCornerRulerMidpoint ? null : lastResizeAnchorRef.current;
+    if (axis === "width") {
+      const frame = sizeFrame;
+      if (shapeHasTaper(shape) && frame) {
+        const scaleX = nextValue / Math.max(MIN_SHAPE_SIZE, frame.width);
+        const signs = anchor?.shapeId === shape.id ? resizeSignsForDimension(anchor.signs, "width") : { x: 0, z: 0 };
+        const nextCenter = signs.x
+          ? resizeCenterFromAnchor(frame, resizeAnchorPointForFrame(frame, signs), signs, nextValue, frame.depth)
+          : frame.center.clone();
+        return {
+          ...scaledHorizontalShapePatch(shape, scaleX, 1),
+          x: cleanNearZero(nextCenter.x, 0.0005),
+          z: cleanNearZero(nextCenter.z, 0.0005),
+          elevation: cleanNearZero(nextCenter.y - shape.height / 2, 0.0005),
+        };
+      } else {
+        // A cylinder is always circular - the diameter mark writes both
+        // fields, the same as the inspector's diameter field does.
+        const patch: Partial<WorkplaneShape> = shape.kind === "cylinder" || shape.kind === "star"
+          ? { width: nextValue, depth: nextValue, size: nextValue }
+          : { width: nextValue, size: resizedShapeSize(nextValue, shapeDepth(shape)) };
+        if (shape.kind === "cone") {
+          patch.baseRadius = nextValue / 2;
+        }
+        return patchWithResizeAnchor(shape, patch, axis, anchor);
+      }
+    } else if (axis === "depth") {
+      const frame = sizeFrame;
+      if (shapeHasTaper(shape) && frame) {
+        const scaleZ = nextValue / Math.max(MIN_SHAPE_SIZE, frame.depth);
+        const signs = anchor?.shapeId === shape.id ? resizeSignsForDimension(anchor.signs, "depth") : { x: 0, z: 0 };
+        const nextCenter = signs.z
+          ? resizeCenterFromAnchor(frame, resizeAnchorPointForFrame(frame, signs), signs, frame.width, nextValue)
+          : frame.center.clone();
+        return {
+          ...scaledHorizontalShapePatch(shape, 1, scaleZ),
+          x: cleanNearZero(nextCenter.x, 0.0005),
+          z: cleanNearZero(nextCenter.z, 0.0005),
+          elevation: cleanNearZero(nextCenter.y - shape.height / 2, 0.0005),
+        };
+      } else {
+        // Defense in depth: the cylinder's dimension mark never offers this
+        // axis (see makeFootprintDimensionMark above), but keep it circular
+        // regardless of how the patch got here.
+        const patch: Partial<WorkplaneShape> = shape.kind === "cylinder" || shape.kind === "star"
+          ? { width: nextValue, depth: nextValue, size: nextValue }
+          : { depth: nextValue, size: resizedShapeSize(shapeWidth(shape), nextValue) };
+        return patchWithResizeAnchor(shape, patch, axis, anchor);
+      }
+    } else {
+      if (isCornerRulerMidpoint) {
+        const deltaY = (shape.height - nextValue) / 2;
+        return {
+          height: nextValue,
+          elevation: cleanNearZero(clamp((shape.elevation ?? 0) + deltaY, MIN_ELEVATION, MAX_ELEVATION), 0.0005),
+        };
+      } else {
+        return patchWithResizeAnchor(shape, { height: nextValue }, axis, anchor);
+      }
+    }
+  }, []);
+
   const commitDimensionEdit = useCallback(() => {
     const edit = editingDimension;
     const id = selectedIdsRef.current[0];
@@ -5430,19 +5520,8 @@ export function WorkplaneViewport({
       setEditingDimension(null);
       return;
     }
-    const isSizeAxis = edit.axis === "width" || edit.axis === "depth" || edit.axis === "height";
-    const sizeFrame = isSizeAxis ? selectionFrameForShapes([shape], [shape.id]) : null;
-    const currentExtent = edit.axis === "width"
-      ? sizeFrame?.width ?? shapeWidth(shape)
-      : edit.axis === "depth"
-        ? sizeFrame?.depth ?? shapeDepth(shape)
-        : edit.axis === "height"
-          ? sizeFrame?.height ?? shape.height
-          : Number.NaN;
-    const value = isSizeAxis
-      ? resolveMeasureMm(edit.value, currentExtent)
-      : parseMeasureMm(edit.value);
     if (edit.axis === "elevation") {
+      const value = parseMeasureMm(edit.value);
       if (Number.isFinite(value)) {
         const activeWorkplane = placementWorkplaneRef.current;
         const frame = selectionFrameForShapes(shapesRef.current, selectedIdsRef.current, activeWorkplane);
@@ -5469,74 +5548,64 @@ export function WorkplaneViewport({
       setPinnedMeasureKey(null);
       return;
     }
-    if (Number.isFinite(value) && value > 0) {
-      const isCornerRulerMidpoint = cornerRulerModelRef.current[0]?.mode === "midpoint";
-      const customLimit = workspaceRef.current.shapeCustomizations[shape.kind]?.maxDimension;
-      const nextValue = Math.min(customLimit ?? Number.POSITIVE_INFINITY, Math.max(MIN_SHAPE_SIZE, value));
-      const anchor = isCornerRulerMidpoint ? null : lastResizeAnchorRef.current;
-      if (edit.axis === "width") {
-        const frame = sizeFrame;
-        if (shapeHasTaper(shape) && frame) {
-          const scaleX = nextValue / Math.max(MIN_SHAPE_SIZE, frame.width);
-          const signs = anchor?.shapeId === shape.id ? resizeSignsForDimension(anchor.signs, "width") : { x: 0, z: 0 };
-          const nextCenter = signs.x
-            ? resizeCenterFromAnchor(frame, resizeAnchorPointForFrame(frame, signs), signs, nextValue, frame.depth)
-            : frame.center.clone();
-          onUpdateShape(id, {
-            ...scaledHorizontalShapePatch(shape, scaleX, 1),
-            x: cleanNearZero(nextCenter.x, 0.0005),
-            z: cleanNearZero(nextCenter.z, 0.0005),
-            elevation: cleanNearZero(nextCenter.y - shape.height / 2, 0.0005),
-          });
-        } else {
-          // A cylinder is always circular - the diameter mark writes both
-          // fields, the same as the inspector's diameter field does.
-          const patch: Partial<WorkplaneShape> = shape.kind === "cylinder" || shape.kind === "star"
-            ? { width: nextValue, depth: nextValue, size: nextValue }
-            : { width: nextValue, size: resizedShapeSize(nextValue, shapeDepth(shape)) };
-          if (shape.kind === "cone") {
-            patch.baseRadius = nextValue / 2;
-          }
-          onUpdateShape(id, patchWithResizeAnchor(shape, patch, edit.axis, anchor));
-        }
-      } else if (edit.axis === "depth") {
-        const frame = sizeFrame;
-        if (shapeHasTaper(shape) && frame) {
-          const scaleZ = nextValue / Math.max(MIN_SHAPE_SIZE, frame.depth);
-          const signs = anchor?.shapeId === shape.id ? resizeSignsForDimension(anchor.signs, "depth") : { x: 0, z: 0 };
-          const nextCenter = signs.z
-            ? resizeCenterFromAnchor(frame, resizeAnchorPointForFrame(frame, signs), signs, frame.width, nextValue)
-            : frame.center.clone();
-          onUpdateShape(id, {
-            ...scaledHorizontalShapePatch(shape, 1, scaleZ),
-            x: cleanNearZero(nextCenter.x, 0.0005),
-            z: cleanNearZero(nextCenter.z, 0.0005),
-            elevation: cleanNearZero(nextCenter.y - shape.height / 2, 0.0005),
-          });
-        } else {
-          // Defense in depth: the cylinder's dimension mark never offers this
-          // axis (see makeFootprintDimensionMark above), but keep it circular
-          // regardless of how the patch got here.
-          const patch: Partial<WorkplaneShape> = shape.kind === "cylinder" || shape.kind === "star"
-            ? { width: nextValue, depth: nextValue, size: nextValue }
-            : { depth: nextValue, size: resizedShapeSize(shapeWidth(shape), nextValue) };
-          onUpdateShape(id, patchWithResizeAnchor(shape, patch, edit.axis, anchor));
-        }
-      } else {
-        if (isCornerRulerMidpoint) {
-          const deltaY = (shape.height - nextValue) / 2;
-          onUpdateShape(id, {
-            height: nextValue,
-            elevation: cleanNearZero(clamp((shape.elevation ?? 0) + deltaY, MIN_ELEVATION, MAX_ELEVATION), 0.0005),
-          });
-        } else {
-          onUpdateShape(id, patchWithResizeAnchor(shape, { height: nextValue }, edit.axis, anchor));
-        }
-      }
-    }
+    const patch = dimensionPatchFor(shape, edit.axis, edit.value);
+    if (patch) onUpdateShape(id, patch);
     setEditingDimension(null);
     setPinnedMeasureKey(null);
-  }, [editingDimension, onUpdateShape]);
+  }, [dimensionPatchFor, editingDimension, onUpdateShape]);
+
+  // A click on a corner opens its width and depth together; Tab moves between them.
+  const beginCornerEdit = useCallback((handleKey: string) => {
+    if (suppressNextCornerEditRef.current) {
+      suppressNextCornerEditRef.current = false;
+      return;
+    }
+    const id = selectedIdsRef.current[0];
+    const marks = (transformOverlayRef.current?.dimensions[handleKey] ?? []).filter((mark) => mark.axis === "width" || mark.axis === "depth");
+    if (!id || marks.length === 0) return;
+    // A round shape only has its diameter mark.
+    if (marks.length === 1) {
+      beginDimensionEdit(marks[0]);
+      return;
+    }
+    rememberResizeAnchor(id, "scale", handleKey);
+    setPinnedMeasureKey(handleKey);
+    setEditingDimension(null);
+    setEditingCorner({
+      entries: marks.slice(0, 2).map((mark) => ({
+        key: mark.key,
+        axis: mark.axis as "width" | "depth",
+        x: mark.labelX,
+        y: mark.labelY,
+        value: mark.label,
+        original: mark.label,
+      })),
+    });
+  }, [beginDimensionEdit, rememberResizeAnchor]);
+
+  const commitCornerEdit = useCallback(() => {
+    const edit = editingCorner;
+    const shape = shapesRef.current.find((entry) => entry.id === selectedIdsRef.current[0]);
+    setEditingCorner(null);
+    setPinnedMeasureKey(null);
+    if (!edit || !shape) return;
+    // Both sizes go out as one patch, the second worked out on the first's result.
+    let working = shape;
+    let merged: Partial<WorkplaneShape> = {};
+    edit.entries.forEach((entry) => {
+      if (entry.value.trim() === entry.original) return;
+      const patch = dimensionPatchFor(working, entry.axis, entry.value);
+      if (!patch) return;
+      working = { ...working, ...patch };
+      merged = { ...merged, ...patch };
+    });
+    if (Object.keys(merged).length > 0) onUpdateShape(shape.id, merged);
+  }, [dimensionPatchFor, editingCorner, onUpdateShape]);
+
+  const cancelCornerEdit = useCallback(() => {
+    setEditingCorner(null);
+    setPinnedMeasureKey(null);
+  }, []);
 
   const cancelDimensionEdit = useCallback(() => {
     setEditingDimension(null);
@@ -6731,6 +6800,9 @@ export function WorkplaneViewport({
         if (transform.kind === "lift" && transform.hasMoved) {
           suppressLiftEditAfterDrag();
         }
+        if (transform.kind === "scale" && transform.hasMoved) {
+          suppressCornerEditAfterDrag();
+        }
         transformRef.current = null;
         setActiveRotationWheel(false);
         setActiveTransformKind(null);
@@ -6828,7 +6900,7 @@ export function WorkplaneViewport({
       }
       onInteractionActiveChange?.(false);
     },
-    [clearMoveDimensions, onInteractionActiveChange, onSelectShape, onUpdateShape, rememberResizeAnchor, setMarqueeFromState, shapesInMarquee, suppressLiftEditAfterDrag],
+    [clearMoveDimensions, onInteractionActiveChange, onSelectShape, onUpdateShape, rememberResizeAnchor, setMarqueeFromState, shapesInMarquee, suppressCornerEditAfterDrag, suppressLiftEditAfterDrag],
   );
 
   const handleDrop = useCallback(
@@ -7334,6 +7406,7 @@ export function WorkplaneViewport({
               box={transformOverlay}
               measureKey={pinnedMeasureKey ?? hoverMeasureKey}
               editingDimension={editingDimension}
+              editingCorner={editingCorner}
               editingRotation={editingRotation}
               rotationReadout={rotationReadout}
               showRotationWheel={activeRotationWheel}
@@ -7350,6 +7423,10 @@ export function WorkplaneViewport({
               onPinMeasure={setPinnedMeasureKey}
               onBeginDimensionEdit={beginDimensionEdit}
               onBeginLiftEdit={beginLiftEdit}
+              onBeginCornerEdit={beginCornerEdit}
+              onEditingCornerChange={(axis, value) => setEditingCorner((current) => (current ? { entries: current.entries.map((entry) => (entry.axis === axis ? { ...entry, value } : entry)) } : current))}
+              onCommitCornerEdit={commitCornerEdit}
+              onCancelCornerEdit={cancelCornerEdit}
               onEditingDimensionChange={(value) => setEditingDimension((current) => (current ? { ...current, value } : current))}
               onCommitDimensionEdit={commitDimensionEdit}
               onCancelDimensionEdit={cancelDimensionEdit}

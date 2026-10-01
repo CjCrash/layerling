@@ -439,6 +439,8 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "shortcuts.raise": "Auswahl anheben oder absenken",
   "shortcuts.rotate": "Um 45° drehen",
   "transform.rotateHandle": "Ziehen zum Drehen",
+  "transform.cornerWidth": "Breite",
+  "transform.cornerDepth": "Tiefe",
   "transform.resize": "Größe ändern",
   "transform.height": "Höhe",
   "transform.lift": "Anheben",

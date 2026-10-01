@@ -23,6 +23,7 @@ export {
   ROTATION_WHEEL_SHIFT_SNAP_DEGREES,
   ROTATION_WHEEL_SNAP_DEGREES,
   type DimensionMark,
+  type EditingCorner,
   type EditingDimension,
   type EditingRotation,
   type PinnedRotationWheelView,
@@ -40,6 +41,7 @@ export function TransformOverlay({
   box,
   measureKey,
   editingDimension,
+  editingCorner,
   editingRotation,
   rotationReadout,
   showRotationWheel,
@@ -56,6 +58,10 @@ export function TransformOverlay({
   onPinMeasure,
   onBeginDimensionEdit,
   onBeginLiftEdit,
+  onBeginCornerEdit,
+  onEditingCornerChange,
+  onCommitCornerEdit,
+  onCancelCornerEdit,
   onEditingDimensionChange,
   onCommitDimensionEdit,
   onCancelDimensionEdit,
@@ -70,7 +76,7 @@ export function TransformOverlay({
   const marks = measureKey
     ? (box.dimensions[measureKey] ?? [])
     : box.alwaysVisibleDimensionKeys.flatMap((key) => box.dimensions[key] ?? []);
-  const visibleMarks = (hideDimensionMarks ? [] : marks).filter((mark) => mark.key !== editingDimension?.key);
+  const visibleMarks = (hideDimensionMarks ? [] : marks).filter((mark) => mark.key !== editingDimension?.key && !editingCorner?.entries.some((entry) => entry.key === mark.key));
   const handleMeasureKey = (handle: TransformOverlayState["handles"][number]) => measureKeyForHandle(handle.kind, handle.key, box);
   const protractorTicks = Array.from({ length: 16 }, (_, index) => {
     const degrees = index * 22.5 - 90;
@@ -200,6 +206,30 @@ export function TransformOverlay({
           }}
         />
       ) : null}
+      {editingCorner?.entries.map((entry, index) => (
+        <input
+          key={entry.key}
+          className="dimension-input"
+          data-corner-input="true"
+          style={{ "--overlay-x": `${entry.x}px`, "--overlay-y": `${entry.y}px` } as CSSProperties}
+          value={entry.value}
+          autoFocus={index === 0}
+          inputMode="text"
+          aria-label={entry.axis === "width" ? t("transform.cornerWidth") : t("transform.cornerDepth")}
+          onPointerDown={(event) => event.stopPropagation()}
+          onFocus={(event) => selectWholeValue(event.currentTarget)}
+          onChange={(event) => onEditingCornerChange(entry.axis, event.target.value)}
+          onBlur={(event) => {
+            // Tab or a click into the other box keeps the pair open.
+            if ((event.relatedTarget as HTMLElement | null)?.dataset?.cornerInput) return;
+            onCommitCornerEdit();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") onCommitCornerEdit();
+            if (event.key === "Escape") onCancelCornerEdit();
+          }}
+        />
+      ))}
       {editingRotation ? (
         <label className="rotation-edit" style={{ "--overlay-x": `${editingRotation.x}px`, "--overlay-y": `${editingRotation.y}px` } as CSSProperties}>
           <input
@@ -254,6 +284,9 @@ export function TransformOverlay({
             if (handle.kind === "lift") {
               event.stopPropagation();
               onBeginLiftEdit(handle.key, handle.x + 42, handle.y - 32);
+            } else if (handle.kind === "scale" && handle.className.startsWith("corner")) {
+              event.stopPropagation();
+              onBeginCornerEdit(handle.key);
             }
           }}
         />

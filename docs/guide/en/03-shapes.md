@@ -71,6 +71,7 @@ Besides the settings there are handles on the shape itself:
 - The **arrow on top** changes the height, the handle **in the middle** lifts or lowers the shape.
 - The **curved arrows** rotate it.
 - The **numbers** beside the shape show the dimensions. A click on one opens a field in which you type the number you want.
+- A **click on a corner** (without dragging) opens width and depth together. Type the first, press [[Tab]] for the second and [[Enter]] to apply both. [[Esc]] cancels.
 
 Without the mouse, use the keyboard: the arrow keys move the selection by one snap step, with [[Shift]] by five. [[Ctrl]]+[[↑]] and [[Ctrl]]+[[↓]] raise and lower it. [[R]] rotates by 45°, [[Shift]]+[[R]] by 22.5°. [[D]] drops the selection onto the workplane.
 

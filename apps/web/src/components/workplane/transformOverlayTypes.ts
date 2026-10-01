@@ -249,6 +249,11 @@ export type EditingDimension = {
   value: string;
 } | null;
 
+/** Click on a corner handle: width and depth open together, like Tinkercad's X and Y boxes. */
+export type EditingCorner = {
+  entries: Array<{ key: string; axis: "width" | "depth"; x: number; y: number; value: string; original: string }>;
+} | null;
+
 export type EditingRotation = {
   axis: RotationAxis;
   handleKey: string;
@@ -261,6 +266,7 @@ export type TransformOverlayProps = {
   box: TransformOverlayState;
   measureKey: string | null;
   editingDimension: EditingDimension;
+  editingCorner: EditingCorner;
   editingRotation: EditingRotation;
   rotationReadout: RotationReadout;
   showRotationWheel: boolean;
@@ -277,6 +283,10 @@ export type TransformOverlayProps = {
   onPinMeasure: (key: string | null) => void;
   onBeginDimensionEdit: (mark: DimensionMark) => void;
   onBeginLiftEdit: (handleKey: string, x: number, y: number) => void;
+  onBeginCornerEdit: (handleKey: string) => void;
+  onEditingCornerChange: (axis: "width" | "depth", value: string) => void;
+  onCommitCornerEdit: () => void;
+  onCancelCornerEdit: () => void;
   onEditingDimensionChange: (value: string) => void;
   onCommitDimensionEdit: () => void;
   onCancelDimensionEdit: () => void;
