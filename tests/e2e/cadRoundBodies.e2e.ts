@@ -173,4 +173,24 @@ describe("exact round bodies against their display meshes", () => {
       trueBounds(solid).forEach((value, index) => expect(Math.abs(value - expected.bounds[index])).toBeLessThan(0.05));
     });
   });
+
+  it("builds shapes drawn with few sides as the display's own flat faces", () => {
+    [
+      shape("cylinder", { sides: 6 }),
+      // Turned beyond half a side step (36 degrees for five sides).
+      shape("cylinder", { sides: 5, x: 12.5, z: -7, elevation: 4, rotation: 50, rotationX: 90, rotationZ: 15, mirrorX: true }),
+      shape("ellipse", { width: 30, depth: 15, sides: 8 }),
+      shape("tube", { sides: 8 }),
+      shape("ring", { width: 30, depth: 30, height: 5, sides: 12 }),
+      shape("roundRoof", { width: 20, depth: 30, height: 10, sides: 4 }),
+    ].forEach((source) => {
+      const { solid, expected } = body(source);
+      const types = cad.getSubShapes(solid, "face").map((face) => cad.surfaceType(face));
+      expect(types.every((type) => type === "plane")).toBe(true);
+      expect(cadProfileSolidMismatch(cad, solid, expected)).toBeNull();
+      // The display mesh is stored in 32-bit floats, good to about 1e-7.
+      expect(Math.abs(cad.getVolume(solid) / expected.volume - 1)).toBeLessThan(1e-6);
+      trueBounds(solid).forEach((value, index) => expect(Math.abs(value - expected.bounds[index])).toBeLessThan(1e-4));
+    });
+  });
 });

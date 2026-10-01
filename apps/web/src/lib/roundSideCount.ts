@@ -1,14 +1,8 @@
 import { MAX_HIGH_RESOLUTION_SIDES } from "@/lib/workplaneSettings";
+import { MIN_AUTOMATIC_SIDES, ROUND_DEVIATION_TOLERANCE } from "@/lib/roundness";
 
-/**
- * Wie weit ein Vieleck vom echten Kreis abweichen darf, bevor man es sieht.
- * Fuenf Tausendstel Millimeter liegen weit unter dem, was ein Drucker
- * aufloest - eine 0,4er-Duese legt Bahnen, die achtzigmal breiter sind.
- */
-export const ROUND_DEVIATION_TOLERANCE = 0.005;
-
-/** Unter vierundzwanzig Seiten sieht auch ein kleiner Stift eckig aus. */
-export const MIN_AUTOMATIC_SIDES = 24;
+// Die Zahlen stehen in roundness.ts, wo auch die Anleitung sie liest.
+export { MIN_AUTOMATIC_SIDES, ROUND_DEVIATION_TOLERANCE };
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));

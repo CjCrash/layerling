@@ -53,7 +53,7 @@ Runde Formen wie Zylinder, Kegel, Rohr, Ellipse oder die Bohrungen haben in den 
 
 **Wie du es einsetzt**
 
-- **Lass {{ui:prop.sidesFollowSize}} eingeschaltet.** Dann wählt layerling die Seitenzahl nach dem Durchmesser, so dass das Vieleck höchstens 0,005 mm vom echten Kreis abweicht, weit unter dem, was ein Drucker auflöst. Kleine Formen bekommen mindestens 24 Seiten, große mehr.
+- **Lass {{ui:prop.sidesFollowSize}} eingeschaltet.** Dann wählt layerling die Seitenzahl nach dem Durchmesser, so dass das Vieleck höchstens {{value:ROUND_DEVIATION_TOLERANCE}} mm vom echten Kreis abweicht, weit unter dem, was ein Drucker auflöst. Kleine Formen bekommen mindestens {{value:MIN_AUTOMATIC_SIDES}} Seiten, große mehr.
 - **Weniger Seiten** nimmst du, wenn du absichtlich ein Vieleck willst (aber dafür gibt es den {{ui:shape.polygon}}) oder wenn der Editor mit sehr vielen runden Formen träge wird.
 - **Mehr Seiten** brauchst du fast nie. Nur bei sehr großen runden Teilen, wenn du im STL Kanten siehst.
 - **Für Teile, die du nur mit Kanten bearbeitest oder als STEP weitergibst,** ist die Seitenzahl egal.

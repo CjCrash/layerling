@@ -174,6 +174,18 @@ describe("STEP export round-trip (real OCCT kernel)", () => {
     }
   });
 
+  it("exports round shapes round whatever their side count, as before", async () => {
+    const dome = shape({ kind: "halfSphere", name: "Faceted dome", x: -40, width: 30, depth: 30, height: 15, steps: 8 });
+    const cone = shape({ kind: "cone", name: "Six-sided oval cone", x: 0, width: 30, depth: 15, height: 15, baseRadius: 15, topRadius: 0, sides: 6 });
+    const ellipse = shape({ kind: "ellipse", name: "Eight-sided ellipse", x: 40, width: 26, depth: 16, height: 20, sides: 8 });
+    const { blob, exportedCount, skipped } = await exportShapesToStep([dome, cone, ellipse]);
+    expect(skipped).toEqual([]);
+    expect(exportedCount).toBe(3);
+    const expected = (2 / 3) * PI * 15 ** 3 + (PI * 15 * 7.5 * 15) / 3 + PI * 13 * 8 * 20;
+    // The pointed oval cone is a B-spline body; OCCT's volume of it runs about 1 % high.
+    expect(Math.abs(await reimportVolume(blob) - expected) / expected).toBeLessThan(0.01);
+  });
+
   it("exports a star, a heart and a teardrop instead of skipping them", async () => {
     const star = shape({ kind: "star", name: "Star", x: -30, width: 20, depth: 20, height: 5 });
     const heart = shape({ kind: "heart", name: "Heart", x: 0, width: 20, depth: 20, height: 5 });

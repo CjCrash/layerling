@@ -254,9 +254,15 @@ export function meshYawDegrees(shape: WorkplaneShape) {
   }
 
   // A tessellated circular primitive is only invariant by one whole side step.
-  // Preserve the remaining yaw so low-sided cylinders (for example a triangular
-  // prism) are baked and used in booleans at the same angle shown in the viewport.
+  // Preserve the remaining yaw so low-sided cylinders are baked and used in
+  // booleans at the same angle shown in the viewport.
   const sides = Math.max(3, Math.round(shape.sides ?? 96));
+  // createPrismGeometry stretches the polygon to fill width and depth
+  // (regularPolygonFootprintScale). Only with a multiple of four sides is it
+  // the same across and across the corners; any other polygon is stretched
+  // (a hexagon by 1/cos 30 degrees, a triangle and offset too) and no longer
+  // turns into itself by one side step - it keeps the angle the viewport shows.
+  if (sides % 4 !== 0) return shape.rotation;
   const sideStep = 360 / sides;
   const normalized = normalizeDegrees(shape.rotation);
   const equivalentYaw = normalized - Math.round(normalized / sideStep) * sideStep;

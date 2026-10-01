@@ -63,14 +63,18 @@ describe("workplane shape helpers", () => {
   });
 
   it("preserves the meaningful yaw of low-sided circular primitives", () => {
+    // An octagon fills width and depth alike and turns into itself by 45 degrees.
+    const octagonalPrism = shape({ kind: "cylinder", width: 10, depth: 10, sides: 8 });
+    expect(meshYawDegrees({ ...octagonalPrism, rotation: 50 })).toBeCloseTo(5);
+    expect(meshYawDegrees({ ...octagonalPrism, rotation: 30 })).toBeCloseTo(-15);
+    expect(meshYawDegrees({ ...octagonalPrism, sides: 96, rotation: 90 })).toBe(0);
+    // A triangle or hexagon is stretched to fill the footprint (regularPolygonFootprintScale),
+    // so one side step no longer turns it into itself: it keeps the viewport's angle.
     const triangularPrism = shape({ kind: "cylinder", width: 10, depth: 10, sides: 3 });
-
-    expect(meshYawDegrees({ ...triangularPrism, rotation: 30 })).toBeCloseTo(30);
-    expect(meshYawDegrees({ ...triangularPrism, rotation: 150 })).toBeCloseTo(30);
-    expect(meshYawDegrees({ ...triangularPrism, rotation: 90 })).toBeCloseTo(-30);
+    expect(meshYawDegrees({ ...triangularPrism, rotation: 150 })).toBe(150);
+    expect(meshYawDegrees({ ...triangularPrism, sides: 6, rotation: 70 })).toBe(70);
     expect(meshYawDegrees({ ...triangularPrism, width: 12, rotation: 150 })).toBe(150);
     expect(meshYawDegrees({ ...triangularPrism, kind: "box", rotation: 30 })).toBe(30);
-    expect(meshYawDegrees({ ...triangularPrism, sides: 96, rotation: 90 })).toBe(0);
   });
 
   it("cleans near-zero values and derives dimensions", () => {

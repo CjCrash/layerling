@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   loadMessages,
+  loadValues,
   parseEnv,
   parseFrontMatter,
   renderFooter,
@@ -23,6 +24,7 @@ async function contextFor(language: "de" | "en") {
   return {
     language,
     messages: await loadMessages(language),
+    values: await loadValues(),
     imageSize: () => null,
     references: { uiKeys: new Set<string>(), shots: new Set<string>(), chapters: new Set<string>() },
   };
@@ -35,6 +37,15 @@ describe("guide markdown", () => {
     expect(html).toContain("„Gruppieren“");
     const english = renderInline("Click {{ui:editor.tool.group}}.", await contextFor("en"));
     expect(english).toContain("“Group”");
+  });
+
+  it("takes the program's numbers from roundness.ts, written as the language writes them", async () => {
+    const { EXACT_ROUND_TOLERANCE, MIN_AUTOMATIC_SIDES } = await import("@/lib/roundness");
+    expect(renderInline("{{value:EXACT_ROUND_TOLERANCE}} mm, {{value:MIN_AUTOMATIC_SIDES}}", await contextFor("de"))).toBe(`${String(EXACT_ROUND_TOLERANCE).replace(".", ",")} mm, ${MIN_AUTOMATIC_SIDES}`);
+    expect(renderInline("{{value:EXACT_ROUND_TOLERANCE}} mm", await contextFor("en"))).toBe(`${EXACT_ROUND_TOLERANCE} mm`);
+    expect(() => renderInline("{{value:NO_SUCH_NUMBER}}", { language: "en", messages: {}, values: {} })).toThrow(/Unknown value/);
+    // The function in the same file is no number to quote.
+    expect((await loadValues()).drawnRound).toBeUndefined();
   });
 
   it("stops on a name the interface does not have", async () => {
