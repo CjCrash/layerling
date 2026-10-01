@@ -3,7 +3,9 @@ import type { CadModifierProfileLoop, CadModifierProfilePart, CadModifierProfile
 
 /*
  * Exact solids for catalog shapes that are an outline pushed straight up
- * (star, heart, crescent, slot, polygon, honeycomb, spur gear, text). The
+ * (star, heart, crescent, slot, polygon, honeycomb, spur gear, text, the
+ * ellipse, tube and round roof) or a section turned around an axis (bores,
+ * the half sphere, the stretched sphere and cone). The
  * outline arrives as lines, circular or elliptical arcs and Bezier curves; the
  * kernel gets real curves and flat caps, so a star is 22 faces instead of one
  * face per display triangle, and fillets and chamfers on it cost milliseconds
@@ -93,6 +95,15 @@ function samePoint(a: Point, b: Point, tolerance: number) {
   return Math.hypot(a.x - b.x, a.z - b.z) <= tolerance;
 }
 
+function sameRadius(a: number, b: number) {
+  return Math.abs(a - b) <= 1e-9 * Math.max(a, b);
+}
+
+/** An arc once round: a loop of its own, a circle or ellipse in one closed edge. */
+export function isWholeEllipse(segment: CadModifierProfileSegment) {
+  return segment.kind === "arc" && Math.abs(Math.abs(segment.end - segment.start) - TWO_PI) <= 1e-9;
+}
+
 /** Throws unless every number is finite, every loop closes and every arc ends where it says. */
 export function validateCadProfile(profile: CadModifierProfilePart) {
   if (profile.kind !== "extrusion" && profile.kind !== "revolution") throw new Error(`Unsupported CAD profile: ${String((profile as { kind: unknown }).kind)}`);
@@ -100,7 +111,9 @@ export function validateCadProfile(profile: CadModifierProfilePart) {
   if (!profile.loops.length) throw new Error("The profile has no outline");
   const tolerance = profileExtent(profile) * 1e-7;
   profile.loops.forEach((loop) => {
-    if (!Number.isFinite(loop.x) || !Number.isFinite(loop.z) || loop.segments.length < 2) {
+    // A loop of one segment is only a whole ellipse, and only in an extrusion.
+    const whole = profile.kind === "extrusion" && loop.segments.length === 1 && isWholeEllipse(loop.segments[0]);
+    if (!Number.isFinite(loop.x) || !Number.isFinite(loop.z) || (loop.segments.length < 2 && !whole)) {
       throw new Error("The profile outline is incomplete");
     }
     let current: Point = loop;
@@ -113,7 +126,7 @@ export function validateCadProfile(profile: CadModifierProfilePart) {
       if (!values.every(Number.isFinite)) throw new Error("The profile outline has an invalid point");
       if (segment.kind === "arc") {
         const sweep = Math.abs(segment.end - segment.start);
-        if (segment.rx <= 0 || segment.rz <= 0 || sweep <= 1e-9 || sweep > TWO_PI - 1e-9) {
+        if (segment.rx <= 0 || segment.rz <= 0 || sweep <= 1e-9 || (sweep > TWO_PI - 1e-9 && !whole)) {
           throw new Error("The profile outline has an invalid arc");
         }
         if (!samePoint(profileArcPoint(segment, segment.start), current, tolerance) || !samePoint(profileArcPoint(segment, segment.end), segment, tolerance)) {
@@ -172,9 +185,22 @@ function ellipseArcEdge(cad: OcctKernel, from: Point, arc: ProfileArc, tolerance
   return edge;
 }
 
+/** A whole ellipse round (cx, 0, cz), semi-axes rx along X and rz along Z, as one closed edge. */
+function wholeEllipseEdge(cad: OcctKernel, arc: ProfileArc) {
+  const center = { x: arc.cx, y: 0, z: arc.cz };
+  if (sameRadius(arc.rx, arc.rz)) return cad.makeCircleEdge(center, UP, arc.rx);
+  // With the normal +Y the major axis lies along +Z (see above); a wider one is turned a quarter.
+  if (arc.rz > arc.rx) return cad.makeEllipseEdge(center, UP, arc.rz, arc.rx);
+  const raw = cad.makeEllipseEdge(ORIGIN, UP, arc.rx, arc.rz);
+  const edge = cad.transform(raw, [0, 0, 1, arc.cx, 0, 1, 0, 0, -1, 0, 0, arc.cz]);
+  cad.release(raw);
+  return edge;
+}
+
 function segmentEdge(cad: OcctKernel, from: Point, segment: CadModifierProfileSegment, tolerance: number) {
   if (segment.kind === "line") return cad.makeLineEdge(vec(from), vec(segment));
   if (segment.kind === "bezier") return cad.makeBezierEdge([vec(from), ...segment.controls.map(vec), vec(segment)]);
+  if (isWholeEllipse(segment)) return wholeEllipseEdge(cad, segment);
   if (Math.abs(segment.rx - segment.rz) <= 1e-9 * Math.max(segment.rx, segment.rz)) {
     return cad.makeArcEdge(vec(from), vec(profileArcPoint(segment, (segment.start + segment.end) / 2)), vec(segment));
   }
@@ -246,6 +272,23 @@ export function profileExtrusionSolid(cad: OcctKernel, profile: CadModifierProfi
   return solid;
 }
 
+function meshedBounds(cad: OcctKernel, solid: ShapeHandle, deflection: number) {
+  const probe = cad.copy(solid);
+  try {
+    const { positions } = cad.tessellate(probe, { linearDeflection: Math.max(1e-4, deflection), angularDeflection: 0.5 });
+    const bounds = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+    for (let index = 0; index + 2 < positions.length; index += 3) {
+      for (let axis = 0; axis < 3; axis += 1) {
+        bounds[axis] = Math.min(bounds[axis], positions[index + axis]);
+        bounds[axis + 3] = Math.max(bounds[axis + 3], positions[index + axis]);
+      }
+    }
+    return bounds;
+  } finally {
+    cad.release(probe);
+  }
+}
+
 /**
  * Null when the exact body agrees with the display mesh it replaces, otherwise
  * what disagrees. The mesh only approximates the arcs, so the check is loose:
@@ -263,7 +306,16 @@ export function cadProfileSolidMismatch(cad: OcctKernel, solid: ShapeHandle, exp
     expected.bounds[5] - expected.bounds[2],
   );
   const boundsTolerance = 0.05 * size + 0.05;
-  const worst = Math.max(...actual.map((value, index) => Math.abs(value - expected.bounds[index])));
+  const differ = (bounds: number[]) => Math.max(...bounds.map((value, index) => Math.abs(value - expected.bounds[index])));
+  let worst = differ(actual);
+  if (!(worst <= boundsTolerance)) {
+    // The kernel's box is loose on a turned curved face - a tipped half
+    // sphere measured 4 mm too big - so ask a coarse mesh of a copy (a copy,
+    // so the body itself keeps no triangulation the preview would reuse).
+    // Its vertices lie on the faces: that box is short of the true one by the
+    // deflection at most, 0.5 % of the size - a tenth of the tolerance.
+    worst = differ(meshedBounds(cad, solid, size * 5e-3));
+  }
   if (!(worst <= boundsTolerance)) return `bounds differ by ${worst.toFixed(3)} mm`;
   const volume = Math.abs(cad.getVolume(solid));
   const expectedVolume = Math.abs(expected.volume);

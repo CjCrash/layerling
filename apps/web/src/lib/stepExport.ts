@@ -4,6 +4,7 @@ import { cadBrepTransformForShape } from "@/lib/cadBakeMetadata";
 import { loadBrepWithOcct, occtKernel, type Brep, type BrepSolid } from "@/lib/brepKernel";
 import { cadModifierProfileForShape } from "@/lib/cadProfileExtrusion";
 import { profileExtrusionSolid } from "@/lib/cadProfileSolid";
+import { cadTransformRequiresGeneralTransform } from "@/lib/cadModifierRuntime";
 
 export type SkippedShape = {
   name: string;
@@ -254,7 +255,9 @@ function buildProfileBody(brep: Brep, shape: WorkplaneShape): BuildOutcome {
   if (!kernel || !part) return { skip: unsupportedReason() };
   try {
     const local = profileExtrusionSolid(kernel, part);
-    const placed = part.transform ? kernel.transform(local, part.transform) : local;
+    // As the CAD worker places it: a stretched placement (an oval dome or
+    // cone) needs the general transform - transform() would scale evenly.
+    const placed = !part.transform ? local : cadTransformRequiresGeneralTransform(part.transform) ? kernel.generalTransform(local, part.transform) : kernel.transform(local, part.transform);
     const text = kernel.toBREP(placed);
     try {
       if (placed !== local) kernel.release(local);
