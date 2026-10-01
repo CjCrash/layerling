@@ -4,7 +4,9 @@
 # answers, and only then opens the browser. Ctrl+C stops the server again.
 # The Windows counterpart is start-layerling.cmd.
 cd "$(dirname "$0")/.." || exit 1
-URL="http://127.0.0.1:3000/"
+# Another port: PORT=3100 scripts/start-layerling.sh
+PORT="${PORT:-3000}"
+URL="http://127.0.0.1:$PORT/"
 
 if [ -d .git ] && command -v git >/dev/null 2>&1; then
   if [ -n "$(git status --porcelain)" ]; then
@@ -23,16 +25,16 @@ if [ -d .git ] && command -v git >/dev/null 2>&1; then
   fi
 fi
 
-npm run dev &
+npm run dev -- -p "$PORT" &
 server=$!
 trap 'kill "$server" 2>/dev/null' INT TERM
 
 echo "Waiting for the server to come up..."
-if node -e '
+if PORT="$PORT" node -e '
   const net = require("net");
   let tries = 0;
   const attempt = () => {
-    const socket = net.connect(3000, "127.0.0.1");
+    const socket = net.connect(Number(process.env.PORT), "127.0.0.1");
     socket.on("connect", () => { socket.destroy(); process.exit(0); });
     socket.on("error", () => {
       socket.destroy();
