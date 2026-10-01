@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 import { guideHref, type GuideChapter } from "@/lib/guideLinks";
 import { t, type MessageKey } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
+import { LAYERLING_VIDEOS } from "@/lib/layerlingVideos";
 
 /**
  * The short version of the manual, in the same shell as the shortcut list:
@@ -118,6 +119,14 @@ export function GuideModal({ onClose, sharedStore = false }: { onClose: () => vo
             <p className="shortcuts-intro">{t("guide.intro")}</p>
             <p className="guide-full-link">
               <a href={guideHref(language)} target="_blank" rel="noreferrer">{t("guide.fullGuide")}</a>
+            </p>
+            <p className="guide-full-link">
+              {t("guide.videos")}{" "}
+              {LAYERLING_VIDEOS.map((video) => (
+                <a key={video.url} href={video.url} target="_blank" rel="noopener noreferrer">
+                  {video.title} ({video.lang})
+                </a>
+              ))}
             </p>
             <div className="shortcuts-groups">
               {sections.map((section) => (

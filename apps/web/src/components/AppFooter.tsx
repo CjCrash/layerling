@@ -1,7 +1,7 @@
 "use client";
 
 import { Heart, Sparkles } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { t, type Language } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
 import { SOURCE_CODE_URL, type AppUpdateInfo } from "@/lib/appUpdate";
@@ -84,6 +84,11 @@ function joinWithDots(items: ReactNode[]) {
     );
 }
 
+// The anchor of the Windows quickstart section, which also explains updating.
+function updateStepsUrl(language: Language) {
+  return `${readmeUrl(language)}#${language === "de" ? "schnellstart-unter-windows" : "windows-quickstart"}`;
+}
+
 /**
  * Dieselbe Zeile auf der Startseite und unter dem Arbeitsbereich. Im Editor
  * liegt sie als schmales Band am unteren Rand, deshalb bekommt sie dort eine
@@ -101,6 +106,13 @@ export function AppFooter({
   const language = useLanguage();
   const { update: hookUpdate } = useAppUpdate(version);
   const update = updateInfo !== undefined ? updateInfo : hookUpdate;
+  // On someone's own computer the release page does not say how to update,
+  // so the notice points at the steps instead. Decided after mount: the
+  // exported page cannot know where it will be opened.
+  const [runsLocally, setRunsLocally] = useState(false);
+  useEffect(() => {
+    setRunsLocally(["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname));
+  }, []);
 
   return (
     <footer className={variant === "editor" ? "dashboard-legal editor-legal" : "dashboard-legal"}>
@@ -140,11 +152,11 @@ export function AppFooter({
           update ? (
             <a
               className="dashboard-legal-update"
-              href={update.releaseUrl}
+              href={runsLocally ? updateStepsUrl(language) : update.releaseUrl}
               target="_blank"
               rel="noreferrer"
               key="update-available"
-              title={t("dashboard.updateAvailable", { version: update.latestVersion })}
+              title={runsLocally ? t("dashboard.updateLocalHint") : t("dashboard.updateAvailable", { version: update.latestVersion })}
             >
               <Sparkles size={13} aria-hidden="true" />
               <span>{t("dashboard.updateAvailable", { version: update.latestVersion })}</span>

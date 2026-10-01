@@ -1,4 +1,5 @@
 import type { MessageKey } from "@/lib/i18n";
+import { LAYERLING_VIDEOS } from "@/lib/layerlingVideos";
 
 type Translate = (key: MessageKey) => string;
 
@@ -30,20 +31,6 @@ const MORE = [
   ["welcome.moreAiTitle", "welcome.moreAiBody"],
 ] as const satisfies ReadonlyArray<readonly [MessageKey, MessageKey]>;
 
-/**
- * Videos by other people about layerling. Plain links, no embeds: an embedded
- * player would contact YouTube as soon as the start page opens, and layerling
- * keeps visitors' data to itself. Newest first; `lang` is the spoken language.
- */
-const VIDEOS = [
-  {
-    title: "Tinkercad Too Basic? Fusion 360 Too Much? Meet Layerling for 3D Printing",
-    channel: "3D Jesus | 3D Printing & Design",
-    lang: "EN",
-    url: "https://youtu.be/kzV7fQ3rXhw",
-  },
-] as const;
-
 /** The body of the welcome panel on the start page. */
 export function WelcomeGuideBody({ tr }: { tr: Translate }) {
   return (
@@ -73,7 +60,7 @@ export function WelcomeGuideBody({ tr }: { tr: Translate }) {
       <div className="dashboard-welcome-more dashboard-welcome-videos">
         <h3>{tr("welcome.videosTitle")}</h3>
         <ul>
-          {VIDEOS.map((video) => (
+          {LAYERLING_VIDEOS.map((video) => (
             <li key={video.url}>
               <a href={video.url} target="_blank" rel="noopener noreferrer">
                 {video.title}
