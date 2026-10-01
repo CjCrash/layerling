@@ -6,6 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
+- **Measure tool in the sketch sits in the side bar:** The ruler button in the sketch moved from the ribbon (group "Inspect") to the side bar, with the same icon as in the 3D editor, and a second click switches it off again (PR #58, thanks gogades).
 - **Start script for Linux and macOS:** `scripts/start-layerling.sh` updates the checkout, starts the server, waits for it and then opens the browser, like the Windows shortcut does. Tried on Debian Linux and in a Windows shell; macOS is untested. `PORT=3100` picks another port.
 - **Toolbar no longer cut off at some window widths:** Between 1344 and 1351 px and between 1222 and 1238 px of page width the last group (Help) lost a few pixels at the right edge; the steps now switch at the width the icons really need (issue #54).
 - **Videos chapter in the user guide:** A new last chapter lists videos by others, in both languages. The quick guide in the editor lost its intro sentence and the button to the full guide (the link at the bottom stays) and shows the videos as a plain list.
