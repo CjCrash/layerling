@@ -4,14 +4,15 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
-## Unreleased
+## 1.24.0
 
 - **190 printers instead of 54:** The printer list grew by Snapmaker (U1, A250, A350, Artisan, J1) and many more models of the vendors that were already there (Bambu Lab, Prusa, Creality, Elegoo, Anycubic, Qidi, Sovol, Flashforge, Artillery, Voron and others), plus BIQU, Kingroon, Longer, Geeetech, Voxelab, TwoTrees, Comgrow, Eryone, Dremel, InfiMech, Peopoly, Wanhao, Raise3D, UltiMaker, Volumic and RatRig. Bed size and height still come from OrcaSlicer's profiles for the 0.4 mm nozzle. Delta printers with a round bed are not in the list.
 - **Settings dialog fits the window:** The workspace settings and the other dialogs of the same kind are sized to the space under the toolbar instead of to the window, so their footer no longer runs off the bottom when the toolbar takes two rows or the page is zoomed. On a very low window the navigation on the left scrolls instead of pushing the footer out. Reported by bernbout (#53).
 - **Browser zoom works again:** Ctrl+Plus, Ctrl+Minus and Cmd+Plus/Minus were swallowed by the 3D editor and zoomed only the camera. They now reach the browser, so the whole page can be zoomed out; the plain + and - keys still zoom the camera. Reported by bernbout (#53).
 - **More exact round shapes:** The sphere with free width, depth and height, the half sphere with an oval footprint and the cone with an oval footprint (pointed, a frustum, or standing on its tip) now reach the edge tool as exact bodies, not as meshes. The ellipse and the oval cylinder have one edge per rim (3 instead of 6), so one click picks a whole rim. A half sphere tipped over no longer falls back to the mesh, and STEP export keeps the size of stretched bodies. Edges in the editor: half sphere 30 x 20 x 10 from 3,008 to 2, sphere 30 x 20 x 15 from 3,312 to 1. Contributed by @plazmabokor (#52).
 - **Sketch view shortcuts:** `F` or `Home` fits the whole sketch in the view and `Shift+F` zooms to the selection, like in the 3D editor, with a new button next to the home button. The sketch shortcut list and the guide name them. Contributed by @gogades (#51).
-- **Sketch dimensions on selection:** The sketch shows lengths only for the selected line, or for the lines that meet at the selected point, with extension lines and arrows outside the shape; labels move out of each other's way. Before, every length was shown all the time. Contributed by @gogades (#51).
+- **Sketch dimensions on selection:** The sketch shows lengths only for the selected line, or for the lines that meet at the selected point, with extension lines and arrows outside the shape; labels move out of each other's way, and on a sketch with inner outlines (a disc with holes) a label goes to the side with fewer lines in the way. Shift+F on a single point no longer zooms in to the maximum. Before, every length was shown all the time. Contributed by @gogades (#51).
+- **Guide header:** The word "Guide" ("Anleitung") in the header of the guide pages sits on one baseline with "layerling".
 - **Kernel:** layerling runs on the official occt-wasm 5.4.0 again, which contains the join type for hollowing; the own build from henmedia/occt-wasm is no longer needed.
 
 ## 1.23.0
