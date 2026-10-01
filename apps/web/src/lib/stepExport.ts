@@ -2,7 +2,7 @@ import type { WorkplaneShape } from "@/types/layerling";
 import { shapeDepth, shapeWidth } from "@/lib/workplaneShapes";
 import { cadBrepTransformForShape } from "@/lib/cadBakeMetadata";
 import { loadBrepWithOcct, occtKernel, type Brep, type BrepSolid } from "@/lib/brepKernel";
-import { cadModifierProfileForShape } from "@/lib/cadProfileExtrusion";
+import { asDesignedRound, cadModifierProfileForShape } from "@/lib/cadProfileExtrusion";
 import { profileExtrusionSolid } from "@/lib/cadProfileSolid";
 import { cadTransformRequiresGeneralTransform } from "@/lib/cadModifierRuntime";
 
@@ -62,7 +62,7 @@ export type StepSource = "primitive" | "imported" | "baked" | "profile" | "unsup
 
 function hasExactProfile(shape: WorkplaneShape) {
   try {
-    return cadModifierProfileForShape(shape) !== null;
+    return cadModifierProfileForShape(asDesignedRound(shape)) !== null;
   } catch {
     return false;
   }
@@ -251,7 +251,8 @@ function buildBakedBody(brep: Brep, shape: WorkplaneShape): BuildOutcome {
  */
 function buildProfileBody(brep: Brep, shape: WorkplaneShape): BuildOutcome {
   const kernel = occtKernel();
-  const part = cadModifierProfileForShape(shape);
+  // Round shapes go out round, as they always have, whatever their side count.
+  const part = cadModifierProfileForShape(asDesignedRound(shape));
   if (!kernel || !part) return { skip: unsupportedReason() };
   try {
     const local = profileExtrusionSolid(kernel, part);

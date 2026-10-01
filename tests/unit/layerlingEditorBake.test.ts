@@ -341,6 +341,23 @@ describe("Layerling transform baking", () => {
     expect(cadModifierPrimitiveForAnalyticShape(elliptical)).toBeNull();
   });
 
+  it("leaves cylinders, cones and balls drawn with few sides to their flat faces", () => {
+    // A hexagon bar (a nut pocket, say) is not a round cylinder, and one baked from now on does not come back as one.
+    expect(cadModifierPrimitiveForAnalyticShape(cylinderShape({ sides: 6 }))).toBeNull();
+    expect(cadModifierPrimitiveForAnalyticShape(cylinderShape({ sides: 12 }))).toBeNull();
+    expect(cadModifierPrimitiveForAnalyticShape(cylinderShape({ width: 150, depth: 150, sides: 24 }))).toBeNull();
+    // Sides following the size, or the former fixed 96, stay round however large.
+    expect(cadModifierPrimitiveForAnalyticShape(cylinderShape({ width: 200, depth: 200 }))?.kind).toBe("cylinder");
+    expect(cadModifierPrimitiveForAnalyticShape(cylinderShape({ width: 200, depth: 200, sides: 96 }))?.kind).toBe("cylinder");
+    expect(cadModifierPrimitiveForAnalyticShape(cylinderShape({ width: 2, depth: 2, sides: 48 }))?.kind).toBe("cylinder");
+    expect(cadModifierPrimitiveForAnalyticShape(coneShape({ sides: 6 }))).toBeNull();
+    expect(cadModifierPrimitiveForAnalyticShape(coneShape({ width: 200, depth: 200, baseRadius: 100, sides: 96 }))?.kind).toBe("cone");
+    // Six steps draw a ball of 12 x 6 facets; its own 24 are round.
+    expect(cadModifierPrimitiveForAnalyticShape(sphereShape({ steps: 6 }))).toBeNull();
+    expect(cadModifierPrimitiveForAnalyticShape(sphereShape({ width: 200, depth: 200, height: 200, size: 200, steps: 24 }))?.kind).toBe("sphere");
+    expect(cadModifierPrimitiveForAnalyticShape(sphereShape())?.kind).toBe("sphere");
+  });
+
   it("extracts an analytic cone primitive including truncated cones", () => {
     const pointedCone = coneShape();
     const pointedPrimitive = cadModifierPrimitiveForAnalyticShape(pointedCone);

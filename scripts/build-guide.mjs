@@ -9,7 +9,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 // The wording of buttons is never typed into a chapter. {{ui:key}} pulls it
 // from the interface's own catalogue, so renaming a button renames it in the
 // guide too, and a key that no longer exists stops the build instead of
-// leaving a stale name behind.
+// leaving a stale name behind. Numbers the program decides by work the same
+// way: {{value:NAME}} reads NAME from apps/web/src/lib/roundness.ts and
+// writes it as the language writes numbers (0,005 / 0.005).
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const guideSource = join(root, "docs", "guide");
 const publicDirectory = join(root, "apps", "web", "public");
@@ -141,7 +143,8 @@ export function parseFrontMatter(source) {
 }
 
 /**
- * Inline text. `context.messages` resolves {{ui:key}}, `context.language` sets
+ * Inline text. `context.messages` resolves {{ui:key}}, `context.values`
+ * {{value:NAME}}, `context.language` sets
  * the quotation marks, `context.references` (optional) collects what was used.
  */
 export function renderInline(text, context) {
@@ -157,6 +160,11 @@ export function renderInline(text, context) {
     context.references?.uiKeys.add(key);
     if (label === undefined) throw new Error(`Unknown interface text {{ui:${key}}}`);
     return `<strong class="ui">${open}${escapeHtml(label)}${close}</strong>`;
+  });
+  work = work.replace(/\{\{value:([A-Za-z0-9_]+)\}\}/g, (_, name) => {
+    const value = context.values?.[name];
+    if (typeof value !== "number") throw new Error(`Unknown value {{value:${name}}}`);
+    return new Intl.NumberFormat(GUIDE_LANGUAGES[context.language].htmlLang, { maximumFractionDigits: 6, useGrouping: false }).format(value);
   });
   work = work.replace(/\[\[([^\]]+)\]\]/g, (_, keys) =>
     keys.split("+").map((key) => `<kbd>${key.trim()}</kbd>`).join("+"));
@@ -461,6 +469,12 @@ export async function readChapters(language) {
   return chapters;
 }
 
+/** The numbers a chapter may quote with {{value:NAME}}: every numeric export of roundness.ts. */
+export async function loadValues() {
+  const module = await import(pathToFileURL(join(root, "apps", "web", "src", "lib", "roundness.ts")).href);
+  return Object.fromEntries(Object.entries(module).filter(([, value]) => typeof value === "number"));
+}
+
 export async function loadMessages(language) {
   const module = await import(pathToFileURL(join(root, "apps", "web", "src", "lib", `messages.${language}.ts`)).href);
   return language === "de" ? module.MESSAGES_DE : module.MESSAGES_EN;
@@ -479,6 +493,7 @@ export async function buildGuide({ log = console.log } = {}) {
     const otherLanguage = language === "de" ? "en" : "de";
     const otherStrings = GUIDE_LANGUAGES[otherLanguage];
     const messages = await loadMessages(language);
+    const values = await loadValues();
     const shortcutsHtml = renderShortcuts(shortcutGroups, messages, language);
     const footer = renderFooter({ language, messages, environment, version });
     const outputRoot = join(publicDirectory, strings.dir);
@@ -500,6 +515,7 @@ export async function buildGuide({ log = console.log } = {}) {
       const context = {
         language,
         messages,
+        values,
         shortcutsHtml,
         imageSize: (name) => imageSizes.get(name) ?? null,
         references: { uiKeys: new Set(), shots: new Set(), chapters: new Set() },

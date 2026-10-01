@@ -6,6 +6,9 @@ import { cadTransformFromMatrix } from "@/lib/cadBakeMetadata";
 import { CAD_MODIFIER_EXACT_SEGMENT_LIMIT } from "@/lib/cadModifierRuntime";
 import { meshYawDegrees, mirrorSign, shapeDepth, shapeHasShapeDeform, shapeWidth } from "@/lib/workplaneShapes";
 import { regularPolygonFootprintScale } from "@/lib/regularPolygonFootprint";
+import { roundSideCount } from "@/lib/roundSideCount";
+import { drawnRound, ROUND_FROM_HALF_SPHERE_STEPS, ROUND_FROM_ROOF_SIDES, ROUND_FROM_SIDES, ROUND_FROM_SPHERE_STEPS } from "@/lib/roundness";
+import { sphereTessellation } from "@/lib/sphereTessellation";
 import { normalizeStarInnerFillet, normalizeStarInnerSize, normalizeStarOuterFillet, normalizeStarPoints } from "@/lib/starGeometry";
 import { normalizeHeartTipFillet } from "@/lib/heartGeometry";
 import { buildCrescentContourPoints, normalizeCrescentQuality, normalizeCrescentThickness, normalizeCrescentTipFillet } from "@/lib/crescentGeometry";
@@ -705,20 +708,38 @@ export function cadProfileForShapeKind(shape: WorkplaneShape): { loops: CadModif
       };
     }
     case "ellipse":
+    case "cylinder": {
+      // createPrismGeometry. Drawn with few sides (see drawnRound) it is the
+      // display prism, corner for corner, like the polygon - a hexagon bar
+      // stays one. Otherwise a round cylinder is an analytic primitive, and
+      // only an oval one, or the ellipse, comes here.
+      const count = Math.max(3, Math.round(roundSideCount(shape.sides, width, depth)));
+      if (!drawnRound(shape.sides, ROUND_FROM_SIDES, count, width, depth)) return { loops: polygonProfileLoops(width, depth, count) };
+      if (shape.kind === "cylinder" && Math.abs(width - depth) <= 1e-4) return null;
       return { loops: [ellipseLoop(width / 2, depth / 2)] };
-    case "cylinder":
-      // A round cylinder is an analytic primitive; only an oval one comes here.
-      return Math.abs(width - depth) > 1e-4 ? { loops: [ellipseLoop(width / 2, depth / 2)] } : null;
+    }
     case "tube":
     case "ring": {
+      // createBooleanHollowCylinderGeometry: never fewer than 12 corners.
       const outerX = width / 2;
       const outerZ = depth / 2;
       const wall = Math.min(Math.max(shape.bevel ?? 4, 0.1), Math.max(0.1, Math.min(outerX, outerZ) - 0.1));
-      return { loops: [ellipseLoop(outerX, outerZ), ellipseLoop(Math.max(0.1, outerX - wall), Math.max(0.1, outerZ - wall))] };
+      const innerX = Math.max(0.1, outerX - wall);
+      const innerZ = Math.max(0.1, outerZ - wall);
+      const count = Math.max(12, Math.round(roundSideCount(shape.sides, width, depth)));
+      if (drawnRound(shape.sides, ROUND_FROM_SIDES, count, width, depth)) return { loops: [ellipseLoop(outerX, outerZ), ellipseLoop(innerX, innerZ)] };
+      const ring = (rx: number, rz: number) => polygonLoop(Array.from({ length: count }, (_, index) => {
+        const angle = (index / count) * Math.PI * 2;
+        return { x: Math.cos(angle) * rx, z: Math.sin(angle) * rz };
+      }));
+      return { loops: [ring(outerX, outerZ), ring(innerX, innerZ)] };
     }
     case "halfSphere": {
       // A dome: a quarter ellipse turned around the axis, stretched to the
       // depth when the footprint is oval (createBooleanHalfSphereGeometry).
+      // Drawn with few steps (twice as many corners round) it is faceted and stays on its display mesh.
+      const corners = Math.max(8, Math.round(shape.steps ?? ROUND_FROM_HALF_SPHERE_STEPS) * 2);
+      if (!drawnRound(shape.steps, ROUND_FROM_HALF_SPHERE_STEPS, corners, Math.max(width, shape.height * 2), Math.max(depth, shape.height * 2))) return null;
       const rx = width / 2;
       const ry = shape.height;
       const loop: CadModifierProfileLoop = { x: 0, z: 0, segments: [{ kind: "line", x: rx, z: 0 }, arcSegment({ cx: 0, cz: 0, rx, rz: ry, start: 0, end: Math.PI / 2 }), { kind: "line", x: 0, z: 0 }] };
@@ -728,7 +749,9 @@ export function cadProfileForShapeKind(shape: WorkplaneShape): { loops: CadModif
       // SphereGeometry scaled to width, height and depth, standing on y = 0: a
       // half ellipse from the bottom pole over the equator to the top one,
       // turned around the axis and stretched to the depth. A round one goes to
-      // the analytic primitive first.
+      // the analytic primitive first. Drawn with few steps it is faceted and
+      // stays on its display mesh.
+      if (!drawnRound(shape.steps, ROUND_FROM_SPHERE_STEPS, sphereTessellation(shape.steps).widthSegments, Math.max(width, shape.height), Math.max(depth, shape.height))) return null;
       const rx = width / 2;
       const ry = shape.height / 2;
       const loop: CadModifierProfileLoop = { x: 0, z: 0, segments: [arcSegment({ cx: 0, cz: ry, rx, rz: ry, start: -Math.PI / 2, end: Math.PI / 2 }), { kind: "line", x: 0, z: 0 }] };
@@ -743,6 +766,9 @@ export function cadProfileForShapeKind(shape: WorkplaneShape): { loops: CadModif
       const base = Math.max(0, shape.baseRadius ?? width / 2);
       const top = Math.max(0, shape.topRadius ?? 0);
       if (!(base > 1e-9 || top > 1e-9)) return null;
+      // Drawn with few sides it is a pyramid of flat faces, which its display mesh already has exactly.
+      const widest = Math.max(base, top) * 2;
+      if (!drawnRound(shape.sides, ROUND_FROM_SIDES, Math.floor(roundSideCount(shape.sides, width, depth)), widest, widest * (depth / Math.max(0.001, width)))) return null;
       const segments: CadModifierProfileSegment[] = [];
       if (base > 1e-9) segments.push({ kind: "line", x: base, z: 0 });
       segments.push({ kind: "line", x: top, z: shape.height });
@@ -753,6 +779,17 @@ export function cadProfileForShapeKind(shape: WorkplaneShape): { loops: CadModif
     case "roundRoof": {
       // A half ellipse (radius = half the width, height = the shape's height) pushed along the depth.
       const radius = width / 2;
+      // THREE draws the half arc with twice `sides` chords (CurvePath.getPoints
+      // doubles an ellipse curve's resolution): four times `sides` corners round
+      // the full circle. Drawn with few, it is that polygon.
+      const chords = Math.max(4, Math.round(shape.sides ?? ROUND_FROM_ROOF_SIDES)) * 2;
+      if (!drawnRound(shape.sides, ROUND_FROM_ROOF_SIDES, chords * 2, width, shape.height * 2)) {
+        const points = Array.from({ length: chords + 1 }, (_, index) => {
+          const angle = Math.PI - (index / chords) * Math.PI;
+          return { x: Math.cos(angle) * radius, z: Math.sin(angle) * shape.height };
+        });
+        return { loops: [polygonLoop(points)], frame: alongDepthFrame(depth) };
+      }
       const loop: CadModifierProfileLoop = { x: -radius, z: 0, segments: [arcSegment({ cx: 0, cz: 0, rx: radius, rz: shape.height, start: Math.PI, end: 0 }), { kind: "line", x: -radius, z: 0 }] };
       return { loops: [loop], frame: alongDepthFrame(depth) };
     }
@@ -815,6 +852,19 @@ function profileTransformForShape(shape: WorkplaneShape, local?: THREE.Matrix4) 
  * of the exact-body plan), an imported or grouped body, or a body that already
  * carries its own BREP.
  */
+const SIDED_ROUND_KINDS = new Set<WorkplaneShape["kind"]>(["cylinder", "ellipse", "cone", "tube", "ring", "roundRoof", "sphere", "halfSphere"]);
+
+/**
+ * The shape as designed round: a round kind's side or step count left unset,
+ * so the exact part is the true curve whatever the display draws. STEP export
+ * uses this - it has always written these shapes round, and whether a polygon
+ * drawn there should stay one is a question of its own.
+ */
+export function asDesignedRound(shape: WorkplaneShape): WorkplaneShape {
+  if (!SIDED_ROUND_KINDS.has(shape.kind)) return shape;
+  return { ...shape, sides: undefined, steps: undefined };
+}
+
 export function cadModifierProfileForShape(shape: WorkplaneShape): CadModifierProfilePart | null {
   if (!CAD_PROFILE_SHAPE_KINDS.has(shape.kind)) return null;
   if (shape.importedMesh || shape.groupedShapes?.length || shape.cadBrep || shape.imagePlate || shapeHasShapeDeform(shape)) return null;

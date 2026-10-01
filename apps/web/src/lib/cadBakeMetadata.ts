@@ -2,6 +2,9 @@ import * as THREE from "three";
 import type { WorkplaneShape } from "@/types/layerling";
 import type { CadModifierPrimitivePart } from "@/lib/cadModifierTypes";
 import { mirrorSign, resizedImportedCoordinates, shapeDepth, shapeWidth } from "@/lib/workplaneShapes";
+import { drawnRound, ROUND_FROM_SIDES, ROUND_FROM_SPHERE_STEPS } from "@/lib/roundness";
+import { roundSideCount } from "@/lib/roundSideCount";
+import { sphereTessellation } from "@/lib/sphereTessellation";
 
 export type BakedCadMetadataFrame = {
   centerX: number;
@@ -87,6 +90,11 @@ export function cadModifierPrimitiveForAnalyticShape(shape: WorkplaneShape): Cad
     if (Math.abs(width - depth) > 1e-4) {
       return null;
     }
+    // A cylinder drawn with few sides is a prism (a hexagon bar, say), not a
+    // round cylinder: cadProfileExtrusion.ts builds it from the display's corners.
+    if (!drawnRound(shape.sides, ROUND_FROM_SIDES, Math.round(roundSideCount(shape.sides, width, depth)), width, depth)) {
+      return null;
+    }
     const radius = width / 2;
     if (!Number.isFinite(radius) || radius <= 0) {
       return null;
@@ -111,6 +119,11 @@ export function cadModifierPrimitiveForAnalyticShape(shape: WorkplaneShape): Cad
     if (!Number.isFinite(baseRadius) || baseRadius <= 0 || !Number.isFinite(topRadius) || topRadius < 0) {
       return null;
     }
+    // Drawn with few sides it is a pyramid, and its display mesh already has the flat faces.
+    const widest = Math.max(baseRadius, topRadius) * 2;
+    if (!drawnRound(shape.sides, ROUND_FROM_SIDES, Math.floor(roundSideCount(shape.sides, width, depth)), widest, widest)) {
+      return null;
+    }
     return {
       kind: "cone",
       baseRadius,
@@ -128,6 +141,10 @@ export function cadModifierPrimitiveForAnalyticShape(shape: WorkplaneShape): Cad
     }
     const radius = width / 2;
     if (!Number.isFinite(radius) || radius <= 0) {
+      return null;
+    }
+    // A ball of few steps is drawn faceted, like a cylinder of few sides.
+    if (!drawnRound(shape.steps, ROUND_FROM_SPHERE_STEPS, sphereTessellation(shape.steps).widthSegments, width, width)) {
       return null;
     }
     const centeredMatrix = new THREE.Matrix4()

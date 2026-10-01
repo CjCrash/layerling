@@ -52,7 +52,7 @@ Round shapes such as cylinder, cone, tube, ellipse or the bores have the switch 
 
 **How to use it**
 
-- **Leave {{ui:prop.sidesFollowSize}} on.** Then layerling picks the side count from the diameter so that the polygon strays at most 0.005 mm from the true circle, far below what a printer resolves. Small shapes get at least 24 sides, large ones more.
+- **Leave {{ui:prop.sidesFollowSize}} on.** Then layerling picks the side count from the diameter so that the polygon strays at most {{value:ROUND_DEVIATION_TOLERANCE}} mm from the true circle, far below what a printer resolves. Small shapes get at least {{value:MIN_AUTOMATIC_SIDES}} sides, large ones more.
 - **Fewer sides** you take when you want a polygon on purpose (but there is the {{ui:shape.polygon}} for that) or when the editor gets slow with very many round shapes.
 - **More sides** you hardly ever need. Only on very large round parts, when you see edges in the STL.
 - **For parts you only treat with edges or hand on as STEP,** the side count does not matter.

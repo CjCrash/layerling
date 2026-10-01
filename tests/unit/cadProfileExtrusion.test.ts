@@ -7,7 +7,7 @@ import type { CadModifierProfileLoop } from "@/lib/cadModifierTypes";
 import { cadModifierProfileForShape, cadProfileExpectation, cadProfileSegmentCount, closedMeshVolume, withinExactProfileLimit, crescentProfile, gearProfileLoops, textGlyphProfiles, heartProfileLoops, honeycombProfileLoops, polygonProfileLoops, slotProfileLoops, starProfileLoops } from "@/lib/cadProfileExtrusion";
 import { isWholeEllipse, profileLoopBounds, validateCadProfile } from "@/lib/cadProfileSolid";
 import { cadTransformRequiresGeneralTransform } from "@/lib/cadModifierRuntime";
-import { cadTransformToMatrix } from "@/lib/cadBakeMetadata";
+import { cadModifierPrimitiveForAnalyticShape, cadTransformToMatrix } from "@/lib/cadBakeMetadata";
 import { cadModifierPrepareTimeoutMs, CAD_MODIFIER_EXACT_SEGMENT_LIMIT, CAD_MODIFIER_MAX_PREPARE_TIMEOUT_MS } from "@/lib/cadModifierRuntime";
 import { createStarGeometry } from "@/lib/starGeometry";
 import { createHeartGeometry } from "@/lib/heartGeometry";
@@ -15,6 +15,8 @@ import { buildCrescentContourPoints, createCrescentGeometry } from "@/lib/cresce
 import { createSlotGeometry } from "@/lib/slotGeometry";
 import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
 import { createPrismGeometry } from "@/lib/prismGeometry";
+import { createBooleanHollowCylinderGeometry, createBooleanRoundRoofGeometry } from "@/lib/roundBodyGeometry";
+import { regularPolygonFootprintScale } from "@/lib/regularPolygonFootprint";
 import { createGearGeometry, normalizeGearCenterHoleSize, normalizeGearTeeth } from "@/lib/gearGeometry";
 
 type Vec3 = [number, number, number];
@@ -493,5 +495,91 @@ describe("the round shapes' exact parts", () => {
     const tip = cadModifierProfileForShape(shape("cone", { width: 30, depth: 15, height: 12, baseRadius: 0, topRadius: 5 }));
     expect(tip?.loops[0].segments.map((segment) => [segment.x, segment.z])).toEqual([[5, 12], [0, 12], [0, 0]]);
     expect(cadModifierProfileForShape(shape("cone", { width: 30, depth: 15, baseRadius: 0, topRadius: 0 }))).toBeNull();
+  });
+});
+
+describe("round shapes drawn with few sides", () => {
+  const key = (x: number, z: number) => `${(Math.round(x * 1e4) / 1e4 + 0).toFixed(4)},${(Math.round(z * 1e4) / 1e4 + 0).toFixed(4)}`;
+  const cornersOf = (loops: CadModifierProfileLoop[]) => loops.flatMap((loop) => loop.segments.map((segment) => {
+    expect(segment.kind).toBe("line");
+    return key(segment.x, segment.z);
+  })).sort();
+  /** The corners on the display mesh's floor (y = 0), leaving out a cap's centre where a fan of triangles meets. */
+  const floorOf = (geometry: THREE.BufferGeometry, capCentre?: { x: number; z: number }) => {
+    const floor = new Set(meshOf(geometry).vertices.filter(([, y]) => Math.abs(y) < 1e-6).map(([x, , z]) => key(x, z)));
+    if (capCentre) floor.delete(key(capCentre.x, capCentre.z));
+    return [...floor].sort();
+  };
+  const prismCentre = (width: number, depth: number, sides: number) => {
+    const fit = regularPolygonFootprintScale(width, depth, sides);
+    return { x: fit.offsetX, z: fit.offsetZ };
+  };
+  const loopsOf = (source: WorkplaneShape) => {
+    const part = cadModifierProfileForShape(source);
+    expect(part?.kind).toBe("extrusion");
+    return part!.loops;
+  };
+
+  it("builds a cylinder or ellipse of few sides as the display prism, corner for corner", () => {
+    const hexagon = loopsOf(shape("cylinder", { width: 20, depth: 20, sides: 6 }));
+    expect(hexagon).toEqual(polygonProfileLoops(20, 20, 6));
+    expect(cornersOf(hexagon)).toEqual(floorOf(createPrismGeometry(20, 10, 20, 6), prismCentre(20, 20, 6)));
+    const octagon = loopsOf(shape("ellipse", { width: 30, depth: 15, sides: 8 }));
+    expect(cornersOf(octagon)).toEqual(floorOf(createPrismGeometry(30, 10, 15, 8), prismCentre(30, 15, 8)));
+    const coarse = loopsOf(shape("cylinder", { width: 150, depth: 150, sides: 24 }));
+    expect(coarse[0].segments).toHaveLength(24);
+  });
+
+  it("puts a turned prism where the viewport draws it, beyond half a side step", () => {
+    // The viewport turns the stretched polygon by the shape's own rotation (WorkplaneViewport.tsx).
+    [[6, 33], [6, 70], [5, 50], [3, 70], [8, 50]].forEach(([sides, rotation]) => {
+      const source = shape("cylinder", { width: 20, depth: 20, sides, rotation, x: 4, z: -2 });
+      const part = cadModifierProfileForShape(source)!;
+      const placed = part.loops[0].segments.map((segment) => new THREE.Vector3(segment.x, 0, segment.z).applyMatrix4(cadTransformToMatrix(part.transform)));
+      const turn = new THREE.Matrix4().makeRotationY(THREE.MathUtils.degToRad(rotation));
+      const viewport = meshOf(createPrismGeometry(20, 10, 20, sides)).vertices
+        .filter(([, y]) => Math.abs(y) < 1e-6)
+        .map(([x, , z]) => new THREE.Vector3(x, 0, z).applyMatrix4(turn).add(new THREE.Vector3(4, 0, -2)));
+      placed.forEach((corner) => {
+        expect(Math.min(...viewport.map((point) => point.distanceTo(corner))), `${sides} sides at ${rotation} degrees`).toBeLessThan(1e-6);
+      });
+    });
+  });
+
+  it("keeps them round with sides following the size, the former 96, or a polygon within the tolerance of the circle", () => {
+    // A round cylinder that is round is the analytic primitive.
+    expect(cadModifierPrimitiveForAnalyticShape(shape("cylinder", { width: 200, depth: 200, sides: 96 }))?.kind).toBe("cylinder");
+    expect(cadModifierPrimitiveForAnalyticShape(shape("cylinder", { width: 200, depth: 200 }))?.kind).toBe("cylinder");
+    expect(cadModifierProfileForShape(shape("cylinder", { width: 200, depth: 200, sides: 96 }))).toBeNull();
+    expect(cadModifierProfileForShape(shape("cylinder", { width: 200, depth: 200 }))).toBeNull();
+    expect(loopsOf(shape("ellipse", { width: 200, depth: 100, sides: 96 }))[0].segments).toHaveLength(1);
+    expect(loopsOf(shape("ellipse", { width: 1, depth: 1, sides: 12 }))[0].segments).toHaveLength(1);
+  });
+
+  it("builds a tube of few sides as the display's two polygons, never fewer than its twelve", () => {
+    const tube = loopsOf(shape("tube", { width: 20, depth: 20, bevel: 4, sides: 8 }));
+    expect(tube.map((loop) => loop.segments.length)).toEqual([12, 12]);
+    expect(cornersOf(tube)).toEqual(floorOf(createBooleanHollowCylinderGeometry(20, 10, 20, 4, 8)));
+    expect(loopsOf(shape("ring", { width: 30, depth: 30, height: 5 })).map((loop) => loop.segments.length)).toEqual([1, 1]);
+  });
+
+  it("builds a round roof of few sides as the display's cross-section, twice as many chords as sides", () => {
+    const roof = cadModifierProfileForShape(shape("roundRoof", { width: 20, depth: 30, height: 10, sides: 4 }));
+    expect(roof?.loops[0].segments).toHaveLength(9);
+    // The display's front face, at z = depth / 2, carries the cross-section: profile (x, z) is display (x, y).
+    const front = new Set(meshOf(createBooleanRoundRoofGeometry(20, 10, 30, 4)).vertices.filter(([, , z]) => Math.abs(z - 15) < 1e-6).map(([x, y]) => key(x, y)));
+    expect(cornersOf(roof!.loops)).toEqual([...front].sort());
+    expect(roof?.loops[0].segments.every((segment) => segment.kind === "line")).toBe(true);
+    // Its own 64 sides are round however large.
+    expect(cadModifierProfileForShape(shape("roundRoof", { width: 160, depth: 30, height: 80, sides: 64 }))?.loops[0].segments[0].kind).toBe("arc");
+  });
+
+  it("leaves faceted balls and few-sided oval cones on their display meshes", () => {
+    expect(cadModifierProfileForShape(shape("sphere", { width: 30, depth: 20, height: 15, steps: 6 }))).toBeNull();
+    expect(cadModifierProfileForShape(shape("sphere", { width: 200, depth: 150, height: 120, steps: 24 }))?.kind).toBe("revolution");
+    expect(cadModifierProfileForShape(shape("halfSphere", { width: 30, depth: 20, height: 10, steps: 5 }))).toBeNull();
+    expect(cadModifierProfileForShape(shape("halfSphere", { width: 200, depth: 200, height: 80, steps: 32 }))?.kind).toBe("revolution");
+    expect(cadModifierProfileForShape(shape("cone", { width: 30, depth: 15, height: 15, sides: 6 }))).toBeNull();
+    expect(cadModifierProfileForShape(shape("cone", { width: 30, depth: 15, height: 15, sides: 96 }))?.kind).toBe("revolution");
   });
 });
