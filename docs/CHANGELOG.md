@@ -4,7 +4,7 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
-## Unreleased
+## 1.25.0
 
 - **More 3MF files open:** A 3MF whose parts are nested several levels deep, or whose meshes live in separate model files of the package (how Bambu Studio, OrcaSlicer and PrusaSlicer write their projects), was refused with "contains no readable geometry". Both layouts are read now (issue #60).
 - **Few-sided round shapes keep their flat faces in the edge tool:** A cylinder with 6 sides is now a hexagonal bar for chamfers and fillets, not a round cylinder. Shapes stay round when no side count is set, when it reaches the shape's default or when the polygon is within 0.05 mm of the circle. STEP export is unchanged. Also fixed: turned few-sided prisms (hexagon, pentagon, triangle) sat a little off the angle shown in the viewport. The guide chapter on the side count says so (PR #57, thanks plazmabokor).
