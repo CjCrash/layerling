@@ -4,6 +4,11 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.28.1
+
+- **Shapes no longer vanish behind a forgotten section view:** The section view stayed on when you went back to the overview and opened another or a new design, so shapes placed on the cut-away side showed only their handles for a moment and seemed to be gone (they were still in the object list). Going back to the overview now switches the cut off, and every design opens uncut. Within a design the cut stays until you switch it off, as before. Reported by _bastler_ in the forum.
+- **Camera bar fits an iPad in landscape:** The left camera bar went two-column only on windows lower than 700 pixels. On an iPad held sideways the toolbar wraps to two rows, the workplane is lower than that, and the bar ran out at the bottom - hiding the section view button, the one that shows the cut is still on. The bar now goes by the height of the workplane itself.
+
 ## 1.28.0
 
 - **Threads as exact bodies for the edge tool and STEP:** A thread - rod, screw, nut or tapped hole, in every profile and either hand - is now built as an exact body (its profile swept along the helix) instead of being refused for its triangle count. Chamfers and fillets work on it, also grouped, so a block with a tapped hole can have its edges rounded and a screw head its rim; listing the edges takes a few seconds (an M6 screw about 4 s, a G1/2 rod about 20 s). STEP export now writes threads as exact bodies too; the head chamfer is part of the body. The drawn thread and the quality setting are unchanged, and when the exact body cannot be built the mesh is used as before. Springs and helical and bevel gears are still meshes. Contributed by @plazmabokor (#75).
