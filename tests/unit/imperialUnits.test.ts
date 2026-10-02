@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { formatFractionalInches, parseMeasurementInput } from "@/lib/measurementUnits";
+import { formatFractionalInches, formatLengthMm, parseMeasurementInput, setLengthUnit } from "@/lib/measurementUnits";
+import { normalizeWorkspaceSettings } from "@/lib/workplaneSettings";
 import { snapGridForUnits, snapGridOptionsForUnits, snapGridStep } from "@/lib/workplaneSettings";
 
 describe("imperial snap grid", () => {
@@ -47,5 +48,30 @@ describe("inch fractions", () => {
     expect(parseMeasurementInput("1/0")).toBeNaN();
     expect(parseMeasurementInput("1,5")).toBe(1.5);
     expect(parseMeasurementInput("2.25")).toBe(2.25);
+  });
+});
+
+describe("inch format", () => {
+  const imperial = { units: "Imperial", scale: "1:1 (inches)" };
+
+  it("shows fractions by default and decimals when asked", () => {
+    try {
+      setLengthUnit(imperial);
+      expect(formatLengthMm(41.275, 3)).toBe("1⅝");
+      setLengthUnit({ ...imperial, inchFormat: "decimal" });
+      expect(formatLengthMm(41.275, 3)).toBe("1.625");
+      expect(formatLengthMm(10, 2)).toBe("0.39");
+      // Millimetres never become fractions.
+      setLengthUnit({ units: "Metric (Default)", scale: "1:1 (millimeters)", inchFormat: "fraction" });
+      expect(formatLengthMm(41.275, 1)).toBe("41.3");
+    } finally {
+      setLengthUnit({ units: "Metric (Default)", scale: "1:1 (millimeters)" });
+    }
+  });
+
+  it("keeps fractions for older settings and unknown values", () => {
+    expect(normalizeWorkspaceSettings({ units: "Imperial" }).inchFormat).toBe("fraction");
+    expect(normalizeWorkspaceSettings({ units: "Imperial", inchFormat: "weird" }).inchFormat).toBe("fraction");
+    expect(normalizeWorkspaceSettings({ units: "Imperial", inchFormat: "decimal" }).inchFormat).toBe("decimal");
   });
 });

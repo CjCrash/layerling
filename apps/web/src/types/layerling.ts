@@ -178,11 +178,15 @@ export type WorkplaneWorkspaceSettings = {
   dimensionsAlwaysVisible: boolean;
   zoomSpeed: number;
   units: string;
+  /** With Imperial: inches as fractions (1⅝, like Tinkercad) or decimals (1.625). */
+  inchFormat: InchFormat;
   scale: string;
   accuracy: MeasurementAccuracy;
   historyLimit: HistoryRetentionLimit;
   shapeCustomizations: ShapeCustomizationMap;
 };
+
+export type InchFormat = "fraction" | "decimal";
 
 export type AlignAxis = "x" | "y" | "z";
 export type AlignTarget = "min" | "center" | "max";

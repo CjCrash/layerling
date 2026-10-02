@@ -649,6 +649,15 @@ export function WorkspaceSettingsModal({
                       if (nextSnap !== snap) onSnapChange(nextSnap);
                     }}
                   />
+                  {workspace.units === "Imperial" ? (
+                    <WorkspaceSelect
+                      label={t("workspace.inchFormat")}
+                      value={workspace.inchFormat}
+                      options={["fraction", "decimal"]}
+                      optionLabel={(value) => t(value === "decimal" ? "workspace.inchFormatDecimal" : "workspace.inchFormatFraction")}
+                      onChange={(inchFormat) => patchWorkspace({ inchFormat: inchFormat === "decimal" ? "decimal" : "fraction" })}
+                    />
+                  ) : null}
                   <WorkspaceSelect
                     label={t("workspace.scale")}
                     value={scaleValue}

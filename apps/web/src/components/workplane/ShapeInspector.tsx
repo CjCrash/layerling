@@ -124,7 +124,7 @@ import {
   minBentTubeBendRadius,
   normalizedBentTubeFields,
 } from "@/lib/bentTubeGeometry";
-import { displayStepFromMillimeters, formatFractionalInches, displayToMillimeters, formatMeasurementNumber, lengthDisplayUnit, measurementOptionLabel, millimetersToDisplay, parseMeasurementInput, resolveMeasurementInput } from "@/lib/measurementUnits";
+import { displayStepFromMillimeters, formatFractionalInches, showsInchFractions, displayToMillimeters, formatMeasurementNumber, lengthDisplayUnit, measurementOptionLabel, millimetersToDisplay, parseMeasurementInput, resolveMeasurementInput } from "@/lib/measurementUnits";
 import { t, type MessageKey } from "@/lib/i18n";
 import { displayShapeName, renamedShapeName } from "@/lib/shapeCatalog";
 import { MAX_SCREW_HOLE_ANGLE, MIN_SCREW_HOLE_ANGLE, normalizeScrewHoleAngle, normalizeScrewHoleHeadDepth, normalizeScrewHoleShaft } from "@/lib/screwHoleGeometry";
@@ -2100,7 +2100,7 @@ function RangeProperty({
   const [draft, setDraft] = useState(formatPropertyNumber(controlValue, accuracy, controlStep));
   const unit = isLength ? lengthDisplayUnit(workspace).label : null;
   // Inches read as fractions (1⅝), like Tinkercad; the slider and typed decimals stay exact.
-  const formatShown = (shown: number) => (unit === "in" ? formatFractionalInches(shown) : formatPropertyNumber(shown, accuracy, controlStep));
+  const formatShown = (shown: number) => (unit === "in" && showsInchFractions(workspace) ? formatFractionalInches(shown) : formatPropertyNumber(shown, accuracy, controlStep));
   const toModelValue = (nextValue: number) => isLength ? displayToMillimeters(nextValue, workspace) : nextValue;
   const commitDraft = () => {
     // Leaving the field untouched keeps the exact value, not its rounded reading.

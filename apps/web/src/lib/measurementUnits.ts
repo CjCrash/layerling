@@ -185,18 +185,23 @@ export function measurementOptionLabel(option: string): string {
 // code is spread over plain functions, so the current setting lives here
 // instead of being passed through every one of them; the editor updates it
 // whenever the workspace settings change.
-let lengthUnit: Pick<WorkplaneWorkspaceSettings, "units" | "scale"> = { units: "Metric (Default)", scale: "1:1 (millimeters)" };
+let lengthUnit: Pick<WorkplaneWorkspaceSettings, "units" | "scale"> & { inchFormat?: WorkplaneWorkspaceSettings["inchFormat"] } = { units: "Metric (Default)", scale: "1:1 (millimeters)" };
 
-export function setLengthUnit(workspace: Pick<WorkplaneWorkspaceSettings, "units" | "scale">) {
-  lengthUnit = { units: workspace.units, scale: workspace.scale };
+export function setLengthUnit(workspace: Pick<WorkplaneWorkspaceSettings, "units" | "scale"> & { inchFormat?: WorkplaneWorkspaceSettings["inchFormat"] }) {
+  lengthUnit = { units: workspace.units, scale: workspace.scale, inchFormat: workspace.inchFormat };
 }
 
-/** Millimetres printed in the workspace unit; inches as fractions (1⅝), like Tinkercad. */
+/** Whether inches read as fractions: the default, unless the workspace asks for decimals. */
+export function showsInchFractions(workspace: { inchFormat?: WorkplaneWorkspaceSettings["inchFormat"] }) {
+  return workspace.inchFormat !== "decimal";
+}
+
+/** Millimetres printed in the workspace unit; inches as fractions (1⅝) like Tinkercad, or as decimals. */
 export function formatLengthMm(value: number, accuracy: number) {
   const zeroThreshold = 0.5 * 10 ** -accuracy;
   const shown = millimetersToDisplay(value, lengthUnit);
   const normalized = Math.abs(shown) < zeroThreshold ? 0 : shown;
-  if (lengthDisplayUnit(lengthUnit).label === "in") return formatFractionalInches(normalized);
+  if (lengthDisplayUnit(lengthUnit).label === "in" && showsInchFractions(lengthUnit)) return formatFractionalInches(normalized);
   return normalized.toFixed(accuracy);
 }
 
