@@ -544,7 +544,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "status.intersectChanged": "Die Szene hat sich beim Bilden der Schnittmenge geändert; wähle die Objekte erneut aus",
   "status.noPrintableSurface": "Das gewählte Objekt hat keine druckbare Oberfläche",
   "status.onlyOnePart": "Das gewählte Objekt besteht nur aus einem zusammenhängenden Teil",
-  "status.meshTooDense": "Dieses Netz hat {triangles} Dreiecke. Die Kantenbearbeitung schafft {limit}; darüber rechnet der Kern länger, als jede Wartezeit hergibt. Vereinfache das Netz zuerst.",
+  "status.meshTooDense": "Dieses Netz hat {triangles} Dreiecke. Die Kantenbearbeitung schafft {limit}; darüber rechnet der Kern länger, als jede Wartezeit hergibt. Bei einer Form aus der Formenliste geht es vorerst nur über ihre eigenen Einstellungen. Ein importiertes Teil liest du besser als STEP ein oder speicherst es vorher mit weniger Dreiecken.",
   "status.threadTooDense": "Ein Gewinde besteht aus {triangles} Dreiecken — zu viele für die Kantenbearbeitung, die bei {limit} aufhört. Setze das Gewinde deshalb erst nach der Kantenbearbeitung ein: erst Fase oder Verrundung am Körper, dann das Gewinde. Die Kopffase in den Eigenschaften bricht die Kante des Schraubenkopfs ohne diesen Umweg.",
   "status.unlockBeforeGroup": "Entsperre alle gewählten Formen, bevor du gruppierst",
   "status.unlockBeforeSeparate": "Entsperre das Objekt, bevor du Teile trennst",
