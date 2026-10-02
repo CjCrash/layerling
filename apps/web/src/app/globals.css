@@ -5336,7 +5336,8 @@ button {
   /* Flush with the camera controls below it, so the left edge of the stage
      reads as one column instead of two slightly different indents. */
   left: 10px;
-  z-index: 4;
+  /* Above the movable object list (10), which passes underneath. */
+  z-index: 11;
   width: 82px;
   height: 82px;
   perspective: 420px;
@@ -5425,7 +5426,8 @@ button {
      flachen Fenster in die Fusszeile lief. */
   top: 120px;
   left: 10px;
-  z-index: 8;
+  /* Above the movable object list (10), which passes underneath. */
+  z-index: 11;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -11037,6 +11039,11 @@ html[data-theme="dark"] .theme-check {
   animation: outlinerFadeIn 140ms ease-out;
 }
 
+.outliner-panel.moving,
+.outliner-panel.moving .outliner-header {
+  cursor: grabbing;
+}
+
 @keyframes outlinerFadeIn {
   from {
     opacity: 0;
@@ -11053,6 +11060,9 @@ html[data-theme="dark"] .theme-check {
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
+  /* The title bar moves the panel. */
+  cursor: grab;
+  touch-action: none;
   background: rgba(248, 246, 244, 0.98);
   border-bottom: 1px solid #ede6da;
 }
@@ -11686,6 +11696,17 @@ html[data-theme="dark"] .open-group-cancel {
 .outliner-help-link {
   width: 24px;
   height: 24px;
+}
+
+.outliner-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Collapsed: the title bar alone, without the line that separates it from the list. */
+.outliner-panel.collapsed .outliner-header {
+  border-bottom: none;
 }
 
 .guide-modal h3 {

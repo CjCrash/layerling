@@ -5615,6 +5615,10 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .open-group-cancel {
   background: rgba(127, 127, 127, 0.16);
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .outliner-panel.collapsed .outliner-header {
+  border-bottom: none;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .guide-videos a {
   color: #8f4700;
 }
