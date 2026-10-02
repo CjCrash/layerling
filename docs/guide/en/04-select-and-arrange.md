@@ -20,6 +20,9 @@ With many parts it is easy to lose track in the view. The object list ({{ui:edit
 - Padlock and eye lock and hide single parts.
 - {{ui:outliner.rename}} gives a part a name of its own; the pencil beside the name at the top of the settings does the same for the selected shape. Sensible names help enormously in larger designs.
 - The search field finds shapes by name and by kind, so also "cylinder" or "hole".
+- The arrow on the far left of the title bar folds the list down to its title bar and back.
+
+The list sits docked just right of the view cube. Drag it by its title bar to put it anywhere on the workplane; it passes underneath the view cube and the camera bar. Drop it back beside the view cube, or double-click the title bar, and it docks again. Where it was and whether it was folded are remembered in this browser.
 
 ## Typing a position
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampPanelPosition, PANEL_GRAB_HEIGHT, parsePanelPosition } from "@/lib/panelPosition";
+import { clampPanelPosition, isNearDock, PANEL_DOCK_DISTANCE, PANEL_GRAB_HEIGHT, parsePanelPosition } from "@/lib/panelPosition";
 
 const area = { width: 1000, height: 700 };
 const panel = { width: 300 };
@@ -45,5 +45,19 @@ describe("a remembered panel position", () => {
     expect(parsePanelPosition(JSON.stringify({ left: 10 }))).toBeNull();
     expect(parsePanelPosition(JSON.stringify({ left: "10", top: 5 }))).toBeNull();
     expect(parsePanelPosition("null")).toBeNull();
+  });
+});
+
+describe("docking a panel again", () => {
+  const dock = { left: 104, top: 64 };
+
+  it("docks when dropped close to its spot", () => {
+    expect(isNearDock({ left: 120, top: 80 }, dock)).toBe(true);
+    expect(isNearDock(dock, dock)).toBe(true);
+  });
+
+  it("stays where it was dropped when that is further away", () => {
+    expect(isNearDock({ left: 104 + PANEL_DOCK_DISTANCE, top: 64 + 1 }, dock)).toBe(false);
+    expect(isNearDock({ left: 400, top: 300 }, dock)).toBe(false);
   });
 });

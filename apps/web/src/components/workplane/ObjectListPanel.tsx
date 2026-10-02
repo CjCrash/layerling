@@ -4,7 +4,7 @@ import { GuideHelpLink } from "@/components/GuideHelpLink";
 import { useMemo, useState, useRef, useEffect, type KeyboardEvent, type MouseEvent } from "react";
 import { ChevronDown, ChevronRight, ChevronUp, Eye, EyeOff, FolderOpen, Layers, ListTree, Lock, Pencil, Search, Unlock, X } from "lucide-react";
 import { useLanguage } from "@/lib/useLanguage";
-import { useMovablePanel } from "@/lib/useMovablePanel";
+import { useMovablePanel, type MovablePanelOptions } from "@/lib/useMovablePanel";
 import { t, type MessageKey } from "@/lib/i18n";
 import { displayShapeName } from "@/lib/shapeCatalog";
 import type { WorkplaneShape } from "@/types/layerling";
@@ -25,6 +25,11 @@ export interface ObjectListPanelProps {
 
 const COLLAPSED_STORAGE_KEY = "layerling.editor.objectListCollapsed";
 
+/** Docked just right of the view cube - where .outliner-panel puts it in globals.css. */
+const OBJECT_LIST_PANEL: MovablePanelOptions = {
+  dockedAt: () => ({ left: 104, top: 64 }),
+};
+
 export function ObjectListPanel({
   shapes,
   selectedIds,
@@ -43,7 +48,7 @@ export function ObjectListPanel({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState("");
   const editInputRef = useRef<HTMLInputElement>(null);
-  const movable = useMovablePanel("layerling.editor.objectListPosition");
+  const movable = useMovablePanel("layerling.editor.objectListPosition", OBJECT_LIST_PANEL);
   const [collapsed, setCollapsed] = useState(false);
 
   // Remembered in this browser, like the panel's position; read after mounting so the first render matches the server's.
@@ -154,12 +159,6 @@ export function ObjectListPanel({
     >
       <header className="outliner-header" title={t("outliner.moveHint")} {...movable.handleProps}>
         <div className="outliner-title-wrap">
-          <ListTree size={16} aria-hidden="true" className="outliner-header-icon" />
-          <strong>{t("outliner.title")}</strong>
-          <span className="outliner-count-badge">{shapes.length}</span>
-        </div>
-        <GuideHelpLink chapter="select" className="outliner-help-link" />
-        <div className="outliner-header-actions">
           <button
             className="outliner-close-button outliner-collapse-button"
             type="button"
@@ -170,6 +169,12 @@ export function ObjectListPanel({
           >
             {collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
           </button>
+          <ListTree size={16} aria-hidden="true" className="outliner-header-icon" />
+          <strong>{t("outliner.title")}</strong>
+          <span className="outliner-count-badge">{shapes.length}</span>
+        </div>
+        <div className="outliner-header-actions">
+          <GuideHelpLink chapter="select" className="outliner-help-link" />
           <button
             className="outliner-close-button"
             type="button"

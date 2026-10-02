@@ -4,6 +4,12 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Movable object list:** The object list can be dragged by its title bar to anywhere on the workplane, where it passes underneath the view cube and the camera bar. Dropping it back beside the view cube, or double-clicking the title bar, docks it in its usual place again. An arrow at the left of the title bar folds the list down to the title bar and back. Where the list was and whether it was folded are remembered in the browser. Contributed by @gogades.
+- **Movable shape settings:** The settings on the right can be dragged away from the edge by their title bar and float where they are dropped, also for the next shape selected; dropping them back at the top right or double-clicking the title bar docks them again. While they float or are folded down, the snap step control sits at the bottom right of the workplane, as it does with nothing selected. Contributed by @gogades.
+- **Same title bar for both panels:** The title bar of the shape settings now looks like the object list's: the same height, colours and text size, smaller buttons, and the object list's padlock and eye icons. The object list's help button moved to the right, next to its close button. Contributed by @gogades.
+
 ## 1.29.0
 
 - **Colours survive the 3MF export:** Before export, bodies that overlap or touch are joined into one, so a slicer gets clean shells. For 3MF this also joined bodies of different colours, and the joined body kept only the colour of the first one - a white logo set into a black plate arrived all black. A 3MF now joins only bodies of the same colour. Where one colour sits inside another, the body built first leaves room for the later one, so the logo stays whole and the plate gets a pocket for it. STL is unchanged; it carries no colour. Asked by @kwjaarsveld-star (#79).

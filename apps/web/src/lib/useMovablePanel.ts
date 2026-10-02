@@ -1,20 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from "react";
-import { clampPanelPosition, parsePanelPosition, type PanelPosition } from "@/lib/panelPosition";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from "react";
+import { clampPanelPosition, isNearDock, parsePanelPosition, type PanelPosition } from "@/lib/panelPosition";
 
 /** Controls inside the title bar keep their own clicks; only the bar itself moves the panel. */
 const NOT_A_HANDLE = "button, a, input, select, textarea";
 
+export type MovablePanelOptions = {
+  /** Added while the panel floats - for a panel docked to an edge, the edges and height that let it float. */
+  floatingStyle?: CSSProperties;
+  /**
+   * Where the stylesheet docks the panel, in the same terms as a moved
+   * position. Dropping the panel close to it docks it again.
+   */
+  dockedAt?: (area: { width: number; height: number }, panel: { width: number }) => PanelPosition;
+};
+
 /**
- * Lets a floating panel be moved by its title bar, inside the area it is
- * placed in (its offset parent). The spot is remembered in this browser under
- * `storageKey`; a double click on the title bar puts the panel back where the
- * stylesheet places it. Spread `handleProps` on the title bar, put `panelRef`
- * and `style` on the panel.
+ * Lets a docked panel be moved by its title bar, inside the area it is placed
+ * in (its offset parent), and docked again. Docked, the stylesheet places it;
+ * moved, it floats where it was dropped. The spot is remembered in this browser
+ * under `storageKey`. Dropping it near its dock (`dockedAt`) or double-clicking
+ * the title bar docks it again. Spread `handleProps` on the title bar, put
+ * `panelRef` and `style` on the panel.
  */
-export function useMovablePanel(storageKey: string) {
-  const panelRef = useRef<HTMLDivElement>(null);
+export function useMovablePanel<T extends HTMLElement = HTMLDivElement>(storageKey: string, { floatingStyle, dockedAt }: MovablePanelOptions = {}) {
+  const panelRef = useRef<T>(null);
   const [position, setPosition] = useState<PanelPosition | null>(null);
   const positionRef = useRef(position);
   positionRef.current = position;
@@ -37,8 +48,9 @@ export function useMovablePanel(storageKey: string) {
     }
   }, [storageKey]);
 
-  // The remembered spot, read after mounting so the first render matches the server's.
-  useEffect(() => {
+  // The remembered spot, read before the first paint so a panel that mounts often
+  // (the inspector, with every selection) does not jump there visibly.
+  useLayoutEffect(() => {
     let stored: PanelPosition | null = null;
     try {
       stored = parsePanelPosition(window.localStorage.getItem(storageKey));
@@ -79,8 +91,17 @@ export function useMovablePanel(storageKey: string) {
     dragRef.current = null;
     setDragging(false);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-    if (positionRef.current) store(positionRef.current);
-  }, [store]);
+    const dropped = positionRef.current;
+    if (!dropped) return;
+    const panel = panelRef.current;
+    const area = panel?.offsetParent;
+    if (dockedAt && panel && area instanceof HTMLElement && isNearDock(dropped, dockedAt({ width: area.clientWidth, height: area.clientHeight }, { width: panel.offsetWidth }))) {
+      setPosition(null);
+      store(null);
+      return;
+    }
+    store(dropped);
+  }, [dockedAt, store]);
 
   const onDoubleClick = useCallback((event: MouseEvent<HTMLElement>) => {
     if (event.target instanceof Element && event.target.closest(NOT_A_HANDLE)) return;
@@ -89,12 +110,14 @@ export function useMovablePanel(storageKey: string) {
   }, [store]);
 
   const style: CSSProperties | undefined = position
-    ? { left: position.left, top: position.top, maxHeight: `calc(100% - ${position.top + 32}px)` }
+    ? { ...floatingStyle, left: position.left, top: position.top, maxHeight: `calc(100% - ${position.top + 32}px)` }
     : undefined;
 
   return {
     panelRef,
     style,
+    /** True once the panel has been moved away from where the stylesheet puts it. */
+    moved: position !== null,
     dragging,
     handleProps: { onPointerDown, onPointerMove, onPointerUp: endDrag, onPointerCancel: endDrag, onDoubleClick },
   };

@@ -2901,6 +2901,37 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   border-bottom: 1px solid #e3e3e3;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-inspector-header.movable {
+  background: rgba(246, 246, 246, 0.98);
+  border-bottom: 1px solid #e3e3e3;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-inspector-header.movable .inspector-header-icon,
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-inspector-header.movable .inspector-rename-button {
+  color: #676767;
+  background: transparent;
+  border: none;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-inspector-header.movable .inspector-header-icon:hover,
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-inspector-header.movable .inspector-rename-button:hover {
+  color: #2e2e2e;
+  background: #dedede;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-inspector-header.movable .inspector-header-icon.active {
+  color: #d3710c;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-inspector-header.movable .inspector-help-link {
+  color: inherit;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-inspector.floating {
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 8px 28px rgba(64, 64, 64, 0.12);
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .inspector-rename-button {
   color: #595959;
   background: transparent;
@@ -4509,6 +4540,10 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .shape-inspector {
   box-shadow: -3px 0 14px rgba(0, 0, 0, 0.28);
 }
 
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-inspector.floating {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
 html[data-theme="dark"]:where([data-palette="graphite"]) .shape-inspector .edit-sketch-button,
 html[data-theme="dark"]:where([data-palette="graphite"]) .shape-inspector .inspector-action-button {
   color: #e0e0e0;
@@ -5421,9 +5456,26 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-panel {
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
 }
 
-html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-header {
+html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-header,
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-inspector-header.movable {
+  color: #d1d1d1;
   background: rgba(28, 28, 28, 0.98);
   border-color: #3d3d3d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-inspector-header.movable .inspector-header-icon,
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-inspector-header.movable .inspector-rename-button {
+  color: #828282;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-inspector-header.movable .inspector-header-icon:hover,
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-inspector-header.movable .inspector-rename-button:hover {
+  color: #ffffff;
+  background: #3d3d3d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-inspector-header.movable .inspector-header-icon.active {
+  color: #f0973a;
 }
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-header-icon {

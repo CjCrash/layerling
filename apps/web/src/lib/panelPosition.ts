@@ -21,6 +21,14 @@ export function clampPanelPosition(
   };
 }
 
+/** How close to its docked spot a panel has to be dropped to snap back into it. */
+export const PANEL_DOCK_DISTANCE = 32;
+
+/** Whether a panel dropped at `position` goes back into its dock at `docked`. */
+export function isNearDock(position: PanelPosition, docked: PanelPosition, distance = PANEL_DOCK_DISTANCE): boolean {
+  return Math.hypot(position.left - docked.left, position.top - docked.top) <= distance;
+}
+
 /** A stored position, or null when there is none or it is not a usable one. */
 export function parsePanelPosition(stored: string | null): PanelPosition | null {
   if (!stored) return null;
