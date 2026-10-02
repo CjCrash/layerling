@@ -7,6 +7,8 @@ code still carries it - so a lower number further down is older, not newer.
 ## Unreleased
 
 - **Section view:** A new button at the bottom of the left bar cuts the view open along a plane across X, Y or Z, to look at walls, cavities and parts that fit into each other. A coarse slider moves the plane across the whole design, a fine slider a little either side of where it stands; the position can also be typed, in the workspace unit. The other side, back to the middle and hiding the plane are one click each, and what the cut lays open can be clicked and selected. Only the view is cut: the design, its files and every export stay whole.
+- **Shift-click in the object list:** Holding Shift while clicking entries in the object list adds them to the selection or takes them out again, as Shift-click already does in the view. Ctrl-click (Cmd-click on a Mac) no longer does this, so the list works the same way as the view. Shift-clicking no longer highlights the text of the rows in between. Contributed by @gogades (#70).
+- **Shift-click in the sketch:** With "Select" in the sketch, holding Shift while clicking a point or line adds it to the selection or takes it out again, so you can pick several points and lines by hand and move them together. Points and lines can be mixed, and Shift-click also works on lines inside an existing selection's frame. Before, a click always replaced the selection, and only a frame or a click inside an outline selected more than one thing. Contributed by @gogades (#70).
 
 ## 1.26.1
 

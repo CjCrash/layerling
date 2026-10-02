@@ -15,7 +15,7 @@ Bei vielen Teilen verliert man in der Ansicht leicht den Überblick. Die Objektl
 
 ![Die Objektliste: die Gruppe „Gruppe“ mit zwei Teilen und daneben eine Kugel. Ein Ordnersymbol öffnet die Gruppe.](shot:object-list)
 
-- Ein Klick auf einen Eintrag wählt die Form aus, auch die Teile innerhalb einer Gruppe. Die Pfeile klappen Gruppen auf und zu.
+- Ein Klick auf einen Eintrag wählt die Form aus, auch die Teile innerhalb einer Gruppe. Mit [[Umschalt]] nimmst du weitere Einträge dazu oder wieder weg, genau wie in der Ansicht. Die Pfeile klappen Gruppen auf und zu.
 - Das Etikett zeigt, ob ein Teil {{ui:outliner.solid}} oder {{ui:outliner.hole}} ist.
 - Schloss und Auge sperren und verstecken einzelne Teile.
 - Über {{ui:outliner.rename}} gibst du einem Teil einen eigenen Namen. Vernünftige Namen helfen bei größeren Entwürfen enorm.

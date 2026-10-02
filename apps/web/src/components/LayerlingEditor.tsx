@@ -149,6 +149,7 @@ import { attachProjectAsset, dedupeProjectAssets, projectAssetFromBytes, sourceF
 import { findSketchOutlineIntersection } from "@/lib/sketchProfileValidation";
 import { addLineIntersectionPoints, splitSketchSegment } from "@/lib/sketchPointRefinement";
 import { copySketchSelection, freeSketchPasteOffset, pasteSketchClipboard, type SketchClipboard } from "@/lib/sketchClipboard";
+import { sketchSelectionCount, toggleSketchSelection } from "@/lib/sketchSelection";
 import { applySketchChamfer, applySketchFillet } from "@/lib/sketchFilletChamfer";
 import { buildSketchRevolveMesh, DEFAULT_SKETCH_REVOLVE_SETTINGS, normalizeSketchRevolveSettings, type SketchRevolveMesh } from "@/lib/sketchRevolve";
 import { AppFooter } from "@/components/AppFooter";
@@ -11290,6 +11291,15 @@ export function LayerlingEditor({
             onSelectSegment={(id) => {
               setSketchSelection({ kind: "segment", id });
               setSketchActivePointId(null);
+            }}
+            onToggleSelect={(entity) => {
+              const next = toggleSketchSelection(sketchSelection, entity);
+              setSketchSelection(next);
+              setSketchActivePointId(null);
+              const count = sketchSelectionCount(next);
+              setNotice(count === 0
+                ? t("status.sketchSelectionCleared")
+                : count === 1 ? t("status.sketchSelectedOne") : t("status.sketchSelectedMany", { count }));
             }}
             onSelectMany={(pointIds, segmentIds, imageIds) => {
               setSketchSelection(pointIds.length || segmentIds.length || imageIds.length ? { kind: "multiple", pointIds, segmentIds, imageIds } : null);

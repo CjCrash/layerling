@@ -379,7 +379,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "guide.sketchGroup.draw": "Zeichnen",
   "guide.sketchDraw.close": "Zum Schließen den ersten Punkt noch einmal anklicken. Esc beendet eine Linienkette.",
   "guide.sketchGroup.edit": "Auswählen und ändern",
-  "guide.sketchEdit.select": "„Auswählen“ verschiebt Punkte und Linien; ein Klick in einen geschlossenen Umriss wählt ihn ganz. „Punkte setzen oder entfernen“ setzt mit einem Klick auf einen Abschnitt einen Punkt und entfernt mit einem Klick auf einen Punkt; „Radieren“ löscht.",
+  "guide.sketchEdit.select": "„Auswählen“ verschiebt Punkte und Linien; Umschalt+Klick nimmt einen Punkt oder eine Linie dazu oder wieder weg, und ein Klick in einen geschlossenen Umriss wählt ihn ganz. „Punkte setzen oder entfernen“ setzt mit einem Klick auf einen Abschnitt einen Punkt und entfernt mit einem Klick auf einen Punkt; „Radieren“ löscht.",
   "guide.sketchEdit.corner": "Ein Klick auf einen Eckpunkt bietet dafür „Ecke verrunden“ und „Ecke fasen“ an. R dreht einen geschlossenen Umriss um 45 Grad.",
   "guide.sketchGroup.clipboard": "Zwischenablage",
   "guide.sketchClipboard.use": "Kopieren, Ausschneiden (Strg+X), Einfügen und Duplizieren (Strg+D) wirken auf die Auswahl. Die Kopie landet auf einem freien Platz neben dem Original und wird deshalb nicht mit ihm verbunden.",
