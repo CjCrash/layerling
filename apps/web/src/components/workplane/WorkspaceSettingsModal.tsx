@@ -62,7 +62,8 @@ import { t, type MessageKey } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
 import { measurementOptionLabel, normalizeScaleForUnits, parseMeasurementInput, scaleOptionsForUnits, WORKSPACE_UNIT_OPTIONS } from "@/lib/measurementUnits";
 import { shapeAssetDefaultDimensions, shapeAssetLabel, shapeAssetSpecialDefaults, toolbarShapeAssets } from "@/lib/shapeCatalog";
-import { DEFAULT_WORKPLANE_WORKSPACE, MAX_CUSTOM_SHAPE_DIMENSION, MAX_HIGH_RESOLUTION_SIDES, MAX_HIGH_RESOLUTION_STEPS, MIN_CUSTOM_SHAPE_DIMENSION, snapGridForUnits, snapGridOptionsForUnits } from "@/lib/workplaneSettings";
+import { DEFAULT_WORKPLANE_WORKSPACE, MAX_CUSTOM_SHAPE_DIMENSION, MAX_HIGH_RESOLUTION_SIDES, MAX_HIGH_RESOLUTION_STEPS, MIN_CUSTOM_SHAPE_DIMENSION, gridBlockForUnits, snapGridForUnits, snapGridOptionsForUnits } from "@/lib/workplaneSettings";
+import { IMPERIAL_GRID_BLOCK_PRESETS, inchGridPresetMm } from "@/lib/workplaneGrid";
 import type { BentTubeProfile, GearType, GridSize, ShapeCustomization, ShapeKind, ThreadHand, ThreadHead, ThreadProfile, ThreadRole, WorkplaneWorkspaceSettings } from "@/types/layerling";
 import { selectWholeValue } from "@/lib/numberField";
 
@@ -145,7 +146,7 @@ function gridBlockSizeForPreset(preset: string, fallback: number) {
   if (preset === "Custom") {
     return clamp(fallback, MIN_GRID_BLOCK_SIZE, MAX_GRID_BLOCK_SIZE);
   }
-  return clamp(Number.parseFloat(preset) || DEFAULT_WORKPLANE_WORKSPACE.gridBlockSize, MIN_GRID_BLOCK_SIZE, MAX_GRID_BLOCK_SIZE);
+  return clamp(inchGridPresetMm(preset) ?? (Number.parseFloat(preset) || DEFAULT_WORKPLANE_WORKSPACE.gridBlockSize), MIN_GRID_BLOCK_SIZE, MAX_GRID_BLOCK_SIZE);
 }
 
 function isHistoryLimitPreset(value: unknown): value is 30 | 50 | 100 {
@@ -644,7 +645,7 @@ export function WorkspaceSettingsModal({
                     options={WORKSPACE_UNIT_OPTIONS}
                     optionLabel={measurementOptionLabel}
                     onChange={(units) => {
-                      patchWorkspace({ units });
+                      patchWorkspace({ units, ...gridBlockForUnits(units, workspace.gridBlockPreset, workspace.gridBlockSize) });
                       const nextSnap = snapGridForUnits(units, snap);
                       if (nextSnap !== snap) onSnapChange(nextSnap);
                     }}
@@ -756,7 +757,7 @@ export function WorkspaceSettingsModal({
                     checked={workspace.showGrid}
                     onChange={(showGrid) => patchWorkspace({ showGrid })}
                   />
-                  <WorkspaceSelect label={t("workspace.gridBlockSize")} value={workspace.gridBlockPreset} options={GRID_BLOCK_PRESETS}
+                  <WorkspaceSelect label={t("workspace.gridBlockSize")} value={workspace.gridBlockPreset} options={workspace.units === "Imperial" ? [...IMPERIAL_GRID_BLOCK_PRESETS, "Custom"] : GRID_BLOCK_PRESETS}
                     optionLabel={gridBlockPresetLabel} onChange={setGridBlockPreset} />
                   <GridColorControl color={gridColor} onChange={(nextGridColor) => patchWorkspace({ gridColor: nextGridColor })} />
                   {workspace.gridBlockPreset === "Custom" ? (

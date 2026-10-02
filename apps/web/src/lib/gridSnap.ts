@@ -1,4 +1,5 @@
 import type { WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
+import { workplaneGridLayout } from "@/lib/workplaneGrid";
 
 const MIN_VISIBLE_GRID_STEP = 1;
 const MAX_VISIBLE_GRID_STEP = 200;
@@ -23,8 +24,9 @@ export type GridFootprintBounds = {
   maxZ: number;
 };
 
-function nearestVisibleGridLine(value: number, workspaceSize: number, step: number) {
-  const gridOrigin = -workspaceSize / 2;
+function nearestVisibleGridLine(value: number, workspaceSize: number, step: number, centered: boolean) {
+  // An inch grid runs through the origin, a millimetre grid from the plate's corner.
+  const gridOrigin = centered ? 0 : -workspaceSize / 2;
   return gridOrigin + Math.round((value - gridOrigin) / step) * step;
 }
 
@@ -34,8 +36,9 @@ export function snapShapeFootprintToVisibleGrid(
   workspace: WorkplaneWorkspaceSettings,
 ) {
   const step = visibleGridStep(workspace);
-  const xOffsets = [bounds.minX, bounds.maxX].map((value) => nearestVisibleGridLine(value, workspace.width, step) - value);
-  const zOffsets = [bounds.minZ, bounds.maxZ].map((value) => nearestVisibleGridLine(value, workspace.depth, step) - value);
+  const { centered } = workplaneGridLayout(workspace);
+  const xOffsets = [bounds.minX, bounds.maxX].map((value) => nearestVisibleGridLine(value, workspace.width, step, centered) - value);
+  const zOffsets = [bounds.minZ, bounds.maxZ].map((value) => nearestVisibleGridLine(value, workspace.depth, step, centered) - value);
   const deltaX = xOffsets.reduce((best, value) => Math.abs(value) < Math.abs(best) ? value : best);
   const deltaZ = zOffsets.reduce((best, value) => Math.abs(value) < Math.abs(best) ? value : best);
   return {

@@ -166,3 +166,66 @@ export function interiorWorkplaneGridCoordinates(span: number, step: number): Wo
 
   return coordinates;
 }
+
+/** Grid sizes offered with Imperial units; the line spacing in millimetres follows from the name. */
+export const IMPERIAL_GRID_BLOCK_PRESETS = ["1/8 in", "1/4 in", "1/2 in", "1 in"] as const;
+export const DEFAULT_IMPERIAL_GRID_BLOCK_PRESET = "1/4 in";
+export const DEFAULT_METRIC_GRID_BLOCK_PRESET = "5 mm";
+const MM_PER_INCH = 25.4;
+
+/** Millimetres of an inch grid preset such as "1/4 in", or null for anything else. */
+export function inchGridPresetMm(preset: string): number | null {
+  const match = /^(\d+)(?:\/(\d+))? in$/.exec(preset);
+  if (!match) return null;
+  const value = Number(match[1]) / (match[2] ? Number(match[2]) : 1);
+  return value > 0 ? value * MM_PER_INCH : null;
+}
+
+export type WorkplaneGridLayout = {
+  step: number;
+  /** Every how many lines a stronger one is drawn. */
+  majorInterval: number;
+  /**
+   * Lines run through the origin rather than from the plate's corner. An inch
+   * grid needs that: its steps do not divide a millimetre plate, and the snap
+   * grid counts from the origin.
+   */
+  centered: boolean;
+};
+
+/**
+ * How the plate's grid is laid out. Millimetre grids keep their old layout,
+ * from the corner with a stronger line every fifth; inch grids run through
+ * the origin with a stronger line on every whole inch.
+ */
+export function workplaneGridLayout(workspace: { gridBlockSize: number; gridBlockPreset?: string; units?: string }): WorkplaneGridLayout {
+  const step = Math.min(200, Math.max(1, workspace.gridBlockSize));
+  const inches = inchGridPresetMm(workspace.gridBlockPreset ?? "") !== null || workspace.units === "Imperial";
+  if (!inches) return { step, majorInterval: WORKPLANE_MAJOR_GRID_INTERVAL, centered: false };
+  const perInch = Math.round(MM_PER_INCH / step);
+  const majorInterval = Math.abs(perInch * step - MM_PER_INCH) < 1e-6 && perInch >= 2 ? perInch : step >= MM_PER_INCH - 1e-6 ? 12 : WORKPLANE_MAJOR_GRID_INTERVAL;
+  return { step, majorInterval, centered: true };
+}
+
+/** Lines through the origin at whole steps, inside the plate; `index` counts from the origin (negative to the left). */
+export function centeredWorkplaneGridCoordinates(span: number, step: number): WorkplaneGridCoordinate[] {
+  if (!Number.isFinite(span) || !Number.isFinite(step) || span <= 0 || step <= 0) return [];
+  const halfSpan = span / 2;
+  const last = Math.floor((halfSpan - WORKPLANE_BOUNDARY_EPSILON) / step);
+  const coordinates: WorkplaneGridCoordinate[] = [];
+  for (let index = -last; index <= last; index += 1) {
+    const coordinate = index === 0 ? 0 : index * step;
+    if (Math.abs(Math.abs(coordinate) - halfSpan) < WORKPLANE_BOUNDARY_EPSILON) continue;
+    coordinates.push({ coordinate, index });
+  }
+  return coordinates;
+}
+
+/** The grid lines across `span` for a layout, each marked as the axis, a major or a minor line. */
+export function workplaneGridLines(span: number, layout: WorkplaneGridLayout) {
+  const coordinates = layout.centered ? centeredWorkplaneGridCoordinates(span, layout.step) : interiorWorkplaneGridCoordinates(span, layout.step);
+  return coordinates.map(({ coordinate, index }) => ({
+    coordinate,
+    kind: coordinate === 0 ? "axis" as const : index % layout.majorInterval === 0 ? "major" as const : "minor" as const,
+  }));
+}

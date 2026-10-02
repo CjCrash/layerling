@@ -1,6 +1,6 @@
 import type { GridSize, HistoryRetentionLimit, MeasurementAccuracy, ShapeCustomization, ShapeCustomizationMap, ShapeKind, WorkplaneWorkspaceSettings } from "@/types/layerling";
 import { normalizeScaleForUnits } from "@/lib/measurementUnits";
-import { DEFAULT_WORKPLANE_GRID_COLOR } from "@/lib/workplaneGrid";
+import { DEFAULT_IMPERIAL_GRID_BLOCK_PRESET, DEFAULT_METRIC_GRID_BLOCK_PRESET, DEFAULT_WORKPLANE_GRID_COLOR, inchGridPresetMm } from "@/lib/workplaneGrid";
 import { isThreadProfile } from "@/lib/threadProfiles";
 
 export const DEFAULT_SNAP_GRID: GridSize = "1.0 mm";
@@ -72,6 +72,23 @@ const snapGridOptions: GridSize[] = [...METRIC_SNAP_GRIDS, ...IMPERIAL_SNAP_GRID
 /** The snap steps offered for a unit system: inch fractions for Imperial, millimetres otherwise. */
 export function snapGridOptionsForUnits(units: string): GridSize[] {
   return units === "Imperial" ? IMPERIAL_SNAP_GRIDS : METRIC_SNAP_GRIDS;
+}
+
+/**
+ * The plate's grid for a unit system: an inch preset with Imperial, a
+ * millimetre one otherwise. A preset of the other system (a design set to
+ * Imperial before inch grids existed, or switched back to metric) gives way
+ * to the usual default; a custom size stays as it is.
+ */
+export function gridBlockForUnits(units: string, preset: string, size: number): { gridBlockPreset: string; gridBlockSize: number } {
+  const inchMm = inchGridPresetMm(preset);
+  if (units === "Imperial") {
+    if (inchMm !== null) return { gridBlockPreset: preset, gridBlockSize: inchMm };
+    if (preset === "Custom") return { gridBlockPreset: preset, gridBlockSize: size };
+    return { gridBlockPreset: DEFAULT_IMPERIAL_GRID_BLOCK_PRESET, gridBlockSize: inchGridPresetMm(DEFAULT_IMPERIAL_GRID_BLOCK_PRESET)! };
+  }
+  if (inchMm !== null) return { gridBlockPreset: DEFAULT_METRIC_GRID_BLOCK_PRESET, gridBlockSize: Number.parseFloat(DEFAULT_METRIC_GRID_BLOCK_PRESET) };
+  return { gridBlockPreset: preset, gridBlockSize: size };
 }
 
 /** Keeps the current snap step when the unit system offers it, else the usual default (1.0 mm or 1/8 in). */
@@ -345,8 +362,11 @@ export function normalizeWorkspaceSettings(value: unknown, fallback: WorkplaneWo
     sizePreset: stringOrDefault(candidate.sizePreset, fallback.sizePreset),
     // Older settings have no printer; that is "none", not the fallback's choice.
     printer: typeof candidate.printer === "string" ? candidate.printer : candidate.sizePreset === undefined ? fallback.printer : "",
-    gridBlockSize: numberOrDefault(candidate.gridBlockSize, fallback.gridBlockSize),
-    gridBlockPreset: stringOrDefault(candidate.gridBlockPreset, fallback.gridBlockPreset),
+    ...gridBlockForUnits(
+      units,
+      stringOrDefault(candidate.gridBlockPreset, fallback.gridBlockPreset),
+      numberOrDefault(candidate.gridBlockSize, fallback.gridBlockSize),
+    ),
     gridColor: migratedLegacyColor(colorOrDefault(candidate.gridColor, fallback.gridColor), LEGACY_GRID_COLOR, fallback.gridColor),
     background: migratedLegacyColor(stringOrDefault(candidate.background, fallback.background), LEGACY_BACKGROUND, fallback.background),
     showShadows: booleanOrDefault(candidate.showShadows, fallback.showShadows),

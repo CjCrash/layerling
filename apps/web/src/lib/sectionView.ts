@@ -1,4 +1,6 @@
 import type { WorkplaneShape } from "@/types/layerling";
+import * as THREE from "three";
+import { quaternionForShape } from "@/lib/geometryRotation";
 import { shapeDepth, shapeWidth } from "@/lib/workplaneShapes";
 
 export type SectionPlaneAxis = "x" | "y" | "z";
@@ -47,21 +49,16 @@ export function getSectionBounds(
   let max = Number.NEGATIVE_INFINITY;
 
   visible.forEach((shape) => {
-    const w = shapeWidth(shape);
-    const d = shapeDepth(shape);
-    const h = shape.height;
-    const elev = shape.elevation ?? 0;
-
-    if (axis === "x") {
-      min = Math.min(min, shape.x - w / 2);
-      max = Math.max(max, shape.x + w / 2);
-    } else if (axis === "y") {
-      min = Math.min(min, elev);
-      max = Math.max(max, elev + h);
-    } else {
-      min = Math.min(min, shape.z - d / 2);
-      max = Math.max(max, shape.z + d / 2);
-    }
+    // The box around the turned shape: a part turned or tipped reaches
+    // further along some axes than its width, depth and height say.
+    const half = new THREE.Vector3(shapeWidth(shape) / 2, shape.height / 2, shapeDepth(shape) / 2);
+    const rotation = new THREE.Matrix4().makeRotationFromQuaternion(quaternionForShape(shape)).elements;
+    const row = axis === "x" ? 0 : axis === "y" ? 1 : 2;
+    // Column-major: element (row, column) sits at column * 4 + row.
+    const reach = Math.abs(rotation[row]) * half.x + Math.abs(rotation[4 + row]) * half.y + Math.abs(rotation[8 + row]) * half.z;
+    const center = axis === "x" ? shape.x : axis === "y" ? (shape.elevation ?? 0) + shape.height / 2 : shape.z;
+    min = Math.min(min, center - reach);
+    max = Math.max(max, center + reach);
   });
 
   const span = Math.max(max - min, 1);

@@ -56,7 +56,7 @@ You will recognise everything: the plate, the shapes, solids and holes, group an
 
 - **A real build plate** – grid, snapping, handles for moving, resizing and rotating, and a panel with the exact numbers when you need them.
 - **Snap to other shapes** – while moving, a shape locks its edges or centre onto the edges and centres of the shapes around it, with a guide line, so parts sit flush without typing numbers. Hold Alt to pause it.
-- **Millimetres or inches** – with Imperial units every measure is shown in inches, as fractions like Tinkercad (1 5/8) or as decimals, and the snap grid steps from 1/64 to 1 inch.
+- **Millimetres or inches** – with Imperial units every measure is shown in inches, as fractions like Tinkercad (1 5/8) or as decimals, the snap grid steps from 1/64 to 1 inch, and the plate's grid is drawn in inches.
 - **Your printer's plate** – pick one of 190 common printers and the plate takes its size. Its name and build volume show in the corner of the workplane, and a warning appears when a body reaches past the edge.
 - **Shape library** – boxes, cylinders, spheres, cones, pyramids, wedges, text, roofs, half spheres, torus shapes, tubes, polygon prisms from three to twenty-four sides, coil springs and more.
 - **Threads that fit** – threaded rods, screws with a socket, countersunk or hex head, hex nuts and tapped holes. M2 to M12, UNC/UNF from #4 to one inch and the Whitworth pipe threads G1/16 to G4 (ISO 228-1) are one pick away, or set your own diameter and pitch, left-hand as well; an inch or G size asks for threads per inch instead of millimetres. The ends take a chamfer, and a tapped hole is a cutter: drop it into a part, group, and the hole comes out threaded.

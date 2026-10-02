@@ -118,4 +118,18 @@ describe("sectionFineWindow", () => {
     expect(sectionFineWindow({ min: 0, max: 4 }).span).toBe(0.5);
     expect(sectionFineWindow({ min: -500, max: 500 }).span).toBe(10);
   });
+
+  it("measures turned and tipped shapes by the space they really take", () => {
+    // 80 mm long along x, turned a quarter about the vertical: now 80 mm along z.
+    const turned = sampleShape({ width: 80, depth: 10, height: 10, rotation: 90 });
+    const alongZ = getSectionBounds([turned], "z");
+    expect(alongZ.center).toBeCloseTo(0, 6);
+    expect(alongZ.max - alongZ.min).toBeGreaterThan(80);
+    expect(getSectionBounds([turned], "x").max).toBeLessThan(10);
+    // A 60 mm cylinder tipped onto its side reaches 5 mm either side of its middle in height.
+    const tipped = sampleShape({ kind: "cylinder", width: 10, depth: 10, height: 60, rotationX: 90 });
+    const height = getSectionBounds([tipped], "y");
+    expect(height.center).toBeCloseTo(30, 6);
+    expect(height.max - height.min).toBeLessThan(15);
+  });
 });

@@ -8,7 +8,7 @@ import { canApplySketchCornerTreatment } from "@/lib/sketchFilletChamfer";
 import { t } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
 import { parseMeasurementInput } from "@/lib/measurementUnits";
-import { WORKPLANE_MAJOR_GRID_INTERVAL } from "@/lib/workplaneGrid";
+import { workplaneGridLayout } from "@/lib/workplaneGrid";
 import { closestPointOnSketchSegment, type SketchSegmentPlacement } from "@/lib/sketchPointRefinement";
 import { isSketchPanGesture, SKETCH_MANUAL_MAX_ZOOM, SKETCH_MAX_ZOOM, SKETCH_WHEEL_ZOOM_BOOST, SKETCH_MIN_ZOOM, sketchWheelZoomFactor, zoomSketchViewAt, type SketchView } from "@/lib/sketchPointerControls";
 import { isSketchPrimitive, type SketchPrimitive } from "@/lib/sketchPrimitives";
@@ -630,7 +630,11 @@ export function SketchWorkspace({
     }
     setCornerDialog(null);
   };
-  const gridStep = clamp(workspace.gridBlockSize, 1, 200);
+  const gridLayout = workplaneGridLayout(workspace);
+  const gridStep = gridLayout.step;
+  // Counted from the origin, like the plate's own grid: a stronger line every
+  // fifth millimetre step, or on every whole inch.
+  const gridLineClass = (value: number) => (Math.abs(value) < 0.0001 ? "axis" : Math.round(value / gridStep) % gridLayout.majorInterval === 0 ? "major" : "minor");
   const verticalLines = useMemo(() => {
     const lines: number[] = [];
     const start = Math.ceil((-workspace.width / 2) / gridStep) * gridStep;
@@ -1043,8 +1047,8 @@ export function SketchWorkspace({
           <rect className="sketch-plate-background" x={-workspace.width / 2} y={-workspace.depth / 2} width={workspace.width} height={workspace.depth} />
           {workspace.showGrid ? (
             <g className="sketch-grid" pointerEvents="none">
-              {verticalLines.map((x, index) => <line className={Math.abs(x) < 0.0001 ? "axis" : index % WORKPLANE_MAJOR_GRID_INTERVAL === 0 ? "major" : "minor"} key={`x-${x}`} x1={x} y1={-workspace.depth / 2} x2={x} y2={workspace.depth / 2} />)}
-              {horizontalLines.map((z, index) => <line className={Math.abs(z) < 0.0001 ? "axis" : index % WORKPLANE_MAJOR_GRID_INTERVAL === 0 ? "major" : "minor"} key={`z-${z}`} x1={-workspace.width / 2} y1={z} x2={workspace.width / 2} y2={z} />)}
+              {verticalLines.map((x) => <line className={gridLineClass(x)} key={`x-${x}`} x1={x} y1={-workspace.depth / 2} x2={x} y2={workspace.depth / 2} />)}
+              {horizontalLines.map((z) => <line className={gridLineClass(z)} key={`z-${z}`} x1={-workspace.width / 2} y1={z} x2={workspace.width / 2} y2={z} />)}
             </g>
           ) : null}
           {operation === "revolve" ? (

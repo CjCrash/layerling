@@ -72,7 +72,7 @@ import { createPyramidGeometry } from "@/lib/pyramidGeometry";
 import { projectThumbnailDimensions } from "@/lib/projectThumbnail";
 import { makeShapeFromAsset } from "@/lib/shapeCatalog";
 import { canBeginShapeDrag, DEFAULT_SNAP_GRID, DEFAULT_WORKPLANE_WORKSPACE, normalizeSnapGrid, normalizeWorkspaceSettings, orbitControlsZoomSpeed, readWorkspaceDefault, saveWorkspaceDefault, shapeDimensionLimit, snapGridForUnits, snapGridStep as snapStep, workplaneSettingsFingerprint, workspaceHydrationSyncDecision, zoomDistanceScale } from "@/lib/workplaneSettings";
-import { interiorWorkplaneGridCoordinates, workplaneGridPalette, workplaneLabelLayout, workplaneThemePalette, WORKPLANE_LABEL_ASPECT, WORKPLANE_LINE_ELEVATION, WORKPLANE_MAJOR_GRID_INTERVAL } from "@/lib/workplaneGrid";
+import { workplaneGridLayout, workplaneGridLines, workplaneGridPalette, workplaneLabelLayout, workplaneThemePalette, WORKPLANE_LABEL_ASPECT, WORKPLANE_LINE_ELEVATION, type WorkplaneGridLayout } from "@/lib/workplaneGrid";
 import { cleanNearZero, cleanRotationDegrees, isNonSolidShapeKind, mirroredAxisCount, mirrorSign, preservesEdgeTreatmentSize, proportionalResizeScale, resizedImportedCoordinates, resizedImportedMeshPositions, resizedShapeSize, shapeDepth, shapeExtrudeDeformAt, shapeHasExtrudeDeform, shapeHasShapeDeform, shapeHasTaper, shapeOverallFootprintDimensions, shapeTaperDimensions, shapeTaperScaleAt, shapeWidth, shapeWithParametricSource } from "@/lib/workplaneShapes";
 import { sphereTessellation } from "@/lib/sphereTessellation";
 import type { LayerlingMcpViewFace } from "@/lib/layerlingMcpProtocol";
@@ -112,8 +112,6 @@ import type { CadModifierEdge } from "@/lib/cadModifierTypes";
 
 const WORKPLANE_WIDTH = 200;
 const WORKPLANE_DEPTH = 140;
-const MIN_GRID_BLOCK_SIZE = 1;
-const MAX_GRID_BLOCK_SIZE = 200;
 const WORKSPACE_DEFAULTS_STORAGE_PREFIX = "layerling.workspaceDefault.";
 const MOVE_DIMENSIONS_ENABLED_STORAGE_KEY = "layerling.editor.moveDimensionsEnabled";
 const ORIGIN_DIMENSIONS_ENABLED_STORAGE_KEY = "layerling.editor.originDimensionsEnabled";
@@ -8453,7 +8451,7 @@ function rebuildWorkplane(
       group.add(createGridLines(
         workspace.width,
         workspace.depth,
-        workspace.gridBlockSize,
+        workplaneGridLayout(workspace),
         theme,
         lineColor,
         state.palette,
@@ -8720,7 +8718,7 @@ function createWorkplaneLabel(
 function createGridLines(
   width = WORKPLANE_WIDTH,
   depth = WORKPLANE_DEPTH,
-  blockSize = DEFAULT_WORKSPACE.gridBlockSize,
+  layout: WorkplaneGridLayout = workplaneGridLayout(DEFAULT_WORKSPACE),
   theme: ResolvedAppTheme = "light",
   gridColor = DEFAULT_WORKSPACE.gridColor,
   paletteName: AppThemePalette = "default",
@@ -8737,15 +8735,13 @@ function createGridLines(
   const pushLine = (points: number[], from: [number, number, number], to: [number, number, number]) => {
     points.push(...from, ...to);
   };
-  const step = clamp(blockSize, MIN_GRID_BLOCK_SIZE, MAX_GRID_BLOCK_SIZE);
-  for (const { coordinate: centeredX, index } of interiorWorkplaneGridCoordinates(width, step)) {
-    const points = centeredX === 0 ? axisPoints : index % WORKPLANE_MAJOR_GRID_INTERVAL === 0 ? majorPoints : minorPoints;
-    pushLine(points, [centeredX, WORKPLANE_LINE_ELEVATION, -depth / 2], [centeredX, WORKPLANE_LINE_ELEVATION, depth / 2]);
+  const pointsFor = (kind: "axis" | "major" | "minor") => (kind === "axis" ? axisPoints : kind === "major" ? majorPoints : minorPoints);
+  for (const { coordinate: centeredX, kind } of workplaneGridLines(width, layout)) {
+    pushLine(pointsFor(kind), [centeredX, WORKPLANE_LINE_ELEVATION, -depth / 2], [centeredX, WORKPLANE_LINE_ELEVATION, depth / 2]);
   }
 
-  for (const { coordinate: centeredZ, index } of interiorWorkplaneGridCoordinates(depth, step)) {
-    const points = centeredZ === 0 ? axisPoints : index % WORKPLANE_MAJOR_GRID_INTERVAL === 0 ? majorPoints : minorPoints;
-    pushLine(points, [-width / 2, WORKPLANE_LINE_ELEVATION, centeredZ], [width / 2, WORKPLANE_LINE_ELEVATION, centeredZ]);
+  for (const { coordinate: centeredZ, kind } of workplaneGridLines(depth, layout)) {
+    pushLine(pointsFor(kind), [-width / 2, WORKPLANE_LINE_ELEVATION, centeredZ], [width / 2, WORKPLANE_LINE_ELEVATION, centeredZ]);
   }
 
   const border = new THREE.LineBasicMaterial({ ...palette.border, transparent: true, depthWrite: false });
