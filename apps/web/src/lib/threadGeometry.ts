@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { ThreadHand, ThreadHead, ThreadProfile, ThreadRole } from "@/types/layerling";
 import { isThreadProfile } from "@/lib/threadProfiles";
+import type { MessageKey } from "@/lib/messages.en";
 
 export const DEFAULT_THREAD_ROLE: ThreadRole = "rod";
 export const DEFAULT_THREAD_HEAD: ThreadHead = "cylinder";
@@ -215,7 +216,23 @@ const PIPE_SIZES: readonly ThreadSizeSpec[] = PIPE_ROWS.map((row) => ({
   profile: "whitworth",
 }));
 
-export const THREAD_SIZE_GROUPS: ReadonlyArray<{ series: string; sizes: readonly ThreadSizeSpec[] }> = [
+/** Die Reihen im Groessenmenue: metrisches Regelgewinde, Zoll grob und fein, Rohrgewinde G. */
+export type ThreadSeries = "metric" | "UNC" | "UNF" | "G";
+
+/**
+ * Was das Groessenmenue zu jeder Reihe zeigt: eine kurze Ueberschrift ueber
+ * ihren Groessen - kurz, damit das native Aufklappfeld schmal bleibt - und
+ * eine Zeile unter dem Feld mit Beispielen aus dem Alltag, solange eine Groesse
+ * dieser Reihe gewaehlt ist.
+ */
+export const THREAD_SERIES_TEXT = {
+  metric: { group: "thread.group.metric", hint: "thread.hint.metric" },
+  UNC: { group: "thread.group.UNC", hint: "thread.hint.UNC" },
+  UNF: { group: "thread.group.UNF", hint: "thread.hint.UNF" },
+  G: { group: "thread.group.G", hint: "thread.hint.G" },
+} as const satisfies Record<ThreadSeries, { group: MessageKey; hint: MessageKey }>;
+
+export const THREAD_SIZE_GROUPS: ReadonlyArray<{ series: ThreadSeries; sizes: readonly ThreadSizeSpec[] }> = [
   { series: "metric", sizes: METRIC_SIZES },
   { series: "UNC", sizes: INCH_COARSE_SIZES },
   { series: "UNF", sizes: INCH_FINE_SIZES },
@@ -264,6 +281,11 @@ function derivedSizeSpec(diameter: number): ThreadSizeSpec {
 }
 
 /** Die Normgroesse zu Durchmesser und Steigung, oder nichts bei freien Werten. */
+/** Die Reihe, zu der eine Normgroesse gehoert. */
+export function threadSeriesFor(size: ThreadSizeSpec): ThreadSeries | null {
+  return THREAD_SIZE_GROUPS.find((group) => group.sizes.includes(size))?.series ?? null;
+}
+
 export function threadSizeFor(diameter: number, pitch: number): ThreadSizeSpec | null {
   return THREAD_SIZES.find((size) => (
     Math.abs(size.diameter - diameter) < SIZE_MATCH_TOLERANCE && Math.abs(size.pitch - pitch) < SIZE_MATCH_TOLERANCE

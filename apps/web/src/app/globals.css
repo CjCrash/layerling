@@ -7602,6 +7602,16 @@ button {
   cursor: pointer;
 }
 
+/* Eine Zeile unter dem Feld, die die Wahl erklaert (beim Gewinde die Reihe mit Alltagsbeispielen). */
+.select-property-hint {
+  grid-column: 2;
+  margin-top: -5px;
+  color: #8d7b68;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
 .text-property input:focus,
 .select-property select:focus {
   border-color: #ea953d;
@@ -9990,6 +10000,10 @@ html[data-theme="dark"] .gear-type-property,
 html[data-theme="dark"] .range-property,
 html[data-theme="dark"] .range-property-name,
 html[data-theme="dark"] .text-property,
+html[data-theme="dark"] .select-property-hint {
+  color: #a08a72;
+}
+
 html[data-theme="dark"] .select-property,
 html[data-theme="dark"] .range-value-unit,
 html[data-theme="dark"] .color-value {
