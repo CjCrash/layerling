@@ -21,6 +21,12 @@ With many parts it is easy to lose track in the view. The object list ({{ui:edit
 - {{ui:outliner.rename}} gives a part a name of its own; the pencil beside the name at the top of the settings does the same for the selected shape. Sensible names help enormously in larger designs.
 - The search field finds shapes by name and by kind, so also "cylinder" or "hole".
 
+## Snapping while moving
+
+When you drag a shape across the workplane, it snaps to other shapes: its left, right, front or back edge or its centre lands exactly on an edge or centre of another shape. A pink guide line shows what it is holding on to. That way two parts sit flush side by side or centred one behind the other without typing numbers. It works with the grid switched off, too.
+
+Hold [[Alt]] while dragging to pause snapping; the shape then follows the grid only. To switch it off for good, use the grid menu in the bottom right ({{ui:inspector.objectSnap}}) or the settings. For now only moving on the normal workplane snaps, not lifting and not resizing.
+
 ## Aligning
 
 Two or more selected shapes are lined up with {{ui:editor.tool.align}}: points appear around the selection for left, centre and right, front, centre and back, and top, centre and bottom. A click on a point moves all shapes there. If you first click one of the selected shapes, it stays in place and the others line up with it.

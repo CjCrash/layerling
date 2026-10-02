@@ -600,6 +600,11 @@ export function WorkspaceSettingsModal({
                     checked={workspace.selectBeforeMove}
                     onChange={(selectBeforeMove) => patchWorkspace({ selectBeforeMove })}
                   />
+                  <WorkspaceToggle
+                    label={t("workspace.objectSnap")}
+                    checked={workspace.objectSnap}
+                    onChange={(objectSnap) => patchWorkspace({ objectSnap })}
+                  />
                   <WorkspaceToggle label={t("workspace.showShadows")} checked={workspace.showShadows} onChange={(showShadows) => patchWorkspace({ showShadows })} />
                   <WorkspaceToggle
                     label={t("workspace.cruise")}

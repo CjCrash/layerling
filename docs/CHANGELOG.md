@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.27.1
+
+- **Snap to other shapes while moving:** Dragging a shape across the workplane now locks its left, right, front or back edge or its centre onto an edge or centre of another shape once it comes within a few pixels, and a pink guide line shows which one. Two parts sit flush or centred without typing numbers, also with the grid off. Holding Alt while dragging pauses it; a checkbox in the snap grid menu and one in the settings ("Snap to other shapes while moving") switch it off. For now it applies to moving on the base workplane only, not to lifting, resizing or a workplane set on a face. Suggested by darkwingbreydin in the forum.
+
 ## 1.27.0
 
 - **Edge tool and hollowing on STEP imports:** A part imported from STEP now gets chamfers, fillets and hollowing on the exact body from the file instead of its triangles. Parts with many holes, which the edge tool refused before because of their triangle count, now work - a plate with 24 holes offers its 68 real edges and fillets them in about a second. Turned, mirrored, lifted and resized imports work too; a tapered, twisted or leaning one keeps the old way. STL, OBJ and 3MF bring only triangles, so if a part also exists as STEP, import that. Contributed by @plazmabokor (#73).

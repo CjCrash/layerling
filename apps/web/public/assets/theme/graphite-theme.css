@@ -3240,6 +3240,11 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   background: #f3f3f3;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .snap-object-toggle {
+  color: #4f4f4f;
+  border-top: 1px solid var(--border);
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .workspace-modal-card {
   color: #424242;
   background: #fff;
@@ -4400,6 +4405,7 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .shape-menu-item .sketc
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .camera-controls button,
 html[data-theme="dark"]:where([data-palette="graphite"]) .snap-menu button,
+html[data-theme="dark"]:where([data-palette="graphite"]) .snap-object-toggle,
 html[data-theme="dark"]:where([data-palette="graphite"]) .snap-row {
   color: #c4c4c4;
 }

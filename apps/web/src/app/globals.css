@@ -7817,7 +7817,8 @@ button {
   right: 0;
   bottom: 26px;
   z-index: 8;
-  width: 92px;
+  min-width: 92px;
+  width: max-content;
   padding: 4px 0;
   background: white;
   border: 1px solid var(--border);
@@ -7837,6 +7838,22 @@ button {
 .snap-menu button:hover,
 .snap-menu .selected {
   background: #f8f4ed;
+}
+
+.snap-object-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 7px 9px 3px;
+  color: #725a42;
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.snap-object-toggle input {
+  margin: 0;
 }
 
 .workspace-modal {
@@ -9838,6 +9855,7 @@ html[data-theme="dark"] .shape-menu-item .sketch-shape-menu-icon {
 
 html[data-theme="dark"] .camera-controls button,
 html[data-theme="dark"] .snap-menu button,
+html[data-theme="dark"] .snap-object-toggle,
 html[data-theme="dark"] .snap-row {
   color: #d5c4b3;
 }

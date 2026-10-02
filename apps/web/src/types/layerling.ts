@@ -171,6 +171,8 @@ export type WorkplaneWorkspaceSettings = {
   showGrid: boolean;
   clickToPlaceShapes: boolean;
   selectBeforeMove: boolean;
+  /** Moving a shape snaps its edges and centre to other shapes, with guide lines. */
+  objectSnap: boolean;
   dimensionsAlwaysVisible: boolean;
   zoomSpeed: number;
   units: string;

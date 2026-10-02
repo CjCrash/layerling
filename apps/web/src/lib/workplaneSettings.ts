@@ -27,6 +27,7 @@ export const DEFAULT_WORKPLANE_WORKSPACE: WorkplaneWorkspaceSettings = {
   showGrid: true,
   clickToPlaceShapes: true,
   selectBeforeMove: false,
+  objectSnap: true,
   dimensionsAlwaysVisible: true,
   zoomSpeed: 5,
   units: "Metric (Default)",
@@ -353,6 +354,7 @@ export function normalizeWorkspaceSettings(value: unknown, fallback: WorkplaneWo
     // with 1.18.8 click placement is on for everyone unless switched off again.
     clickToPlaceShapes: booleanOrDefault(candidate.clickToPlaceShapes, fallback.clickToPlaceShapes),
     selectBeforeMove: booleanOrDefault(candidate.selectBeforeMove, fallback.selectBeforeMove),
+    objectSnap: booleanOrDefault(candidate.objectSnap, fallback.objectSnap),
     dimensionsAlwaysVisible: booleanOrDefault(candidate.dimensionsAlwaysVisible, fallback.dimensionsAlwaysVisible),
     zoomSpeed: numberOrDefault(candidate.zoomSpeed, fallback.zoomSpeed),
     units,

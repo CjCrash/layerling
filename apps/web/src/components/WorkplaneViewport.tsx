@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Crosshair, Cuboid, FlipHorizontal, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, RotateCcw, Rows3, Ruler, RulerDimensionLine, Slice, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type DragEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type SetStateAction, type WheelEvent as ReactWheelEvent } from "react";
+import { objectSnapOffset, shiftSnapBox, type ObjectSnapGuide, type SnapBox } from "@/lib/objectSnap";
 import { computeSectionPlaneVector, DEFAULT_SECTION_SETTINGS, getSectionBounds, sectionFineWindow, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
 import * as THREE from "three";
 import { Brush, Evaluator, HOLLOW_INTERSECTION } from "three-bvh-csg";
@@ -429,6 +430,9 @@ type DragState = {
   primaryStartX: number;
   primaryStartZ: number;
   items: DragItem[];
+  /** World footprint of the dragged shapes at the start, when snapping to other shapes is on. */
+  snapMoving?: SnapBox | null;
+  snapTargets?: SnapBox[];
 };
 
 type MoveDimensionSession = {
@@ -2717,6 +2721,76 @@ function importedShapeProjectionBounds(
   return { min, max };
 }
 
+const WORLD_X_AXIS = new THREE.Vector3(1, 0, 0);
+const WORLD_Y_AXIS = new THREE.Vector3(0, 1, 0);
+const WORLD_Z_AXIS = new THREE.Vector3(0, 0, 1);
+/** How close (in screen pixels) an edge has to come before it snaps to another shape. */
+const OBJECT_SNAP_PIXELS = 8;
+
+/** The shape's footprint on the base plane, as the axis-parallel box Ausrichten also uses. */
+function worldSnapBox(shape: WorkplaneShape): SnapBox {
+  const { min, max } = projectShapeExtent(shape, WORLD_X_AXIS, WORLD_Y_AXIS, WORLD_Z_AXIS, new THREE.Vector3());
+  return { minX: min.x, maxX: max.x, minZ: min.z, maxZ: max.z };
+}
+
+function unionSnapBox(boxes: SnapBox[]): SnapBox | null {
+  if (boxes.length === 0) return null;
+  return boxes.reduce((all, box) => ({
+    minX: Math.min(all.minX, box.minX),
+    maxX: Math.max(all.maxX, box.maxX),
+    minZ: Math.min(all.minZ, box.minZ),
+    maxZ: Math.max(all.maxZ, box.maxZ),
+  }));
+}
+
+/** Converts OBJECT_SNAP_PIXELS into millimetres at `at`, so the pull feels the same at every zoom. */
+function objectSnapThreshold(state: ThreeState, at: THREE.Vector3) {
+  const rect = state.renderer.domElement.getBoundingClientRect();
+  const origin = at.clone().project(state.camera);
+  const pixels = (axis: THREE.Vector3) => {
+    const moved = at.clone().add(axis).project(state.camera);
+    return Math.hypot((moved.x - origin.x) * rect.width / 2, (moved.y - origin.y) * rect.height / 2);
+  };
+  const pixelsPerMm = Math.max(pixels(WORLD_X_AXIS), pixels(WORLD_Z_AXIS), 1e-6);
+  return clamp(OBJECT_SNAP_PIXELS / pixelsPerMm, 0.05, 10);
+}
+
+const OBJECT_SNAP_GUIDE_OVERHANG = 6;
+
+/** Draws (or clears, with an empty list) the guide lines of a snap on the plane at height `y`. */
+function syncObjectSnapGuides(state: ThreeState, guides: ObjectSnapGuide[], y: number) {
+  let lines = state.scene.getObjectByName("ObjectSnapGuides") as THREE.LineSegments | undefined;
+  if (guides.length === 0) {
+    if (lines?.visible) {
+      lines.visible = false;
+      state.needsRender = true;
+    }
+    return;
+  }
+  if (!lines) {
+    lines = new THREE.LineSegments(
+      new THREE.BufferGeometry(),
+      new THREE.LineBasicMaterial({ color: "#e0347c", depthTest: false, transparent: true, opacity: 0.95 }),
+    );
+    lines.name = "ObjectSnapGuides";
+    lines.renderOrder = 1000;
+    lines.frustumCulled = false;
+    state.scene.add(lines);
+  }
+  const positions: number[] = [];
+  guides.forEach((guide) => {
+    const from = guide.from - OBJECT_SNAP_GUIDE_OVERHANG;
+    const to = guide.to + OBJECT_SNAP_GUIDE_OVERHANG;
+    if (guide.axis === "x") positions.push(guide.value, y, from, guide.value, y, to);
+    else positions.push(from, y, guide.value, to, y, guide.value);
+  });
+  lines.geometry.dispose();
+  lines.geometry = new THREE.BufferGeometry();
+  lines.geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  lines.visible = true;
+  state.needsRender = true;
+}
+
 /** Bounding-Box einer Form auf drei vorgegebene Achsen projiziert, relativ zu `origin` - Kern sowohl fuer die Zieh-Griff-Rahmen als auch fuer die Abstands-zum-Ursprung-Anzeige. */
 function projectShapeExtent(
   shape: WorkplaneShape,
@@ -3992,6 +4066,11 @@ export function WorkplaneViewport({
   const chooseSnapGrid = useCallback<Dispatch<SetStateAction<GridSize>>>((value) => {
     pendingWorkspaceHydrationFingerprintRef.current = null;
     setSnap(value);
+  }, []);
+  /** Same as the grid: switched from the snap menu, so never a hydration echo. */
+  const changeObjectSnap = useCallback((objectSnap: boolean) => {
+    pendingWorkspaceHydrationFingerprintRef.current = null;
+    setWorkspace((current) => ({ ...current, objectSnap }));
   }, []);
 
   const makeWorkspaceDefault = useCallback(() => {
@@ -6563,6 +6642,17 @@ export function WorkplaneViewport({
       const usesWorldHorizontalAxes = Math.abs(activeWorkplane.normal.y - 1) < 1e-6
         && Math.abs(activeWorkplane.xAxis.x - 1) < 1e-6
         && Math.abs(activeWorkplane.zAxis.z - 1) < 1e-6;
+      if (workspaceRef.current.objectSnap && usesWorldHorizontalAxes && dragRef.current) {
+        const dragged = new Set(items.map((item) => item.id));
+        const shapeById = new Map(shapesRef.current.map((entry) => [entry.id, entry]));
+        dragRef.current.snapMoving = unionSnapBox(items.flatMap((item) => {
+          const entry = shapeById.get(item.id);
+          return entry ? [worldSnapBox(entry)] : [];
+        }));
+        dragRef.current.snapTargets = shapesRef.current
+          .filter((entry) => !dragged.has(entry.id) && !entry.hidden)
+          .map(worldSnapBox);
+      }
       if (moveDimensionsEnabledRef.current && usesWorldHorizontalAxes) {
         const dragFrame = selectionFrameForShapes(shapesRef.current, items.map((item) => item.id));
         const moveDimensionAnchor = dragFrame
@@ -6687,9 +6777,27 @@ export function WorkplaneViewport({
         return;
       }
 
-      const deltaX = point.x - drag.startPoint.x;
+      let deltaX = point.x - drag.startPoint.x;
       const deltaY = point.y - drag.startPoint.y;
-      const deltaZ = point.z - drag.startPoint.z;
+      let deltaZ = point.z - drag.startPoint.z;
+      const state = threeRef.current;
+      if (drag.snapMoving && drag.snapTargets?.length && state) {
+        let guides: ObjectSnapGuide[] = [];
+        const raw = event.altKey ? null : toRawPlanePoint(event.clientX, event.clientY, new THREE.Plane(new THREE.Vector3(0, 1, 0), -drag.workplane.origin.y));
+        if (raw) {
+          // Measured from the unsnapped pointer: the grid must not keep an edge
+          // a step away from the neighbour it is being pulled to.
+          const rawDeltaX = raw.x - drag.startPoint.x;
+          const rawDeltaZ = raw.z - drag.startPoint.z;
+          const snap = objectSnapOffset(shiftSnapBox(drag.snapMoving, rawDeltaX, rawDeltaZ), drag.snapTargets, objectSnapThreshold(state, raw));
+          if (snap.dx !== null) deltaX = rawDeltaX + snap.dx;
+          if (snap.dz !== null) deltaZ = rawDeltaZ + snap.dz;
+          if (snap.dx !== null || snap.dz !== null) {
+            guides = objectSnapOffset(shiftSnapBox(drag.snapMoving, deltaX, deltaZ), drag.snapTargets, 1e-4).guides;
+          }
+        }
+        syncObjectSnapGuides(state, guides, drag.workplane.origin.y + 0.06);
+      }
       const moveDimensionSession = moveDimensionSessionRef.current;
       if (moveDimensionSession) {
         moveDimensionSession.deltaX = deltaX;
@@ -6810,7 +6918,10 @@ export function WorkplaneViewport({
       });
       dragRef.current = null;
       clearMoveDimensions();
-      if (state) syncCutPreviewOverlays(state, shapesRef.current);
+      if (state) {
+        syncObjectSnapGuides(state, [], 0);
+        syncCutPreviewOverlays(state, shapesRef.current);
+      }
     }
     if (state) state.needsRender = true;
     onInteractionActiveChange?.(false);
@@ -6906,6 +7017,7 @@ export function WorkplaneViewport({
         event.currentTarget.releasePointerCapture(drag.pointerId);
       }
 
+      if (state) syncObjectSnapGuides(state, [], 0);
       let movedShape = false;
       drag.items.forEach((item) => {
         if (item.visual && item.hadPreviewSimplified) {
@@ -7870,6 +7982,7 @@ export function WorkplaneViewport({
           }}
           onSnapChange={chooseSnapGrid}
           onSnapOpenChange={setSnapOpen}
+          onObjectSnapChange={changeObjectSnap}
           onEditSketch={selectedShape.sketchProfile ? onEditSketch : undefined}
           onOpenGroup={selectedShape.groupedShapes?.length && onOpenGroup ? () => onOpenGroup(selectedShape.id) : undefined}
           canSeparateParts={canSeparateParts}
@@ -7881,7 +7994,15 @@ export function WorkplaneViewport({
 
       {!selectedShape || inspectorMinimized ? (
         <div className="grid-settings">
-          <SnapGridControl units={workspace.units} snap={snap} snapOpen={snapOpen} onSnapChange={chooseSnapGrid} onSnapOpenChange={setSnapOpen} />
+          <SnapGridControl
+            units={workspace.units}
+            snap={snap}
+            snapOpen={snapOpen}
+            onSnapChange={chooseSnapGrid}
+            onSnapOpenChange={setSnapOpen}
+            objectSnap={workspace.objectSnap}
+            onObjectSnapChange={changeObjectSnap}
+          />
         </div>
       ) : null}
 

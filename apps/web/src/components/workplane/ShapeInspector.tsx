@@ -1365,6 +1365,7 @@ export function ShapeInspector({
   onUpdate,
   onSnapChange,
   onSnapOpenChange,
+  onObjectSnapChange,
   onEditSketch,
   onOpenGroup,
   canSeparateParts = false,
@@ -1379,6 +1380,7 @@ export function ShapeInspector({
   onUpdate: ShapeInspectorUpdate;
   onSnapChange: Dispatch<SetStateAction<GridSize>>;
   onSnapOpenChange: Dispatch<SetStateAction<boolean>>;
+  onObjectSnapChange?: (enabled: boolean) => void;
   onEditSketch?: () => void;
   /** Opens a group so its parts can be changed one by one. */
   onOpenGroup?: () => void;
@@ -1840,7 +1842,7 @@ export function ShapeInspector({
         </div>
       ) : null}
       <div className="inspector-snap-dock">
-        <SnapGridControl units={workspace.units} snap={snap} snapOpen={snapOpen} onSnapChange={onSnapChange} onSnapOpenChange={onSnapOpenChange} />
+        <SnapGridControl units={workspace.units} snap={snap} snapOpen={snapOpen} onSnapChange={onSnapChange} onSnapOpenChange={onSnapOpenChange} objectSnap={workspace.objectSnap} onObjectSnapChange={onObjectSnapChange} />
       </div>
         </>
       ) : null}
@@ -2010,12 +2012,17 @@ export function SnapGridControl({
   snapOpen,
   onSnapChange,
   onSnapOpenChange,
+  objectSnap,
+  onObjectSnapChange,
 }: {
   units: string;
   snap: GridSize;
   snapOpen: boolean;
   onSnapChange: Dispatch<SetStateAction<GridSize>>;
   onSnapOpenChange: Dispatch<SetStateAction<boolean>>;
+  /** Only the 3D editor passes these: snapping to other shapes, switched in the same menu. */
+  objectSnap?: boolean;
+  onObjectSnapChange?: (enabled: boolean) => void;
 }) {
   return (
     <div className="snap-row">
@@ -2038,6 +2045,12 @@ export function SnapGridControl({
               {measurementOptionLabel(size)}
             </button>
           ))}
+          {onObjectSnapChange ? (
+            <label className="snap-object-toggle" title={t("inspector.objectSnapHint")}>
+              <input type="checkbox" checked={Boolean(objectSnap)} onChange={(event) => onObjectSnapChange(event.target.checked)} />
+              <span>{t("inspector.objectSnap")}</span>
+            </label>
+          ) : null}
         </div>
       ) : null}
     </div>

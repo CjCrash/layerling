@@ -21,6 +21,12 @@ Bei vielen Teilen verliert man in der Ansicht leicht den Überblick. Die Objektl
 - Über {{ui:outliner.rename}} gibst du einem Teil einen eigenen Namen; der Stift neben dem Namen oben in den Einstellungen macht dasselbe für die ausgewählte Form. Vernünftige Namen helfen bei größeren Entwürfen enorm.
 - Das Suchfeld findet Formen nach Namen und nach Art, also auch „Zylinder“ oder „Aussparung“.
 
+## Fangen beim Verschieben
+
+Ziehst du eine Form über die Arbeitsebene, rastet sie an anderen Formen ein: Ihre linke, rechte, vordere oder hintere Kante oder ihre Mitte legt sich genau auf eine Kante oder Mitte einer anderen Form. Eine rosa Hilfslinie zeigt, woran sie gerade hängt. So stellst du zwei Teile bündig nebeneinander oder mittig hintereinander, ohne Zahlen einzutippen. Das gilt auch, wenn das Raster ausgeschaltet ist.
+
+Hältst du beim Ziehen [[Alt]] gedrückt, setzt das Fangen aus und die Form folgt nur dem Raster. Ganz abschalten lässt es sich im Rastermenü unten rechts ({{ui:inspector.objectSnap}}) oder in den Einstellungen. Bisher fängt nur das Verschieben auf der normalen Arbeitsebene, nicht das Anheben und nicht die Größenänderung.
+
 ## Ausrichten
 
 Zwei oder mehr ausgewählte Formen richtest du mit {{ui:editor.tool.align}} aneinander aus: Am Rand der Auswahl erscheinen Punkte für links, mittig und rechts, vorn, mittig und hinten sowie oben, mittig und unten. Ein Klick auf einen Punkt schiebt alle Formen dorthin. Klickst du zuerst eine der ausgewählten Formen an, bleibt sie an ihrem Platz und die anderen richten sich nach ihr.
