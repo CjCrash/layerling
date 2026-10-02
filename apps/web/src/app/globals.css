@@ -10000,14 +10000,14 @@ html[data-theme="dark"] .gear-type-property,
 html[data-theme="dark"] .range-property,
 html[data-theme="dark"] .range-property-name,
 html[data-theme="dark"] .text-property,
-html[data-theme="dark"] .select-property-hint {
-  color: #a08a72;
-}
-
 html[data-theme="dark"] .select-property,
 html[data-theme="dark"] .range-value-unit,
 html[data-theme="dark"] .color-value {
   color: #b9a188;
+}
+
+html[data-theme="dark"] .select-property-hint {
+  color: #a08a72;
 }
 
 html[data-theme="dark"] .gear-type-options button {

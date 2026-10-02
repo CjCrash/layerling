@@ -4544,14 +4544,14 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .gear-type-property,
 html[data-theme="dark"]:where([data-palette="graphite"]) .range-property,
 html[data-theme="dark"]:where([data-palette="graphite"]) .range-property-name,
 html[data-theme="dark"]:where([data-palette="graphite"]) .text-property,
-html[data-theme="dark"]:where([data-palette="graphite"]) .select-property-hint {
-  color: #797979;
-}
-
 html[data-theme="dark"]:where([data-palette="graphite"]) .select-property,
 html[data-theme="dark"]:where([data-palette="graphite"]) .range-value-unit,
 html[data-theme="dark"]:where([data-palette="graphite"]) .color-value {
   color: #8d8d8d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .select-property-hint {
+  color: #797979;
 }
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .gear-type-options button {
