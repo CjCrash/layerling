@@ -24,7 +24,7 @@ Was die Bibliothek bietet:
 
 ## Die Einstellungen der Form
 
-Sobald eine Form ausgewählt ist, erscheinen rechts ihre Einstellungen. Ganz oben steht der Name. Daneben schließt das Schloss die Form gegen versehentliches Verschieben ab, und das Auge blendet sie aus.
+Sobald eine Form ausgewählt ist, erscheinen rechts ihre Einstellungen. Ganz oben steht der Name; über den Stift daneben ({{ui:outliner.rename}}) tippst du einen neuen ein. [[Enter]] übernimmt ihn, [[Esc]] bricht ab, und ein leerer Name bringt den Standardnamen der Form zurück. Weiter rechts schließt das Schloss die Form gegen versehentliches Verschieben ab, und das Auge blendet sie aus.
 
 ![Die Einstellungen eines Zylinders: Körper oder Aussparung, Durchmesser und Höhe als Zahl und als Schieber.](shot:editor-overview)
 

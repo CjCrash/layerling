@@ -18,7 +18,7 @@ With many parts it is easy to lose track in the view. The object list ({{ui:edit
 - A click on an entry selects the shape, including parts inside a group. With [[Shift]] held you add more entries or take them away again, just as in the view. The arrows fold groups open and shut.
 - The label shows whether a part is {{ui:outliner.solid}} or {{ui:outliner.hole}}.
 - Padlock and eye lock and hide single parts.
-- {{ui:outliner.rename}} gives a part a name of its own. Sensible names help enormously in larger designs.
+- {{ui:outliner.rename}} gives a part a name of its own; the pencil beside the name at the top of the settings does the same for the selected shape. Sensible names help enormously in larger designs.
 - The search field finds shapes by name and by kind, so also "cylinder" or "hole".
 
 ## Aligning

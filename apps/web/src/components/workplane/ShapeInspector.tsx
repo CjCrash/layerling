@@ -2,7 +2,7 @@
 
 import { GuideHelpLink } from "@/components/GuideHelpLink";
 import { guideChapterForShape } from "@/lib/guideLinks";
-import { ChevronDown, ChevronUp, LockKeyhole, LockKeyholeOpen, Split } from "lucide-react";
+import { ChevronDown, ChevronUp, LockKeyhole, LockKeyholeOpen, Pencil, Split } from "lucide-react";
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { ToolbarHideSelectedIcon } from "@/components/icons";
 import {
@@ -123,7 +123,7 @@ import {
 } from "@/lib/bentTubeGeometry";
 import { displayStepFromMillimeters, formatFractionalInches, displayToMillimeters, formatMeasurementNumber, lengthDisplayUnit, measurementOptionLabel, millimetersToDisplay, parseMeasurementInput, resolveMeasurementInput } from "@/lib/measurementUnits";
 import { t, type MessageKey } from "@/lib/i18n";
-import { displayShapeName } from "@/lib/shapeCatalog";
+import { displayShapeName, renamedShapeName } from "@/lib/shapeCatalog";
 import { MAX_SCREW_HOLE_ANGLE, MIN_SCREW_HOLE_ANGLE, normalizeScrewHoleAngle, normalizeScrewHoleHeadDepth, normalizeScrewHoleShaft } from "@/lib/screwHoleGeometry";
 import { MAX_TEARDROP_TIP_ANGLE, MIN_TEARDROP_TIP_ANGLE, normalizeTeardropTipAngle, teardropHeightForTipAngle, teardropTipAngle } from "@/lib/teardropGeometry";
 import { MAX_DOVETAIL_CLEARANCE, normalizeDovetailClearance, normalizeDovetailNeckWidth } from "@/lib/dovetailGeometry";
@@ -1370,6 +1370,7 @@ export function ShapeInspector({
   canSeparateParts = false,
   onSeparateParts,
   onInteractionActiveChange,
+  onMinimizedChange,
 }: {
   shape: WorkplaneShape;
   snap: GridSize;
@@ -1384,6 +1385,8 @@ export function ShapeInspector({
   canSeparateParts?: boolean;
   onSeparateParts?: () => void;
   onInteractionActiveChange?: (active: boolean) => void;
+  /** The snap control lives in the expanded panel; collapsed, the workplane shows its own. */
+  onMinimizedChange?: (minimized: boolean) => void;
 }) {
   useLanguage();
   const solidColor = shape.color;
@@ -1494,8 +1497,20 @@ export function ShapeInspector({
   const [colorOpen, setColorOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const customColorInputRef = useRef<HTMLInputElement>(null);
+  // Renaming here works like the pencil in the object list.
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const commitName = () => {
+    const name = nameDraft === null ? undefined : renamedShapeName(shape, nameDraft);
+    if (name !== undefined) onUpdate({ name });
+    setNameDraft(null);
+  };
 
   useEffect(() => () => onInteractionActiveChange?.(false), [onInteractionActiveChange]);
+  useEffect(() => {
+    onMinimizedChange?.(minimized);
+    return () => onMinimizedChange?.(false);
+  }, [minimized, onMinimizedChange]);
   useEffect(() => {
     const input = customColorInputRef.current;
     if (!colorOpen || !input) {
@@ -1514,6 +1529,11 @@ export function ShapeInspector({
   useLayoutEffect(() => {
     inspectorRef.current?.scrollTo({ top: 0, left: 0 });
   }, [isSketchRevolve, shape.id]);
+  useEffect(() => setNameDraft(null), [shape.id]);
+  const editingName = nameDraft !== null;
+  useEffect(() => {
+    if (editingName) nameInputRef.current?.select();
+  }, [editingName]);
 
   return (
     <aside ref={inspectorRef} className={`shape-inspector ${isSketchRevolve ? "sketch-revolve-inspector" : ""} ${shape.kind === "gear" ? "gear-inspector" : ""} ${minimized ? "minimized" : ""}`} aria-label={t("inspector.settingsFor", { name: displayShapeName(shape) })} onPointerDown={(event) => event.stopPropagation()}>
@@ -1526,8 +1546,35 @@ export function ShapeInspector({
         >
           {minimized ? <ChevronDown size={26} strokeWidth={2.8} /> : <ChevronUp size={26} strokeWidth={2.8} />}
         </button>
-        {/* One long word ("Schwalbenschwanz") cannot wrap; it gets a smaller size instead. */}
-        <strong className={displayShapeName(shape).split(/\s+/).some((word) => word.length > 11) ? "long-word" : undefined}>{displayShapeName(shape)}</strong>
+        <div className="inspector-name">
+          {nameDraft !== null ? (
+            <input
+              ref={nameInputRef}
+              className="inspector-name-input"
+              value={nameDraft}
+              aria-label={t("outliner.rename")}
+              onChange={(event) => setNameDraft(event.target.value)}
+              onBlur={commitName}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  commitName();
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  setNameDraft(null);
+                }
+              }}
+            />
+          ) : (
+            <>
+              {/* One long word ("Schwalbenschwanz") cannot wrap; it gets a smaller size instead. */}
+              <strong className={displayShapeName(shape).split(/\s+/).some((word) => word.length > 11) ? "long-word" : undefined}>{displayShapeName(shape)}</strong>
+              <button className="inspector-rename-button" title={t("outliner.rename")} aria-label={t("outliner.rename")} onClick={() => setNameDraft(displayShapeName(shape))}>
+                <Pencil size={16} strokeWidth={2.4} />
+              </button>
+            </>
+          )}
+        </div>
         <div className="inspector-header-actions">
           <GuideHelpLink chapter={guideChapterForShape(shape)} className="inspector-help-link" iconSize={31} strokeWidth={2.4} />
           <button className={locked ? "inspector-header-icon active" : "inspector-header-icon"} aria-label={locked ? t("outliner.unlock") : t("outliner.lock")} onClick={() => onUpdate({ locked: !locked })}>

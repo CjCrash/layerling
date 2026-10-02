@@ -2901,6 +2901,24 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   border-bottom: 1px solid #e3e3e3;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .inspector-rename-button {
+  color: #595959;
+  background: transparent;
+  border: 0;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .inspector-rename-button:hover {
+  color: #955717;
+  background: #efefef;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .inspector-name-input {
+  color: inherit;
+  background: #ffffff;
+  border: 1px solid #d46b08;
+  outline: none;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .inspector-snap-dock {
   background: linear-gradient(180deg, rgba(246, 246, 246, 0), rgba(246, 246, 246, 0.98) 18px, rgba(246, 246, 246, 0.98));
   border-top: 1px solid rgba(224, 224, 224, 0.75);
@@ -5492,6 +5510,21 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-children-list
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-child-name {
   color: #cbd5e0;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .inspector-rename-button {
+  color: #c5c5c5;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .inspector-rename-button:hover {
+  color: #f0973a;
+  background: #393939;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .inspector-name-input {
+  background: #202020;
+  border-color: #ed8936;
+  color: #f7fafc;
 }
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-rename-input {
