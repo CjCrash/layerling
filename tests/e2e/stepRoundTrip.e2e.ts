@@ -257,6 +257,29 @@ describe("STEP export round-trip (real OCCT kernel)", () => {
     expect(near(await reimportVolume(blob), volume(plain) + volume(oval), 1e-4)).toBe(true);
   });
 
+  it("exports a helical and a bevel gear as their exact bodies", async () => {
+    const { cadModifierHelicalGearForShape, cadModifierProfileForShape } = await import("@/lib/cadProfileExtrusion");
+    const { helicalGearPartSolid } = await import("@/lib/gearSolid");
+    const { profileExtrusionSolid } = await import("@/lib/cadProfileSolid");
+    const { occtKernel } = await import("@/lib/brepKernel");
+    const gear = (overrides: Partial<WorkplaneShape>) => shape({ kind: "gear", width: 30, depth: 30, size: 30, height: 6, teeth: 12, toothSize: 2.5, centerHoleSize: 6, helixAngle: 22.5, ...overrides });
+    const helical = gear({ name: "Helical", gearType: "helical", x: -40, rotation: 20 });
+    const bevel = gear({ name: "Bevel", gearType: "bevel", x: 0 });
+    const block = shape({ kind: "box", name: "Block", x: 50, width: 40, depth: 40, height: 6 });
+    const pocket = gear({ name: "Pocket", gearType: "helical", x: 50, hole: true, helixAngle: -15 });
+
+    const { blob, exportedCount, skipped } = await exportShapesToStep([helical, bevel, block, pocket]);
+    expect(skipped).toEqual([]);
+    expect(exportedCount).toBe(3);
+    // The same bodies the CAD worker builds, measured directly.
+    const kernel = occtKernel()!;
+    const volume = (source: WorkplaneShape) => source.gearType === "bevel"
+      ? kernel.getVolume(profileExtrusionSolid(kernel, cadModifierProfileForShape(source)!))
+      : kernel.getVolume(helicalGearPartSolid(kernel, cadModifierHelicalGearForShape(source)!));
+    const expected = volume(helical) + volume(bevel) + 40 * 40 * 6 - volume(pocket);
+    expect(near(await reimportVolume(blob), expected, 1e-4)).toBe(true);
+  });
+
   it("exports a star, a heart and a teardrop instead of skipping them", async () => {
     const star = shape({ kind: "star", name: "Star", x: -30, width: 20, depth: 20, height: 5 });
     const heart = shape({ kind: "heart", name: "Heart", x: 0, width: 20, depth: 20, height: 5 });

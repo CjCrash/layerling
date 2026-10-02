@@ -36,6 +36,8 @@ Das Kantenwerkzeug nimmt ein Gewinde als exakten Körper. Du kannst das Teil, in
 
 {{ui:shape.gear}} gibt es als {{ui:gear.spur}}, {{ui:gear.helical}} und {{ui:gear.bevel}}. Du stellst die Zahl der {{ui:prop.teeth}}, die {{ui:prop.toothSize}}, die {{ui:prop.toothWidth}} und die {{ui:prop.centerHole}} ein. Beim Schrägrad kommt der {{ui:prop.helixAngle}} dazu. Zwei Räder, die ineinandergreifen sollen, brauchen dieselbe Zahngröße und Zahnbreite und den passenden Abstand zwischen ihren Mitten.
 
+Das Kantenwerkzeug und der STEP-Export nehmen jedes Zahnrad als exakten Körper; ein Schrägrad auf ovaler Grundfläche bleibt ein Dreiecksnetz. Kleine Zähne begrenzen, wie stark sich Kanten verrunden lassen: Bei einem Rad mit 30 mm Durchmesser und 12 Zähnen ist die Fläche zwischen zwei Zähnen am Fuß nur etwa 0,65 mm breit, alle Kanten zu verrunden geht deshalb bis etwa 0,5 mm, beim Kegelrad mit seiner kleineren Oberseite bis etwa 0,4 mm. Die Zähne eines Schrägrads stehen schräg, das macht diese Fläche quer zu ihren schrägen Kanten noch schmaler: Je größer der Schrägungswinkel im Verhältnis zur Höhe des Rads, desto kleiner die Rundung, die passt. Beim Schrägrad lassen sich die Kanten der beiden flachen Enden verrunden, nur diese Kanten zu fasen scheitert aber im CAD-Kern; verrunde sie oder fase alle Kanten zusammen mit kleinerem Maß, etwa 0,2 mm.
+
 ## Federn
 
 Die {{ui:shape.spring}} hat {{ui:prop.turns}} und eine {{ui:prop.wire}}. Zusammen mit der Höhe bestimmen sie, wie weich die Feder wird.

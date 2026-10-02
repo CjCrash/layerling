@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { WorkplaneShape } from "@/types/layerling";
-import type { CadModifierProfileLoop, CadModifierProfilePart, CadModifierProfileSegment, CadModifierSpringPart, CadModifierSweepPiece, CadModifierThreadPart } from "@/lib/cadModifierTypes";
+import type { CadModifierProfileLoop, CadModifierProfilePart, CadModifierProfileSegment, CadModifierHelicalGearPart, CadModifierSpringPart, CadModifierSweepPiece, CadModifierThreadPart } from "@/lib/cadModifierTypes";
 import { profileArcPoint, profileLoopBounds, validateCadProfile } from "@/lib/cadProfileSolid";
 import { cadTransformFromMatrix } from "@/lib/cadBakeMetadata";
 import { CAD_MODIFIER_EXACT_SEGMENT_LIMIT } from "@/lib/cadModifierRuntime";
@@ -22,7 +22,7 @@ import { textFont } from "@/lib/textFonts";
 import { buildCurvedText, curvedTextFitScale, curvedTextLayout } from "@/lib/textGeometry";
 import { threadBuildPlan, WHITWORTH_PROFILE_CONSTANTS } from "@/lib/threadGeometry";
 import { springBuildPlan, springRingSectionShare } from "@/lib/springGeometry";
-import { gearToothPitch, normalizeGearCenterHoleSize, normalizeGearToothSize, normalizeGearToothWidth, normalizeGearTeeth, normalizeGearType } from "@/lib/gearGeometry";
+import { BEVEL_GEAR_TOP_SCALE, gearOutlineCorners, normalizeGearCenterHoleSize, normalizeGearHelixAngle, normalizeGearToothSize, normalizeGearType } from "@/lib/gearGeometry";
 
 /*
  * The outlines below follow the display geometry of each shape
@@ -442,55 +442,73 @@ function originDistanceToSegment(a: Point, b: Point) {
  * teeth x 4 sides (at 12 teeth the polygon lies 0.2 % inside the circle) - one
  * round face to fillet or chamfer instead of dozens of flat ones, like the
  * exact cylinder the edge tool already uses for a faceted cylinder.
- * Helical and bevel gears change their outline along the height and keep the
- * mesh path.
+ * A bevel gear lofts this outline (bevelGearProfile), a helical gear turns it
+ * as it rises (cadModifierHelicalGearForShape).
  */
 export function gearProfileLoops(
   width: number,
   depth: number,
   options: Pick<WorkplaneShape, "teeth" | "toothSize" | "toothWidth" | "centerHoleSize">,
 ) {
+  const { outline, boreRadius } = gearOutline(width, depth, options);
+  const loops = [polygonLoop(outline)];
+  if (boreRadius > 0) loops.push(boreLoop(outline, boreRadius));
+  return loops;
+}
+
+/** The gear's outline stretched to width x depth (createGearGeometry), and its bore radius. */
+function gearOutline(width: number, depth: number, options: Pick<WorkplaneShape, "teeth" | "toothSize" | "toothWidth" | "centerHoleSize">) {
   const safeWidth = Math.max(0.01, width);
   const safeDepth = Math.max(0.01, depth);
-  const teeth = normalizeGearTeeth(options.teeth);
   const toothSize = normalizeGearToothSize(options.toothSize, safeWidth, safeDepth);
-  const toothPitch = gearToothPitch(safeWidth, safeDepth, teeth);
-  const toothWidth = normalizeGearToothWidth(options.toothWidth, safeWidth, safeDepth, teeth);
-  const toothFraction = toothWidth / toothPitch;
   const centerHoleSize = normalizeGearCenterHoleSize(options.centerHoleSize, safeWidth, safeDepth, toothSize);
-  const outerX = safeWidth / 2;
-  const outerZ = safeDepth / 2;
-  const rootX = Math.max(outerX * 0.34, outerX - toothSize);
-  const rootZ = Math.max(outerZ * 0.34, outerZ - toothSize);
-  const toothPhases = [0.05, (1 - toothFraction) / 2, (1 + toothFraction) / 2, 0.95];
-  const raw: Point[] = [];
-  for (let tooth = 0; tooth < teeth; tooth += 1) {
-    toothPhases.forEach((phase, phaseIndex) => {
-      const angle = ((tooth + phase) / teeth) * Math.PI * 2;
-      const isOuter = phaseIndex === 1 || phaseIndex === 2;
-      raw.push({ x: Math.cos(angle) * (isOuter ? outerX : rootX), z: Math.sin(angle) * (isOuter ? outerZ : rootZ) });
-    });
-  }
+  const raw: Point[] = gearOutlineCorners(safeWidth, safeDepth, options).map((corner) => ({ x: Math.cos(corner.angle) * corner.radiusX, z: Math.sin(corner.angle) * corner.radiusZ }));
   // The display stretches the ring about the origin until it spans width x depth.
   const xs = raw.map((point) => point.x);
   const zs = raw.map((point) => point.z);
   const scaleX = safeWidth / Math.max(Number.EPSILON, Math.max(...xs) - Math.min(...xs));
   const scaleZ = safeDepth / Math.max(Number.EPSILON, Math.max(...zs) - Math.min(...zs));
-  const outline = raw.map((point) => ({ x: point.x * scaleX, z: point.z * scaleZ }));
+  return { outline: raw.map((point) => ({ x: point.x * scaleX, z: point.z * scaleZ })), boreRadius: centerHoleSize / 2 };
+}
+
+/** How near the outline comes to the axis. */
+function outlineClearance(outline: Point[]) {
+  return Math.min(...outline.map((point, index) => originDistanceToSegment(point, outline[(index + 1) % outline.length])));
+}
+
+/** The bore as a true circle, in two halves; it has to stay clear of the outline. */
+function boreLoop(outline: Point[], radius: number) {
+  // A bore reaching the teeth cuts the outline; the display mesh then folds
+  // over itself and the shape stays on its old path.
+  if (!(radius < outlineClearance(outline) * 0.999)) throw new Error("The gear's centre hole reaches its teeth");
+  const half = (start: number): Corner => {
+    const arc: Arc = { cx: 0, cz: 0, rx: radius, rz: radius, start, end: start + Math.PI };
+    return { start: profileArcPoint(arc, arc.start), end: profileArcPoint(arc, arc.end), arc };
+  };
+  return loopFromCorners([half(0), half(Math.PI)]);
+}
+
+/**
+ * A bevel gear: the spur gear's outline at the foot and the same outline
+ * shrunk to BEVEL_GEAR_TOP_SCALE at the top, every corner joined to its
+ * partner by a straight line (createGearGeometry's two rings), round the
+ * straight bore. Shrinking about the axis while rising is a scaling about
+ * the apex where those lines meet, so every side is a flat face - the loft
+ * builds them as planes.
+ */
+function bevelGearProfile(shape: WorkplaneShape, width: number, depth: number): CadModifierProfilePart {
+  const { outline, boreRadius } = gearOutline(width, depth, shape);
+  const top = outline.map((point) => ({ x: point.x * BEVEL_GEAR_TOP_SCALE, z: point.z * BEVEL_GEAR_TOP_SCALE }));
   const loops = [polygonLoop(outline)];
-  if (centerHoleSize > 0) {
-    const radius = centerHoleSize / 2;
-    // A bore reaching the teeth cuts the outline; the display mesh then folds
-    // over itself and the shape stays on its old path.
-    const clearance = Math.min(...outline.map((point, index) => originDistanceToSegment(point, outline[(index + 1) % outline.length])));
-    if (!(radius < clearance * 0.999)) throw new Error("The gear's centre hole reaches its teeth");
-    const half = (start: number): Corner => {
-      const arc: Arc = { cx: 0, cz: 0, rx: radius, rz: radius, start, end: start + Math.PI };
-      return { start: profileArcPoint(arc, arc.start), end: profileArcPoint(arc, arc.end), arc };
-    };
-    loops.push(loopFromCorners([half(0), half(Math.PI)]));
+  const topLoops = [polygonLoop(top)];
+  if (boreRadius > 0) {
+    // The bore keeps its size up the gear, so it has to clear the smaller top.
+    loops.push(boreLoop(top, boreRadius));
+    topLoops.push(boreLoop(top, boreRadius));
   }
-  return loops;
+  const part: CadModifierProfilePart = { kind: "loft", loops, topLoops, height: shape.height, transform: profileTransformForShape(shape) };
+  validateCadProfile(part);
+  return part;
 }
 
 /** Straight text is laid out at this size and then scaled into its frame (createTextGeometry). */
@@ -968,6 +986,7 @@ export function cadModifierProfileForShape(shape: WorkplaneShape, options: { des
   }
   if (!CAD_PROFILE_SHAPE_KINDS.has(shape.kind)) return null;
   try {
+    if (shape.kind === "gear" && normalizeGearType(shape.gearType) === "bevel") return bevelGearProfile(shape, width, depth);
     const profile = cadProfileForShapeKind(shape, options.designedRound);
     if (!profile) return null;
     const part: CadModifierProfilePart = {
@@ -1083,6 +1102,60 @@ export function cadModifierSpringForShape(shape: WorkplaneShape): CadModifierSpr
     // to the shape's footprint; the body takes the same stretch.
     transform: profileTransformForShape(shape, new THREE.Matrix4().makeScale(plan.scaleX, 1, plan.scaleZ)),
   };
+}
+
+/** The extremes of r cos(angle + t) for t from 0 to `twist`: a corner's reach along x as it turns (along z with angle - pi/2). */
+function turningReach(radius: number, angle: number, twist: number) {
+  const from = Math.min(angle, angle + twist);
+  const to = Math.max(angle, angle + twist);
+  const passes = (target: number) => Math.ceil((from - target) / (2 * Math.PI)) * 2 * Math.PI + target <= to;
+  const ends = [Math.cos(from), Math.cos(to)];
+  return {
+    max: radius * (passes(0) ? 1 : Math.max(...ends)),
+    min: radius * (passes(Math.PI) ? -1 : Math.min(...ends)),
+  };
+}
+
+/**
+ * A helical gear as the exact body its display mesh draws, or null. The mesh
+ * turns the tooth ring by the helix angle from foot to top in `helixQuality`
+ * steps and stretches all of it to width x depth; the body turns it evenly,
+ * and stretches it by what the turning ring spans - the limit the steps
+ * approach, so it is the same body at any quality. On an oval footprint the
+ * mesh moves each corner along its own ellipse, which is no turn of the ring:
+ * that gear stays a mesh.
+ */
+export function cadModifierHelicalGearForShape(shape: WorkplaneShape): CadModifierHelicalGearPart | null {
+  if (shape.kind !== "gear" || normalizeGearType(shape.gearType) !== "helical") return null;
+  if (shape.importedMesh || shape.groupedShapes?.length || shape.cadBrep || shape.imagePlate || shapeHasShapeDeform(shape)) return null;
+  const width = shapeWidth(shape);
+  const depth = shapeDepth(shape);
+  if (![width, depth, shape.height].every((value) => Number.isFinite(value) && value > 0)) return null;
+  if (Math.abs(width - depth) > 1e-6) return null;
+  const twist = normalizeGearHelixAngle(shape.helixAngle) * (Math.PI / 180);
+  const corners = gearOutlineCorners(width, depth, shape).map((corner) => ({ angle: corner.angle, radius: corner.radiusX }));
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  for (const { angle, radius } of corners) {
+    const x = turningReach(radius, angle, twist);
+    const z = turningReach(radius, angle - Math.PI / 2, twist);
+    minX = Math.min(minX, x.min);
+    maxX = Math.max(maxX, x.max);
+    minZ = Math.min(minZ, z.min);
+    maxZ = Math.max(maxZ, z.max);
+  }
+  const stretch = { x: width / (maxX - minX), z: depth / (maxZ - minZ) };
+  const toothSize = normalizeGearToothSize(shape.toothSize, width, depth);
+  const boreRadius = normalizeGearCenterHoleSize(shape.centerHoleSize, width, depth, toothSize) / 2;
+  if (boreRadius > 0) {
+    // The bore has to clear the ring wherever it has turned to; stretched, the
+    // ring comes no nearer than its narrower stretch allows.
+    const ring = corners.map(({ angle, radius }) => ({ x: Math.cos(angle) * radius, z: Math.sin(angle) * radius }));
+    if (!(boreRadius < outlineClearance(ring) * Math.min(stretch.x, stretch.z) * 0.999)) return null;
+  }
+  return { corners, twist, height: shape.height, stretch, boreRadius, transform: profileTransformForShape(shape) };
 }
 
 /** Outline pieces of a profile, the measure its kernel cost grows with. */

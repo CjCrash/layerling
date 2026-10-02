@@ -36,6 +36,8 @@ The edge tool takes a thread as its exact body. You can chamfer or round the par
 
 {{ui:shape.gear}} comes as {{ui:gear.spur}}, {{ui:gear.helical}} and {{ui:gear.bevel}}. You set the number of {{ui:prop.teeth}}, the {{ui:prop.toothSize}}, the {{ui:prop.toothWidth}} and the {{ui:prop.centerHole}}. A helical gear adds the {{ui:prop.helixAngle}}. Two gears that should mesh need the same tooth size and tooth width and the right distance between their centres.
 
+The edge tool and the STEP export take every gear as its exact body; a helical gear on an oval footprint stays a triangle mesh. Small teeth limit how far edges can be rounded: on a gear 30 mm across with 12 teeth the flat between two teeth at the foot is only about 0.65 mm wide, so rounding every edge works up to about 0.5 mm, and on a bevel gear, whose top is smaller, up to about 0.4 mm. A helical gear's teeth lean, which narrows that flat across its slanted edges: the larger the helix angle against the gear's height, the smaller the rounding that fits. The edges of its two flat ends can be rounded, but chamfering just those edges fails in the CAD kernel; round them, or chamfer all edges together at a smaller size, such as 0.2 mm.
+
 ## Springs
 
 The {{ui:shape.spring}} has {{ui:prop.turns}} and a {{ui:prop.wire}}. Together with the height they decide how soft the spring is.

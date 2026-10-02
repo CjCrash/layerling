@@ -4,7 +4,7 @@ import { createTextGeometry, curvedTextFootprint } from "@/lib/textGeometry";
 import * as THREE from "three";
 import type { WorkplaneShape } from "@/types/layerling";
 import type { CadModifierProfileLoop } from "@/lib/cadModifierTypes";
-import { cadModifierProfileForShape, cadProfileExpectation, cadProfileSegmentCount, closedMeshVolume, withinExactProfileLimit, crescentProfile, gearProfileLoops, textGlyphProfiles, heartProfileLoops, honeycombProfileLoops, polygonProfileLoops, slotProfileLoops, starProfileLoops } from "@/lib/cadProfileExtrusion";
+import { cadModifierHelicalGearForShape, cadModifierProfileForShape, cadProfileExpectation, cadProfileSegmentCount, closedMeshVolume, withinExactProfileLimit, crescentProfile, gearProfileLoops, textGlyphProfiles, heartProfileLoops, honeycombProfileLoops, polygonProfileLoops, slotProfileLoops, starProfileLoops } from "@/lib/cadProfileExtrusion";
 import { isWholeEllipse, profileLoopBounds, validateCadProfile } from "@/lib/cadProfileSolid";
 import { cadTransformRequiresGeneralTransform } from "@/lib/cadModifierRuntime";
 import { cadModifierPrimitiveForAnalyticShape, cadTransformToMatrix } from "@/lib/cadBakeMetadata";
@@ -17,7 +17,7 @@ import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
 import { createPrismGeometry } from "@/lib/prismGeometry";
 import { createBooleanHollowCylinderGeometry, createBooleanRoundRoofGeometry } from "@/lib/roundBodyGeometry";
 import { regularPolygonFootprintScale } from "@/lib/regularPolygonFootprint";
-import { createGearGeometry, normalizeGearCenterHoleSize, normalizeGearTeeth } from "@/lib/gearGeometry";
+import { BEVEL_GEAR_TOP_SCALE, createGearGeometry, normalizeGearCenterHoleSize, normalizeGearTeeth } from "@/lib/gearGeometry";
 
 type Vec3 = [number, number, number];
 
@@ -381,11 +381,45 @@ describe("which shapes get an exact profile", () => {
     expect(cadModifierProfileForShape(shape("star", { extrudeTwist: 45 }))).not.toBeNull();
   });
 
+  it("lofts a bevel gear from its foot outline to the same outline shrunk at the top, round its straight bore", () => {
+    const part = cadModifierProfileForShape(shape("gear", { gearType: "bevel", width: 30, depth: 30, height: 6, teeth: 12, centerHoleSize: 6 }));
+    expect(part?.kind).toBe("loft");
+    expect(part!.loops.length).toBe(2);
+    const [foot, top] = [part!.loops[0], part!.topLoops![0]];
+    expect(foot.segments.length).toBe(48);
+    foot.segments.forEach((segment, index) => {
+      expect(top.segments[index].x).toBeCloseTo(segment.x * BEVEL_GEAR_TOP_SCALE, 12);
+      expect(top.segments[index].z).toBeCloseTo(segment.z * BEVEL_GEAR_TOP_SCALE, 12);
+    });
+    // The bore keeps its size; one too wide for the smaller top stays on the mesh.
+    expect(part!.topLoops![1]).toEqual(part!.loops[1]);
+    expect(cadModifierProfileForShape(shape("gear", { gearType: "bevel", width: 30, depth: 30, height: 6, teeth: 12, centerHoleSize: 18 }))).toBeNull();
+  });
+
+  it("gives a helical gear its turning ring, stretched by what the turning ring spans, and keeps an oval one on its mesh", () => {
+    const part = cadModifierHelicalGearForShape(shape("gear", { gearType: "helical", width: 30, depth: 30, height: 6, teeth: 12, helixAngle: 22.5, centerHoleSize: 6 }));
+    expect(part!.corners.length).toBe(48);
+    expect(part!.twist).toBeCloseTo((22.5 * Math.PI) / 180, 12);
+    expect(part!.boreRadius).toBeCloseTo(3, 12);
+    // At 22.5 degrees a tooth tip passes every direction: the ring spans its full tip circle, unstretched.
+    expect(part!.stretch.x).toBeCloseTo(1, 12);
+    expect(part!.stretch.z).toBeCloseTo(1, 12);
+    // At 0 degrees it is stretched like the spur gear, until its corners span the width.
+    const straight = cadModifierHelicalGearForShape(shape("gear", { gearType: "helical", width: 30, depth: 30, height: 6, teeth: 7, helixAngle: 0 }))!;
+    const reach = (pick: (angle: number) => number) => {
+      const values = straight.corners.map(({ angle, radius }) => pick(angle) * radius);
+      return Math.max(...values) - Math.min(...values);
+    };
+    expect(reach(Math.cos) * straight.stretch.x).toBeCloseTo(30, 9);
+    expect(reach(Math.sin) * straight.stretch.z).toBeCloseTo(30, 9);
+    expect(cadModifierHelicalGearForShape(shape("gear", { gearType: "helical", width: 30, depth: 18 }))).toBeNull();
+    expect(cadModifierHelicalGearForShape(shape("gear", { gearType: "spur" }))).toBeNull();
+  });
+
   it("leaves everything else on its old path", () => {
     expect(cadModifierProfileForShape(shape("box"))).toBeNull();
-    // Helical and bevel gears change their outline along the height.
+    // A helical gear turns its outline as it rises: its own part (cadModifierHelicalGearForShape), no profile.
     expect(cadModifierProfileForShape(shape("gear", { gearType: "helical" }))).toBeNull();
-    expect(cadModifierProfileForShape(shape("gear", { gearType: "bevel" }))).toBeNull();
     expect(cadModifierProfileForShape(shape("text"))).toBeNull();
     // A twist stays on the mesh; a taper or lean is a loft (tests/unit/taperedLoft.test.ts).
     expect(cadModifierProfileForShape(shape("polygon", { extrudeTwist: 45 }))).toBeNull();

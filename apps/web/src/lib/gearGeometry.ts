@@ -14,6 +14,8 @@ export const MIN_GEAR_HELIX_ANGLE = -45;
 export const MAX_GEAR_HELIX_ANGLE = 45;
 export const MIN_GEAR_HELIX_QUALITY = 4;
 export const MAX_GEAR_HELIX_QUALITY = 32;
+/** Ein Kegelrad ist oben um diesen Faktor kleiner als am Fuss, zur Achse hin. */
+export const BEVEL_GEAR_TOP_SCALE = 0.68;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -86,6 +88,33 @@ export function gearSettings(shape: Pick<WorkplaneShape, "width" | "depth" | "te
   };
 }
 
+/**
+ * Die Ecken des Zahnkranzes auf einem Ring, vor dem Strecken auf Breite x
+ * Tiefe: je Zahn vier (Fuss, Kopf, Kopf, Fuss) auf der Fuss- und der
+ * Kopfellipse, beim Winkel `angle` von +x nach +z. Anzeigenetz und exakter
+ * Koerper (`cadProfileExtrusion.ts`) nehmen dieselben Ecken.
+ */
+export function gearOutlineCorners(width: number, depth: number, options: Pick<WorkplaneShape, "teeth" | "toothSize" | "toothWidth">) {
+  const safeWidth = Math.max(0.01, width);
+  const safeDepth = Math.max(0.01, depth);
+  const teeth = normalizeGearTeeth(options.teeth);
+  const toothSize = normalizeGearToothSize(options.toothSize, safeWidth, safeDepth);
+  const toothFraction = normalizeGearToothWidth(options.toothWidth, safeWidth, safeDepth, teeth) / gearToothPitch(safeWidth, safeDepth, teeth);
+  const outerX = safeWidth / 2;
+  const outerZ = safeDepth / 2;
+  const rootX = Math.max(outerX * 0.34, outerX - toothSize);
+  const rootZ = Math.max(outerZ * 0.34, outerZ - toothSize);
+  const toothPhases = [0.05, (1 - toothFraction) / 2, (1 + toothFraction) / 2, 0.95] as const;
+  const corners: Array<{ angle: number; radiusX: number; radiusZ: number }> = [];
+  for (let tooth = 0; tooth < teeth; tooth += 1) {
+    toothPhases.forEach((phase, phaseIndex) => {
+      const isOuter = phaseIndex === 1 || phaseIndex === 2;
+      corners.push({ angle: ((tooth + phase) / teeth) * Math.PI * 2, radiusX: isOuter ? outerX : rootX, radiusZ: isOuter ? outerZ : rootZ });
+    });
+  }
+  return corners;
+}
+
 type GearGeometryOptions = {
   width: number;
   depth: number;
@@ -116,9 +145,7 @@ export function createGearGeometry({
   const safeHeight = Math.max(0.01, height);
   const teeth = normalizeGearTeeth(requestedTeeth);
   const toothSize = normalizeGearToothSize(requestedToothSize, safeWidth, safeDepth);
-  const toothPitch = gearToothPitch(safeWidth, safeDepth, teeth);
-  const toothWidth = normalizeGearToothWidth(requestedToothWidth, safeWidth, safeDepth, teeth);
-  const toothFraction = toothWidth / toothPitch;
+  const corners = gearOutlineCorners(safeWidth, safeDepth, { teeth, toothSize: requestedToothSize, toothWidth: requestedToothWidth });
   const centerHoleSize = normalizeGearCenterHoleSize(requestedCenterHoleSize, safeWidth, safeDepth, toothSize);
   const hasCenterHole = centerHoleSize > 0;
   const gearType = normalizeGearType(requestedType);
@@ -127,14 +154,9 @@ export function createGearGeometry({
   const outlineCount = teeth * 4;
   const ringCount = gearType === "helical" ? helixQuality : 2;
   const twist = gearType === "helical" ? THREE.MathUtils.degToRad(helixAngle) : 0;
-  const topScale = gearType === "bevel" ? 0.68 : 1;
-  const outerX = safeWidth / 2;
-  const outerZ = safeDepth / 2;
-  const rootX = Math.max(outerX * 0.34, outerX - toothSize);
-  const rootZ = Math.max(outerZ * 0.34, outerZ - toothSize);
+  const topScale = gearType === "bevel" ? BEVEL_GEAR_TOP_SCALE : 1;
   const boreX = centerHoleSize / 2;
   const boreZ = centerHoleSize / 2;
-  const toothPhases = [0.05, (1 - toothFraction) / 2, (1 + toothFraction) / 2, 0.95] as const;
   const positions: number[] = [];
   const indices: number[] = [];
 
@@ -147,15 +169,9 @@ export function createGearGeometry({
     const ringTwist = progress * twist;
     const scale = 1 + (topScale - 1) * progress;
 
-    for (let tooth = 0; tooth < teeth; tooth += 1) {
-      for (let phaseIndex = 0; phaseIndex < toothPhases.length; phaseIndex += 1) {
-        const phase = toothPhases[phaseIndex];
-        const angle = ((tooth + phase) / teeth) * Math.PI * 2 + ringTwist;
-        const isOuter = phaseIndex === 1 || phaseIndex === 2;
-        const radiusX = (isOuter ? outerX : rootX) * scale;
-        const radiusZ = (isOuter ? outerZ : rootZ) * scale;
-        positions.push(Math.cos(angle) * radiusX, y, Math.sin(angle) * radiusZ);
-      }
+    for (const corner of corners) {
+      const angle = corner.angle + ringTwist;
+      positions.push(Math.cos(angle) * corner.radiusX * scale, y, Math.sin(angle) * corner.radiusZ * scale);
     }
 
     for (let point = 0; point < outlineCount; point += 1) {
