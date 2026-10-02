@@ -13,7 +13,7 @@ Das hat eine Kehrseite: Wer den Browserspeicher löscht oder auf einen anderen R
 
 Auf der Startseite hat jeder Entwurf ein Menü mit den Optionen zum Umbenennen, Duplizieren und Löschen. Mit {{ui:dashboard.backupAll}} packst du alle Entwürfe auf einmal in eine einzige Datei. Über {{ui:dashboard.importGeometry}} kommen sie wieder zurück, auch in einem anderen Browser oder auf einem anderen Rechner.
 
-Einen einzelnen Entwurf sicherst du im Editor: {{ui:editor.export}}, dann das Format **LYL** wählen und {{ui:export.saveProject}} anklicken. Die LYL-Datei ist layerlings eigenes Entwurfsformat und enthält alles: Formen, Gruppen, Skizzen, CAD-Daten, importierte Quellen und den Verlauf, also die Rückgängig-Schritte. Bei {{ui:export.historyTitle}} wählst du, wie viele der letzten Schritte mitreisen sollen. Ältere `.skf`-Dateien aus früheren Fassungen lassen sich weiterhin öffnen, gespeichert wird dann als `.lyl`.
+Einen einzelnen Entwurf sicherst du im Editor: {{ui:editor.export}}, dann das Format **LYL** wählen und {{ui:export.saveProject}} anklicken. Die LYL-Datei ist layerlings eigenes Entwurfsformat und enthält alles: Formen, Gruppen, Skizzen, CAD-Daten, importierte Quellen und den Verlauf, also die Rückgängig-Schritte. Bei {{ui:export.historyTitle}} wählst du, wie viele der letzten Schritte mitreisen sollen; vorgegeben ist, was die Einstellungen (das Zahnrad im Menüband) unter {{ui:workspace.history}} aufheben. Ältere `.skf`-Dateien aus früheren Fassungen lassen sich weiterhin öffnen, gespeichert wird dann als `.lyl`.
 
 ## Exportieren
 

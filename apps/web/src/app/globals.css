@@ -4126,22 +4126,11 @@ button {
   box-shadow: inset 0 1px 2px rgba(82, 62, 40, 0.12);
 }
 
+/* --stop is the position of the chosen stop, 0 to 1; the thumb sits 9px in from either end. */
 .lyl-history-range-control::after {
-  width: 0;
+  width: calc((100% - 18px) * var(--stop, 0));
   background: linear-gradient(90deg, #dc8122, #c16608);
   transition: width 140ms ease;
-}
-
-.lyl-history-range-control[data-limit="100"]::after {
-  width: calc(33.333333% - 6px);
-}
-
-.lyl-history-range-control[data-limit="50"]::after {
-  width: calc(66.666667% - 12px);
-}
-
-.lyl-history-range-control[data-limit="30"]::after {
-  width: calc(100% - 18px);
 }
 
 .lyl-history-range {
@@ -4212,6 +4201,7 @@ button {
 .lyl-history-range-labels span {
   position: absolute;
   top: 0;
+  left: calc(9px + (100% - 18px) * var(--stop, 0));
   color: #96836f;
   font-size: 10px;
   font-weight: 750;
@@ -4224,15 +4214,8 @@ button {
   transform: none;
 }
 
-.lyl-history-range-labels span:nth-child(2) {
-  left: calc(33.333333% + 3px);
-}
-
-.lyl-history-range-labels span:nth-child(3) {
-  left: calc(66.666667% - 3px);
-}
-
 .lyl-history-range-labels span:last-child {
+  left: auto;
   right: 0;
   transform: none;
 }

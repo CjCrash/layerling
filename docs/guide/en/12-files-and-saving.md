@@ -13,7 +13,7 @@ That has a downside: whoever clears the browser storage or switches to another c
 
 On the start page every design has a menu with the options to rename, duplicate and delete. With {{ui:dashboard.backupAll}} you pack all designs into one single file. Through {{ui:dashboard.importGeometry}} they come back, also in another browser or on another computer.
 
-You back up a single design in the editor: {{ui:editor.export}}, choose the format **LYL** and click {{ui:export.saveProject}}. The LYL file is layerling's own design format and contains everything: shapes, groups, sketches, CAD data, imported sources and the history, meaning the undo steps. Under {{ui:export.historyTitle}} you choose how many of the last steps travel along. Older `.skf` files from earlier versions can still be opened; they are then saved as `.lyl`.
+You back up a single design in the editor: {{ui:editor.export}}, choose the format **LYL** and click {{ui:export.saveProject}}. The LYL file is layerling's own design format and contains everything: shapes, groups, sketches, CAD data, imported sources and the history, meaning the undo steps. Under {{ui:export.historyTitle}} you choose how many of the last steps travel along; it starts at what the settings (the cogwheel in the ribbon) keep under {{ui:workspace.history}}. Older `.skf` files from earlier versions can still be opened; they are then saved as `.lyl`.
 
 ## Exporting
 
