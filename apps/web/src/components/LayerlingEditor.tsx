@@ -10277,6 +10277,7 @@ export function LayerlingEditor({
       ? t("status.exportedSelectedOne")
       : t("status.exportedSelectedMany", { count: exportable.length });
     const finishNotice = (label: string) => {
+      setTopPanel(null);
       setNotice(hasSelection
         ? t("status.exportedSelectedAs", { selected: selectedNotice, label })
         : t("status.exportedAs", { label }));
@@ -10308,6 +10309,8 @@ export function LayerlingEditor({
         } else {
           await downloadTextFile(projectExportFileName(exportName, "obj"), exportMeshesToObj(fertig), "text/plain");
         }
+        // The file is written either way; the notice below only adds a caveat.
+        setTopPanel(null);
         const exportOverhangs = bedPrinter ? bedOverhangs(exportable, bedPrinter.width, bedPrinter.depth, bedPrinter.height) : [];
         if (gescheitert > 0) setNotice(t("status.exportUnionFailed"), true);
         else if (bedPrinter && exportOverhangs.length > 0) setNotice(bedOverhangMessage(exportOverhangs, `${bedPrinter.vendor} ${bedPrinter.model}`), true);
@@ -10333,6 +10336,7 @@ export function LayerlingEditor({
       const { blob, exportedCount, skipped } = await exportShapesToStep(sourceShapes);
       const text = await blob.text();
       await downloadTextFile(projectExportFileName(exportName, "step"), text, "application/step");
+      setTopPanel(null);
       const skipNote = skipped.length === 0
         ? ""
         : skipped.length === 1
@@ -10397,6 +10401,7 @@ export function LayerlingEditor({
         const result = await downloadBlobFile(projectExportFileName(exportName, "lyl"), new Blob([buffer], { type: LYL_MEDIA_TYPE }));
         setNotice(t("status.savedProject"));
       }
+      setTopPanel(null);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : t("status.saveProjectFailed"));
     } finally {
@@ -11049,6 +11054,12 @@ export function LayerlingEditor({
       if (shortcut && (key === "o" || key === "O") && event.shiftKey) {
         event.preventDefault();
         setOutlinerOpen((open) => !open);
+        return;
+      }
+
+      if (shortcut && key === "e" && !event.shiftKey && !event.altKey) {
+        event.preventDefault();
+        setTopPanel("export");
         return;
       }
 

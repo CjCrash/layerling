@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Ctrl+E opens the export window:** The export window now has a keyboard shortcut (Cmd+E on a Mac), listed in the shortcuts window and the guide. After a successful export - STL, 3MF, OBJ, STEP, SVG, LYL or saving to the shared folder - the window closes by itself; when an export fails it stays open so you can try again.
+
 ## 1.26.1
 
 - **Tapered and leaning shapes stay exact:** A box, cylinder, ellipse, polygon, tube or ring with a taper or lean is now built as an exact body (the straight-sided loft between its bottom and top) instead of a triangle mesh, so the edge tool offers its real edges and fillets it where it used to refuse - a tapered cylinder has 4 selectable edges instead of 200. Twisted shapes, and a tapered sphere or cone, stay a mesh. Also fixed: STEP export wrote a tapered, leaning or twisted box, cylinder, sphere or cone as the plain undeformed shape; it now writes the tapered or leaning body, and skips a twisted one with a message. Contributed by @plazmabokor (#68).

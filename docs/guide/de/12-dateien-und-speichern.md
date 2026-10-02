@@ -17,11 +17,11 @@ Einen einzelnen Entwurf sicherst du im Editor: {{ui:editor.export}}, dann das Fo
 
 ## Exportieren
 
-Klicke auf {{ui:editor.export}}.
+Klicke auf {{ui:editor.export}} oder drücke [[Strg]]+[[E]].
 
 ![Das Exportfenster mit den Formaten STL, 3MF, OBJ, STEP, SVG und LYL.](shot:export-panel)
 
-Oben steht der Dateiname, darunter wählst du das Format. Du entscheidest, ob nur die Auswahl oder der ganze Entwurf exportiert wird.
+Oben steht der Dateiname, darunter wählst du das Format. Du entscheidest, ob nur die Auswahl oder der ganze Entwurf exportiert wird. Ist die Datei geschrieben, schließt sich das Fenster von selbst; schlägt der Export fehl, bleibt es mit der Meldung offen.
 
 | Format | Wofür | Was du wissen musst |
 | --- | --- | --- |

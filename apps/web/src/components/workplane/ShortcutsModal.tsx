@@ -48,6 +48,13 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
     ],
   },
   {
+    title: "shortcuts.group.file",
+    mode: "geometry",
+    shortcuts: [
+      { combos: ["Ctrl+E"], label: "shortcuts.export" },
+    ],
+  },
+  {
     title: "shortcuts.group.organise",
     mode: "geometry",
     shortcuts: [
