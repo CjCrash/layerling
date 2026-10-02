@@ -6699,8 +6699,12 @@ export function LayerlingEditor({
   const edgeModifierMaxAmount = useMemo(() => {
     const source = cadModifierBaseShapeRef.current ?? selectedShape;
     if (!source) return 10;
-    const smallestDimension = Math.min(shapeWidth(source), shapeDepth(source), source.height);
-    return Math.max(MIN_EDGE_MODIFIER_AMOUNT, smallestDimension * 0.99);
+    // The largest measure, not the smallest: a vertical edge of a 10 mm thick
+    // plate can take a far bigger radius than 10 mm, the plate's thickness
+    // only limits the edges along it. Whether a size really fits the chosen
+    // edges is the kernel's call, and it says so when it does not.
+    const largestDimension = Math.max(shapeWidth(source), shapeDepth(source), source.height);
+    return Math.max(MIN_EDGE_MODIFIER_AMOUNT, largestDimension * 0.99);
   }, [edgeModifier, selectedShape]);
   const selectedEdgeFeatureCount = useMemo(() => selectedShape ? edgeTreatmentFeatureCount(selectedShape) : 0, [selectedShape]);
   const selectedReversibleEdgeFeatureCount = useMemo(() => selectedShape ? reversibleEdgeTreatmentCount(selectedShape) : 0, [selectedShape]);
