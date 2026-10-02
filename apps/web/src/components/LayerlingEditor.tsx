@@ -5,7 +5,7 @@ import { AlertTriangle, Check, Circle as CircleIcon, CloudUpload, Download, Eye,
 import { ObjectListPanel } from "@/components/workplane/ObjectListPanel";
 import type manifoldModule from "manifold-3d";
 import type { ManifoldToplevel } from "manifold-3d";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ADDITION, Brush, Evaluator, HOLLOW_INTERSECTION, HOLLOW_SUBTRACTION, INTERSECTION, SUBTRACTION, type CSGOperation } from "three-bvh-csg";
 import * as THREE from "three";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
@@ -10278,6 +10278,7 @@ export function LayerlingEditor({
       ? t("status.exportedSelectedOne")
       : t("status.exportedSelectedMany", { count: exportable.length });
     const finishNotice = (label: string) => {
+      setTopPanel(null);
       setNotice(hasSelection
         ? t("status.exportedSelectedAs", { selected: selectedNotice, label })
         : t("status.exportedAs", { label }));
@@ -10309,6 +10310,8 @@ export function LayerlingEditor({
         } else {
           await downloadTextFile(projectExportFileName(exportName, "obj"), exportMeshesToObj(fertig), "text/plain");
         }
+        // The file is written either way; the notice below only adds a caveat.
+        setTopPanel(null);
         const exportOverhangs = bedPrinter ? bedOverhangs(exportable, bedPrinter.width, bedPrinter.depth, bedPrinter.height) : [];
         if (gescheitert > 0) setNotice(t("status.exportUnionFailed"), true);
         else if (bedPrinter && exportOverhangs.length > 0) setNotice(bedOverhangMessage(exportOverhangs, `${bedPrinter.vendor} ${bedPrinter.model}`), true);
@@ -10334,6 +10337,7 @@ export function LayerlingEditor({
       const { blob, exportedCount, skipped } = await exportShapesToStep(sourceShapes);
       const text = await blob.text();
       await downloadTextFile(projectExportFileName(exportName, "step"), text, "application/step");
+      setTopPanel(null);
       const skipNote = skipped.length === 0
         ? ""
         : skipped.length === 1
@@ -10398,6 +10402,7 @@ export function LayerlingEditor({
         const result = await downloadBlobFile(projectExportFileName(exportName, "lyl"), new Blob([buffer], { type: LYL_MEDIA_TYPE }));
         setNotice(t("status.savedProject"));
       }
+      setTopPanel(null);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : t("status.saveProjectFailed"));
     } finally {
@@ -11053,6 +11058,18 @@ export function LayerlingEditor({
         return;
       }
 
+      if (shortcut && key === "e" && !event.shiftKey && !event.altKey) {
+        event.preventDefault();
+        setTopPanel("export");
+        return;
+      }
+
+      if (shortcut && key === "i" && !event.shiftKey && !event.altKey) {
+        event.preventDefault();
+        setTopPanel("import");
+        return;
+      }
+
       const geometryRotationDegrees = geometryRotationDegreesForShortcut(event);
       if (geometryRotationDegrees !== null && hasSelection) {
         event.preventDefault();
@@ -11512,6 +11529,7 @@ export function LayerlingEditor({
           onPickProjectFile={() => projectFileInputRef.current?.click()}
           onPickInsertProjectFile={() => insertProjectFileInputRef.current?.click()}
           onNotice={setNotice}
+          workspaceHistoryLimit={workspaceSettings.historyLimit}
         />
       ) : null}
       <input
@@ -12538,6 +12556,7 @@ function TopActionPanel({
   onPickProjectFile,
   onPickInsertProjectFile,
   onNotice,
+  workspaceHistoryLimit,
 }: {
   panel: Exclude<TopPanel, null>;
   projectName: string;
@@ -12556,18 +12575,30 @@ function TopActionPanel({
   onPickProjectFile: () => void;
   onPickInsertProjectFile: () => void;
   onNotice: (message: string) => void;
+  workspaceHistoryLimit: LylHistoryLimit;
 }) {
   const [exportFormat, setExportFormat] = useState<ExportFormat>("stl");
   const [exportName, setExportName] = useState(projectName);
   const previousProjectNameRef = useRef(projectName);
-  const [lylHistoryLimit, setLylHistoryLimit] = useState<LylHistoryLimit>("unlimited");
+  // Starts at the history setting from the workspace settings, so a project
+  // file carries what the editor keeps unless it is changed here.
+  const [lylHistoryLimit, setLylHistoryLimit] = useState<LylHistoryLimit>(workspaceHistoryLimit);
+  useEffect(() => setLylHistoryLimit(workspaceHistoryLimit), [workspaceHistoryLimit]);
   useEffect(() => {
     const previousProjectName = previousProjectNameRef.current;
     setExportName((current) => current === previousProjectName ? projectName : current);
     previousProjectNameRef.current = projectName;
   }, [projectName]);
-  const lylHistoryLimits: readonly LylHistoryLimit[] = ["unlimited", 100, 50, 30];
-  const lylHistoryLimitIndex = lylHistoryLimits.indexOf(lylHistoryLimit);
+  // A custom number from the settings joins the usual stops in its place.
+  const lylHistoryLimits = useMemo<readonly LylHistoryLimit[]>(() => {
+    const presets: number[] = [100, 50, 30];
+    const numbers = typeof workspaceHistoryLimit === "number" && !presets.includes(workspaceHistoryLimit)
+      ? [...presets, workspaceHistoryLimit].sort((a, b) => b - a)
+      : presets;
+    return ["unlimited", ...numbers];
+  }, [workspaceHistoryLimit]);
+  const lylHistoryLimitIndex = Math.max(0, lylHistoryLimits.indexOf(lylHistoryLimit));
+  const lylHistoryStop = (index: number) => ({ "--stop": index / (lylHistoryLimits.length - 1) }) as CSSProperties;
   useLanguage();
   const title = panel === "export" ? t("panel.export") : t("panel.import");
 
@@ -12725,7 +12756,7 @@ function TopActionPanel({
                   <span>{t("export.historyHint")}</span>
                 </div>
               </div>
-              <div className="lyl-history-range-control" data-limit={String(lylHistoryLimit)}>
+              <div className="lyl-history-range-control" data-limit={String(lylHistoryLimit)} style={lylHistoryStop(lylHistoryLimitIndex)}>
                 <input
                   className="lyl-history-range"
                   type="range"
@@ -12739,8 +12770,8 @@ function TopActionPanel({
                 />
               </div>
               <div className="lyl-history-range-labels" aria-hidden="true">
-                {lylHistoryLimits.map((limit) => (
-                  <span key={limit} className={lylHistoryLimit === limit ? "active" : undefined}>
+                {lylHistoryLimits.map((limit, index) => (
+                  <span key={limit} className={lylHistoryLimit === limit ? "active" : undefined} style={lylHistoryStop(index)}>
                     {limit === "unlimited" ? t("export.unlimited") : limit}
                   </span>
                 ))}

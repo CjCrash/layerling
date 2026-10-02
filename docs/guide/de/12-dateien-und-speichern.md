@@ -13,15 +13,15 @@ Das hat eine Kehrseite: Wer den Browserspeicher löscht oder auf einen anderen R
 
 Auf der Startseite hat jeder Entwurf ein Menü mit den Optionen zum Umbenennen, Duplizieren und Löschen. Mit {{ui:dashboard.backupAll}} packst du alle Entwürfe auf einmal in eine einzige Datei. Über {{ui:dashboard.importGeometry}} kommen sie wieder zurück, auch in einem anderen Browser oder auf einem anderen Rechner.
 
-Einen einzelnen Entwurf sicherst du im Editor: {{ui:editor.export}}, dann das Format **LYL** wählen und {{ui:export.saveProject}} anklicken. Die LYL-Datei ist layerlings eigenes Entwurfsformat und enthält alles: Formen, Gruppen, Skizzen, CAD-Daten, importierte Quellen und den Verlauf, also die Rückgängig-Schritte. Bei {{ui:export.historyTitle}} wählst du, wie viele der letzten Schritte mitreisen sollen. Ältere `.skf`-Dateien aus früheren Fassungen lassen sich weiterhin öffnen, gespeichert wird dann als `.lyl`.
+Einen einzelnen Entwurf sicherst du im Editor: {{ui:editor.export}}, dann das Format **LYL** wählen und {{ui:export.saveProject}} anklicken. Die LYL-Datei ist layerlings eigenes Entwurfsformat und enthält alles: Formen, Gruppen, Skizzen, CAD-Daten, importierte Quellen und den Verlauf, also die Rückgängig-Schritte. Bei {{ui:export.historyTitle}} wählst du, wie viele der letzten Schritte mitreisen sollen; vorgegeben ist, was die Einstellungen (das Zahnrad im Menüband) unter {{ui:workspace.history}} aufheben. Ältere `.skf`-Dateien aus früheren Fassungen lassen sich weiterhin öffnen, gespeichert wird dann als `.lyl`.
 
 ## Exportieren
 
-Klicke auf {{ui:editor.export}}.
+Klicke auf {{ui:editor.export}} oder drücke [[Strg]]+[[E]].
 
 ![Das Exportfenster mit den Formaten STL, 3MF, OBJ, STEP, SVG und LYL.](shot:export-panel)
 
-Oben steht der Dateiname, darunter wählst du das Format. Du entscheidest, ob nur die Auswahl oder der ganze Entwurf exportiert wird.
+Oben steht der Dateiname, darunter wählst du das Format. Du entscheidest, ob nur die Auswahl oder der ganze Entwurf exportiert wird. Ist die Datei geschrieben, schließt sich das Fenster von selbst; schlägt der Export fehl, bleibt es mit der Meldung offen.
 
 | Format | Wofür | Was du wissen musst |
 | --- | --- | --- |
@@ -36,7 +36,7 @@ Aussparungen lassen sich nicht einzeln exportieren. Gruppiere sie zuerst mit ein
 
 ## Importieren
 
-Über {{ui:editor.import}} bringst du fremde Dateien in den Entwurf.
+Über {{ui:editor.import}} oder [[Strg]]+[[I]] bringst du fremde Dateien in den Entwurf.
 
 ![Das Importfenster: Entwürfe öffnen oder einfügen und Geometrie ablegen.](shot:import-panel)
 

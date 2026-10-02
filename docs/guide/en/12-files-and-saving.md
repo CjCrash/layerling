@@ -13,15 +13,15 @@ That has a downside: whoever clears the browser storage or switches to another c
 
 On the start page every design has a menu with the options to rename, duplicate and delete. With {{ui:dashboard.backupAll}} you pack all designs into one single file. Through {{ui:dashboard.importGeometry}} they come back, also in another browser or on another computer.
 
-You back up a single design in the editor: {{ui:editor.export}}, choose the format **LYL** and click {{ui:export.saveProject}}. The LYL file is layerling's own design format and contains everything: shapes, groups, sketches, CAD data, imported sources and the history, meaning the undo steps. Under {{ui:export.historyTitle}} you choose how many of the last steps travel along. Older `.skf` files from earlier versions can still be opened; they are then saved as `.lyl`.
+You back up a single design in the editor: {{ui:editor.export}}, choose the format **LYL** and click {{ui:export.saveProject}}. The LYL file is layerling's own design format and contains everything: shapes, groups, sketches, CAD data, imported sources and the history, meaning the undo steps. Under {{ui:export.historyTitle}} you choose how many of the last steps travel along; it starts at what the settings (the cogwheel in the ribbon) keep under {{ui:workspace.history}}. Older `.skf` files from earlier versions can still be opened; they are then saved as `.lyl`.
 
 ## Exporting
 
-Click {{ui:editor.export}}.
+Click {{ui:editor.export}} or press [[Ctrl]]+[[E]].
 
 ![The export window with the formats STL, 3MF, OBJ, STEP, SVG and LYL.](shot:export-panel)
 
-At the top is the file name, below it you choose the format. You decide whether only the selection or the whole design is exported.
+At the top is the file name, below it you choose the format. You decide whether only the selection or the whole design is exported. Once the file is written, the window closes by itself; if the export fails, it stays open with the message.
 
 | Format | For | What to know |
 | --- | --- | --- |
@@ -36,7 +36,7 @@ Holes cannot be exported on their own. Group them with a body first, otherwise l
 
 ## Importing
 
-With {{ui:editor.import}} you bring foreign files into the design.
+With {{ui:editor.import}} or [[Ctrl]]+[[I]] you bring foreign files into the design.
 
 ![The import window: open or insert designs and drop geometry.](shot:import-panel)
 
