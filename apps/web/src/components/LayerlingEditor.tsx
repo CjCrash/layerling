@@ -11063,6 +11063,12 @@ export function LayerlingEditor({
         return;
       }
 
+      if (shortcut && key === "i" && !event.shiftKey && !event.altKey) {
+        event.preventDefault();
+        setTopPanel("import");
+        return;
+      }
+
       const geometryRotationDegrees = geometryRotationDegreesForShortcut(event);
       if (geometryRotationDegrees !== null && hasSelection) {
         event.preventDefault();

@@ -428,6 +428,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "shortcuts.lock": "Auswahl sperren oder entsperren",
   "shortcuts.hide": "Auswahl ausblenden",
   "shortcuts.showHidden": "Alle wieder einblenden",
+  "shortcuts.import": "Import-Dialog öffnen",
   "shortcuts.export": "Export-Dialog öffnen",
   "shortcuts.outliner": "Objektliste ein- oder ausblenden",
   "shortcuts.hole": "Auswahl zur Aussparung machen",

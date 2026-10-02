@@ -36,7 +36,7 @@ Holes cannot be exported on their own. Group them with a body first, otherwise l
 
 ## Importing
 
-With {{ui:editor.import}} you bring foreign files into the design.
+With {{ui:editor.import}} or [[Ctrl]]+[[I]] you bring foreign files into the design.
 
 ![The import window: open or insert designs and drop geometry.](shot:import-panel)
 

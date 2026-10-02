@@ -429,6 +429,7 @@ export const MESSAGES_EN = {
   "shortcuts.lock": "Lock or unlock the selection",
   "shortcuts.hide": "Hide the selection",
   "shortcuts.showHidden": "Show everything hidden",
+  "shortcuts.import": "Open the import dialog",
   "shortcuts.export": "Open the export dialog",
   "shortcuts.outliner": "Show or hide the object list",
   "shortcuts.hole": "Turn the selection into a hole",

@@ -36,7 +36,7 @@ Aussparungen lassen sich nicht einzeln exportieren. Gruppiere sie zuerst mit ein
 
 ## Importieren
 
-Über {{ui:editor.import}} bringst du fremde Dateien in den Entwurf.
+Über {{ui:editor.import}} oder [[Strg]]+[[I]] bringst du fremde Dateien in den Entwurf.
 
 ![Das Importfenster: Entwürfe öffnen oder einfügen und Geometrie ablegen.](shot:import-panel)
 

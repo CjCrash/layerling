@@ -6,6 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
+- **Ctrl+I opens the import window:** The import window has a keyboard shortcut as well (Cmd+I on a Mac), listed in the shortcuts window and the guide.
 - **Ctrl+E opens the export window:** The export window now has a keyboard shortcut (Cmd+E on a Mac), listed in the shortcuts window and the guide. After a successful export - STL, 3MF, OBJ, STEP, SVG, LYL or saving to the shared folder - the window closes by itself; when an export fails it stays open so you can try again.
 
 ## 1.26.1
