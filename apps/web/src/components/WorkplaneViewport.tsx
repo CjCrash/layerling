@@ -6017,6 +6017,7 @@ export function WorkplaneViewport({
       { x: normal.x, y: normal.y, z: normal.z },
       { x: tangent.x, y: tangent.y, z: tangent.z },
       reverse,
+      true,
     );
 
     return {

@@ -92,6 +92,7 @@ export type LayerlingMcpCommandName =
   | "close_group"
   | "group_objects"
   | "ungroup_objects"
+  | "intersect_objects"
   | "boolean_cut"
   | "separate_parts"
   | "list_edges"

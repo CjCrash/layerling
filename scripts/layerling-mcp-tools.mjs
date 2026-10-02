@@ -333,6 +333,18 @@ export const tools = [
     },
   },
   {
+    name: "layerling_intersect_objects",
+    description: "Keep only what the given objects have in common, like the editor's Intersection button. Pass two or more solids (each counts as it looks, a group with its holes) or solids and holes (all solids against all holes). The result replaces the operands and can be opened like a group; no overlap leaves nothing and reports empty.",
+    inputSchema: {
+      ...editorTargetSchema,
+      required: ["ids"],
+      properties: {
+        ...editorTargetSchema.properties,
+        ids: { type: "array", items: { type: "string" } },
+      },
+    },
+  },
+  {
     name: "layerling_ungroup_objects",
     description: "Ungroup one or more grouped objects by id and preserve their edited geometry.",
     inputSchema: {

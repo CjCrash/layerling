@@ -4945,14 +4945,41 @@ function asIntersectionGroup(group: WorkplaneShape): WorkplaneShape {
   };
 }
 
-async function manifoldIntersectionMeshShape(selection: WorkplaneShape[]): Promise<IntersectionAttempt> {
-  const solids = selection.filter((shape) => !shape.hole && !shape.locked);
-  const holes = selection.filter((shape) => shape.hole && !shape.locked);
-  if (solids.length === 0 || holes.length === 0) {
-    return { status: "unsupported" };
-  }
+// Was miteinander geschnitten wird: entweder alle Koerper gegen alle
+// Aussparungen (je Seite vereinigt, so war es seit 1.0.0) oder - ohne
+// Aussparung in der Auswahl - jeder Koerper fuer sich, so dass nur bleibt,
+// was alle gemeinsam haben. Die Anleitung versprach Letzteres immer schon,
+// der Knopf blieb aber grau (Forum 617194).
+type IntersectionPlan = {
+  operands: WorkplaneShape[][];
+  colorSource: WorkplaneShape[];
+  children: WorkplaneShape[];
+};
 
-  const sourceTriangleCount = selection.reduce((total, shape) => total + meshForShape(shape).faces.length, 0);
+function intersectionPlanForSelection(groupable: WorkplaneShape[]): IntersectionPlan | null {
+  const candidates = groupable.filter((shape) => !shape.locked);
+  if (candidates.some((shape) => shape.hole)) {
+    const booleanSelection = expandGroupsForBoolean(candidates);
+    const solids = booleanSelection.filter((shape) => !shape.hole);
+    const holes = booleanSelection.filter((shape) => shape.hole);
+    return solids.length && holes.length ? { operands: [solids, holes], colorSource: solids, children: booleanSelection } : null;
+  }
+  // Eine Gruppe zaehlt hier als ein Koerper, so wie sie aussieht - also mit
+  // ihren Bohrungen, nicht als lose Teile.
+  return candidates.length >= 2 ? { operands: candidates.map((shape) => [shape]), colorSource: candidates, children: candidates } : null;
+}
+
+function canIntersectShapes(groupable: WorkplaneShape[]) {
+  return intersectionPlanForSelection(groupable) !== null;
+}
+
+function intersectionOperandsOverlap(operands: WorkplaneShape[][]) {
+  const [first, ...rest] = operands;
+  return rest.every((operand) => hasSolidHoleOverlap(first, operand));
+}
+
+async function manifoldIntersectionMeshShape(plan: IntersectionPlan): Promise<IntersectionAttempt> {
+  const sourceTriangleCount = plan.children.reduce((total, shape) => total + meshForShape(shape).faces.length, 0);
   if (sourceTriangleCount > IMPORTED_EXACT_BOOLEAN_TRIANGLE_LIMIT) {
     return { status: "unsupported" };
   }
@@ -4960,24 +4987,29 @@ async function manifoldIntersectionMeshShape(selection: WorkplaneShape[]): Promi
   const created: ManifoldSolid[] = [];
   try {
     const runtime = await getManifoldRuntime();
-    const solid = shapesToManifoldUnion(runtime, solids, created, true);
-    const hole = shapesToManifoldUnion(runtime, holes, created, true);
-    if (!solid || !hole) {
-      return { status: "unsupported" };
+    let result: ManifoldSolid | null = null;
+    for (const operand of plan.operands) {
+      const solid = shapesToManifoldUnion(runtime, operand, created, true);
+      if (!solid) {
+        return { status: "unsupported" };
+      }
+      if (!result) {
+        result = solid;
+        continue;
+      }
+      result = result.intersect(solid);
+      created.push(result);
+      if (result.status() !== "NoError") {
+        return { status: "unsupported" };
+      }
     }
-
-    const result = solid.intersect(hole);
-    created.push(result);
-    if (result.status() !== "NoError") {
-      return { status: "unsupported" };
-    }
-    if (result.numTri() < 1) {
+    if (!result || result.numTri() < 1) {
       return { status: "empty" };
     }
 
     const outputMesh = result.getMesh();
     const positions = manifoldMeshToPositions(outputMesh);
-    const group = meshPositionsToGroupShape(selection, solids, positions, "grouped-manifold-intersection");
+    const group = meshPositionsToGroupShape(plan.children, plan.colorSource, positions, "grouped-manifold-intersection");
     return group && isUsableBooleanGroup(group, sourceTriangleCount, false)
       ? { status: "success", group: asIntersectionGroup(group) }
       : { status: "unsupported" };
@@ -4988,10 +5020,10 @@ async function manifoldIntersectionMeshShape(selection: WorkplaneShape[]): Promi
   }
 }
 
-function bvhIntersectionMeshShape(selection: WorkplaneShape[], operation: CSGOperation, idPrefix: string): IntersectionAttempt {
-  const solids = selection.filter((shape) => !shape.hole && !shape.locked);
-  const holes = selection.filter((shape) => shape.hole && !shape.locked);
-  if (solids.length === 0 || holes.length === 0) {
+function bvhIntersectionMeshShape(plan: IntersectionPlan, operation: CSGOperation, idPrefix: string): IntersectionAttempt {
+  // Die hohle Schnittmenge behaelt nur die Haut der ersten Seite - fuer mehr
+  // als zwei Partner ist das keine Schnittmenge mehr.
+  if (operation === HOLLOW_INTERSECTION && plan.operands.length !== 2) {
     return { status: "unsupported" };
   }
 
@@ -5001,26 +5033,26 @@ function bvhIntersectionMeshShape(selection: WorkplaneShape[], operation: CSGOpe
     evaluator.attributes = ["position", "normal"];
     (evaluator as Evaluator & { useCDTClipping: boolean }).useCDTClipping = true;
 
-    let solidResult = brushFromShape(solids[0]);
-    solids.slice(1).forEach((solid) => {
-      solidResult = evaluator.evaluate(solidResult, brushFromShape(solid), ADDITION);
-      solidResult.updateMatrixWorld(true);
+    const operandBrushes = plan.operands.map((operand) => {
+      let brush = brushFromShape(operand[0]);
+      operand.slice(1).forEach((shape) => {
+        brush = evaluator.evaluate(brush, brushFromShape(shape), ADDITION);
+        brush.updateMatrixWorld(true);
+      });
+      return brush;
     });
 
-    let holeResult = brushFromShape(holes[0]);
-    holes.slice(1).forEach((hole) => {
-      holeResult = evaluator.evaluate(holeResult, brushFromShape(hole), ADDITION);
-      holeResult.updateMatrixWorld(true);
+    let result = operandBrushes[0];
+    operandBrushes.slice(1).forEach((brush) => {
+      result = evaluator.evaluate(result, brush, operation);
+      result.updateMatrixWorld(true);
     });
-
-    const result = evaluator.evaluate(solidResult, holeResult, operation);
-    result.updateMatrixWorld(true);
     if (positionsFromGeometryDrawRange(result.geometry).length < 9) {
       return { status: "empty" };
     }
 
-    const sourceTriangleCount = solids.reduce((total, solid) => total + meshForShape(solid).faces.length, 0);
-    const group = resultGeometryToMeshShape(selection, solids, result.geometry, idPrefix);
+    const sourceTriangleCount = plan.operands[0].reduce((total, shape) => total + meshForShape(shape).faces.length, 0);
+    const group = resultGeometryToMeshShape(plan.children, plan.colorSource, result.geometry, idPrefix);
     return group && isUsableBooleanGroup(group, sourceTriangleCount, false)
       ? { status: "success", group: asIntersectionGroup(group) }
       : { status: "unsupported" };
@@ -5030,22 +5062,20 @@ function bvhIntersectionMeshShape(selection: WorkplaneShape[], operation: CSGOpe
 }
 
 async function buildIntersectionShapeFromSelection(groupable: WorkplaneShape[]): Promise<IntersectionBuildResult> {
-  const booleanSelection = expandGroupsForBoolean(groupable);
-  const solids = booleanSelection.filter((shape) => !shape.hole && !shape.locked);
-  const holes = booleanSelection.filter((shape) => shape.hole && !shape.locked);
-  if (solids.length === 0 || holes.length === 0) {
+  const plan = intersectionPlanForSelection(groupable);
+  if (!plan) {
     return {
       group: null,
       empty: false,
-      failureNotice: "Select at least one solid and one hole for Intersection",
+      failureNotice: t("status.selectSolidAndHole"),
     };
   }
 
-  if (!hasSolidHoleOverlap(solids, holes)) {
+  if (!intersectionOperandsOverlap(plan.operands)) {
     return { group: null, empty: true, failureNotice: "" };
   }
 
-  const manifoldAttempt = await manifoldIntersectionMeshShape(booleanSelection);
+  const manifoldAttempt = await manifoldIntersectionMeshShape(plan);
   if (manifoldAttempt.status === "success") {
     return { group: manifoldAttempt.group, empty: false, failureNotice: "" };
   }
@@ -5053,16 +5083,16 @@ async function buildIntersectionShapeFromSelection(groupable: WorkplaneShape[]):
     return { group: null, empty: true, failureNotice: "" };
   }
 
-  const exactAttempt = bvhIntersectionMeshShape(booleanSelection, INTERSECTION, "grouped-intersection");
+  const exactAttempt = bvhIntersectionMeshShape(plan, INTERSECTION, "grouped-intersection");
   if (exactAttempt.status === "success") {
     return { group: exactAttempt.group, empty: false, failureNotice: "" };
   }
-  const hasImportedMesh = booleanSelection.some((shape) => Boolean(shape.importedMesh));
+  const hasImportedMesh = plan.children.some((shape) => Boolean(shape.importedMesh));
   if (exactAttempt.status === "empty" && !hasImportedMesh) {
     return { group: null, empty: true, failureNotice: "" };
   }
 
-  const hollowAttempt = bvhIntersectionMeshShape(booleanSelection, HOLLOW_INTERSECTION, "grouped-hollow-intersection");
+  const hollowAttempt = bvhIntersectionMeshShape(plan, HOLLOW_INTERSECTION, "grouped-hollow-intersection");
   if (hollowAttempt.status === "success") {
     return { group: hollowAttempt.group, empty: false, failureNotice: "" };
   }
@@ -9378,9 +9408,7 @@ export function LayerlingEditor({
 
   const intersectSelected = useCallback(async () => {
     const groupable = selectedShapes.filter((shape) => !shape.locked && !isNonSolidShapeKind(shape.kind));
-    const hasSolid = groupable.some((shape) => !shape.hole);
-    const hasHole = groupable.some((shape) => shape.hole);
-    if (!hasSolid || !hasHole) {
+    if (!canIntersectShapes(groupable)) {
       setNotice(t("status.selectSolidAndHole"));
       return;
     }
@@ -9947,6 +9975,29 @@ export function LayerlingEditor({
         const editableGroup = canonicalizeShape({ ...result.group, groupOperation: "group" });
         commitShapes([...currentShapes().filter((shape) => !ids.has(shape.id)), editableGroup], editableGroup.id, t("status.mcpGrouped", { count: groupable.length }));
         return { object: mcpShapeSummary(editableGroup) };
+      }
+
+      if (command.action === "intersect_objects") {
+        const ids = new Set(mcpStringArray(params.ids));
+        const groupable = currentShapes().filter((shape) => ids.has(shape.id));
+        if (groupable.some((shape) => shape.locked)) throw new Error("Unlock every selected object before intersecting");
+        if (groupable.some((shape) => isNonSolidShapeKind(shape.kind))) throw new Error("A ruler isn't a solid and can't be intersected");
+        if (!canIntersectShapes(groupable)) throw new Error("Pass two solids, or a solid and a hole, to intersect");
+        const sourceFingerprint = projectShapesFingerprint(currentShapes());
+        const sourceProjectId = projectInfoRef.current.projectId;
+        const result = await buildIntersectionShapeFromSelection(groupable);
+        if (projectInfoRef.current.projectId !== sourceProjectId || projectShapesFingerprint(currentShapes()) !== sourceFingerprint) {
+          throw new Error("The scene changed while intersecting; run the command again");
+        }
+        if (!result.group && !result.empty) throw new Error(result.failureNotice);
+        const remainingShapes = currentShapes().filter((shape) => !ids.has(shape.id));
+        if (result.empty) {
+          commitShapes(remainingShapes, null, t("status.intersectionEmpty"));
+          return { empty: true, objects: remainingShapes.map(mcpShapeSummary) };
+        }
+        const intersection = canonicalizeShape({ ...result.group!, groupOperation: "intersection" });
+        commitShapes([...remainingShapes, intersection], intersection.id, t("status.intersectedMany", { count: groupable.length }));
+        return { object: mcpShapeSummary(intersection) };
       }
 
       if (command.action === "ungroup_objects") {
@@ -11306,7 +11357,7 @@ export function LayerlingEditor({
         canUndo={!projectInteractionActive && (historyIndex > 0 || Boolean(edgeModifier))}
         canRedo={!projectInteractionActive && historyIndex < history.length - 1}
         canGroup={selectedShapes.length > 1 && selectedShapes.every((shape) => !shape.locked && !isNonSolidShapeKind(shape.kind))}
-        canIntersect={selectedShapes.some((shape) => !shape.locked && !shape.hole && !isNonSolidShapeKind(shape.kind)) && selectedShapes.some((shape) => !shape.locked && Boolean(shape.hole) && !isNonSolidShapeKind(shape.kind))}
+        canIntersect={canIntersectShapes(selectedShapes.filter((shape) => !shape.locked && !isNonSolidShapeKind(shape.kind)))}
         canUngroup={selectedShapes.some((shape) => Boolean(shape.groupedShapes?.length))}
         hasClipboard={clipboard.length > 0 || systemClipboardSupported}
         hasSelection={hasSelection}

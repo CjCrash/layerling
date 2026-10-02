@@ -50,6 +50,7 @@ The AI works with the same functions as you, through the same path as your opera
 | `layerling_group_objects` | groups objects |
 | `layerling_ungroup_objects` | dissolves groups |
 | `layerling_boolean_cut` | cuts solids with holes |
+| `layerling_intersect_objects` | keeps only what the objects have in common (Intersection) |
 | `layerling_separate_parts` | splits a shape with loose parts |
 | `layerling_list_edges` | lists the real CAD edges of an object |
 | `layerling_apply_edge_treatment` | chamfers or fillets chosen edges |

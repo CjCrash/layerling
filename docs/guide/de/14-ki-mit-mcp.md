@@ -50,6 +50,7 @@ Die KI arbeitet mit denselben Funktionen wie du, sie läuft über denselben Weg 
 | `layerling_group_objects` | gruppiert Objekte |
 | `layerling_ungroup_objects` | löst Gruppen auf |
 | `layerling_boolean_cut` | schneidet Körper mit Aussparungen |
+| `layerling_intersect_objects` | behält nur, was die Objekte gemeinsam haben (Schnittmenge) |
 | `layerling_separate_parts` | zerlegt eine Form mit losen Teilen |
 | `layerling_list_edges` | listet die echten CAD-Kanten eines Objekts |
 | `layerling_apply_edge_treatment` | fast oder verrundet ausgewählte Kanten |

@@ -39,6 +39,8 @@ Click a corner point and choose {{ui:sketch.filletCorner}} or {{ui:sketch.chamfe
 
 Click {{ui:sketch.finishSketch}}. The outline stands as a body on the workplane. In its settings you change the height, the colour and everything else as with any other shape.
 
+If the workplane lies on the side of a body, you draw the way you look at that side: up in the sketch is up on the finished body too. The faint outline of the body in the sketch view shows where it stands.
+
 ![The outline has become a body. The corner is rounded.](shot:sketch-result)
 
 With {{ui:inspector.editSketch}} you can return to the sketch at any time to change it. Edge treatments you already made on the body are lost, though, because the edges are created anew.

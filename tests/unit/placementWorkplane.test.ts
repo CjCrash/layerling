@@ -26,6 +26,42 @@ describe("placement workplanes", () => {
     expect(local.z).toBeCloseTo(-7);
   });
 
+  it("keeps a sketch upright on every side of a box", () => {
+    // Forum 617195: auf der Rueck- und der rechten Seite stand die Skizze auf dem Kopf.
+    const sides = [
+      { x: 0, y: 0, z: 1 },
+      { x: 0, y: 0, z: -1 },
+      { x: 1, y: 0, z: 0 },
+      { x: -1, y: 0, z: 0 },
+      { x: 0.6, y: 0.6, z: 0.52915 },
+    ];
+    for (const normal of sides) {
+      for (const reverse of [false, true]) {
+        const plane = placementWorkplaneFromSurface({ x: 0, y: 5, z: 0 }, normal, { x: 1, y: 0, z: 0 }, reverse, true);
+        const n = plane.normal;
+        // "oben" in der Skizze ist -z und zeigt in der Welt nach oben
+        expect(-plane.zAxis.y).toBeGreaterThan(0);
+        expect(Math.abs(plane.xAxis.y)).toBeLessThan(1e-9);
+        // gleiche Haendigkeit wie die Grundebene: z = x x n
+        const cross = {
+          x: plane.xAxis.y * n.z - plane.xAxis.z * n.y,
+          y: plane.xAxis.z * n.x - plane.xAxis.x * n.z,
+          z: plane.xAxis.x * n.y - plane.xAxis.y * n.x,
+        };
+        expect(cross.x).toBeCloseTo(plane.zAxis.x);
+        expect(cross.y).toBeCloseTo(plane.zAxis.y);
+        expect(cross.z).toBeCloseTo(plane.zAxis.z);
+        // ein gespeicherter Rahmen kommt unveraendert zurueck
+        expect(placementWorkplaneFingerprint(normalizePlacementWorkplane(plane))).toBe(placementWorkplaneFingerprint(plane));
+      }
+    }
+  });
+
+  it("leaves a flat face to its edge", () => {
+    const plane = placementWorkplaneFromSurface({ x: 0, y: 5, z: 0 }, { x: 0, y: 1, z: 0 }, { x: 0, y: 0, z: 1 }, false, true);
+    expect(plane.xAxis.z).toBeCloseTo(1);
+  });
+
   it("places a new shape flush with a vertical face", () => {
     const plane = placementWorkplaneFromSurface(
       { x: 20, y: 10, z: 0 },

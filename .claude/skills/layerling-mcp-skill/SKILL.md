@@ -67,6 +67,7 @@ Useful tools:
 - `layerling_group_objects`: group selected ids using the normal layerling group/boolean path.
 - `layerling_open_group` / `layerling_close_group`: open a group so its parts lie loose and can be changed one by one, then close it - rebuilt with the group's own name, colour and solid/hole state, or `cancel: true` for the untouched group. One group at a time; `layerling_read_scene` shows it as `openGroup`.
 - `layerling_boolean_cut`: pass `solidIds` and `holeIds`; the result replaces the operands.
+- `layerling_intersect_objects`: keep only what the `ids` have in common - two or more solids (a group counts as it looks), or solids against holes. The result replaces the operands; no overlap reports `empty`.
 - `layerling_ungroup_objects`: restore grouped children while preserving edited child geometry.
 - `layerling_separate_parts`: split disconnected parts in one object.
 - `layerling_hollow_object`: hollow a solid into walls of equal thickness, open on top, bottom, both, or closed.

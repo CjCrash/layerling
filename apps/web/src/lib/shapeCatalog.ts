@@ -645,6 +645,7 @@ export function shapeAssetLabel(asset: Pick<ShapeAsset, "id" | "name">): string 
 /** Names the editor itself hands out in English - a sketch, a group, anything made through MCP. */
 const GENERATED_NAME_KEYS: Record<string, MessageKey> = {
   Group: "shape.group",
+  Intersection: "shape.intersection",
   "Sketch extrusion": "shape.sketchExtrusion",
   "Sketch revolve": "shape.sketchRevolve",
   Cube: "shape.box",

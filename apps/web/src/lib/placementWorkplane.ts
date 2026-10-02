@@ -73,9 +73,25 @@ export function placementWorkplaneFromSurface(
   surfaceNormal: PlacementPoint,
   tangentHint: PlacementPoint,
   reverse = false,
+  upright = false,
 ): PlacementWorkplane {
   const normal = vector(surfaceNormal).normalize();
   if (reverse) normal.negate();
+
+  // Auf einer stehenden oder schraegen Flaeche zeigt "oben" in der Skizze
+  // (-zAxis) nach oben in der Welt. Die Kante der Flaeche allein legte das
+  // nicht fest: auf der Rueck- und der rechten Seite stand die Skizze sonst
+  // auf dem Kopf (Forum 617195).
+  if (upright && Math.abs(normal.y) < 0.999) {
+    const zAxis = new THREE.Vector3(0, 1, 0).projectOnPlane(normal).normalize().negate();
+    const xAxis = normal.clone().cross(zAxis).normalize();
+    return {
+      origin: { x: origin.x, y: origin.y, z: origin.z },
+      normal: point(normal),
+      xAxis: point(xAxis),
+      zAxis: point(zAxis),
+    };
+  }
 
   let xAxis = vector(tangentHint).projectOnPlane(normal);
   if (xAxis.lengthSq() < EPSILON) {

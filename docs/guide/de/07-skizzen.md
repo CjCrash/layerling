@@ -39,6 +39,8 @@ Klicke auf einen Eckpunkt und wähle {{ui:sketch.filletCorner}} oder {{ui:sketch
 
 Klicke auf {{ui:sketch.finishSketch}}. Der Umriss steht als Körper auf der Arbeitsebene und trägt den Namen „Skizzenkörper“. In seinen Einstellungen änderst du die Höhe, die Farbe und alles Weitere wie bei jeder anderen Form.
 
+Liegt die Arbeitsebene auf einer Seite eines Körpers, zeichnest du so, wie du auf diese Seite schaust: Oben in der Skizze ist auch am fertigen Körper oben. Der blasse Umriss des Körpers in der Skizzenansicht zeigt, wo er steht.
+
 ![Aus dem Umriss ist ein Körper geworden. Die Ecke ist gerundet.](shot:sketch-result)
 
 Mit {{ui:inspector.editSketch}} kehrst du jederzeit in die Skizze zurück, um sie zu ändern. Kantenbearbeitungen, die du an dem Körper schon gemacht hast, gehen dabei allerdings verloren, weil die Kanten neu entstehen.

@@ -4,6 +4,12 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.28.2
+
+- **Intersection works with two solids:** The Intersection button stayed grey unless one of the selected objects was a hole, although the guide always said it keeps what two or more bodies have in common. Two or more solids can now be intersected directly, and only what all of them share remains; a group counts the way it looks, holes included. A solid together with a hole works as before. The result opens and closes like a group. The new MCP action `layerling_intersect_objects` does the same. Reported by Fratercula in the forum.
+- **Sketches on a side face stand upright:** A sketch started on the back or the right side of a body was shown upside down in the sketch view and built upside down, so it had to be drawn on its head to fit. A workplane set on a standing or sloping face now always has the sketch's up pointing up in the world, on every side; shapes placed on such a face follow it as well. Reported by Fratercula in the forum.
+- **Intersection keeps its German name:** The result of an intersection was called "Intersection" in the German interface as well; it is now "Schnittmenge" there.
+
 ## 1.28.1
 
 - **Shapes no longer vanish behind a forgotten section view:** The section view stayed on when you went back to the overview and opened another or a new design, so shapes placed on the cut-away side showed only their handles for a moment and seemed to be gone (they were still in the object list). Going back to the overview now switches the cut off, and every design opens uncut. Within a design the cut stays until you switch it off, as before. Reported by _bastler_ in the forum.
