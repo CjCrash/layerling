@@ -18,6 +18,16 @@ export const MIN_THREAD_PITCH = 0.2;
 export const MAX_THREAD_PITCH = 12;
 export const MIN_THREAD_CLEARANCE = 0;
 export const MAX_THREAD_CLEARANCE = 1.5;
+/**
+ * Spiel fuer Aussengewinde (Stange, Schraube): so viel duenner wird der
+ * Bolzen im Durchmesser. Ein eigenes Feld mit 0 als Vorgabe, weil
+ * `threadClearance` auch bei Stange und Schraube schon 0,2 mm gespeichert
+ * hat, ohne dass es dort je gewirkt haette - wuerde es jetzt wirken, kaeme
+ * jeder alte Bolzen duenner heraus.
+ */
+export const DEFAULT_THREAD_BOLT_CLEARANCE = 0;
+export const MIN_THREAD_BOLT_CLEARANCE = 0;
+export const MAX_THREAD_BOLT_CLEARANCE = 1;
 export const MIN_THREAD_QUALITY = 12;
 export const MAX_THREAD_QUALITY = 96;
 
@@ -337,6 +347,10 @@ export function normalizeThreadClearance(value?: number) {
   return clamp(finite(value, DEFAULT_THREAD_CLEARANCE), MIN_THREAD_CLEARANCE, MAX_THREAD_CLEARANCE);
 }
 
+export function normalizeThreadBoltClearance(value?: number) {
+  return clamp(finite(value, DEFAULT_THREAD_BOLT_CLEARANCE), MIN_THREAD_BOLT_CLEARANCE, MAX_THREAD_BOLT_CLEARANCE);
+}
+
 /**
  * Die Fase an den Enden. Bei einem Innengewinde (Mutter, Gewindeloch) reicht
  * genau die Gewindetiefe: der Kegel laeuft unter 45 Grad bis auf den Kern
@@ -385,6 +399,7 @@ export type ThreadShapeFields = {
   threadDiameter?: number;
   threadPitch?: number;
   threadClearance?: number;
+  threadBoltClearance?: number;
   threadQuality?: number;
   threadHeadHeight?: number;
   threadChamfer?: number;
@@ -399,6 +414,7 @@ export type ThreadSettings = {
   diameter: number;
   pitch: number;
   clearance: number;
+  boltClearance: number;
   quality: number;
   headHeight: number;
   chamfer: number;
@@ -421,6 +437,7 @@ export function threadSettings(shape: ThreadShapeFields): ThreadSettings {
     hand: normalizeThreadHand(shape.threadHand),
     profile,
     clearance: normalizeThreadClearance(shape.threadClearance),
+    boltClearance: normalizeThreadBoltClearance(shape.threadBoltClearance),
     quality: normalizeThreadQuality(shape.threadQuality),
     headHeight,
     chamfer,
@@ -430,9 +447,13 @@ export function threadSettings(shape: ThreadShapeFields): ThreadSettings {
   };
 }
 
-/** Nur Innengewinde bekommen Spiel: aussen wuerde es den Bolzen duenner machen. */
-function radialAllowance(role: ThreadRole, clearance: number) {
-  return role === "bore" || role === "nut" ? clearance / 2 : 0;
+/**
+ * Innengewinde (Mutter, Gewindeloch) werden um ihr Spiel weiter, Aussengewinde
+ * (Stange, Schraube) um ihr eigenes Bolzenspiel duenner - fuer einen gedruckten
+ * Bolzen in einer Metallmutter, die selbst kein Spiel hat.
+ */
+function radialAllowance(settings: Pick<ThreadSettings, "role" | "clearance" | "boltClearance">) {
+  return settings.role === "bore" || settings.role === "nut" ? settings.clearance / 2 : -settings.boltClearance / 2;
 }
 
 type HeadShape = Pick<ThreadSettings, "role" | "head" | "diameter" | "pitch">;
@@ -547,7 +568,7 @@ export function threadNaturalHeight(settings: Pick<ThreadSettings, "role" | "hea
  */
 export function threadNaturalFootprint(settings: ThreadSettings) {
   const spec = threadSizeSpec(settings.diameter, settings.pitch);
-  const allowance = radialAllowance(settings.role, settings.clearance);
+  const allowance = radialAllowance(settings);
   if (settings.role === "nut") {
     return { width: spec.acrossFlats / Math.cos(Math.PI / 6), depth: spec.acrossFlats };
   }
@@ -907,6 +928,7 @@ export function threadFootprintPatch(shape: ThreadShapeFields & { width?: number
     threadDiameter: scaled.diameter,
     threadPitch: scaled.pitch,
     threadClearance: scaled.clearance,
+    threadBoltClearance: scaled.boltClearance,
     threadQuality: scaled.quality,
     threadHeadHeight: scaled.headHeight,
     threadChamfer: scaled.chamfer,
@@ -930,7 +952,7 @@ export function threadBuildPlan(options: ThreadGeometryOptions) {
   const settings = threadSettings(options);
   const height = Math.max(0.05, options.height);
   const spec = threadSizeSpec(settings.diameter, settings.pitch);
-  const allowance = radialAllowance(settings.role, settings.clearance);
+  const allowance = radialAllowance(settings);
   const profile = threadProfileSpec(settings.profile);
   const major = settings.diameter / 2 + allowance;
   const minor = Math.max(0.02, major - settings.pitch * profile.depthPerPitch);

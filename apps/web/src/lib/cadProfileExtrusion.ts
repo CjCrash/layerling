@@ -1007,6 +1007,7 @@ export function cadModifierThreadForShape(shape: WorkplaneShape): CadModifierThr
     threadDiameter: shape.threadDiameter,
     threadPitch: shape.threadPitch,
     threadClearance: shape.threadClearance,
+    threadBoltClearance: shape.threadBoltClearance,
     threadQuality: shape.threadQuality,
     threadHeadHeight: shape.threadHeadHeight,
     threadChamfer: shape.threadChamfer,

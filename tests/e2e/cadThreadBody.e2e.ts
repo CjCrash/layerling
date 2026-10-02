@@ -118,6 +118,8 @@ describe("the thread's exact body", () => {
     ["a trapezoidal rod", { threadProfile: "trapezoidal", threadDiameter: 10, threadPitch: 2 }],
     ["a round-profile rod", { threadProfile: "round", threadDiameter: 10, threadPitch: 2 }],
     ["a Whitworth G1/2 rod", { threadProfile: "whitworth", threadDiameter: 20.955, threadPitch: 25.4 / 14 }],
+    ["an M6 rod with 0.3 mm bolt clearance", { threadBoltClearance: 0.3 }],
+    ["a screw with 0.25 mm bolt clearance", { threadRole: "screw", threadBoltClearance: 0.25 }],
     ["a screw with a cylinder head", { threadRole: "screw" }],
     ["a screw with a hex head, both head rims chamfered", { threadRole: "screw", threadHead: "hex", threadHeadChamfer: 0.4 }],
     ["a countersunk screw", { threadRole: "screw", threadHead: "countersunk" }],

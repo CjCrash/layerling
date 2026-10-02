@@ -868,6 +868,7 @@ export const MESSAGES_EN = {
   "prop.threadHand": "Direction",
   "prop.threadProfile": "Profile",
   "prop.clearance": "Clearance",
+  "prop.boltClearance": "Clearance for rods and screws",
   "prop.headHeight": "Head height",
   "prop.chamfer": "Chamfer",
   "prop.headChamfer": "Head chamfer",

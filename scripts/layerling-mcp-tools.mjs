@@ -88,6 +88,7 @@ export const shapeSettingSchema = {
   threadDiameter: { type: "number", description: "Thread only, in millimetres: 6 is an M6, 20.955 a G1/2 pipe thread. Width and depth follow it, they are not set separately. For a standard size, threadSize is simpler." },
   threadPitch: { type: "number", description: "Thread only, in millimetres per turn: an M6 runs 1.0 as standard." },
   threadClearance: { type: "number", description: "Thread only, for nuts and tapped holes: how much room the thread leaves so a printed pair still turns." },
+  threadBoltClearance: { type: "number", description: "Thread only, for rods and screws: how much thinner in diameter (mm, 0 to 1, default 0) the bolt is built, so a printed bolt fits a metal nut. Try 0.2 to 0.3." },
   threadQuality: { type: "number", description: "Thread only: columns around the circumference." },
   threadChamfer: { type: "number", description: "Thread only: the break at the ends that leads the first turn in." },
   threadHeadHeight: { type: "number", description: "Thread only, and only for a screw: height of the head. Left out it follows the standard for the size." },

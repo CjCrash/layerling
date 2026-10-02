@@ -1103,6 +1103,10 @@ function validateShapeDefinition(definition: Record<string, unknown>, label: str
       const threadClearance = finiteNumber(definition.threadClearance, `${label}.threadClearance`);
       if (threadClearance < 0 || threadClearance > 1.5) throw new Error(`${label}.threadClearance is outside the supported range`);
     }
+    if (definition.threadBoltClearance !== undefined) {
+      const threadBoltClearance = finiteNumber(definition.threadBoltClearance, `${label}.threadBoltClearance`);
+      if (threadBoltClearance < 0 || threadBoltClearance > 1) throw new Error(`${label}.threadBoltClearance is outside the supported range`);
+    }
     if (definition.threadQuality !== undefined) {
       const threadQuality = finiteNumber(definition.threadQuality, `${label}.threadQuality`);
       if (!Number.isInteger(threadQuality) || threadQuality < 12 || threadQuality > 96) {

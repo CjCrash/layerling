@@ -867,6 +867,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "prop.threadHand": "Gangrichtung",
   "prop.threadProfile": "Profil",
   "prop.clearance": "Spiel",
+  "prop.boltClearance": "Spiel bei Stange und Schraube",
   "prop.headHeight": "Kopfhöhe",
   "prop.chamfer": "Fase",
   "prop.headChamfer": "Kopffase",

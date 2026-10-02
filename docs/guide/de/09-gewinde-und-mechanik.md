@@ -24,7 +24,7 @@ Weitere Einstellungen:
 
 - **{{ui:prop.threadHand}}:** {{ui:thread.right}} oder {{ui:thread.left}}.
 - **{{ui:prop.threadProfile}}:** {{ui:thread.profileV}} ist das genormte Profil der metrischen und Zollgewinde, {{ui:thread.profileWhitworth}} das der G-Rohrgewinde: 55° mit gerundeten Spitzen und Tälern. {{ui:thread.profileTrapezoidal}} und {{ui:thread.profileRound}} haben flache Spitzen und Täler. Das druckt sich meist zuverlässiger, weil keine dünnen Spitzen entstehen.
-- **{{ui:prop.clearance}}:** Bei Mutter und Gewindeloch der Spielraum, der dafür sorgt, dass ein gedrucktes Paar sich wirklich dreht. Je gröber dein Drucker arbeitet, desto mehr Spiel braucht das Paar.
+- **{{ui:prop.clearance}}:** Bei Mutter und Gewindeloch der Spielraum, der dafür sorgt, dass ein gedrucktes Paar sich wirklich dreht. Je gröber dein Drucker arbeitet, desto mehr Spiel braucht das Paar. Bei Gewindestange und Schraube steht hier ein eigenes Spiel, das den Bolzen im Durchmesser um diesen Wert dünner macht. Es ist auf 0 gestellt. Brauchst du es, weil ein gedruckter Bolzen in eine Mutter aus Metall soll, die selbst kein Spiel hat, sind 0,2 bis 0,3 mm ein guter Anfang.
 - **{{ui:prop.chamfer}}, {{ui:prop.headChamfer}} und {{ui:prop.rimChamfer}}:** Fasen an den Enden, damit das Gewinde sauber anläuft und der Kopf keine scharfe Kante hat.
 - **{{ui:prop.quality}}:** Wie fein das Gewinde berechnet wird. Höher ist genauer, aber langsamer.
 

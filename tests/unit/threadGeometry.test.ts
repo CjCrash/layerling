@@ -6,6 +6,7 @@ import { canonicalizeShape } from "@/lib/workplaneShapes";
 import { DEFAULT_SNAP_GRID, DEFAULT_WORKPLANE_WORKSPACE } from "@/lib/workplaneSettings";
 import {
   createThreadGeometry,
+  threadBuildPlan,
   defaultThreadPitch,
   normalizeThreadPitch,
   normalizeThreadQuality,
@@ -159,6 +160,22 @@ describe("thread geometry", () => {
     expect(sunk.footprint.width).toBeCloseTo(bore.footprint.width + 1.6, 6);
   });
 
+  it("makes a rod or screw thinner by its bolt clearance, and leaves old ones alone", () => {
+    const rod = geometryFor("rod", 14, { threadChamfer: 0 });
+    // The 0.2 mm every rod already carries in threadClearance must not start to act.
+    const oldRod = geometryFor("rod", 14, { threadChamfer: 0, threadClearance: 0.2 });
+    expect(oldRod.footprint.width).toBeCloseTo(rod.footprint.width, 6);
+    const thinner = geometryFor("rod", 14, { threadChamfer: 0, threadBoltClearance: 0.3 });
+    expect(thinner.footprint.width).toBeCloseTo(rod.footprint.width - 0.3, 6);
+    const plan = threadBuildPlan({ width: 6, depth: 6, height: 14, threadRole: "screw", threadDiameter: 6, threadPitch: 1, threadBoltClearance: 0.3 });
+    expect(plan.major).toBeCloseTo(3 - 0.15, 6);
+    // A nut ignores the bolt clearance and keeps its own.
+    const nut = threadBuildPlan({ width: 10, depth: 10, height: 5, threadRole: "nut", threadDiameter: 6, threadPitch: 1, threadClearance: 0.2, threadBoltClearance: 0.3 });
+    expect(nut.major).toBeCloseTo(3 + 0.1, 6);
+    expect(threadSettings({ threadBoltClearance: 5 }).boltClearance).toBe(1);
+    expect(threadSettings({}).boltClearance).toBe(0);
+  });
+
   it("keeps the standard sizes reachable and the free values in range", () => {
     expect(threadSizeFor(6, 1)?.id).toBe("M6");
     expect(threadSizeFor(6, 1.25)).toBeNull();
@@ -179,6 +196,7 @@ describe("thread geometry", () => {
       threadDiameter: 8,
       threadPitch: 1.25,
       threadClearance: 0.35,
+      threadBoltClearance: 0.25,
       threadQuality: 60,
     });
     const shapes = [shape];
@@ -205,6 +223,7 @@ describe("thread geometry", () => {
     expect(loaded.threadDiameter).toBe(8);
     expect(loaded.threadPitch).toBe(1.25);
     expect(loaded.threadClearance).toBe(0.35);
+    expect(loaded.threadBoltClearance).toBe(0.25);
     expect(loaded.threadQuality).toBe(60);
   });
   /*

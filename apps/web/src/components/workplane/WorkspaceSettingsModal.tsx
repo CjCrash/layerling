@@ -12,6 +12,9 @@ import { printerPresetById } from "@/lib/printBed";
 import { PRINTER_PRESETS } from "@/lib/printerPresets.generated";
 import {
   DEFAULT_THREAD_CLEARANCE,
+  DEFAULT_THREAD_BOLT_CLEARANCE,
+  MIN_THREAD_BOLT_CLEARANCE,
+  MAX_THREAD_BOLT_CLEARANCE,
   DEFAULT_THREAD_DIAMETER,
   DEFAULT_THREAD_HAND,
   DEFAULT_THREAD_HEAD,
@@ -128,7 +131,7 @@ const BENT_TUBE_PROFILE_OPTIONS: Array<{ value: BentTubeProfile; label: MessageK
   { value: "octagon", label: "bentTube.profileOctagon" },
 ];
 
-type ShapeSpecialNumberKey = "steps" | "sides" | "bevel" | "segments" | "topRadius" | "baseRadius" | "teeth" | "toothSize" | "toothWidth" | "centerHoleSize" | "helixAngle" | "helixQuality" | "threadDiameter" | "threadPitch" | "threadClearance" | "threadQuality" | "threadChamfer" | "threadHeadChamfer" | "springTurns" | "springWire" | "springQuality" | "topWidth" | "topDepth" | "starPoints" | "starInnerSize" | "starOuterFillet" | "starInnerFillet" | "starQuality" | "heartTipFillet" | "heartQuality" | "crescentThickness" | "crescentTipFillet" | "crescentQuality" | "honeycombCellSize" | "honeycombWallThickness" | "honeycombFrameWidth" | "dovetailNeckWidth" | "dovetailClearance" | "screwHoleShaft" | "screwHoleHeadDepth" | "screwHoleAngle" | "cornerFillet" | "topBottomFillet" | "roundedBoxQuality" | "bentTubeSize" | "bentTubeWall" | "bentTubeQuality";
+type ShapeSpecialNumberKey = "steps" | "sides" | "bevel" | "segments" | "topRadius" | "baseRadius" | "teeth" | "toothSize" | "toothWidth" | "centerHoleSize" | "helixAngle" | "helixQuality" | "threadDiameter" | "threadPitch" | "threadClearance" | "threadBoltClearance" | "threadQuality" | "threadChamfer" | "threadHeadChamfer" | "springTurns" | "springWire" | "springQuality" | "topWidth" | "topDepth" | "starPoints" | "starInnerSize" | "starOuterFillet" | "starInnerFillet" | "starQuality" | "heartTipFillet" | "heartQuality" | "crescentThickness" | "crescentTipFillet" | "crescentQuality" | "honeycombCellSize" | "honeycombWallThickness" | "honeycombFrameWidth" | "dovetailNeckWidth" | "dovetailClearance" | "screwHoleShaft" | "screwHoleHeadDepth" | "screwHoleAngle" | "cornerFillet" | "topBottomFillet" | "roundedBoxQuality" | "bentTubeSize" | "bentTubeWall" | "bentTubeQuality";
 type ShapeSpecialField =
   | { type: "number"; key: ShapeSpecialNumberKey; label: string; defaultValue: number; min: number; max: number; step?: number; unit?: string }
   | { type: "select"; key: "font" | "gearType" | "threadRole" | "threadHead" | "threadHand" | "threadProfile" | "bentTubeProfile" | "bentTubeInnerProfile"; label: string; defaultValue: string; options: Array<{ value: string; label: string }> }
@@ -229,6 +232,7 @@ function specialFieldsForShape(
       { type: "select", key: "threadHand", label: t("prop.threadHand"), defaultValue: defaults.threadHand ?? DEFAULT_THREAD_HAND, options: THREAD_HAND_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) })) },
       { type: "select", key: "threadProfile", label: t("prop.threadProfile"), defaultValue: defaults.threadProfile ?? DEFAULT_THREAD_PROFILE, options: THREAD_PROFILE_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) })) },
       { type: "number", key: "threadClearance", label: t("prop.clearance"), defaultValue: defaults.threadClearance ?? DEFAULT_THREAD_CLEARANCE, min: MIN_THREAD_CLEARANCE, max: MAX_THREAD_CLEARANCE, unit: "mm" },
+      { type: "number", key: "threadBoltClearance", label: t("prop.boltClearance"), defaultValue: defaults.threadBoltClearance ?? DEFAULT_THREAD_BOLT_CLEARANCE, min: MIN_THREAD_BOLT_CLEARANCE, max: MAX_THREAD_BOLT_CLEARANCE, unit: "mm" },
       { type: "number", key: "threadChamfer", label: t("prop.chamfer"), defaultValue: defaults.threadChamfer ?? defaultThreadChamfer(defaults.threadPitch ?? DEFAULT_THREAD_PITCH, defaults.threadProfile ?? DEFAULT_THREAD_PROFILE, defaults.threadRole ?? DEFAULT_THREAD_ROLE), min: 0, max: 40, unit: "mm" },
       { type: "number", key: "threadQuality", label: t("prop.quality"), defaultValue: defaults.threadQuality ?? DEFAULT_THREAD_QUALITY, min: MIN_THREAD_QUALITY, max: MAX_THREAD_QUALITY, step: 6 },
     );

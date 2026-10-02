@@ -34,6 +34,9 @@ import {
   defaultThreadHeadHeight,
   normalizeThreadChamfer,
   normalizeThreadClearance,
+  normalizeThreadBoltClearance,
+  MIN_THREAD_BOLT_CLEARANCE,
+  MAX_THREAD_BOLT_CLEARANCE,
   normalizeThreadDiameter,
   normalizeThreadHand,
   normalizeThreadHead,
@@ -271,7 +274,7 @@ function formatPropertyNumber(value: number, accuracy: MeasurementAccuracy, step
 const RELATIVE_SIZE_PROPERTY_IDS = new Set(["width", "height", "length", "diameter", "starOuterSize"]);
 
 function propertyUsesLengthUnit(key: string) {
-  return ["radius", "length", "width", "height", "bevel", "topRadius", "baseRadius", "thickness", "toothSize", "toothWidth", "centerHole", "topLength", "topWidth", "bottomLength", "bottomWidth", "diameter", "pitch", "clearance", "threadLength", "headHeight", "chamfer", "headChamfer", "wire", "starOuterSize", "starInnerSize", "starOuterFillet", "starInnerFillet", "heartTipFillet", "crescentThickness", "crescentTipFillet", "honeycombCellSize", "honeycombWallThickness", "honeycombFrameWidth", "cornerFillet", "topBottomFillet", "bentTubeSize", "bentTubeWall", "bentTubeSegmentLength", "bentTubeBendRadius", "dovetailNeckWidth", "dovetailClearance", "screwHoleShaft", "screwHoleHeadDepth"].includes(key);
+  return ["radius", "length", "width", "height", "bevel", "topRadius", "baseRadius", "thickness", "toothSize", "toothWidth", "centerHole", "topLength", "topWidth", "bottomLength", "bottomWidth", "diameter", "pitch", "clearance", "boltClearance", "threadLength", "headHeight", "chamfer", "headChamfer", "wire", "starOuterSize", "starInnerSize", "starOuterFillet", "starInnerFillet", "heartTipFillet", "crescentThickness", "crescentTipFillet", "honeycombCellSize", "honeycombWallThickness", "honeycombFrameWidth", "cornerFillet", "topBottomFillet", "bentTubeSize", "bentTubeWall", "bentTubeSegmentLength", "bentTubeBendRadius", "dovetailNeckWidth", "dovetailClearance", "screwHoleShaft", "screwHoleHeadDepth"].includes(key);
 }
 
 /**
@@ -991,6 +994,7 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
       next.diameter = normalizeThreadDiameter(next.diameter);
       next.pitch = normalizeThreadPitch(next.pitch, next.diameter);
       next.clearance = normalizeThreadClearance(next.clearance);
+      next.boltClearance = normalizeThreadBoltClearance(next.boltClearance);
       next.quality = normalizeThreadQuality(next.quality);
       next.chamfer = normalizeThreadChamfer(next.chamfer, { role: next.role, diameter: next.diameter, pitch: next.pitch, profile: next.profile });
       const headBase = { role: next.role, head: next.head, diameter: next.diameter, pitch: next.pitch };
@@ -1011,6 +1015,7 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
         threadDiameter: next.diameter,
         threadPitch: next.pitch,
         threadClearance: next.clearance,
+        threadBoltClearance: next.boltClearance,
         threadQuality: next.quality,
         threadHeadHeight: next.headHeight,
         threadChamfer: next.chamfer,
@@ -1157,6 +1162,18 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
         max: MAX_THREAD_CLEARANCE,
         step: 0.05,
         onChange: (clearance) => applyThread({ clearance }),
+      });
+    } else {
+      // Stange und Schraube: das Spiel macht den Bolzen duenner, fuer eine
+      // Mutter aus Metall, die selbst keins hat.
+      properties.push({
+        id: "boltClearance",
+        label: t("prop.clearance"),
+        value: settings.boltClearance,
+        min: MIN_THREAD_BOLT_CLEARANCE,
+        max: MAX_THREAD_BOLT_CLEARANCE,
+        step: 0.05,
+        onChange: (boltClearance) => applyThread({ boltClearance }),
       });
     }
     properties.push({
@@ -1410,7 +1427,7 @@ export function ShapeInspector({
       ? properties.filter((property) => ["threadSize", "diameter", "threadLength", "headHeight", "headChamfer"].includes(property.id))
       : properties;
   const threadProperties = isThread
-    ? properties.filter((property) => ["pitch", "threadsPerInch", "threadHand", "threadProfile", "clearance", "chamfer", "quality"].includes(property.id))
+    ? properties.filter((property) => ["pitch", "threadsPerInch", "threadHand", "threadProfile", "clearance", "boltClearance", "chamfer", "quality"].includes(property.id))
     : [];
   const gearTeethProperties = shape.kind === "gear"
     ? properties.filter((property) => ["teeth", "toothSize", "toothWidth"].includes(property.id))
