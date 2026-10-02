@@ -80,6 +80,21 @@ export function springSettings(shape: SpringShapeFields, diameter: number, heigh
   };
 }
 
+/** Punkte je Drahtring im Anzeigenetz: ein Vieleck im Drahtkreis, also etwas weniger Querschnitt als der Kreis. */
+export function springRingSegments(quality: number) {
+  return clamp(Math.round(quality / 3) * 2, 8, 24);
+}
+
+/**
+ * Wie viel vom runden Drahtquerschnitt das Vieleck des Anzeigenetzes fasst:
+ * 0,989 bei der Standardqualitaet, 0,900 bei der groebsten. Der exakte
+ * Koerper hat den runden Draht, das Netz entsprechend weniger Volumen.
+ */
+export function springRingSectionShare(quality: number) {
+  const segments = springRingSegments(quality);
+  return (segments / (2 * Math.PI)) * Math.sin((2 * Math.PI) / segments);
+}
+
 export type SpringGeometryOptions = SpringShapeFields & {
   width: number;
   depth: number;
@@ -94,16 +109,15 @@ function triangle(builder: Builder, a: number, b: number, c: number) {
 }
 
 /**
- * Eine Feder ist ein Draht, der einer Wendel folgt. Gebaut wird sie als Rohr
- * entlang dieser Wendel: an jeder Station steht ein Ring aus Punkten quer zur
- * Laufrichtung, und die Ringe werden zu einem geschlossenen Schlauch
- * verbunden.
- *
- * Das Begleitbein entsteht aus der Laufrichtung und der Senkrechten - bei
- * einer Wendel ergibt das die Richtung nach innen und steht nie still, also
- * dreht sich der Querschnitt unterwegs auch nicht auf.
+ * Die Masse der Feder, aus denen das Anzeigenetz gezeichnet und der exakte
+ * Koerper (`springSolid.ts`) gebaut wird - beide aus derselben Rechnung, damit
+ * sie nicht auseinanderlaufen. Die Mittellinie ist eine Wendel um die
+ * Hochachse: Halbmesser `coilRadius`, von `bottom` aus `span` hoch, in
+ * `turns` Windungen, beginnend auf +x und mit dem Winkel von +x nach +z
+ * steigend. Gezeichnet wird mit dem groesseren Durchmesser und danach auf
+ * `scaleX`/`scaleZ` gezogen.
  */
-export function createSpringGeometry(options: SpringGeometryOptions) {
+export function springBuildPlan(options: SpringGeometryOptions) {
   const width = Math.max(0.2, options.width);
   const depth = Math.max(0.2, options.depth);
   const height = Math.max(0.2, options.height);
@@ -111,9 +125,6 @@ export function createSpringGeometry(options: SpringGeometryOptions) {
   const settings = springSettings(options, diameter, height);
   const wireRadius = settings.wire / 2;
   const coilRadius = Math.max(0.05, diameter / 2 - wireRadius);
-
-  const stations = Math.max(8, Math.round(settings.quality)) * settings.turns;
-  const ringSegments = clamp(Math.round(settings.quality / 3) * 2, 8, 24);
   const twist = Math.PI * 2 * settings.turns;
   /*
    * Der Draht steht nach oben nicht um seinen vollen Halbmesser ueber die
@@ -130,6 +141,23 @@ export function createSpringGeometry(options: SpringGeometryOptions) {
     span = Math.max(0.01, height - settings.wire * horizontalShare);
   }
   const bottom = (height - span) / 2;
+  return { settings, wireRadius, coilRadius, twist, span, bottom, scaleX: width / diameter, scaleZ: depth / diameter };
+}
+
+/**
+ * Eine Feder ist ein Draht, der einer Wendel folgt. Gebaut wird sie als Rohr
+ * entlang dieser Wendel: an jeder Station steht ein Ring aus Punkten quer zur
+ * Laufrichtung, und die Ringe werden zu einem geschlossenen Schlauch
+ * verbunden.
+ *
+ * Das Begleitbein entsteht aus der Laufrichtung und der Senkrechten - bei
+ * einer Wendel ergibt das die Richtung nach innen und steht nie still, also
+ * dreht sich der Querschnitt unterwegs auch nicht auf.
+ */
+export function createSpringGeometry(options: SpringGeometryOptions) {
+  const { settings, wireRadius, coilRadius, twist, span, bottom, scaleX, scaleZ } = springBuildPlan(options);
+  const stations = Math.max(8, Math.round(settings.quality)) * settings.turns;
+  const ringSegments = springRingSegments(settings.quality);
 
   const builder: Builder = { positions: [], indices: [] };
   const rings: number[][] = [];
@@ -202,8 +230,6 @@ export function createSpringGeometry(options: SpringGeometryOptions) {
   }
 
   // Auf die verlangte Grundflaeche ziehen, wie bei den uebrigen Koerpern.
-  const scaleX = width / diameter;
-  const scaleZ = depth / diameter;
   if (scaleX !== 1 || scaleZ !== 1) {
     for (let offset = 0; offset < builder.positions.length; offset += 3) {
       builder.positions[offset] *= scaleX;

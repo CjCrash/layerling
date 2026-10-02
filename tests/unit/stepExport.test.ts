@@ -111,8 +111,14 @@ describe("stepSourceForShape", () => {
     expect(stepSourceForShape(shape({ kind: "thread", threadRole: "nut" }))).toBe("thread");
   });
 
+  it("baut eine Feder als exakten Koerper aus ihren Massen", () => {
+    expect(stepSourceForShape(shape({ kind: "spring", width: 20, depth: 20, height: 30 }))).toBe("spring");
+    expect(stepSourceForShape(shape({ kind: "spring", width: 20, depth: 12, height: 30, springTurns: 3, springWire: 1 }))).toBe("spring");
+  });
+
   it("laesst tragen, was STEP nicht abbilden kann", () => {
-    expect(stepSourceForShape(shape({ kind: "spring" }))).toBe("unsupported");
+    // Eine Verdrillung hat noch keine exakte Form.
+    expect(stepSourceForShape(shape({ kind: "box", extrudeTwist: 45 }))).toBe("unsupported");
     expect(stepSourceForShape(shape({ kind: "text" }))).toBe("unsupported");
     // Ein eingelesenes Netz ohne Quelle: kein B-Rep, nur Dreiecke.
     const netz = shape({

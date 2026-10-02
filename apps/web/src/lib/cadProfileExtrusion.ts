@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { WorkplaneShape } from "@/types/layerling";
-import type { CadModifierProfileLoop, CadModifierProfilePart, CadModifierProfileSegment, CadModifierSweepPiece, CadModifierThreadPart } from "@/lib/cadModifierTypes";
+import type { CadModifierProfileLoop, CadModifierProfilePart, CadModifierProfileSegment, CadModifierSpringPart, CadModifierSweepPiece, CadModifierThreadPart } from "@/lib/cadModifierTypes";
 import { profileArcPoint, profileLoopBounds, validateCadProfile } from "@/lib/cadProfileSolid";
 import { cadTransformFromMatrix } from "@/lib/cadBakeMetadata";
 import { CAD_MODIFIER_EXACT_SEGMENT_LIMIT } from "@/lib/cadModifierRuntime";
@@ -21,6 +21,7 @@ import { DEFAULT_ROUNDED_BOX_CORNER_FILLET, DEFAULT_ROUNDED_BOX_TOP_BOTTOM_FILLE
 import { textFont } from "@/lib/textFonts";
 import { buildCurvedText, curvedTextFitScale, curvedTextLayout } from "@/lib/textGeometry";
 import { threadBuildPlan, WHITWORTH_PROFILE_CONSTANTS } from "@/lib/threadGeometry";
+import { springBuildPlan, springRingSectionShare } from "@/lib/springGeometry";
 import { gearToothPitch, normalizeGearCenterHoleSize, normalizeGearToothSize, normalizeGearToothWidth, normalizeGearTeeth, normalizeGearType } from "@/lib/gearGeometry";
 
 /*
@@ -1049,6 +1050,38 @@ export function cadModifierThreadForShape(shape: WorkplaneShape): CadModifierThr
   }
   if (settings.role === "nut") part.nut = { acrossFlats: spec.acrossFlats, chamferFaceRadius: plan.rimBroken ? plan.rimFaceRadius : 0 };
   return part;
+}
+
+/**
+ * A spring shape as the exact body its display mesh draws, or null: the
+ * measures come from the same `springBuildPlan` the mesh is built from, and
+ * `springSolid.ts` builds the body from them.
+ */
+export function cadModifierSpringForShape(shape: WorkplaneShape): CadModifierSpringPart | null {
+  if (shape.kind !== "spring") return null;
+  if (shape.importedMesh || shape.groupedShapes?.length || shape.cadBrep || shape.imagePlate || shapeHasShapeDeform(shape)) return null;
+  const width = shapeWidth(shape);
+  const depth = shapeDepth(shape);
+  if (![width, depth, shape.height].every((value) => Number.isFinite(value) && value > 0)) return null;
+  const plan = springBuildPlan({
+    width,
+    depth,
+    height: shape.height,
+    springTurns: shape.springTurns,
+    springWire: shape.springWire,
+    springQuality: shape.springQuality,
+  });
+  return {
+    coilRadius: plan.coilRadius,
+    wireRadius: plan.wireRadius,
+    turns: plan.settings.turns,
+    bottom: plan.bottom,
+    span: plan.span,
+    meshSectionShare: springRingSectionShare(plan.settings.quality),
+    // The mesh is drawn round at the larger of width and depth and stretched
+    // to the shape's footprint; the body takes the same stretch.
+    transform: profileTransformForShape(shape, new THREE.Matrix4().makeScale(plan.scaleX, 1, plan.scaleZ)),
+  };
 }
 
 /** Outline pieces of a profile, the measure its kernel cost grows with. */

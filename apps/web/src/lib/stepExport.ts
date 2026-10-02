@@ -1,9 +1,11 @@
+import type { OcctKernel, ShapeHandle } from "occt-wasm";
 import type { WorkplaneShape } from "@/types/layerling";
 import { shapeDepth, shapeHasShapeDeform, shapeWidth } from "@/lib/workplaneShapes";
 import { cadBrepTransformForShape } from "@/lib/cadBakeMetadata";
 import { loadBrepWithOcct, occtKernel, type Brep, type BrepSolid } from "@/lib/brepKernel";
-import { asDesignedRound, cadModifierProfileForShape, cadModifierThreadForShape } from "@/lib/cadProfileExtrusion";
+import { asDesignedRound, cadModifierProfileForShape, cadModifierSpringForShape, cadModifierThreadForShape } from "@/lib/cadProfileExtrusion";
 import { threadPartSolid } from "@/lib/threadSolid";
+import { springPartSolid } from "@/lib/springSolid";
 import { profileExtrusionSolid } from "@/lib/cadProfileSolid";
 import { cadTransformRequiresGeneralTransform } from "@/lib/cadModifierRuntime";
 
@@ -59,7 +61,7 @@ function unsupportedReason(): string {
  *   ist danach kein Quader mehr, sondern ein Netz, und ein Netz kann STEP
  *   nicht tragen - obwohl die exakte Form die ganze Zeit danebenlag.
  */
-export type StepSource = "primitive" | "imported" | "baked" | "profile" | "thread" | "unsupported";
+export type StepSource = "primitive" | "imported" | "baked" | "profile" | "thread" | "spring" | "unsupported";
 
 function hasExactProfile(shape: WorkplaneShape) {
   try {
@@ -77,6 +79,14 @@ function hasExactThread(shape: WorkplaneShape) {
   }
 }
 
+function hasExactSpring(shape: WorkplaneShape) {
+  try {
+    return cadModifierSpringForShape(shape) !== null;
+  } catch {
+    return false;
+  }
+}
+
 export function stepSourceForShape(shape: WorkplaneShape): StepSource {
   if (shape.kind === "mesh" && shape.importedMesh?.brepStep) return "imported";
   // A taper or lean is no part of the primitives: the box would go out as a
@@ -88,6 +98,7 @@ export function stepSourceForShape(shape: WorkplaneShape): StepSource {
   if (shape.cadBrep) return "baked";
   if (hasExactProfile(shape)) return "profile";
   if (hasExactThread(shape)) return "thread";
+  if (hasExactSpring(shape)) return "spring";
   // An oval cylinder or cone without a profile: the builder says why it is skipped.
   if (EXACT_KINDS.has(shape.kind)) return "primitive";
   return "unsupported";
@@ -288,13 +299,12 @@ function buildProfileBody(brep: Brep, shape: WorkplaneShape): BuildOutcome {
   }
 }
 
-/** A thread, rod, screw, nut or tapped hole as its exact body, built and placed as the CAD worker does. */
-function buildThreadBody(brep: Brep, shape: WorkplaneShape): BuildOutcome {
+/** A part's exact body in its own frame, placed and handed over as the CAD worker does. */
+function buildPlacedBody(brep: Brep, part: { transform?: number[] } | null, build: (kernel: OcctKernel) => ShapeHandle): BuildOutcome {
   const kernel = occtKernel();
-  const part = cadModifierThreadForShape(shape);
   if (!kernel || !part) return { skip: unsupportedReason() };
   try {
-    const local = threadPartSolid(kernel, part);
+    const local = build(kernel);
     const placed = !part.transform ? local : cadTransformRequiresGeneralTransform(part.transform) ? kernel.generalTransform(local, part.transform) : kernel.transform(local, part.transform);
     const text = kernel.toBREP(placed);
     try {
@@ -309,6 +319,18 @@ function buildThreadBody(brep: Brep, shape: WorkplaneShape): BuildOutcome {
   } catch (error) {
     return { skip: `exact body could not be built: ${error instanceof Error ? error.message : String(error)}` };
   }
+}
+
+/** A thread, rod, screw, nut or tapped hole as its exact body, built and placed as the CAD worker does. */
+function buildThreadBody(brep: Brep, shape: WorkplaneShape): BuildOutcome {
+  const part = cadModifierThreadForShape(shape);
+  return buildPlacedBody(brep, part, (kernel) => threadPartSolid(kernel, part!));
+}
+
+/** A spring as its exact body, built and placed as the CAD worker does. */
+function buildSpringBody(brep: Brep, shape: WorkplaneShape): BuildOutcome {
+  const part = cadModifierSpringForShape(shape);
+  return buildPlacedBody(brep, part, (kernel) => springPartSolid(kernel, part!));
 }
 
 function describe(shape: WorkplaneShape, reason: string): SkippedShape {
@@ -366,7 +388,7 @@ export async function exportShapesToStep(shapes: WorkplaneShape[]): Promise<Step
     }
     // Eine Aussparung wird hier nur aus dem gebaut, was ohne Warten geht; eine
     // eingelesene STEP-Quelle als Bohrer ist kein Fall, der vorkommt.
-    const built = source === "primitive" ? buildExactSolid(brep, shape) : source === "profile" ? buildProfileBody(brep, shape) : source === "thread" ? buildThreadBody(brep, shape) : buildBakedBody(brep, shape);
+    const built = source === "primitive" ? buildExactSolid(brep, shape) : source === "profile" ? buildProfileBody(brep, shape) : source === "thread" ? buildThreadBody(brep, shape) : source === "spring" ? buildSpringBody(brep, shape) : buildBakedBody(brep, shape);
     if ("skip" in built) {
       skipped.push(describe(shape, `hole ${built.skip}; cut omitted`));
       continue;
@@ -388,6 +410,8 @@ export async function exportShapesToStep(shapes: WorkplaneShape[]): Promise<Step
       built = buildProfileBody(brep, shape);
     } else if (source === "thread") {
       built = buildThreadBody(brep, shape);
+    } else if (source === "spring") {
+      built = buildSpringBody(brep, shape);
     } else {
       const reason = shape.kind === "mesh" ? "imported mesh has no B-Rep source; re-import as STEP to round-trip" : unsupportedReason();
       skipped.push(describe(shape, reason));

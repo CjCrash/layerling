@@ -6,6 +6,7 @@ import type { CadModifierComponentMesh, CadModifierDeflection, CadModifierDispla
 import { cadProfileSolidMismatch, profileExtrusionSolid } from "@/lib/cadProfileSolid";
 import { importedStepBody } from "@/lib/cadImportedStep";
 import { threadPartSolid } from "@/lib/threadSolid";
+import { springPartSolid } from "@/lib/springSolid";
 import { meshTreatedBody } from "@/lib/cadMeshAccuracy";
 import { CAD_MODIFIER_KERNEL_RESTART_MESSAGE, CAD_MODIFIER_RUNTIME_BASE, cadModifierCappedDeflection, cadModifierTessellationDeflection, cadModifierTopologyEdgeIsSelectable, cadTransformRequiresGeneralTransform, isCadModifierKernelExhausted, isCadModifierWasmMemoryFault } from "@/lib/cadModifierRuntime";
 
@@ -307,6 +308,23 @@ function reconstructSolid(cad: OcctKernel, part: CadModifierMeshPart) {
       }
     }
   }
+  if (part.spring) {
+    try {
+      const placed = applyCadTransform(cad, springPartSolid(cad, part.spring), part.spring.transform);
+      if (!cadShapeIsValid(cad, placed)) throw new Error("The exact spring body is not valid after placing it");
+      const mismatch = cadProfileSolidMismatch(cad, placed, part.spring.expected);
+      if (mismatch) throw new Error(`The exact spring body does not match the shape (${mismatch})`);
+      exactProfileBodiesUsed += 1;
+      return placed;
+    } catch (error) {
+      // As for a profile: with its mesh along, the part goes the way it always went.
+      if (isFatalKernelFault(error)) throw error;
+      if (!part.positions || !part.indices) {
+        const reason = error instanceof Error ? error.message : String(error ?? "");
+        throw new Error(`This spring could not be built as an exact body, and its mesh is too dense for edge treatment. ${reason}`.trim());
+      }
+    }
+  }
   if (part.step) {
     try {
       const restored = restoredExactSolid(cad, importedStepBody(cad, part.step), part.brepTransform);
@@ -408,14 +426,14 @@ function reconstructPartsWithFallback(cad: OcctKernel, parts: CadModifierMeshPar
   try {
     return reconstructParts(cad, parts);
   } catch (error) {
-    const exactParts = parts.filter((part) => part.profile || part.step || part.thread);
+    const exactParts = parts.filter((part) => part.profile || part.step || part.thread || part.spring);
     if (
       isFatalKernelFault(error) ||
       exactProfileBodiesUsed === 0 ||
       exactParts.some((part) => !part.positions || !part.indices)
     ) throw error;
     releaseSession(cad);
-    return reconstructParts(cad, parts.map((part) => (part.profile || part.step || part.thread ? { ...part, profile: undefined, step: undefined, thread: undefined } : part)));
+    return reconstructParts(cad, parts.map((part) => (part.profile || part.step || part.thread || part.spring ? { ...part, profile: undefined, step: undefined, thread: undefined, spring: undefined } : part)));
   }
 }
 

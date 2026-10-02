@@ -946,7 +946,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "export.obj.description": "Universelles 3D-Netz",
   "export.obj.note": "Ein breit unterstütztes Netzformat für Modellierung, Bildberechnung und Austausch.",
   "export.step.description": "CAD / B-Rep",
-  "export.step.note": "Behält Quader, Zylinder, Kugeln und Kegel als exakte CAD-Geometrie, dazu alles mit verrundeten oder gefasten Kanten und Körper, die als STEP hereingekommen sind. Gewinde gehen ebenfalls als exakter Körper. Federn, Schräg- und Kegelräder, verdrehte Formen und eingelesene Netze zum Beispiel kann STEP nicht tragen — die gehen als STL.",
+  "export.step.note": "Behält Quader, Zylinder, Kugeln und Kegel als exakte CAD-Geometrie, dazu alles mit verrundeten oder gefasten Kanten und Körper, die als STEP hereingekommen sind. Gewinde und Federn gehen ebenfalls als exakter Körper. Schräg- und Kegelräder, verdrehte Formen und eingelesene Netze zum Beispiel kann STEP nicht tragen — die gehen als STL.",
   "export.svg.description": "Vektor-Draufsicht",
   "export.svg.note": "Gibt eine saubere Draufsicht in Millimetern aus, samt Löchern und gekrümmten Umrissen.",
   "export.lyl.description": "layerlings eigenes Entwurfsformat",

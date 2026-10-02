@@ -40,6 +40,8 @@ Das Kantenwerkzeug nimmt ein Gewinde als exakten Körper. Du kannst das Teil, in
 
 Die {{ui:shape.spring}} hat {{ui:prop.turns}} und eine {{ui:prop.wire}}. Zusammen mit der Höhe bestimmen sie, wie weich die Feder wird.
 
+Das Kantenwerkzeug und der STEP-Export nehmen eine Feder als exakten Körper: ein runder Draht entlang einer Schraubenlinie, an beiden Enden gerade abgeschnitten. Diese beiden Drahtenden kannst du zum Beispiel verrunden oder fasen.
+
 ## Gebogene Rohre
 
 Ein {{ui:shape.bentTube}} besteht aus bis zu zwölf Abschnitten: ein gerades Stück, gefolgt von einer Biegung. Für jedes stellst du die {{ui:prop.bentTubeSegmentLength}}, den {{ui:prop.bentTubeBendAngle}}, den {{ui:prop.bentTubeBendRadius}} und den {{ui:prop.bentTubeRoll}} ein. Ein Rollwinkel von 0° biegt in der Ebene der Arbeitsfläche, bei 90° biegt das Rohr nach oben. Das Profil kann rund, quadratisch, sechs- oder achteckig sein, innen ebenso, oder ganz massiv. Läuft das Rohr in sich selbst, warnt dich layerling.

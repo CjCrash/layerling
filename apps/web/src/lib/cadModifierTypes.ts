@@ -184,6 +184,25 @@ export type CadModifierThreadPart = {
   expected?: { bounds: number[]; volume: number };
 };
 
+/**
+ * A spring, as the exact body its display mesh draws: a round wire swept
+ * along a helix about y, cut square to the wire at both ends. The centre line
+ * starts on +x at y = `bottom` and climbs `span` in `turns` whole turns as the
+ * angle from +x towards +z grows. Built in the shape's own frame (y up, the
+ * bottom at y = 0); `transform` places it, footprint stretch included.
+ */
+export type CadModifierSpringPart = {
+  coilRadius: number;
+  wireRadius: number;
+  turns: number;
+  bottom: number;
+  span: number;
+  /** The display mesh's polygon wire section as a share of the round one, which the mesh's volume is short by. */
+  meshSectionShare: number;
+  transform?: number[];
+  expected?: { bounds: number[]; volume: number };
+};
+
 export type CadModifierMeshPart = {
   positions?: Float32Array;
   indices?: Uint32Array;
@@ -199,6 +218,8 @@ export type CadModifierMeshPart = {
   expected?: { bounds: number[]; volume: number };
   /** A thread's exact body; positions/indices (if any) are only the fallback if it cannot be built. */
   thread?: CadModifierThreadPart;
+  /** A spring's exact body; positions/indices (if any) are only the fallback if it cannot be built. */
+  spring?: CadModifierSpringPart;
   primitive?: CadModifierPrimitivePart;
   /** When set, positions/indices (if any) are only the fallback if the exact body fails. */
   profile?: CadModifierProfilePart;
