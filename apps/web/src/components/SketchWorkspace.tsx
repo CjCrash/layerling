@@ -16,16 +16,12 @@ import { mirrorSign, resizedImportedMeshPositions } from "@/lib/workplaneShapes"
 import { DEFAULT_SNAP_GRID, DEFAULT_WORKPLANE_WORKSPACE, normalizeSnapGrid, normalizeWorkspaceSettings, snapGridStep as snapStep, orbitControlsZoomSpeed, zoomDistanceScale } from "@/lib/workplaneSettings";
 import type { GridSize, SketchImage, SketchOperation, SketchPoint, SketchProfile, SketchSegment, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 import { selectWholeValue } from "@/lib/numberField";
+import type { SketchSelectableEntity, SketchSelection } from "@/lib/sketchSelection";
 import { closedPathAt, cubicPoint, curveControls, isInsideEdges, orderedPaths, pathEdges, type DisplayPath, type PlaneEdge } from "@/lib/sketchPaths";
 
 export type { SketchPrimitive } from "@/lib/sketchPrimitives";
 export type SketchTool = "line" | "bezier" | "smooth" | SketchPrimitive | "select" | "refine" | "erase" | "measure";
-export type SketchSelection =
-  | { kind: "point"; id: string }
-  | { kind: "segment"; id: string }
-  | { kind: "image"; id: string }
-  | { kind: "multiple"; pointIds: string[]; segmentIds: string[]; imageIds?: string[] }
-  | null;
+export type { SketchSelection } from "@/lib/sketchSelection";
 export type SketchMeasurement = { start: SketchPoint; end: SketchPoint } | null;
 
 type SketchWorkspaceProps = {
@@ -45,6 +41,8 @@ type SketchWorkspaceProps = {
   onPointPress: (id: string) => void;
   onSelectSegment: (id: string) => void;
   onSelectMany: (pointIds: string[], segmentIds: string[], imageIds: string[]) => void;
+  /** Shift+click with Select: adds the point or line to the selection, or takes it out. */
+  onToggleSelect: (entity: SketchSelectableEntity) => void;
   onSelectImage: (id: string) => void;
   onUpdateImage: (id: string, patch: Partial<SketchImage>, message?: string) => void;
   onDeleteImage: (id: string) => void;
@@ -485,6 +483,7 @@ export function SketchWorkspace({
   onPointPress,
   onSelectSegment,
   onSelectMany,
+  onToggleSelect,
   onSelectImage,
   onUpdateImage,
   onDeleteImage,
@@ -1131,6 +1130,7 @@ export function SketchWorkspace({
             {displayProfile.segments.map((segment) => (
               <path
                 data-sketch-entity="segment"
+                data-segment-id={segment.id}
                 className={isSegmentSelected(segment.id) ? "selected" : ""}
                 key={segment.id}
                 d={segmentData(segment, pointById)}
@@ -1158,6 +1158,9 @@ export function SketchWorkspace({
                       const placement = closestPointOnSketchSegment(segment, start, end, point);
                       onInsertPoint(segment.id, placement.point, placement.amount);
                     }
+                  }
+                  else if (event.button === 0 && tool === "select" && event.shiftKey) {
+                    onToggleSelect({ kind: "segment", id: segment.id });
                   }
                   else if (event.button === 0 && tool === "select" && point) {
                     onSelectSegment(segment.id);
@@ -1225,6 +1228,17 @@ export function SketchWorkspace({
                   onPointerDown={(event) => {
                     if (event.button === 1) {
                       beginPan(event);
+                      return;
+                    }
+                    if (event.button === 0 && event.shiftKey) {
+                      // The box covers the lines inside it (points sit above it), so a
+                      // Shift+click looks underneath for the line that was meant.
+                      event.preventDefault();
+                      event.stopPropagation();
+                      const segmentId = document.elementsFromPoint(event.clientX, event.clientY)
+                        .find((element) => element.getAttribute("data-sketch-entity") === "segment")
+                        ?.getAttribute("data-segment-id");
+                      if (segmentId) onToggleSelect({ kind: "segment", id: segmentId });
                       return;
                     }
                     if (event.button !== 0 || selected?.kind !== "multiple") return;
@@ -1339,6 +1353,9 @@ export function SketchWorkspace({
                     beginPan(event);
                   } else if (tool === "erase" || tool === "refine") {
                     onDeletePoint(point.id);
+                  } else if (event.button === 0 && tool === "select" && event.shiftKey) {
+                    // No drag here: Shift only changes what is selected.
+                    onToggleSelect({ kind: "point", id: point.id });
                   } else if (event.button === 0 && tool === "select") {
                     onPointPress(point.id);
                     beginEntityDrag(event, { kind: "move-point", pointerId: event.pointerId, pointId: point.id, current: { x: point.x, z: point.z } });

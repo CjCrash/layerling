@@ -380,7 +380,7 @@ export const MESSAGES_EN = {
   "guide.sketchGroup.draw": "Drawing",
   "guide.sketchDraw.close": "Click the first point again to close the outline. Esc ends a line chain.",
   "guide.sketchGroup.edit": "Selecting and editing",
-  "guide.sketchEdit.select": "\"Select\" moves points and lines; a click inside a closed outline selects all of it. \"Add or Remove Points\" adds a point with a click on a section and removes one with a click on a point; \"Erase\" deletes.",
+  "guide.sketchEdit.select": "\"Select\" moves points and lines; Shift+click adds a point or line or takes it away, and a click inside a closed outline selects all of it. \"Add or Remove Points\" adds a point with a click on a section and removes one with a click on a point; \"Erase\" deletes.",
   "guide.sketchEdit.corner": "A click on a corner point offers \"Fillet corner\" and \"Chamfer corner\" for it. R turns a closed outline by 45 degrees.",
   "guide.sketchGroup.clipboard": "Clipboard",
   "guide.sketchClipboard.use": "Copy, cut (Ctrl+X), paste and duplicate (Ctrl+D) work on the selection. The copy lands on a free spot beside the original, so it is not joined to it.",

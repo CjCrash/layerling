@@ -7,6 +7,7 @@ code still carries it - so a lower number further down is older, not newer.
 ## Unreleased
 
 - **Shift-click in the object list:** Holding Shift while clicking entries in the object list adds them to the selection or takes them out again, as Shift-click already does in the view. Ctrl-click (Cmd-click on a Mac) no longer does this, so the list works the same way as the view. Shift-clicking no longer highlights the text of the rows in between. Contributed by @gogades.
+- **Shift-click in the sketch:** With "Select" in the sketch, holding Shift while clicking a point or line adds it to the selection or takes it out again, so you can pick several points and lines by hand and move them together. Points and lines can be mixed, and Shift-click also works on lines inside an existing selection's frame. Before, a click always replaced the selection, and only a frame or a click inside an outline selected more than one thing. Contributed by @gogades.
 
 ## 1.26.1
 
