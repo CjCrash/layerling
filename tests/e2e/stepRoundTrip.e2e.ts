@@ -242,6 +242,21 @@ describe("STEP export round-trip (real OCCT kernel)", () => {
     expect(near(await reimportVolume(blob), expected, 1e-4)).toBe(true);
   });
 
+  it("exports springs as their exact bodies, round wire and all", async () => {
+    const { springBuildPlan } = await import("@/lib/springGeometry");
+    const plain = shape({ kind: "spring", name: "Spring", x: -30, width: 20, depth: 20, height: 30, springTurns: 6, springWire: 3 });
+    const oval = shape({ kind: "spring", name: "Oval spring", x: 10, width: 20, depth: 12, height: 40, springTurns: 9, springWire: 2, rotation: 30, mirrorX: true });
+    const { blob, exportedCount, skipped } = await exportShapesToStep([plain, oval]);
+    expect(skipped).toEqual([]);
+    expect(exportedCount).toBe(2);
+    // The round wire's section times its centre line, stretched with the footprint.
+    const volume = (source: WorkplaneShape) => {
+      const plan = springBuildPlan({ ...source, width: source.width, depth: source.depth ?? source.width, height: source.height });
+      return Math.PI * plan.wireRadius ** 2 * Math.hypot(plan.coilRadius * plan.twist, plan.span) * plan.scaleX * plan.scaleZ;
+    };
+    expect(near(await reimportVolume(blob), volume(plain) + volume(oval), 1e-4)).toBe(true);
+  });
+
   it("exports a star, a heart and a teardrop instead of skipping them", async () => {
     const star = shape({ kind: "star", name: "Star", x: -30, width: 20, depth: 20, height: 5 });
     const heart = shape({ kind: "heart", name: "Heart", x: 0, width: 20, depth: 20, height: 5 });

@@ -40,6 +40,8 @@ The edge tool takes a thread as its exact body. You can chamfer or round the par
 
 The {{ui:shape.spring}} has {{ui:prop.turns}} and a {{ui:prop.wire}}. Together with the height they decide how soft the spring is.
 
+The edge tool and the STEP export take a spring as its exact body: a round wire along a helix, cut square at both ends. You can round or chamfer those two wire ends, for instance.
+
 ## Bent tubes
 
 A {{ui:shape.bentTube}} consists of up to twelve sections: a straight piece followed by a bend. For each you set the {{ui:prop.bentTubeSegmentLength}}, the {{ui:prop.bentTubeBendAngle}}, the {{ui:prop.bentTubeBendRadius}} and the {{ui:prop.bentTubeRoll}}. A roll angle of 0° bends within the plane of the workplane, at 90° the tube bends upward. The profile can be round, square, hexagonal or octagonal, the inside likewise, or fully solid. If the tube runs into itself, layerling warns you.

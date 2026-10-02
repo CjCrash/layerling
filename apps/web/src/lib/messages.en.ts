@@ -948,7 +948,7 @@ export const MESSAGES_EN = {
   "export.obj.description": "Universal 3D mesh",
   "export.obj.note": "A broadly compatible mesh format for modeling, rendering, and interchange.",
   "export.step.description": "CAD / B-Rep",
-  "export.step.note": "Keeps boxes, cylinders, spheres and cones as precise CAD geometry, along with anything whose edges were rounded or chamfered and bodies that came in as STEP. Threads go as their exact body too. Springs, helical and bevel gears, twisted shapes and imported meshes, for example, are beyond STEP — those go as STL.",
+  "export.step.note": "Keeps boxes, cylinders, spheres and cones as precise CAD geometry, along with anything whose edges were rounded or chamfered and bodies that came in as STEP. Threads and springs go as their exact body too. Helical and bevel gears, twisted shapes and imported meshes, for example, are beyond STEP — those go as STL.",
   "export.svg.description": "Top-view vector",
   "export.svg.note": "Exports a clean top-view silhouette in millimeters, including holes and curved contours.",
   "export.lyl.description": "layerling's own design format",
