@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { WorkplaneShape } from "@/types/layerling";
 import type { CadModifierPrimitivePart } from "@/lib/cadModifierTypes";
-import { mirrorSign, resizedImportedCoordinates, shapeDepth, shapeWidth } from "@/lib/workplaneShapes";
+import { meshYawDegrees, mirrorSign, preservesEdgeTreatmentSize, resizedImportedCoordinates, shapeDepth, shapeHasShapeDeform, shapeWidth } from "@/lib/workplaneShapes";
 import { drawnRound, ROUND_FROM_SIDES, ROUND_FROM_SPHERE_STEPS } from "@/lib/roundness";
 import { roundSideCount } from "@/lib/roundSideCount";
 import { sphereTessellation } from "@/lib/sphereTessellation";
@@ -45,6 +45,41 @@ function isIdentityCadTransform(transform: number[]) {
 
 function allFinitePositive(values: number[]) {
   return values.every((value) => Number.isFinite(value) && value > 0);
+}
+
+/**
+ * The exact body a STEP import brought along, placed where the shape stands,
+ * or null. The importer keeps it in the shape's own frame - centred in x and
+ * z, its bottom at y = 0, at the size it came in - so it takes the same
+ * resize, mirror, turn and lift that transformMesh gives the display mesh.
+ * A taper, twist or lean, or a resize that keeps treated edges their size,
+ * bends the mesh in ways no transform does: those keep the mesh.
+ */
+export function importedStepPartForShape(shape: WorkplaneShape): { step: string; brepTransform?: number[] } | null {
+  const mesh = shape.importedMesh;
+  const step = mesh?.brepStep;
+  if (shape.kind !== "mesh" || !mesh || !step || shape.cadBrep || shape.groupedShapes?.length) return null;
+  if (shapeHasShapeDeform(shape) || preservesEdgeTreatmentSize(shape)) return null;
+  const width = shapeWidth(shape);
+  const depth = shapeDepth(shape);
+  const height = shape.height;
+  if (!allFinitePositive([width, depth, height, mesh.baseWidth, mesh.baseDepth, mesh.baseHeight])) return null;
+  const centerY = height / 2;
+  const matrix = new THREE.Matrix4()
+    .makeTranslation(shape.x, (shape.elevation ?? 0) + centerY, shape.z)
+    .multiply(new THREE.Matrix4().makeRotationFromEuler(
+      new THREE.Euler(
+        THREE.MathUtils.degToRad(shape.rotationX ?? 0),
+        THREE.MathUtils.degToRad(meshYawDegrees(shape)),
+        THREE.MathUtils.degToRad(shape.rotationZ ?? 0),
+        "XYZ",
+      ),
+    ))
+    .multiply(new THREE.Matrix4().makeScale(mirrorSign(shape.mirrorX), mirrorSign(shape.mirrorY), mirrorSign(shape.mirrorZ)))
+    .multiply(new THREE.Matrix4().makeTranslation(0, -centerY, 0))
+    .multiply(new THREE.Matrix4().makeScale(width / mesh.baseWidth, height / mesh.baseHeight, depth / mesh.baseDepth));
+  const transform = cadTransformFromMatrix(matrix);
+  return { step, brepTransform: isIdentityCadTransform(transform) ? undefined : transform };
 }
 
 export function cadModifierPrimitiveForAnalyticShape(shape: WorkplaneShape): CadModifierPrimitivePart | null {

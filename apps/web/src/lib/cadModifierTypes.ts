@@ -138,7 +138,15 @@ export type CadModifierMeshPart = {
   positions?: Float32Array;
   indices?: Uint32Array;
   brep?: string;
+  /**
+   * A body imported from STEP: the file's exact solid in the shape's own
+   * frame, placed by `brepTransform`. positions/indices (if any) are only the
+   * fallback if it cannot be restored.
+   */
+  step?: string;
   brepTransform?: number[];
+  /** With `step`: world bounds and volume of the display mesh, which the placed body has to match. */
+  expected?: { bounds: number[]; volume: number };
   primitive?: CadModifierPrimitivePart;
   /** When set, positions/indices (if any) are only the fallback if the exact body fails. */
   profile?: CadModifierProfilePart;
