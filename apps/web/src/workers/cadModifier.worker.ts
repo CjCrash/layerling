@@ -4,6 +4,7 @@ import { OcctKernel, type ShapeHandle } from "occt-wasm";
 import { orientedFaceNormal, shellSolid } from "@/lib/cadShell";
 import type { CadModifierComponentMesh, CadModifierDeflection, CadModifierDisplayEdge, CadModifierEdge, CadModifierMeshPart, CadModifierPrimitivePart, CadModifierProfilePart, CadModifierQuality, CadModifierWorkerRequest, CadModifierWorkerResponse } from "@/lib/cadModifierTypes";
 import { cadProfileSolidMismatch, profileExtrusionSolid } from "@/lib/cadProfileSolid";
+import { importedStepBody } from "@/lib/cadImportedStep";
 import { meshTreatedBody } from "@/lib/cadMeshAccuracy";
 import { CAD_MODIFIER_KERNEL_RESTART_MESSAGE, CAD_MODIFIER_RUNTIME_BASE, cadModifierCappedDeflection, cadModifierTessellationDeflection, cadModifierTopologyEdgeIsSelectable, cadTransformRequiresGeneralTransform, isCadModifierKernelExhausted, isCadModifierWasmMemoryFault } from "@/lib/cadModifierRuntime";
 
@@ -237,7 +238,7 @@ function isFatalKernelFault(error: unknown) {
   return isCadModifierWasmMemoryFault(message, name);
 }
 
-/** Exact profile bodies the current prepare attempt has actually used. */
+/** Exact profile and STEP bodies the current prepare attempt has actually used. */
 let exactProfileBodiesUsed = 0;
 
 function reconstructProfileSolid(cad: OcctKernel, profile: CadModifierProfilePart) {
@@ -247,6 +248,26 @@ function reconstructProfileSolid(cad: OcctKernel, profile: CadModifierProfilePar
   const mismatch = cadProfileSolidMismatch(cad, placed, profile.expected);
   if (mismatch) throw new Error(`The exact profile body does not match the shape (${mismatch})`);
   return placed;
+}
+
+/** A stored exact body placed by its transform, healed if it has to be; throws unless it is a valid solid. */
+function restoredExactSolid(cad: OcctKernel, stored: ShapeHandle, transform: number[] | undefined) {
+  // Eine Verschiebung oder Drehung ist eine starre Bewegung; die gehoert in
+  // transform. generalTransform baut analytische Flaechen in Splines um - das
+  // ist teuer, ungenauer, und der Kernel nimmt es uebel.
+  let exact = applyCadTransform(cad, stored, transform);
+  const restoredSolids = cad.getSubShapes(exact, "solid");
+  if (cadShapeIsValid(cad, exact) && (cad.isSolid(exact) || restoredSolids.length > 0)) {
+    return restoredSolids.length === 1 ? restoredSolids[0] : exact;
+  }
+  exact = cad.fixShape(exact);
+  exact = cad.fixFaceOrientations(exact);
+  if (cad.isSolid(exact)) exact = cad.healSolid(exact, 1e-5);
+  const healedSolids = cad.getSubShapes(exact, "solid");
+  if (cadShapeIsValid(cad, exact) && (cad.isSolid(exact) || healedSolids.length > 0)) {
+    return healedSolids.length === 1 ? healedSolids[0] : exact;
+  }
+  throw new Error("The stored CAD feature could not be restored as a valid solid");
 }
 
 function reconstructSolid(cad: OcctKernel, part: CadModifierMeshPart) {
@@ -268,24 +289,24 @@ function reconstructSolid(cad: OcctKernel, part: CadModifierMeshPart) {
       }
     }
   }
+  if (part.step) {
+    try {
+      const restored = restoredExactSolid(cad, importedStepBody(cad, part.step), part.brepTransform);
+      const mismatch = cadProfileSolidMismatch(cad, restored, part.expected);
+      if (mismatch) throw new Error(`The imported STEP body does not match the shape (${mismatch})`);
+      exactProfileBodiesUsed += 1;
+      return restored;
+    } catch (error) {
+      // As for a profile: with its mesh along, the part goes the way it always went.
+      if (isFatalKernelFault(error)) throw error;
+      if (!part.positions || !part.indices) {
+        const reason = error instanceof Error ? error.message : String(error ?? "");
+        throw new Error(`This imported STEP body could not be restored for edge treatment, and its mesh is too dense to use instead. ${reason}`.trim());
+      }
+    }
+  }
   if (part.brep) {
-    let exact = cad.fromBREP(part.brep);
-    // Eine Verschiebung oder Drehung ist eine starre Bewegung; die gehoert in
-    // transform. generalTransform baut analytische Flaechen in Splines um - das
-    // ist teuer, ungenauer, und der Kernel nimmt es uebel.
-    exact = applyCadTransform(cad, exact, part.brepTransform);
-    const restoredSolids = cad.getSubShapes(exact, "solid");
-    if (cadShapeIsValid(cad, exact) && (cad.isSolid(exact) || restoredSolids.length > 0)) {
-      return restoredSolids.length === 1 ? restoredSolids[0] : exact;
-    }
-    exact = cad.fixShape(exact);
-    exact = cad.fixFaceOrientations(exact);
-    if (cad.isSolid(exact)) exact = cad.healSolid(exact, 1e-5);
-    const healedSolids = cad.getSubShapes(exact, "solid");
-    if (cadShapeIsValid(cad, exact) && (cad.isSolid(exact) || healedSolids.length > 0)) {
-      return healedSolids.length === 1 ? healedSolids[0] : exact;
-    }
-    throw new Error("The stored CAD feature could not be restored as a valid solid");
+    return restoredExactSolid(cad, cad.fromBREP(part.brep), part.brepTransform);
   }
   const imported = cad.importStl(meshPartToAsciiStl(part));
   let shape = cad.fixShape(imported);
@@ -358,8 +379,8 @@ function reconstructParts(cad: OcctKernel, parts: CadModifierMeshPart[]) {
 }
 
 /**
- * Exact profile bodies first; if the group cannot be combined from them, the
- * whole group again from the display meshes - the way it was built before
+ * Exact profile bodies (and STEP imports' own bodies) first; if the group
+ * cannot be combined from them, the whole group again from the display meshes - the way it was built before
  * exact profiles existed - as long as an exact body was in play and every
  * profile part brought its mesh. Called right after releaseSession, so the
  * failed attempt's handles are all that is in the arena and can go.
@@ -369,14 +390,14 @@ function reconstructPartsWithFallback(cad: OcctKernel, parts: CadModifierMeshPar
   try {
     return reconstructParts(cad, parts);
   } catch (error) {
-    const profileParts = parts.filter((part) => part.profile);
+    const exactParts = parts.filter((part) => part.profile || part.step);
     if (
       isFatalKernelFault(error) ||
       exactProfileBodiesUsed === 0 ||
-      profileParts.some((part) => !part.positions || !part.indices)
+      exactParts.some((part) => !part.positions || !part.indices)
     ) throw error;
     releaseSession(cad);
-    return reconstructParts(cad, parts.map((part) => (part.profile ? { ...part, profile: undefined } : part)));
+    return reconstructParts(cad, parts.map((part) => (part.profile || part.step ? { ...part, profile: undefined, step: undefined } : part)));
   }
 }
 
