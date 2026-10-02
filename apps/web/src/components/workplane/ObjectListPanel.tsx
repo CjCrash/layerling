@@ -102,7 +102,7 @@ export function ObjectListPanel({
   };
 
   const handleRowClick = (shapeId: string, e: MouseEvent) => {
-    if (e.ctrlKey || e.metaKey) {
+    if (e.shiftKey) {
       onSelectShape(shapeId, "toggle");
     } else {
       onSelectShape(shapeId, "replace");
@@ -182,6 +182,10 @@ export function ObjectListPanel({
                   className={`outliner-item ${isSelected ? "selected" : ""} ${shape.hidden ? "hidden-shape" : ""} ${shape.locked ? "locked-shape" : ""} ${openParts.has(shape.id) ? "open-group-part" : ""}`}
                   role="option"
                   aria-selected={isSelected}
+                  onMouseDown={(e) => {
+                    // Shift-click would otherwise highlight text across the rows.
+                    if (e.shiftKey && !(e.target instanceof HTMLInputElement)) e.preventDefault();
+                  }}
                   onClick={(e) => handleRowClick(shape.id, e)}
                 >
                   <div className="outliner-row-main">
