@@ -5538,6 +5538,309 @@ button {
   }
 }
 
+.section-control-group {
+  position: relative;
+}
+
+.section-tool-popover {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 10px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 285px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(219, 207, 194, 0.94);
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(84, 59, 32, 0.18), 0 2px 8px rgba(84, 59, 32, 0.1);
+  backdrop-filter: blur(14px) saturate(1.15);
+  animation: section-tools-in 130ms ease-out;
+  color: #3b2c1d;
+  font-size: 13px;
+  user-select: none;
+  z-index: 60;
+}
+
+@keyframes section-tools-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.section-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.section-popover-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: inherit;
+  flex: 1;
+}
+
+.camera-controls .section-tool-popover .section-toggle-btn {
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  border: 1px solid #d2c8be;
+  background: #f4efe9;
+  color: #7a6e60;
+  cursor: pointer;
+  transition: all 120ms ease;
+  width: auto;
+  height: 24px;
+}
+
+.camera-controls .section-tool-popover .section-toggle-btn.active {
+  background: #d27009;
+  border-color: #b75e05;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(210, 112, 9, 0.35);
+}
+
+.camera-controls .section-tool-popover .section-popover-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #8b7d6e;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.camera-controls .section-tool-popover .section-popover-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #2b1f14;
+}
+
+.section-popover-axis-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #7a6e60;
+  min-width: 48px;
+}
+
+.section-axis-buttons {
+  display: flex;
+  flex: 1;
+  gap: 3px;
+  background: #ebe5dc;
+  padding: 2px;
+  border-radius: 8px;
+}
+
+.camera-controls .section-tool-popover .section-axis-btn {
+  flex: 1;
+  height: 28px;
+  width: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #635546;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 100ms ease;
+}
+
+.camera-controls .section-tool-popover .section-axis-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+  color: #2b1f14;
+}
+
+.camera-controls .section-tool-popover .section-axis-btn.active {
+  background: #ffffff;
+  color: #d27009;
+  box-shadow: 0 1px 3px rgba(84, 59, 32, 0.15);
+}
+
+.camera-controls .section-tool-popover .section-flip-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #dcd4c9;
+  border-radius: 8px;
+  background: #fbf9f6;
+  color: #635546;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.camera-controls .section-tool-popover .section-flip-btn:hover {
+  background: #f2ede6;
+  color: #2b1f14;
+}
+
+.camera-controls .section-tool-popover .section-flip-btn.active {
+  background: #fff3e6;
+  border-color: #f0a256;
+  color: #d27009;
+}
+
+.section-popover-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.section-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-slider {
+  flex: 1;
+  height: 20px;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.section-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: #ded7cd;
+  border-radius: 999px;
+}
+
+.section-slider::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  appearance: none;
+  background: #ffffff;
+  border: 2px solid #d27009;
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(68, 47, 24, 0.2);
+}
+
+.section-slider::-moz-range-track {
+  height: 4px;
+  background: #ded7cd;
+  border-radius: 999px;
+}
+
+.section-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border: 2px solid #d27009;
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(68, 47, 24, 0.2);
+}
+
+.section-number-wrap {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: #f4efe9;
+  border: 1px solid #dcd4c9;
+  border-radius: 7px;
+  padding: 2px 5px;
+}
+
+.section-number-input {
+  width: 44px;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: inherit;
+  text-align: right;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.section-number-input::-webkit-outer-spin-button,
+.section-number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.section-unit {
+  font-size: 11px;
+  color: #8b7d6e;
+}
+
+.section-popover-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px solid #ebe4db;
+}
+
+.camera-controls .section-tool-popover .section-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  min-height: 30px;
+  width: auto;
+  padding: 0 10px;
+  border: 1px solid #dcd4c9;
+  border-radius: 8px;
+  background: #fbf9f6;
+  color: #635546;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.camera-controls .section-tool-popover .section-action-btn:hover {
+  background: #f2ede6;
+  color: #2b1f14;
+}
+
+.section-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #7a6e60;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.section-checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #d27009;
+}
+
 .workplane-wrap {
   position: absolute;
   inset: 0;
@@ -9352,6 +9655,7 @@ html[data-theme="dark"] .top-action-panel,
 html[data-theme="dark"] .edge-modifier-panel,
 html[data-theme="dark"] .camera-controls,
 html[data-theme="dark"] .tape-tool-popover,
+html[data-theme="dark"] .section-tool-popover,
 html[data-theme="dark"] .snap-menu {
   color: #ede4d4;
   background: rgba(40, 30, 20, 0.97);
@@ -9489,6 +9793,88 @@ html[data-theme="dark"] .camera-controls button:hover {
   color: #f9f7f2;
   background: rgba(84, 66, 46, 0.9);
   border-color: #79634c;
+}
+
+html[data-theme="dark"] .section-tool-popover .section-toggle-btn {
+  border-color: #554433;
+  background: #372a1e;
+  color: #bfaea0;
+}
+
+html[data-theme="dark"] .section-tool-popover .section-popover-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .section-label {
+  color: #a89787;
+}
+
+html[data-theme="dark"] .section-axis-buttons {
+  background: #2f2317;
+}
+
+html[data-theme="dark"] .section-tool-popover .section-axis-btn {
+  color: #baa99a;
+}
+
+html[data-theme="dark"] .section-tool-popover .section-axis-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .section-tool-popover .section-axis-btn.active {
+  background: #463727;
+  color: #ff9d3b;
+}
+
+html[data-theme="dark"] .section-tool-popover .section-flip-btn {
+  border-color: #554433;
+  background: #36291d;
+  color: #baa99a;
+}
+
+html[data-theme="dark"] .section-tool-popover .section-flip-btn:hover {
+  background: #463727;
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .section-tool-popover .section-flip-btn.active {
+  background: #4d3319;
+  border-color: #bd6a17;
+  color: #ff9d3b;
+}
+
+html[data-theme="dark"] .section-slider::-webkit-slider-runnable-track {
+  background: #4a3c2e;
+}
+
+html[data-theme="dark"] .section-slider::-moz-range-track {
+  background: #4a3c2e;
+}
+
+html[data-theme="dark"] .section-number-wrap {
+  background: #33271b;
+  border-color: #554433;
+}
+
+html[data-theme="dark"] .section-popover-footer {
+  border-top-color: #4a3a2a;
+}
+
+html[data-theme="dark"] .section-tool-popover .section-action-btn {
+  border-color: #554433;
+  background: #36291d;
+  color: #baa99a;
+}
+
+html[data-theme="dark"] .section-tool-popover .section-action-btn:hover {
+  background: #463727;
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .section-checkbox-label {
+  color: #a89787;
 }
 
 html[data-theme="dark"] .shape-inspector {
@@ -10501,7 +10887,8 @@ html[data-theme="dark"] .theme-check {
 
   .camera-controls > .workplane-control-group,
   .camera-controls > .tape-control-group,
-  .camera-controls > .corner-ruler-control-group {
+  .camera-controls > .corner-ruler-control-group,
+  .camera-controls > .section-control-group {
     order: 2;
   }
 }
