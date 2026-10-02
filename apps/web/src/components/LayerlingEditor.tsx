@@ -138,6 +138,7 @@ import { snapShapeFootprintToVisibleGrid, visibleGridStep } from "@/lib/gridSnap
 import { composedShapeRotation, geometryRotationDegreesForShortcut, geometryRotationDelta, rotatedGeometryShapePatch } from "@/lib/geometryRotation";
 import type { PivotPoint } from "@/lib/rotationPivot";
 import { createLocalId, derivedLocalId } from "@/lib/localIds";
+import { trackOpenGroupParts } from "@/lib/openGroupParts";
 import { projectExportFileName } from "@/lib/exportNames";
 import { exportMeshesToObj } from "@/lib/objExport";
 import { boundsOverlap, exportColorGroups, meshBounds, overlappingExportClusters } from "@/lib/exportUnion";
@@ -7320,6 +7321,15 @@ export function LayerlingEditor({
       // Eine Notiz, deren Koerper nicht mehr da ist, bleibt stehen und loest
       // sich nur von ihm - sonst waere jedes Gruppieren ein stiller Verlust.
       const nextNotes = detachNotesFromMissingShapes(notesRef.current, canonicalNext);
+      const session = openGroupRef.current;
+      if (session) {
+        const childIds = trackOpenGroupParts(session.childIds, shapesRef.current, canonicalNext);
+        if (childIds !== session.childIds) {
+          const tracked = { ...session, childIds: [...childIds] };
+          openGroupRef.current = tracked;
+          setOpenGroup(tracked);
+        }
+      }
       shapesRef.current = canonicalNext;
       selectedIdsRef.current = validSelection;
       notesRef.current = nextNotes;
@@ -9603,13 +9613,13 @@ export function LayerlingEditor({
     if (!session) return { ok: false, message: t("group.noneOpen") };
     const parts = new Set(session.childIds);
     const message = t("status.groupOpenCancelled", { name: displayShapeName(session.original) });
+    openGroupRef.current = null;
+    setOpenGroup(null);
     commitShapes(
       [...shapesRef.current.filter((shape) => !parts.has(shape.id)), session.original],
       session.original.id,
       message,
     );
-    openGroupRef.current = null;
-    setOpenGroup(null);
     return { ok: true, message, groupId: session.original.id };
   }, [commitShapes]);
 
@@ -9652,8 +9662,10 @@ export function LayerlingEditor({
       const firstSolid = original.groupedShapes?.find((child) => !child.hole) ?? original.groupedShapes?.[0];
       const ownColour = Boolean(firstSolid && firstSolid.color !== original.color);
       const rebuilt = canonicalizeShape({ ...result.group, groupOperation: operation });
+      // The same group, not a new one: its id stays, so anything holding that id (MCP, the object list) still finds it.
       const regrouped = canonicalizeShape(withHoleMode({
         ...rebuilt,
+        id: original.id,
         name: original.name,
         color: ownColour ? original.color : rebuilt.color,
         transparent: original.transparent,
@@ -9661,13 +9673,13 @@ export function LayerlingEditor({
       }, Boolean(original.hole)));
       const partIds = new Set(parts.map((shape) => shape.id));
       const message = t("status.groupClosed", { name: displayShapeName(regrouped) });
+      openGroupRef.current = null;
+      setOpenGroup(null);
       commitShapes(
         [...shapesRef.current.filter((shape) => !partIds.has(shape.id)), regrouped],
         regrouped.id,
         message,
       );
-      openGroupRef.current = null;
-      setOpenGroup(null);
       return { ok: true, message, groupId: regrouped.id };
     } finally {
       setOpenGroupBusy(false);

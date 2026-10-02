@@ -66,7 +66,7 @@ Useful tools:
 - `layerling_align_objects`: align two or more ids using the same logic as the editor Alignment button.
 - `layerling_lay_flat`: turn objects so a face rests on the workplane, like the editor's Lay flat tool. Pass `face` (`bottom`/`top`/`left`/`right`/`front`/`back`, a side of the object's own box in its current turn) or `normal` `[x, y, z]` in world coordinates; both snap to the nearest real face. Several ids turn together and keep their spacing.
 - `layerling_group_objects`: group selected ids using the normal layerling group/boolean path.
-- `layerling_open_group` / `layerling_close_group`: open a group so its parts lie loose and can be changed one by one, then close it - rebuilt with the group's own name, colour and solid/hole state, or `cancel: true` for the untouched group. One group at a time; `layerling_read_scene` shows it as `openGroup`.
+- `layerling_open_group` / `layerling_close_group`: open a group so its parts lie loose and can be changed one by one, then close it - rebuilt as the same group, with its own id, name, colour and solid/hole state, or `cancel: true` for the untouched group. A part replaced while the group is open (grouped, cut, separated, ungrouped) stays in it; new shapes, pastes and duplicates do not. One group at a time; `layerling_read_scene` shows it as `openGroup`.
 - `layerling_boolean_cut`: pass `solidIds` and `holeIds`; the result replaces the operands.
 - `layerling_intersect_objects`: keep only what the `ids` have in common - two or more solids (a group counts as it looks), or solids against holes. The result replaces the operands; no overlap reports `empty`.
 - `layerling_ungroup_objects`: restore grouped children while preserving edited child geometry.
