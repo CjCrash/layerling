@@ -28,7 +28,7 @@ Oben steht der Dateiname, darunter wählst du das Format. Du entscheidest, ob nu
 | **STL** | Slicer und 3D-Druck | Ein Dreiecksnetz. Das einfachste und verbreitetste Format. |
 | **3MF** | Slicer mit Farben | Jeder Körper bleibt ein eigenes Teil mit Namen und Farbe. Geeignet für PrusaSlicer, Bambu Studio, OrcaSlicer und Cura. Bambu Studio und OrcaSlicer fragen beim Öffnen, wie die Farben auf deine Filamente verteilt werden sollen, und nennen die Datei „nicht von Bambu“ – die Meldung ist harmlos. |
 | **OBJ** | Modellierung und Austausch | Ein breit unterstütztes Netzformat. |
-| **STEP** | Ein vollwertiges CAD-Programm | Behält Quader, Zylinder, Kugeln und Kegel als exakte Geometrie, ebenso Formen aus einem Umriss (Stern, Herz, Ellipse, Rohr, Halbkugel, Rundes Dach, Abgerundeter Quader, Schwalbenschwanz, die Bohrungen und mehr) und das gebogene Rohr, dazu Rundungen und Fasen. Gewinde und Feder fehlen noch. Der erste STEP-Export in einer Sitzung lädt den CAD-Kern (etwa 22 MB) einmalig nach. |
+| **STEP** | Ein vollwertiges CAD-Programm | Behält Quader, Zylinder, Kugeln und Kegel als exakte Geometrie, ebenso Formen aus einem Umriss (Stern, Herz, Ellipse, Rohr, Halbkugel, Rundes Dach, Abgerundeter Quader, Schwalbenschwanz, die Bohrungen und mehr) das gebogene Rohr und Gewinde, dazu Rundungen und Fasen. Die Feder fehlt noch. Der erste STEP-Export in einer Sitzung lädt den CAD-Kern (etwa 22 MB) einmalig nach. |
 | **SVG** | Lasercutter und Plotter | Eine saubere Draufsicht in Millimetern, samt Löchern und gekrümmten Umrissen. |
 | **LYL** | layerling selbst | Der bearbeitbare Entwurf mit allem Drum und Dran. |
 

@@ -30,7 +30,7 @@ Weitere Einstellungen:
 
 Gedruckte Gewinde sind eine Sache für sich. Stelle die Pärchen aus Schraube und Mutter zuerst als Test her, bevor du ein großes Teil druckst, und passe das Spiel an deinen Drucker an.
 
-Willst du an dem Teil, in dem das Gewinde sitzt, Kanten fasen oder verrunden, tu das zuerst und setze das Gewinde danach ein. Ein Gewinde besteht aus sehr vielen Dreiecken, das ist für die Kantenbearbeitung zu viel. Die Kante des Schraubenkopfs brichst du direkt mit der Kopffase in den Eigenschaften.
+Das Kantenwerkzeug nimmt ein Gewinde als exakten Körper. Du kannst das Teil, in dem es sitzt, mit dem Gewinde darin fasen oder verrunden, ebenso die Kanten eines Schraubenkopfs, siehe [Kanten brechen und Körper aushöhlen](chapter:kanten-und-aushoehlen). Die Kanten eines Gewindes zu ermitteln dauert etwas: ein paar Sekunden bei M6, etwa eine halbe Minute bei einem G1/2-Rohrgewinde. Am schnellsten brichst du die Kante eines Schraubenkopfs aber weiterhin mit der Kopffase in den Eigenschaften.
 
 ## Zahnräder
 

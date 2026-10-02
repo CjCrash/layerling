@@ -134,6 +134,56 @@ export type CadModifierProfilePart = {
   expected?: { bounds: number[]; volume: number };
 };
 
+/**
+ * A thread, rod, screw, nut or tapped hole, as the exact body its display
+ * mesh draws: the profile swept along a helix, cut to length and chamfered
+ * at its ends, with its head or nut body around it. Built in the shape's own
+ * frame (y up, the axis on y, the bottom at y = 0); `transform` places it.
+ */
+export type CadModifierThreadPart = {
+  role: "rod" | "screw" | "nut" | "bore";
+  /** One pitch of the profile from the crest: u in [0, 1), level 1 = major radius, 0 = minor; straight between points, as drawn, unless `curve` says otherwise. */
+  profile: Array<{ u: number; level: number }>;
+  /**
+   * The true curve the profile points sample, where there is one: "round", the
+   * cosine level = (1 + cos 2 pi u) / 2; "whitworth", arcs of `radius` (in
+   * pitches) at crest and root, tangent to flanks at `halfAngle` (radians).
+   * Absent: the points themselves are the profile.
+   */
+  curve?: { kind: "round" } | { kind: "whitworth"; radius: number; halfAngle: number };
+  major: number;
+  minor: number;
+  pitch: number;
+  /** 1: the thread climbs as the angle from +x towards +z grows (right hand as drawn); -1 the other way. */
+  hand: 1 | -1;
+  height: number;
+  /** Where the thread starts: 0, or the top of a screw head. */
+  shaftBottom: number;
+  /** The 45 degree chamfer at the thread ends; 0 for none. */
+  chamfer: number;
+  chamferBottom: boolean;
+  /** Screw only. */
+  head?: {
+    kind: "cylinder" | "hex" | "countersunk";
+    height: number;
+    /** Cylinder head radius, or the countersunk head's crown radius at y = 0. */
+    radius: number;
+    /** Hex head across flats. */
+    acrossFlats: number;
+    /** The countersunk cone's radius where it meets the shaft. */
+    neckRadius: number;
+    /** Radius of the flat faces when both head edges are chamfered, or 0. */
+    chamferFaceRadius: number;
+    /** Hex socket across flats and depth, or 0 depth for none. */
+    socketAcrossFlats: number;
+    socketDepth: number;
+  };
+  /** Nut only: its hex across flats, and the face radius of its chamfered rims (0 for sharp). */
+  nut?: { acrossFlats: number; chamferFaceRadius: number };
+  transform?: number[];
+  expected?: { bounds: number[]; volume: number };
+};
+
 export type CadModifierMeshPart = {
   positions?: Float32Array;
   indices?: Uint32Array;
@@ -147,6 +197,8 @@ export type CadModifierMeshPart = {
   brepTransform?: number[];
   /** With `step`: world bounds and volume of the display mesh, which the placed body has to match. */
   expected?: { bounds: number[]; volume: number };
+  /** A thread's exact body; positions/indices (if any) are only the fallback if it cannot be built. */
+  thread?: CadModifierThreadPart;
   primitive?: CadModifierPrimitivePart;
   /** When set, positions/indices (if any) are only the fallback if the exact body fails. */
   profile?: CadModifierProfilePart;

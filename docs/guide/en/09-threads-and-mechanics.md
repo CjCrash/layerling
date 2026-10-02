@@ -30,7 +30,7 @@ More settings:
 
 Printed threads are a topic of their own. Make the screw-and-nut pair as a test first before you print a large part, and adjust the clearance to your printer.
 
-If you want to chamfer or round edges on the part that carries the thread, do that first and add the thread afterwards. A thread is made of very many triangles, which is too much for edge treatment. The edge of a screw head you break directly with the head chamfer in the properties.
+The edge tool takes a thread as its exact body. You can chamfer or round the part that carries it with the thread already in place, or the rims of a screw head, see [Breaking edges and hollowing bodies](chapter:edges-and-hollowing). Working out a thread's edges takes a while: a few seconds for an M6, about half a minute for a G1/2 pipe thread. The quickest way to break the edge of a screw head is still the head chamfer in the properties.
 
 ## Gears
 

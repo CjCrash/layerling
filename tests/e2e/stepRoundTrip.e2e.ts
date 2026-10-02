@@ -216,6 +216,32 @@ describe("STEP export round-trip (real OCCT kernel)", () => {
     expect(near(await reimportVolume(blob), expected, 1e-4)).toBe(true);
   });
 
+  it("exports a threaded rod, a nut and a tapped hole as their exact bodies", async () => {
+    const { threadNaturalFootprint, threadNaturalHeight, threadSettings } = await import("@/lib/threadGeometry");
+    const { cadModifierThreadForShape } = await import("@/lib/cadProfileExtrusion");
+    const { threadPartSolid } = await import("@/lib/threadSolid");
+    const { occtKernel } = await import("@/lib/brepKernel");
+    const thread = (overrides: Partial<WorkplaneShape>) => {
+      const fields = { threadDiameter: 6, threadPitch: 1, ...overrides } as WorkplaneShape;
+      const settings = threadSettings(fields);
+      const footprint = threadNaturalFootprint(settings);
+      return shape({ kind: "thread", width: footprint.width, depth: footprint.depth, size: footprint.width, height: threadNaturalHeight(settings), ...overrides });
+    };
+    const rod = thread({ name: "Rod", x: -30 });
+    const nut = thread({ name: "Nut", threadRole: "nut", x: 0 });
+    const block = shape({ kind: "box", name: "Block", x: 40, width: 20, depth: 20, height: 12 });
+    const tapped = thread({ name: "Tapped hole", threadRole: "bore", hole: true, x: 40, height: 12 });
+
+    const { blob, exportedCount, skipped } = await exportShapesToStep([rod, nut, block, tapped]);
+    expect(skipped).toEqual([]);
+    expect(exportedCount).toBe(3);
+    // The same bodies the CAD worker builds, measured directly.
+    const kernel = occtKernel()!;
+    const volume = (source: WorkplaneShape) => kernel.getVolume(threadPartSolid(kernel, cadModifierThreadForShape(source)!));
+    const expected = volume(rod) + volume(nut) + 20 * 20 * 12 - volume(tapped);
+    expect(near(await reimportVolume(blob), expected, 1e-4)).toBe(true);
+  });
+
   it("exports a star, a heart and a teardrop instead of skipping them", async () => {
     const star = shape({ kind: "star", name: "Star", x: -30, width: 20, depth: 20, height: 5 });
     const heart = shape({ kind: "heart", name: "Heart", x: 0, width: 20, depth: 20, height: 5 });

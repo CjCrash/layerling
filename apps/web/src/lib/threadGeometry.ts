@@ -920,7 +920,13 @@ export type ThreadGeometryOptions = ThreadShapeFields & {
   height: number;
 };
 
-export function createThreadGeometry(options: ThreadGeometryOptions) {
+/**
+ * Every measure the thread body is built from, worked out once from the
+ * shape: the display mesh below and the exact CAD body
+ * (`cadModifierThreadForShape`, `threadSolid.ts`) both take them from here,
+ * so the two cannot drift apart.
+ */
+export function threadBuildPlan(options: ThreadGeometryOptions) {
   const settings = threadSettings(options);
   const height = Math.max(0.05, options.height);
   const spec = threadSizeSpec(settings.diameter, settings.pitch);
@@ -938,6 +944,58 @@ export function createThreadGeometry(options: ThreadGeometryOptions) {
   // Nach innen geschnittene Gewinde bekommen die Fase andersherum: dort muss
   // der Werkzeugkoerper weiter werden, nicht schmaler.
   const inward = settings.role === "bore" || settings.role === "nut";
+
+  /*
+   * Die Aussenfase: zwei Kegel um die Achse, einer an jedem Ende. Jeder
+   * beginnt an der Stirnflaeche als Kreis vom Radius `faceRadius` und geht mit
+   * 45 Grad auf, bis er die Flanke trifft - beim Sechskant an den Ecken tiefer
+   * als an den Schluesselflaechen, genau wie eine gedrehte Fase. Die Grenze
+   * rechnet mit dem Normmass; hier steht die wirkliche Hoehe, also wird noch
+   * einmal nachgeschnitten, falls jemand den Koerper flacher gezogen hat.
+   */
+  const rimRadii = headRingRadii(settings);
+  const rimRoom = Math.max(0, height * 0.35 - (rimRadii.circumscribed - rimRadii.inscribed));
+  const rimChamfer = Math.min(settings.headChamfer, rimRoom);
+  // Dieselbe Fase wie an der Mutter, nur in der Hoehe des Kopfes.
+  const headRoom = Math.max(0, headHeight * 0.35 - (rimRadii.circumscribed - rimRadii.inscribed));
+  const headChamfer = Math.min(settings.headChamfer, headRoom);
+  // Der Innensechskant sitzt in der freien Kopfflaeche. Der Sechskantkopf
+  // bekommt keinen: den fasst man von aussen an.
+  const socketDepth = settings.head === "hex" ? 0 : Math.min(headHeight * 0.6, settings.diameter * 0.55);
+  const natural = threadNaturalFootprint(settings);
+  return {
+    settings,
+    height,
+    spec,
+    profile,
+    major,
+    minor,
+    handSign,
+    headHeight,
+    shaftBottom,
+    chamfer,
+    chamferBottom,
+    inward,
+    rimRadii,
+    rimChamfer,
+    rimBroken: rimChamfer > 0.001,
+    rimFaceRadius: rimRadii.inscribed - rimChamfer,
+    headChamfer,
+    headBroken: headChamfer > 0.001,
+    headFaceRadius: rimRadii.inscribed - headChamfer,
+    headCrown: threadHeadDiameter(settings) / 2,
+    socketDepth,
+    hasSocket: socketDepth > 0.05,
+    scaleX: Math.max(0.01, options.width) / Math.max(Number.EPSILON, natural.width),
+    scaleZ: Math.max(0.01, options.depth) / Math.max(Number.EPSILON, natural.depth),
+  };
+}
+
+export type ThreadBuildPlan = ReturnType<typeof threadBuildPlan>;
+
+export function createThreadGeometry(options: ThreadGeometryOptions) {
+  const plan = threadBuildPlan(options);
+  const { settings, height, spec, profile, major, minor, handSign, headHeight, shaftBottom, chamfer, chamferBottom, inward } = plan;
   const limitRadius = chamfer <= 0.001
     ? (_y: number, radius: number) => radius
     : (y: number, radius: number) => {
@@ -963,19 +1021,7 @@ export function createThreadGeometry(options: ThreadGeometryOptions) {
 
   const builder: Builder = { positions: [], indices: [] };
 
-  /*
-   * Die Aussenfase: zwei Kegel um die Achse, einer an jedem Ende. Jeder
-   * beginnt an der Stirnflaeche als Kreis vom Radius `faceRadius` und geht mit
-   * 45 Grad auf, bis er die Flanke trifft - beim Sechskant an den Ecken tiefer
-   * als an den Schluesselflaechen, genau wie eine gedrehte Fase. Die Grenze
-   * rechnet mit dem Normmass; hier steht die wirkliche Hoehe, also wird noch
-   * einmal nachgeschnitten, falls jemand den Koerper flacher gezogen hat.
-   */
-  const rimRadii = headRingRadii(settings);
-  const rimRoom = Math.max(0, height * 0.35 - (rimRadii.circumscribed - rimRadii.inscribed));
-  const rimChamfer = Math.min(settings.headChamfer, rimRoom);
-  const rimBroken = rimChamfer > 0.001;
-  const rimFaceRadius = rimRadii.inscribed - rimChamfer;
+  const { rimBroken, rimFaceRadius } = plan;
 
   if (settings.role === "nut") {
     const outerRadiusAt = (angle: number) => hexRadius(angle, spec.acrossFlats);
@@ -1005,16 +1051,13 @@ export function createThreadGeometry(options: ThreadGeometryOptions) {
       if (settings.head === "hex") return hexRadius(angle, spec.acrossFlats);
       if (settings.head === "countersunk") {
         const progress = headHeight > 0 ? y / headHeight : 1;
-        const crown = threadHeadDiameter(settings) / 2;
+        const crown = plan.headCrown;
         return crown + (settings.diameter / 2 - crown) * progress;
       }
       return spec.headDiameter / 2;
     };
-    // Dieselbe Fase wie an der Mutter, nur in der Hoehe des Kopfes.
-    const headRoom = Math.max(0, headHeight * 0.35 - (rimRadii.circumscribed - rimRadii.inscribed));
-    const headChamfer = Math.min(settings.headChamfer, headRoom);
-    const gebrochen = headChamfer > 0.001;
-    const faceRadius = rimRadii.inscribed - headChamfer;
+    const gebrochen = plan.headBroken;
+    const faceRadius = plan.headFaceRadius;
     const headBottom = gebrochen
       ? ring(builder, angles, () => faceRadius, 0)
       : ring(builder, angles, (angle) => headRadiusAt(angle, 0), 0);
@@ -1038,10 +1081,8 @@ export function createThreadGeometry(options: ThreadGeometryOptions) {
     }
     capRing(builder, shaft.bottomEdge, headTop, true);
 
-    // Der Innensechskant sitzt in der freien Kopfflaeche. Der Sechskantkopf
-    // bekommt keinen: den fasst man von aussen an.
-    const socketDepth = settings.head === "hex" ? 0 : Math.min(headHeight * 0.6, settings.diameter * 0.55);
-    if (socketDepth > 0.05) {
+    const socketDepth = plan.socketDepth;
+    if (plan.hasSocket) {
       const socketMouth = ring(builder, angles, (angle) => hexRadius(angle, spec.socket), 0);
       const socketFloor = ring(builder, angles, (angle) => hexRadius(angle, spec.socket), socketDepth);
       capRing(builder, socketMouth, headBottom, false);
@@ -1056,9 +1097,7 @@ export function createThreadGeometry(options: ThreadGeometryOptions) {
     capFan(builder, rod.topEdge, height, true);
   }
 
-  const natural = threadNaturalFootprint(settings);
-  const scaleX = Math.max(0.01, options.width) / Math.max(Number.EPSILON, natural.width);
-  const scaleZ = Math.max(0.01, options.depth) / Math.max(Number.EPSILON, natural.depth);
+  const { scaleX, scaleZ } = plan;
   if (scaleX !== 1 || scaleZ !== 1) {
     for (let offset = 0; offset < builder.positions.length; offset += 3) {
       builder.positions[offset] *= scaleX;
