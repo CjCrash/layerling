@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Section view:** A new button at the bottom of the left bar cuts the view open along a plane across X, Y or Z, to look at walls, cavities and parts that fit into each other. A coarse slider moves the plane across the whole design, a fine slider a little either side of where it stands; the position can also be typed, in the workspace unit. The other side, back to the middle and hiding the plane are one click each, and what the cut lays open can be clicked and selected. Only the view is cut: the design, its files and every export stay whole.
+
 ## 1.26.1
 
 - **Tapered and leaning shapes stay exact:** A box, cylinder, ellipse, polygon, tube or ring with a taper or lean is now built as an exact body (the straight-sided loft between its bottom and top) instead of a triangle mesh, so the edge tool offers its real edges and fillets it where it used to refuse - a tapered cylinder has 4 selectable edges instead of 200. Twisted shapes, and a tapered sphere or cone, stay a mesh. Also fixed: STEP export wrote a tapered, leaning or twisted box, cylinder, sphere or cone as the plain undeformed shape; it now writes the tapered or leaning body, and skips a twisted one with a message. Contributed by @plazmabokor (#68).

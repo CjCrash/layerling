@@ -5542,10 +5542,14 @@ button {
   position: relative;
 }
 
+/* The section button is the last one in the bar, so the panel opens upwards
+   from it; anchored at the top it ran out of the window below. */
 .section-tool-popover {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: calc(100% + 10px);
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -5706,6 +5710,25 @@ button {
   display: flex;
   flex-direction: column;
   gap: 5px;
+}
+
+.section-slider-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.section-slider-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-slider-scale {
+  min-width: 34px;
+  font-size: 11px;
+  color: #8b7d6e;
 }
 
 .section-slider-container {

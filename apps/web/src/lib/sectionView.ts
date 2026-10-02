@@ -79,6 +79,15 @@ export function getSectionBounds(
 }
 
 /**
+ * The fine slider's window: a twentieth of the coarse range to either side,
+ * at least 0.5 mm and at most 10 mm, in steps 200 times finer than that.
+ */
+export function sectionFineWindow(bounds: Pick<SectionBounds, "min" | "max">) {
+  const span = Math.min(10, Math.max(0.5, (bounds.max - bounds.min) / 20));
+  return { span, step: span / 200 };
+}
+
+/**
  * Computes normal vector and plane constant D for Ax + By + Cz + D = 0.
  * In Three.js: points with n · p + D >= 0 are kept, points with n · p + D < 0 are discarded.
  */

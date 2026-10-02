@@ -32,6 +32,17 @@ At the left edge is a narrow bar. From the top:
 
 The small arrow at the very top of the bar hides it if it gets in the way.
 
+## Looking inside: the section view
+
+{{ui:camera.sectionView}}, the last button in the bar, cuts the view open along a plane so you can check walls, cavities and parts that fit into each other. Nothing is cut for real: the design, its files and every export stay whole.
+
+- Choose the axis (X, Y or Z) the plane stands across. The plane starts in the middle of your design.
+- {{ui:camera.sectionCoarse}} moves the plane across the whole design, {{ui:camera.sectionFine}} moves it a little either side of where it stands, for tenths of a millimetre. You can also type the position.
+- The button beside the axes shows the other side of the cut, {{ui:camera.sectionReset}} puts the plane back in the middle, and {{ui:camera.sectionShowPlane}} hides the blue plane.
+- You can click and select what the cut lays open, inner walls included.
+
+[[Esc]] closes the panel; the cut stays until you switch it off.
+
 ## The workplane
 
 New shapes align with the workplane. At first that is the base plate with the grid. But you can put it on any surface, to place something on a side or a sloped face.

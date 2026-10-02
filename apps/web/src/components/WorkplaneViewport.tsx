@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Crosshair, Cuboid, FlipHorizontal, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, RotateCcw, Rows3, Ruler, RulerDimensionLine, Slice, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type DragEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type SetStateAction, type WheelEvent as ReactWheelEvent } from "react";
-import { computeSectionPlaneVector, DEFAULT_SECTION_SETTINGS, getSectionBounds, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
+import { computeSectionPlaneVector, DEFAULT_SECTION_SETTINGS, getSectionBounds, sectionFineWindow, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
 import * as THREE from "three";
 import { Brush, Evaluator, HOLLOW_INTERSECTION } from "three-bvh-csg";
 import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
@@ -37,7 +37,7 @@ import { createBentTubeGeometry } from "@/lib/bentTubeGeometry";
 import { createThreadGeometry } from "@/lib/threadGeometry";
 import { createSpringGeometry } from "@/lib/springGeometry";
 import { createTextGeometry } from "@/lib/textGeometry";
-import { formatLengthMm, lengthDisplayUnit, parseLengthMm, parseMeasurementInput, resolveLengthMm, setLengthUnit } from "@/lib/measurementUnits";
+import { displayStepFromMillimeters, displayToMillimeters, formatLengthMm, lengthDisplayUnit, millimetersToDisplay, parseLengthMm, parseMeasurementInput, resolveLengthMm, setLengthUnit } from "@/lib/measurementUnits";
 import {
   computeCornerRulerRelativeCoordinates,
   computeCornerRulerShift,
@@ -3624,6 +3624,9 @@ export function WorkplaneViewport({
   sectionSettingsRef.current = sectionSettings;
   const sectionViewOpenRef = useRef(sectionViewOpen);
   sectionViewOpenRef.current = sectionViewOpen;
+  // Mitte des Feinreglers: folgt jeder Aenderung, die nicht vom Feinregler selbst kommt.
+  const [sectionFineAnchor, setSectionFineAnchor] = useState(DEFAULT_SECTION_SETTINGS.offset);
+  const sectionFineDraggingRef = useRef(false);
   const hostRef = useRef<HTMLDivElement | null>(null);
   const threeRef = useRef<ThreeState | null>(null);
   const shapesRef = useRef(shapes);
@@ -7166,6 +7169,10 @@ export function WorkplaneViewport({
     syncSectionClippingState(sectionSettings);
   }, [sectionSettings, syncSectionClippingState]);
 
+  useEffect(() => {
+    if (!sectionFineDraggingRef.current) setSectionFineAnchor(sectionSettings.offset);
+  }, [sectionSettings.offset]);
+
   const toggleSectionView = useCallback(() => {
     setSectionViewOpen((current) => {
       const next = !current;
@@ -7580,10 +7587,33 @@ export function WorkplaneViewport({
 
                       {(() => {
                         const bounds = getSectionBounds(shapes, sectionSettings.axis, workspace.width, workspace.depth);
+                        const fine = sectionFineWindow(bounds);
+                        const shown = Math.round(millimetersToDisplay(sectionSettings.offset, workspace) * 1000) / 1000;
+                        const finishFine = () => {
+                          sectionFineDraggingRef.current = false;
+                          setSectionFineAnchor(sectionSettingsRef.current.offset);
+                        };
                         return (
                           <div className="section-popover-slider-row">
-                            <span className="section-label">{t("camera.sectionOffset")}</span>
-                            <div className="section-slider-container">
+                            <div className="section-slider-head">
+                              <span className="section-label">{t("camera.sectionOffset")}</span>
+                              <div className="section-number-wrap">
+                                <input
+                                  type="number"
+                                  className="section-number-input"
+                                  step={displayStepFromMillimeters(fine.step * 10, workspace)}
+                                  value={shown}
+                                  onChange={(e) => {
+                                    const val = parseFloat(e.target.value);
+                                    if (!Number.isNaN(val)) handleSectionOffsetChange(displayToMillimeters(val, workspace));
+                                  }}
+                                  aria-label={t("camera.sectionOffset")}
+                                />
+                                <span className="section-unit">{lengthDisplayUnit(workspace).label}</span>
+                              </div>
+                            </div>
+                            <label className="section-slider-line">
+                              <span className="section-slider-scale">{t("camera.sectionCoarse")}</span>
                               <input
                                 type="range"
                                 className="section-slider"
@@ -7592,25 +7622,32 @@ export function WorkplaneViewport({
                                 step={bounds.step}
                                 value={sectionSettings.offset}
                                 onChange={(e) => handleSectionOffsetChange(parseFloat(e.target.value))}
-                                aria-label={t("camera.sectionOffset")}
+                                aria-label={`${t("camera.sectionOffset")} (${t("camera.sectionCoarse")})`}
                               />
-                              <div className="section-number-wrap">
-                                <input
-                                  type="number"
-                                  className="section-number-input"
-                                  min={bounds.min}
-                                  max={bounds.max}
-                                  step={bounds.step}
-                                  value={Math.round(sectionSettings.offset * 10) / 10}
-                                  onChange={(e) => {
-                                    const val = parseFloat(e.target.value);
-                                    if (!Number.isNaN(val)) handleSectionOffsetChange(val);
-                                  }}
-                                  aria-label={t("camera.sectionOffset")}
-                                />
-                                <span className="section-unit">{lengthDisplayUnit(workspace).label}</span>
-                              </div>
-                            </div>
+                            </label>
+                            {/* Fein: ein schmales Fenster um die Stelle, an der der Grobregler
+                                stand; nach dem Loslassen rueckt es mit, der Knopf springt in die Mitte. */}
+                            <label className="section-slider-line" title={t("camera.sectionFineHint", { span: formatLengthMm(fine.span, workspace.accuracy) })}>
+                              <span className="section-slider-scale">{t("camera.sectionFine")}</span>
+                              <input
+                                type="range"
+                                className="section-slider"
+                                min={-fine.span}
+                                max={fine.span}
+                                step={fine.step}
+                                value={Math.max(-fine.span, Math.min(fine.span, sectionSettings.offset - sectionFineAnchor))}
+                                onPointerDown={() => { sectionFineDraggingRef.current = true; }}
+                                onPointerUp={finishFine}
+                                onBlur={finishFine}
+                                onKeyDown={() => { sectionFineDraggingRef.current = true; }}
+                                onKeyUp={finishFine}
+                                onChange={(e) => {
+                                  sectionFineDraggingRef.current = true;
+                                  handleSectionOffsetChange(sectionFineAnchor + parseFloat(e.target.value));
+                                }}
+                                aria-label={`${t("camera.sectionOffset")} (${t("camera.sectionFine")})`}
+                              />
+                            </label>
                           </div>
                         );
                       })()}
@@ -8928,16 +8965,16 @@ function applySectionClipping(state: ThreeState | null, plane: THREE.Plane | nul
     }
   });
 
-  sharedShapeMaterialCache.forEach((entry) => {
-    entry.material.clippingPlanes = planes;
-    entry.material.clipShadows = true;
-    entry.material.needsUpdate = true;
-  });
-
-  sharedLineMaterialCache.forEach((mat) => {
+  // Moving the plane only changes its numbers, which every material reads
+  // each frame; a shader rebuild is needed only when clipping starts or stops.
+  const setPlanes = (mat: THREE.Material) => {
+    const changed = Boolean(mat.clippingPlanes?.length) !== Boolean(planes?.length);
     mat.clippingPlanes = planes;
-    mat.needsUpdate = true;
-  });
+    mat.clipShadows = true;
+    if (changed) mat.needsUpdate = true;
+  };
+  sharedShapeMaterialCache.forEach((entry) => setPlanes(entry.material));
+  sharedLineMaterialCache.forEach(setPlanes);
 
   state.needsRender = true;
 }

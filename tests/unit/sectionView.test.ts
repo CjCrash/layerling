@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeSectionPlaneVector, DEFAULT_SECTION_SETTINGS, getSectionBounds } from "@/lib/sectionView";
+import { computeSectionPlaneVector, DEFAULT_SECTION_SETTINGS, getSectionBounds, sectionFineWindow } from "@/lib/sectionView";
 import type { WorkplaneShape } from "@/types/layerling";
 
 function sampleShape(overrides: Partial<WorkplaneShape> = {}): WorkplaneShape {
@@ -109,5 +109,13 @@ describe("sectionView", () => {
     });
     expect(zAxisFlipped.normal).toEqual({ x: 0, y: 0, z: -1 });
     expect(zAxisFlipped.constant).toBe(-10);
+  });
+});
+
+describe("sectionFineWindow", () => {
+  it("is a twentieth of the coarse range to either side, between 0.5 and 10 mm", () => {
+    expect(sectionFineWindow({ min: 0, max: 40 })).toEqual({ span: 2, step: 0.01 });
+    expect(sectionFineWindow({ min: 0, max: 4 }).span).toBe(0.5);
+    expect(sectionFineWindow({ min: -500, max: 500 }).span).toBe(10);
   });
 });

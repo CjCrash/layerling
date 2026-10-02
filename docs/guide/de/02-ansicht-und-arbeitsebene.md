@@ -32,6 +32,17 @@ Am linken Rand liegt eine schmale Leiste. Von oben nach unten:
 
 Über den kleinen Pfeil ganz oben in der Leiste kannst du sie ausblenden, wenn sie stört.
 
+## Ins Innere schauen: die Schnittansicht
+
+{{ui:camera.sectionView}}, der letzte Knopf der Leiste, schneidet die Ansicht entlang einer Ebene auf. So prüfst du Wände, Hohlräume und Teile, die ineinandergreifen. Geschnitten wird nur die Ansicht: Entwurf, Dateien und jeder Export bleiben vollständig.
+
+- Wähle die Achse (X, Y oder Z), quer zu der die Ebene steht. Sie beginnt in der Mitte deines Entwurfs.
+- {{ui:camera.sectionCoarse}} schiebt die Ebene über den ganzen Entwurf, {{ui:camera.sectionFine}} nur ein Stück um ihre aktuelle Stelle, für Zehntelmillimeter. Die Position kannst du auch eintippen.
+- Der Knopf neben den Achsen zeigt die andere Seite des Schnitts, {{ui:camera.sectionReset}} setzt die Ebene zurück in die Mitte, {{ui:camera.sectionShowPlane}} blendet die blaue Ebene aus.
+- Was der Schnitt freilegt, kannst du anklicken und auswählen, auch innere Wände.
+
+[[Esc]] schließt das Fenster; der Schnitt bleibt, bis du ihn ausschaltest.
+
 ## Die Arbeitsebene
 
 Neue Formen richten sich nach der Arbeitsebene. Anfangs ist das die Grundplatte mit dem Gitter. Du kannst sie aber auf jede Fläche legen, um etwas seitlich oder auf eine schräge Fläche zu setzen.

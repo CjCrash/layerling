@@ -2353,6 +2353,10 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   color: #d27009;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-slider-scale {
+  color: #6e6e6e;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .section-slider {
   background: transparent;
 }
