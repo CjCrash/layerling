@@ -3574,6 +3574,7 @@ export function WorkplaneViewport({
   onThemePreferenceChange,
 }: WorkplaneViewportProps) {
   const [snapOpen, setSnapOpen] = useState(false);
+  const [inspectorMinimized, setInspectorMinimized] = useState(false);
   const [snap, setSnap] = useState<GridSize>(() => normalizeSnapGrid(initialSnap, DEFAULT_SNAP_GRID));
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [workspace, setWorkspace] = useState<WorkspaceSettings>(() => normalizeWorkspaceSettings(initialWorkspace));
@@ -7588,10 +7589,11 @@ export function WorkplaneViewport({
           canSeparateParts={canSeparateParts}
           onSeparateParts={onSeparateParts}
           onInteractionActiveChange={onInteractionActiveChange}
+          onMinimizedChange={setInspectorMinimized}
         />
       ) : null}
 
-      {!selectedShape ? (
+      {!selectedShape || inspectorMinimized ? (
         <div className="grid-settings">
           <SnapGridControl units={workspace.units} snap={snap} snapOpen={snapOpen} onSnapChange={chooseSnapGrid} onSnapOpenChange={setSnapOpen} />
         </div>

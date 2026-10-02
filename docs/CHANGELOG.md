@@ -7,6 +7,7 @@ code still carries it - so a lower number further down is older, not newer.
 ## Unreleased
 
 - **Rename from the settings panel:** A pencil beside the shape's name at the top of its settings opens the name for typing, like the rename button in the object list. Enter or clicking elsewhere keeps the new name, Esc cancels, and an empty name brings back the default one. Confirming the name unchanged keeps an editor-given name such as "Box" following the interface language. Works in the light, dark and Graphite themes. Contributed by @gogades.
+- **Snap grid stays reachable with the settings collapsed:** The snap grid control sits in a shape's settings while a shape is selected, so collapsing the settings with the arrow at their top hid it until the selection was cleared. With the settings collapsed, the snap grid control now shows on the workplane, as it does with nothing selected. Contributed by @gogades.
 
 ## 1.26.1
 

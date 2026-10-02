@@ -1370,6 +1370,7 @@ export function ShapeInspector({
   canSeparateParts = false,
   onSeparateParts,
   onInteractionActiveChange,
+  onMinimizedChange,
 }: {
   shape: WorkplaneShape;
   snap: GridSize;
@@ -1384,6 +1385,8 @@ export function ShapeInspector({
   canSeparateParts?: boolean;
   onSeparateParts?: () => void;
   onInteractionActiveChange?: (active: boolean) => void;
+  /** The snap control lives in the expanded panel; collapsed, the workplane shows its own. */
+  onMinimizedChange?: (minimized: boolean) => void;
 }) {
   useLanguage();
   const solidColor = shape.color;
@@ -1504,6 +1507,10 @@ export function ShapeInspector({
   };
 
   useEffect(() => () => onInteractionActiveChange?.(false), [onInteractionActiveChange]);
+  useEffect(() => {
+    onMinimizedChange?.(minimized);
+    return () => onMinimizedChange?.(false);
+  }, [minimized, onMinimizedChange]);
   useEffect(() => {
     const input = customColorInputRef.current;
     if (!colorOpen || !input) {
