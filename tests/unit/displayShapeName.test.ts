@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { setLanguage } from "@/lib/i18n";
-import { displayShapeName } from "@/lib/shapeCatalog";
+import { displayShapeName, renamedShapeName } from "@/lib/shapeCatalog";
 
 describe("displayShapeName", () => {
   afterEach(() => setLanguage("en", false));
@@ -25,5 +25,33 @@ describe("displayShapeName", () => {
     setLanguage("en", false);
     expect(displayShapeName({ name: "Sketch extrusion", kind: "mesh" })).toBe("Sketch body");
     expect(displayShapeName({ name: "Box", kind: "box" })).toBe("Box");
+  });
+});
+
+describe("renamedShapeName", () => {
+  afterEach(() => setLanguage("en", false));
+
+  it("stores a new name, trimmed", () => {
+    expect(renamedShapeName({ name: "Box", kind: "box" }, "  Lid  ")).toBe("Lid");
+    expect(renamedShapeName({ name: "Lid", kind: "box" }, "Base")).toBe("Base");
+  });
+
+  it("changes nothing when the shown name is confirmed as it is", () => {
+    expect(renamedShapeName({ name: "Lid", kind: "box" }, "Lid")).toBeUndefined();
+    expect(renamedShapeName({ name: "Lid", kind: "box" }, " Lid ")).toBeUndefined();
+  });
+
+  it("does not store the translated name of an untouched shape", () => {
+    setLanguage("de", false);
+    // The field opens with "Quader"; confirming it must keep "Box" stored, so
+    // the name still follows the language.
+    expect(renamedShapeName({ name: "Box", kind: "box" }, "Quader")).toBeUndefined();
+    expect(renamedShapeName({ name: "Group", kind: "mesh" }, "Gruppe")).toBeUndefined();
+  });
+
+  it("clears the name when the field is emptied, which shows the default again", () => {
+    const shape = { name: "Lid", kind: "box" as const };
+    expect(renamedShapeName(shape, "   ")).toBe("");
+    expect(displayShapeName({ ...shape, name: "" })).toBe("Box");
   });
 });

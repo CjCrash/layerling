@@ -18,7 +18,7 @@ Bei vielen Teilen verliert man in der Ansicht leicht den Überblick. Die Objektl
 - Ein Klick auf einen Eintrag wählt die Form aus, auch die Teile innerhalb einer Gruppe. Die Pfeile klappen Gruppen auf und zu.
 - Das Etikett zeigt, ob ein Teil {{ui:outliner.solid}} oder {{ui:outliner.hole}} ist.
 - Schloss und Auge sperren und verstecken einzelne Teile.
-- Über {{ui:outliner.rename}} gibst du einem Teil einen eigenen Namen. Vernünftige Namen helfen bei größeren Entwürfen enorm.
+- Über {{ui:outliner.rename}} gibst du einem Teil einen eigenen Namen; der Stift neben dem Namen oben in den Einstellungen macht dasselbe für die ausgewählte Form. Vernünftige Namen helfen bei größeren Entwürfen enorm.
 - Das Suchfeld findet Formen nach Namen und nach Art, also auch „Zylinder“ oder „Aussparung“.
 
 ## Ausrichten

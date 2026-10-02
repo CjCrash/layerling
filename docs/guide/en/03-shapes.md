@@ -24,7 +24,7 @@ What the library offers:
 
 ## The shape's settings
 
-As soon as a shape is selected, its settings appear on the right. At the top is the name. Beside it, the padlock locks the shape against accidental moving and the eye hides it.
+As soon as a shape is selected, its settings appear on the right. At the top is the name; the pencil beside it ({{ui:outliner.rename}}) lets you type a new one. [[Enter]] keeps it, [[Esc]] cancels, and an empty name brings back the shape's default name. Further right, the padlock locks the shape against accidental moving and the eye hides it.
 
 ![The settings of a cylinder: solid or hole, diameter and height as a number and as a slider.](shot:editor-overview)
 

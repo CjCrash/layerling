@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Rename from the settings panel:** A pencil beside the shape's name at the top of its settings opens the name for typing, like the rename button in the object list. Enter or clicking elsewhere keeps the new name, Esc cancels, and an empty name brings back the default one. Confirming the name unchanged keeps an editor-given name such as "Box" following the interface language. Works in the light, dark and Graphite themes. Contributed by @gogades.
+
 ## 1.26.1
 
 - **Tapered and leaning shapes stay exact:** A box, cylinder, ellipse, polygon, tube or ring with a taper or lean is now built as an exact body (the straight-sided loft between its bottom and top) instead of a triangle mesh, so the edge tool offers its real edges and fillets it where it used to refuse - a tapered cylinder has 4 selectable edges instead of 200. Twisted shapes, and a tapered sphere or cone, stay a mesh. Also fixed: STEP export wrote a tapered, leaning or twisted box, cylinder, sphere or cone as the plain undeformed shape; it now writes the tapered or leaning body, and skips a twisted one with a message. Contributed by @plazmabokor (#68).

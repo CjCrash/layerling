@@ -6693,6 +6693,53 @@ button {
   font-size: 14px;
 }
 
+/* The name, and the pencil that renames it right beside it. */
+.inspector-name {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  margin-right: 8px;
+}
+
+.inspector-name strong {
+  flex: 0 1 auto;
+  margin-right: 0;
+}
+
+.inspector-rename-button {
+  display: grid;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: #7a6550;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.inspector-rename-button:hover {
+  color: #955717;
+  background: #f5f0e8;
+}
+
+.inspector-name-input {
+  width: 100%;
+  min-width: 0;
+  margin-left: 9px;
+  padding: 4px 6px;
+  color: inherit;
+  background: #ffffff;
+  border: 1px solid #d46b08;
+  border-radius: 4px;
+  outline: none;
+  font-size: 16px;
+  font-weight: 800;
+}
+
 .inspector-header-actions {
   display: flex;
   align-items: center;
@@ -11011,6 +11058,21 @@ html[data-theme="dark"] .outliner-children-list {
 
 html[data-theme="dark"] .outliner-child-name {
   color: #cbd5e0;
+}
+
+html[data-theme="dark"] .inspector-rename-button {
+  color: #d8c8b2;
+}
+
+html[data-theme="dark"] .inspector-rename-button:hover {
+  color: #f0973a;
+  background: #463625;
+}
+
+html[data-theme="dark"] .inspector-name-input {
+  background: #1e1a16;
+  border-color: #ed8936;
+  color: #f7fafc;
 }
 
 html[data-theme="dark"] .outliner-rename-input {

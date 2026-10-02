@@ -660,6 +660,17 @@ export function displayShapeName(shape: Pick<WorkplaneShape, "name" | "kind">): 
 }
 
 /**
+ * The name to store after somebody edited the shown name, or undefined when
+ * nothing changed. The draft starts as the shown (possibly translated) name,
+ * so confirming it untouched must not pin "Quader" onto a shape stored as
+ * "Box". An emptied field stores "", which shows the default name again.
+ */
+export function renamedShapeName(shape: Pick<WorkplaneShape, "name" | "kind">, draft: string): string | undefined {
+  const trimmed = draft.trim();
+  return trimmed === displayShapeName(shape) ? undefined : trimmed;
+}
+
+/**
  * Die Zeile im Formenmenue darf mehr sagen als der Name des Objekts. Hinter
  * "Gewinde" stecken auch Schrauben und Muttern, und wer die sucht, soll den
  * Eintrag finden - benannt wird ein neues Objekt trotzdem nur "Gewinde".
