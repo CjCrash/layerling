@@ -55,7 +55,9 @@ Ein Klick ins Leere oder [[Esc]] holt die Arbeitsebene zurück auf die Grundplat
 
 ## Gitter und Raster
 
-Das Gitter zeigt die Größe der Platte. Unten rechts steht das **Raster**: Verschieben und Skalieren rasten in Schritten dieser Größe ein, zum Beispiel 1 mm. Für Feinarbeit stellst du es kleiner, für grobes Anordnen größer. {{ui:editor.tool.snapToGrid}} im Menüband rückt die ausgewählten Formen nachträglich auf das nächste Rasterkreuz.
+Das Gitter zeigt die Größe der Platte. Unten rechts steht das **Raster**: Verschieben und Skalieren rasten in Schritten dieser Größe ein, zum Beispiel 1 mm. Für Feinarbeit stellst du es kleiner, für grobes Anordnen größer. {{ui:editor.tool.snapToGrid}} im Menüband rückt die ausgewählten Formen nachträglich auf das nächste Rasterkreuz. Beim Verschieben rasten Formen außerdem an anderen Formen ein, siehe [Auswählen und Anordnen](chapter:auswaehlen-und-anordnen).
+
+Unter {{ui:workspace.measurement}} in den Einstellungen stellst du die {{ui:workspace.units}} ein. Mit {{ui:units.imperial}} zeigt layerling alle Maße in Zoll, an der Form, im Eigenschaftenfeld, bei Maßband und Lineal. Das Raster bietet dann Schritte von 1/64 bis 1 Zoll. Bei {{ui:workspace.inchFormat}} wählst du, ob Zoll als Bruch wie in Tinkercad erscheinen (1 5/8, auf 1/64 Zoll gerundet) oder als Dezimalzahl (1.625) mit so vielen Nachkommastellen, wie unter {{ui:workspace.accuracy}} eingestellt ist. Eintippen kannst du beides, auch „1 5/8“.
 
 Größe, Gitterweite und Farbe der Platte änderst du in den Einstellungen (das Zahnrad im Menüband): Dort liegen die Bereiche {{ui:workspace.appearance}}, {{ui:workspace.measurement}}, {{ui:workspace.workplane}}, {{ui:workspace.shapeDefaults}} und {{ui:workspace.history}}. Unter {{ui:workspace.appearance}} gibt es zum Beispiel den Schalter {{ui:workspace.startInPerspective}}, {{ui:workspace.showShadows}} und {{ui:workspace.showGrid}}.
 

@@ -56,6 +56,8 @@ Du wirst alles wiedererkennen: die Platte, die Formen, Körper und Aussparung (d
 ### Bauen
 
 - **Eine echte Bauplatte** – Raster, Einrasten, Griffe zum Verschieben, Skalieren und Drehen, und ein Feld mit den genauen Zahlen, wenn du sie brauchst.
+- **Fangen an anderen Formen** – beim Verschieben rastet eine Form mit Kante oder Mitte an Kanten und Mitten der Formen ringsum ein, eine Hilfslinie zeigt woran. So sitzen Teile bündig, ohne Zahlen zu tippen. Alt hält das kurz an.
+- **Millimeter oder Zoll** – mit Imperial erscheinen alle Maße in Zoll, als Bruch wie in Tinkercad (1 5/8) oder als Dezimalzahl, und das Raster rastet von 1/64 bis 1 Zoll.
 - **Die Platte deines Druckers** – wähl einen von 190 gängigen Druckern, dann bekommt die Platte seine Größe. Name und Bauraum stehen in der Ecke der Arbeitsfläche, und eine Warnung erscheint, wenn ein Körper über den Rand ragt.
 - **Formen-Bibliothek** – Quader, Zylinder, Kugeln, Kegel, Pyramiden, Keile, Text, Dächer, Halbkugeln, Tori, Rohre, Mehrkante von drei bis vierundzwanzig Seiten, Federn und mehr.
 - **Gewinde, die passen** – Gewindestangen, Schrauben mit Zylinder-, Senk- oder Sechskantkopf, Sechskantmuttern und Gewindelöcher. M2 bis M12 liegen bereit, dazu UNC und UNF von #4 bis ein Zoll und die Whitworth-Rohrgewinde G1/16 bis G4 (ISO 228-1); Durchmesser und Steigung lassen sich auch frei wählen, Linksgewinde ebenso. Bei einer Zoll- oder G-Größe fragt das Feld nach Gängen je Zoll statt nach Millimetern. Die Enden bekommen auf Wunsch eine Fase, und das Gewindeloch ist eine Aussparung: in ein Teil ziehen, gruppieren, fertig.
@@ -77,6 +79,7 @@ Du wirst alles wiedererkennen: die Platte, die Formen, Körper und Aussparung (d
 ### Ansicht
 
 - **Perspektivisch oder gerade von vorn** – zwischen normaler und orthografischer Ansicht wechseln, über den Würfelknopf neben den Zoomtasten oder mit **O**. Blickrichtung und Ausschnitt bleiben erhalten.
+- **Schnittansicht** – die Ansicht entlang einer Ebene quer zu X, Y oder Z aufschneiden, um Wände, Hohlräume und ineinandergreifende Teile zu sehen, mit grobem und feinem Regler. Geschnitten wird nur die Ansicht: Entwurf und jeder Export bleiben ganz.
 - **Auf einem Tablet** – ein Finger arbeitet am Entwurf, genau wie die linke Maustaste: Antippen wählt aus, Ziehen verschiebt, Ziehen auf leerer Fläche spannt den Auswahlrahmen. **Zwei Finger gehören der Ansicht**: Spreizen und Zusammenziehen zoomt, gemeinsames Schieben verschiebt die Arbeitsfläche. Setzt der zweite Finger auf, wird zurückgenommen, was der erste angefangen hatte; ein Zoom verschiebt also nie versehentlich ein Teil. Fürs Drehen gibt es keine eigene Geste, dafür einen Umschalter in der Kameraleiste, der nur auf einem Berührungsbildschirm erscheint: Solange er an ist, dreht ein Finger die Ansicht, statt auszuwählen. Zahlenfelder geben beim Antippen ihren ganzen Wert zum Überschreiben frei – eine Dezimaltastatur hat keine Pfeiltasten, mit denen sich der Schreibzeiger setzen ließe.
 
 ### Videos

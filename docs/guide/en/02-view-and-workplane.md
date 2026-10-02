@@ -55,7 +55,9 @@ A click on empty space or [[Esc]] returns the workplane to the base plate. [[Shi
 
 ## Grid and snapping
 
-The grid shows the size of the plate. At the bottom right is the **snap step**: moving and scaling snap in steps of that size, for example 1 mm. Make it smaller for fine work and larger for rough arranging. {{ui:editor.tool.snapToGrid}} in the ribbon moves the selected shapes afterwards onto the nearest grid crossing.
+The grid shows the size of the plate. At the bottom right is the **snap step**: moving and scaling snap in steps of that size, for example 1 mm. Make it smaller for fine work and larger for rough arranging. {{ui:editor.tool.snapToGrid}} in the ribbon moves the selected shapes afterwards onto the nearest grid crossing. While moving, shapes also snap to other shapes, see [Selecting and arranging](chapter:select-and-arrange).
+
+Under {{ui:workspace.measurement}} in the settings you set the {{ui:workspace.units}}. With {{ui:units.imperial}}, layerling shows every measure in inches, on the shape, in the properties panel, on the tape measure and the ruler. The snap grid then offers steps from 1/64 to 1 inch. Under {{ui:workspace.inchFormat}} you choose whether inches appear as fractions like in Tinkercad (1 5/8, rounded to 1/64 inch) or as decimals (1.625) with as many decimal places as set under {{ui:workspace.accuracy}}. You can type either, "1 5/8" included.
 
 Size, grid width and colour of the plate are changed in the settings (the cogwheel in the ribbon): the areas are {{ui:workspace.appearance}}, {{ui:workspace.measurement}}, {{ui:workspace.workplane}}, {{ui:workspace.shapeDefaults}} and {{ui:workspace.history}}. Under {{ui:workspace.appearance}} you find switches such as {{ui:workspace.startInPerspective}}, {{ui:workspace.showShadows}} and {{ui:workspace.showGrid}}.
 

@@ -27,6 +27,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { combos: ["Esc"], label: "shortcuts.clearSelection" },
       { combos: ["Delete", "Backspace"], label: "shortcuts.delete" },
       { combos: ["Ctrl+A"], label: "shortcuts.selectAll" },
+      { combos: ["Shift+Click"], label: "shortcuts.addToSelection" },
     ],
   },
   {
@@ -88,6 +89,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { combos: ["Ctrl+↑ / ↓"], label: "shortcuts.raise" },
       { combos: ["R"], label: "shortcuts.rotate" },
       { combos: ["Shift+R"], label: "shortcuts.rotateFine" },
+      { combos: ["Alt"], label: "shortcuts.pauseObjectSnap" },
     ],
   },
   {
@@ -149,7 +151,7 @@ function ShortcutKeys({ combos }: { combos: string[] }) {
             {comboKeys(combo).map((key, keyIndex) => (
               <Fragment key={key}>
                 {keyIndex > 0 ? <span className="shortcuts-plus" aria-hidden="true">+</span> : null}
-                <kbd>{key}</kbd>
+                <kbd>{key === "Click" ? t("shortcuts.click") : key}</kbd>
               </Fragment>
             ))}
           </span>

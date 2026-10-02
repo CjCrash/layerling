@@ -282,7 +282,7 @@ export function renderBlocks(markdown, context) {
 }
 
 const KEY_NAMES = {
-  de: { Ctrl: "Strg", Shift: "Umschalt", Delete: "Entf", Backspace: "Rücktaste", Home: "Pos1" },
+  de: { Ctrl: "Strg", Shift: "Umschalt", Delete: "Entf", Backspace: "Rücktaste", Home: "Pos1", Click: "Klick" },
   en: {},
 };
 

@@ -26,7 +26,7 @@ function guideSections(sharedStore: boolean): GuideSection[] {
     {
       title: "guide.group.view",
       chapter: "view",
-      lines: ["guide.view.orbit", "guide.view.touch", "guide.view.cube", "guide.view.projection"],
+      lines: ["guide.view.orbit", "guide.view.touch", "guide.view.cube", "guide.view.projection", "guide.view.section"],
     },
     {
       title: "guide.group.workplane",
