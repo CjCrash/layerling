@@ -232,7 +232,7 @@ scenes["open-group"] = async (ctx) => {
   await ctx.mcp("group_objects", { ids: [box, hole] });
   await ctx.wait(2500);
   await ctx.click(ctx.t("editor.tool.showOutliner"));
-  await ctx.click(ctx.t("group.open"));
+  await ctx.click(ctx.t("group.edit"));
   await ctx.wait(2500);
   await ctx.shot("open-group");
 };

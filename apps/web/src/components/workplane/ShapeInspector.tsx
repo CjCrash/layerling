@@ -1731,7 +1731,7 @@ export function ShapeInspector({
 
       {onOpenGroup ? (
         <button className="inspector-action-button" type="button" disabled={locked} onClick={onOpenGroup}>
-          {t("group.open")}
+          {t("group.edit")}
         </button>
       ) : null}
 

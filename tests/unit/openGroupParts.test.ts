@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { trackOpenGroupParts } from "@/lib/openGroupParts";
+import { canEditGroupAtLevel, openGroupLevelsStillOpen, trackOpenGroupLevels, trackOpenGroupParts } from "@/lib/openGroupParts";
 
 const shapes = (...ids: string[]) => ids.map((id) => ({ id }));
 
@@ -45,5 +45,73 @@ describe("the parts of an open group", () => {
     expect(grouped).toEqual(["a", "b", "bc", "c"]);
     // Undo: b and c return, bc goes - nothing new to take in, and b and c are still parts.
     expect(trackOpenGroupParts(grouped, shapes("a", "bc"), shapes("a", "b", "c"))).toBe(grouped);
+  });
+});
+
+describe("groups edited inside each other", () => {
+  it("gives a replacement to the innermost level that lost a part", () => {
+    // Outer level: a and the inner group g (open); inner level: c and d.
+    const levels = [["a", "g"], ["c", "d"]];
+    const tracked = trackOpenGroupLevels(levels, shapes("a", "c", "d"), shapes("a", "cd"));
+    expect(tracked).toEqual([["a", "g"], ["c", "cd", "d"]]);
+    expect(tracked[0]).toBe(levels[0]);
+  });
+
+  it("gives a replacement of an outer part to the outer level", () => {
+    const levels = [["a", "b", "g"], ["c", "d"]];
+    expect(trackOpenGroupLevels(levels, shapes("a", "b", "c", "d"), shapes("ab", "c", "d"))).toEqual([["a", "ab", "b", "g"], ["c", "d"]]);
+  });
+
+  it("does not hand an id that a level already has to another one", () => {
+    // Undo of an outer grouping brings a and b back while the inner level is open.
+    const levels = [["a", "ab", "b", "g"], ["c", "d"]];
+    expect(trackOpenGroupLevels(levels, shapes("ab", "c", "d"), shapes("a", "b", "c", "d"))).toBe(levels);
+  });
+
+  it("changes nothing for new shapes", () => {
+    const levels = [["a", "g"], ["c", "d"]];
+    expect(trackOpenGroupLevels(levels, shapes("a", "c", "d"), shapes("a", "c", "d", "new"))).toBe(levels);
+  });
+});
+
+describe("which levels stay open", () => {
+  const level = (groupId: string, ...partIds: string[]) => ({ groupId, partIds });
+  const present = (...ids: string[]) => new Set(ids);
+
+  it("keeps every level while each still has parts", () => {
+    expect(openGroupLevelsStillOpen([level("outer", "a", "inner"), level("inner", "c", "d")], present("a", "c", "d"))).toBe(2);
+  });
+
+  it("ends the inner level when undo brings its group back, and keeps the outer one", () => {
+    expect(openGroupLevelsStillOpen([level("outer", "a", "inner"), level("inner", "c", "d")], present("a", "inner"))).toBe(1);
+  });
+
+  it("ends every level when undo brings the outer group back", () => {
+    expect(openGroupLevelsStillOpen([level("outer", "a", "inner"), level("inner", "c", "d")], present("outer"))).toBe(0);
+  });
+
+  it("keeps an outer level whose only part left is the group open inside it", () => {
+    expect(openGroupLevelsStillOpen([level("outer", "a", "inner"), level("inner", "c", "d")], present("c", "d"))).toBe(2);
+  });
+
+  it("ends a level with nothing left, and every level inside it", () => {
+    expect(openGroupLevelsStillOpen([level("outer", "a", "inner"), level("inner", "c")], present("x"))).toBe(0);
+  });
+
+  it("ends only the inner level when only its parts are gone", () => {
+    expect(openGroupLevelsStillOpen([level("outer", "a", "inner"), level("inner", "c")], present("a"))).toBe(1);
+  });
+});
+
+describe("which groups can be edited", () => {
+  it("allows any group when none is being edited", () => {
+    expect(canEditGroupAtLevel([], "g")).toBe(true);
+  });
+
+  it("allows only parts of the innermost level", () => {
+    const levels = [{ partIds: ["a", "g1"] }, { partIds: ["c", "g2"] }];
+    expect(canEditGroupAtLevel(levels, "g2")).toBe(true);
+    expect(canEditGroupAtLevel(levels, "g1")).toBe(false);
+    expect(canEditGroupAtLevel(levels, "elsewhere")).toBe(false);
   });
 });

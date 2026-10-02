@@ -315,18 +315,18 @@ export const tools = [
   },
   {
     name: "layerling_open_group",
-    description: "Open a group to change its parts one by one, like 'Open group' in the editor: the parts lie loose on the workplane (their ids come back) and can be changed with every other tool. Close it again with layerling_close_group. Only one group can be open at a time; layerling_read_scene reports it as openGroup.",
+    description: "Open a group to change its parts one by one, like 'Edit group' in the editor: the parts lie loose on the workplane (their ids come back) and can be changed with every other tool. Close it again with layerling_close_group. While a group is open, a group among its parts can be opened too, one level deeper each time; any other group is refused until the open one is closed. layerling_read_scene reports the innermost open group as openGroup and every level, outermost first, as openGroups.",
     inputSchema: {
       ...editorTargetSchema,
       properties: {
         ...editorTargetSchema.properties,
-        id: { type: "string", description: "The group to open. If omitted, the one selected object." },
+        id: { type: "string", description: "The group to open: any group when none is open, otherwise one of the innermost open group's parts. If omitted, the one selected object." },
       },
     },
   },
   {
     name: "layerling_close_group",
-    description: "Close the open group: rebuild it from its parts (the editor's Done), keeping the group's name, colour, solid/hole state; or pass cancel: true to put the untouched group back. Fillets and chamfers applied to the whole group are lost on rebuild.",
+    description: "Close the innermost open group: rebuild it from its parts (the editor's Done) as the same group, keeping its id, name, colour and solid/hole state; or pass cancel: true to put the untouched group back. The level around it, if any, stays open. Fillets and chamfers applied to the whole group are lost on rebuild.",
     inputSchema: {
       ...editorTargetSchema,
       properties: {
