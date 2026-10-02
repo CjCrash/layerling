@@ -99,6 +99,7 @@ export type LayerlingMcpCommandName =
   | "hollow_object"
   | "array_objects"
   | "inspect_errors"
+  | "set_section_view"
   | "capture_image";
 
 export type LayerlingMcpCommand = {

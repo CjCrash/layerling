@@ -56,6 +56,7 @@ Die KI arbeitet mit denselben Funktionen wie du, sie läuft über denselben Weg 
 | `layerling_hollow_object` | höhlt einen Körper mit gleichmäßiger Wand aus |
 | `layerling_array_objects` | vervielfältigt in einer Reihe oder auf einem Kreis |
 | `layerling_inspect_errors` | zeigt die letzte Meldung und den letzten Fehler |
+| `layerling_set_section_view` | schneidet die Ansicht entlang einer Ebene auf, um ins Innere zu sehen (nur die Ansicht, nichts wird zerteilt) |
 | `layerling_capture_image` | nimmt ein Bild der Ansicht auf, von vorn, oben, seitlich und mehr |
 
 Die KI kann sich damit selbst kontrollieren: Sie legt etwas an, macht ein Bild, sieht nach und verbessert.

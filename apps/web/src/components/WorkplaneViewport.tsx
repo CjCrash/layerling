@@ -416,6 +416,8 @@ declare global {
     layerlingCaptureCanvas?: () => string;
     layerlingCaptureCanvasAsync?: () => Promise<string>;
     layerlingCaptureView?: (face?: LayerlingMcpViewFace) => Promise<string> | string;
+    /** The section view for MCP: applies what is given, returns the settings it ends on and the plane's range. */
+    layerlingSectionView?: (patch: Partial<SectionPlaneSettings> & { center?: boolean }) => { settings: SectionPlaneSettings; bounds: { min: number; max: number; center: number } };
   }
 }
 
@@ -7353,6 +7355,32 @@ export function WorkplaneViewport({
       ...prev,
       showPlane,
     }));
+  }, []);
+
+  // MCP: the same rules as the buttons - a new axis, switching on from the
+  // start position or `center` put the plane in the middle of the design,
+  // unless an offset is given.
+  useEffect(() => {
+    window.layerlingSectionView = (patch) => {
+      const current = sectionSettingsRef.current;
+      const axis = patch.axis ?? current.axis;
+      const bounds = getSectionBounds(shapesRef.current, axis, workspaceRef.current.width, workspaceRef.current.depth);
+      const switchingOn = patch.enabled === true && !current.enabled && current.offset === 0;
+      const recenter = patch.center === true || axis !== current.axis || switchingOn;
+      const next: SectionPlaneSettings = {
+        enabled: patch.enabled ?? current.enabled,
+        axis,
+        offset: typeof patch.offset === "number" && Number.isFinite(patch.offset) ? patch.offset : recenter ? bounds.center : current.offset,
+        flipped: patch.flipped ?? current.flipped,
+        showPlane: patch.showPlane ?? current.showPlane,
+      };
+      sectionSettingsRef.current = next;
+      setSectionSettings(next);
+      return { settings: next, bounds: { min: bounds.min, max: bounds.max, center: bounds.center } };
+    };
+    return () => {
+      delete window.layerlingSectionView;
+    };
   }, []);
 
   const handleTapePointPointerDown = useCallback(

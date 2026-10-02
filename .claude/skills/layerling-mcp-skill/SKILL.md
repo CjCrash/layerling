@@ -1,6 +1,6 @@
 ---
 name: layerling-mcp-skill
-description: Control a live local layerling editor through its MCP server. Use when the assistant needs to list currently open layerling editor tabs, target a tab by editorNumber/projectName, read the current scene, list or select objects, create any of the editor's shapes including threads, springs, gears and raised text, update dimensions/position/rotation, align objects, group/ungroup/cut/separate parts, list exact CAD edge ids, apply chamfer/fillet to specific edges, hollow bodies into walls, repeat objects in rows or circles (hole rows, bolt circles, teeth), inspect editor errors, or capture viewport images from view-cube angles.
+description: Control a live local layerling editor through its MCP server. Use when the assistant needs to list currently open layerling editor tabs, target a tab by editorNumber/projectName, read the current scene, list or select objects, create any of the editor's shapes including threads, springs, gears and raised text, update dimensions/position/rotation, align objects, group/ungroup/cut/separate parts, list exact CAD edge ids, apply chamfer/fillet to specific edges, hollow bodies into walls, repeat objects in rows or circles (hole rows, bolt circles, teeth), cut the view open with the section view to look inside, inspect editor errors, or capture viewport images from view-cube angles.
 ---
 
 # layerling MCP
@@ -99,6 +99,10 @@ For a row of holes, a hole grid, a bolt circle or the teeth of a ring, build one
 Group the pattern with the body afterwards when the pieces are holes.
 
 ## Images
+
+## Section view
+
+To look inside a part - wall thickness after hollowing, a thread in its nut, a cavity, parts that fit into each other - cut the view open with `layerling_set_section_view({ editorNumber, enabled: true, axis, offset })`, then capture an image. Only the view is cut; the design and its exports stay whole. `axis` uses the editor's coordinates like an object's position: `x` cuts across left-right (`offset` is an x position), `z` across front-back (a z position), `y` horizontally (`offset` is a height above the plate, like `elevation`). Switching on, a new axis or `center: true` put the plane in the middle of the design unless `offset` is given; the result returns the plane's useful range (`min`, `max`, `center`). The far side (greater x, z or height) stays visible; `flipped: true` shows the other one. `showPlane: false` hides the blue plane for a clean picture. Call it with no settings to read the current state, and switch it off with `enabled: false` when done.
 
 Use `layerling_capture_image` for viewport PNGs. `face` can be `current`, `home`, `top`, `bottom`, `front`, `back`, `right`, or `left`. These use the same camera/view-cube orientation logic as the editor UI.
 

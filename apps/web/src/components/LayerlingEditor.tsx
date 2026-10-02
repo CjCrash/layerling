@@ -189,6 +189,7 @@ import {
 } from "@/lib/layerlingMcpProtocol";
 import type { CadModifierComponentMesh, CadModifierDeflection, CadModifierDisplayEdge, CadModifierEdge, CadModifierHelicalGearPart, CadModifierKind, CadModifierMeshPart, CadModifierPrimitivePart, CadModifierProfilePart, CadModifierQuality, CadModifierSpringPart, CadModifierThreadPart, CadModifierWorkerRequest, CadModifierWorkerResponse } from "@/lib/cadModifierTypes";
 import type { SketchCadBuildResponse } from "@/lib/sketchCadTypes";
+import type { SectionPlaneAxis, SectionPlaneSettings } from "@/lib/sectionView";
 import type { AlignAxis, AlignHandleStatus, AlignTarget, GridSize, ParametricSource, ProjectAsset, ShapeAsset, ShapeCustomization, ShapeKind, SketchImage, SketchOperation, SketchPoint, SketchProfile, SketchRevolveSettings, SketchSegment, ShellEdges, ShellOpenings, WorkplaneNote, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 
 export { importedShapeFromObj, importedShapeFromStl, importedShapeFromSvg };
@@ -284,6 +285,8 @@ declare global {
     layerlingCaptureCanvas?: () => string;
     layerlingCaptureCanvasAsync?: () => Promise<string>;
     layerlingCaptureView?: (face?: LayerlingMcpViewFace) => Promise<string> | string;
+    /** The section view for MCP: applies what is given, returns the settings it ends on and the plane's range. */
+    layerlingSectionView?: (patch: Partial<SectionPlaneSettings> & { center?: boolean }) => { settings: SectionPlaneSettings; bounds: { min: number; max: number; center: number } };
   }
 }
 
@@ -10065,6 +10068,22 @@ export function LayerlingEditor({
           edgeModifierError: edgeModifierRef.current?.error ?? null,
           lastMcpError: lastMcpErrorRef.current,
         };
+      }
+
+      if (command.action === "set_section_view") {
+        if (!window.layerlingSectionView) throw new Error("The section view is not available in this editor");
+        const axis = params.axis === undefined ? undefined : mcpString(params.axis, "x").toLowerCase();
+        if (axis !== undefined && axis !== "x" && axis !== "y" && axis !== "z") throw new Error("axis must be x, y or z");
+        const offset = params.offset === undefined ? undefined : mcpNumber(params.offset, 0);
+        const result = window.layerlingSectionView({
+          ...(typeof params.enabled === "boolean" ? { enabled: params.enabled } : {}),
+          ...(axis ? { axis: axis as SectionPlaneAxis } : {}),
+          ...(offset !== undefined ? { offset } : {}),
+          ...(typeof params.flipped === "boolean" ? { flipped: params.flipped } : {}),
+          ...(typeof params.showPlane === "boolean" ? { showPlane: params.showPlane } : {}),
+          ...(params.center === true ? { center: true } : {}),
+        });
+        return result;
       }
 
       if (command.action === "capture_image") {

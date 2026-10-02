@@ -447,6 +447,22 @@ export const tools = [
     inputSchema: editorTargetSchema,
   },
   {
+    name: "layerling_set_section_view",
+    description: "Cut the view open along a plane to look inside: walls, cavities, threads in their nuts, parts fitting into each other. Only the view is cut; the design and every export stay whole. Call with no settings to read the current state. axis uses the editor's own coordinates, the same as an object's x, z and elevation: \"x\" cuts across left-right (offset is an x position), \"z\" across front-back (a z position), \"y\" horizontally (offset is a height above the plate, like elevation). Switching on, changing the axis or center: true puts the plane in the middle of the design unless offset is given. By default the part on the far side of the plane (greater x, z or height) stays visible; flipped shows the other side. Returns the settings and the plane's useful range (min, max, center). Combine with layerling_capture_image to see the cut.",
+    inputSchema: {
+      ...editorTargetSchema,
+      properties: {
+        ...editorTargetSchema.properties,
+        enabled: { type: "boolean", description: "Switch the section view on or off." },
+        axis: { type: "string", enum: ["x", "y", "z"] },
+        offset: { type: "number", description: "Position of the plane in millimetres along the axis." },
+        center: { type: "boolean", description: "Move the plane to the middle of the design." },
+        flipped: { type: "boolean", description: "Show the other side of the plane." },
+        showPlane: { type: "boolean", description: "Draw the blue plane (false hides it, the cut stays)." },
+      },
+    },
+  },
+  {
     name: "layerling_capture_image",
     description: "Capture a PNG image of the editor viewport from current/home/top/bottom/front/back/right/left view.",
     inputSchema: {

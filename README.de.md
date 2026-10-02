@@ -292,7 +292,7 @@ MCP-Route abgeschaltet.
 
 Die wichtigsten Werkzeugnamen sind `layerling_list_editors`, `layerling_read_scene`, `layerling_list_objects`,
 `layerling_create_shape`, `layerling_update_object`, `layerling_list_edges`, `layerling_apply_edge_treatment`,
-`layerling_hollow_object`, `layerling_array_objects` und `layerling_capture_image`.
+`layerling_hollow_object`, `layerling_array_objects`, `layerling_set_section_view` und `layerling_capture_image`.
 
 ### Claude Code
 

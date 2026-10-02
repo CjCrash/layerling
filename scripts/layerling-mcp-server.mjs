@@ -115,6 +115,8 @@ async function callTool(name, args) {
       return bridgeCommand("apply_edge_treatment", args, 60000);
     case "layerling_inspect_errors":
       return bridgeCommand("inspect_errors", args);
+    case "layerling_set_section_view":
+      return bridgeCommand("set_section_view", args);
     case "layerling_capture_image":
       return bridgeCommand("capture_image", args, 30000);
     default:

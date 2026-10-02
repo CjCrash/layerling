@@ -56,6 +56,7 @@ The AI works with the same functions as you, through the same path as your opera
 | `layerling_hollow_object` | hollows a body with an even wall |
 | `layerling_array_objects` | multiplies in a row or on a circle |
 | `layerling_inspect_errors` | shows the last message and the last error |
+| `layerling_set_section_view` | cuts the view open along a plane to look inside (only the view, nothing is cut apart) |
 | `layerling_capture_image` | takes a picture of the view: front, top, side and more |
 
 That lets the AI check itself: it creates something, takes a picture, looks and improves.
