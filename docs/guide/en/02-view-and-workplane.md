@@ -41,7 +41,7 @@ The small arrow at the very top of the bar hides it if it gets in the way.
 - The button beside the axes shows the other side of the cut, {{ui:camera.sectionReset}} puts the plane back in the middle, and {{ui:camera.sectionShowPlane}} hides the blue plane.
 - You can click and select what the cut lays open, inner walls included.
 
-[[Esc]] closes the panel; the cut stays until you switch it off.
+[[Esc]] closes the panel; the cut stays until you switch it off or go back to the design overview. While it is on, its button stays highlighted. Anything you place on the side that is cut away only shows once you switch the cut off.
 
 ## The workplane
 

@@ -6068,6 +6068,7 @@ export function LayerlingEditor({
   projectCreatedAt = Date.now(),
   projectModifiedAt = Date.now(),
   projectRevision = 0,
+  editorOpen = true,
   sharedProjectsEnabled = false,
   themePreference = "system",
   resolvedTheme = "light",
@@ -6115,6 +6116,8 @@ export function LayerlingEditor({
   projectCreatedAt?: number;
   projectModifiedAt?: number;
   projectRevision?: number;
+  /** False while the overview is shown; the editor stays mounted behind it. */
+  editorOpen?: boolean;
   sharedProjectsEnabled?: boolean;
   themePreference?: AppThemePreference;
   resolvedTheme?: ResolvedAppTheme;
@@ -11467,6 +11470,7 @@ export function LayerlingEditor({
         ) : (
           <WorkplaneViewport
           projectName={projectName}
+          projectId={editorOpen ? projectId ?? null : null}
           shapes={viewportShapes}
           selectedIds={selectedIds}
           alignMode={alignMode}

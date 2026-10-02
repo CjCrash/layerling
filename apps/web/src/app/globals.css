@@ -4571,6 +4571,9 @@ button {
   height: calc(100vh - var(--editor-toolbar-height) - var(--editor-footer-height));
   overflow: hidden;
   background: var(--background);
+  /* Fuer die Kameraleiste: Sie richtet sich nach der Hoehe dieser Flaeche,
+     nicht nach der des Fensters. */
+  container: workplane / size;
 }
 
 .sketch-workspace-stage {
@@ -10935,8 +10938,14 @@ html[data-theme="dark"] .theme-check {
    Gefuellt wird spaltenweise, damit Plus und Minus untereinander bleiben: Ein
    Zoompaar, das diagonal auseinanderliegt, sucht man jedes Mal neu. Der
    Einklapper bekommt seine eigene Zeile darueber - er gehoert zu keiner der
-   beiden Spalten, sondern zur ganzen Leiste. */
-@media (max-height: 700px) {
+   beiden Spalten, sondern zur ganzen Leiste.
+
+   Gemessen wird die Arbeitsflaeche, nicht das Fenster: Auf einem iPad quer
+   (1180 x 820) bricht die Werkzeugleiste oben zweizeilig um, die Flaeche ist
+   nur gut 500 Pixel hoch, und die einspaltige Leiste (120 + 460 Pixel) lief
+   unten aus dem Bild - samt dem Knopf, der eine eingeschaltete
+   Schnittansicht anzeigt. */
+@container workplane (max-height: 600px) {
   .camera-controls {
     display: grid;
     grid-template-columns: repeat(2, auto);

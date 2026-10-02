@@ -41,7 +41,7 @@ Am linken Rand liegt eine schmale Leiste. Von oben nach unten:
 - Der Knopf neben den Achsen zeigt die andere Seite des Schnitts, {{ui:camera.sectionReset}} setzt die Ebene zurück in die Mitte, {{ui:camera.sectionShowPlane}} blendet die blaue Ebene aus.
 - Was der Schnitt freilegt, kannst du anklicken und auswählen, auch innere Wände.
 
-[[Esc]] schließt das Fenster; der Schnitt bleibt, bis du ihn ausschaltest.
+[[Esc]] schließt das Fenster; der Schnitt bleibt, bis du ihn ausschaltest oder zur Entwurfsübersicht zurückgehst. Solange er an ist, ist der Knopf hervorgehoben. Was du dann auf der weggeschnittenen Seite ablegst, siehst du erst, wenn du den Schnitt ausschaltest.
 
 ## Die Arbeitsebene
 

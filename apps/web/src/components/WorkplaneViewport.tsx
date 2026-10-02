@@ -277,6 +277,8 @@ type WorkplaneViewportProps = {
   onNoteModeChange?: (active: boolean) => void;
   onWorkspaceSettingsChange?: (settings: { workspace: WorkplaneWorkspaceSettings; snap: GridSize }) => void;
   projectName?: string;
+  /** The design on screen, null behind the overview. The viewport outlives a design, so its tools reset when this changes. */
+  projectId?: string | null;
   onWorkplaneModeChange: (active: boolean) => void;
   modifierActive?: boolean;
   modifierPreviewActive?: boolean;
@@ -3641,6 +3643,7 @@ export function WorkplaneViewport({
   onNoteModeChange,
   onWorkspaceSettingsChange,
   projectName = "",
+  projectId = null,
   onWorkplaneModeChange,
   modifierActive = false,
   modifierPreviewActive = false,
@@ -7380,6 +7383,19 @@ export function WorkplaneViewport({
       delete window.layerlingSectionView;
     };
   }, []);
+
+  // The editor stays mounted when you go back to the overview, so a cut set in
+  // one design used to carry over into the next one: shapes placed there
+  // vanished behind a plane nobody remembered switching on. Leaving the
+  // editor ends the cut; every design opens uncut.
+  const sectionProjectIdRef = useRef(projectId);
+  useEffect(() => {
+    if (sectionProjectIdRef.current === projectId) return;
+    sectionProjectIdRef.current = projectId;
+    sectionSettingsRef.current = DEFAULT_SECTION_SETTINGS;
+    setSectionSettings(DEFAULT_SECTION_SETTINGS);
+    setSectionViewOpen(false);
+  }, [projectId]);
 
   const handleTapePointPointerDown = useCallback(
     (event: ReactPointerEvent<SVGCircleElement>, pointId: string) => {

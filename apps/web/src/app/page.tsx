@@ -1974,6 +1974,7 @@ export default function Home() {
             projectCreatedAt={activeProject?.createdAt}
             projectModifiedAt={activeProject?.updatedAt}
             projectRevision={activeProjectShapeEntry?.revision ?? activeProject?.revision ?? 0}
+            editorOpen={view === "editor"}
             sharedProjectsEnabled={sharedProjectsEnabled}
             themePreference={themePreference}
             resolvedTheme={resolvedTheme}
