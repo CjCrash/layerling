@@ -4,7 +4,7 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
-## Unreleased
+## 1.27.0
 
 - **Edge tool and hollowing on STEP imports:** A part imported from STEP now gets chamfers, fillets and hollowing on the exact body from the file instead of its triangles. Parts with many holes, which the edge tool refused before because of their triangle count, now work - a plate with 24 holes offers its 68 real edges and fillets them in about a second. Turned, mirrored, lifted and resized imports work too; a tapered, twisted or leaning one keeps the old way. STL, OBJ and 3MF bring only triangles, so if a part also exists as STEP, import that. Contributed by @plazmabokor (#73).
 - **Section view:** A new button at the bottom of the left bar cuts the view open along a plane across X, Y or Z, to look at walls, cavities and parts that fit into each other. A coarse slider moves the plane across the whole design, a fine slider a little either side of where it stands; the position can also be typed, in the workspace unit. The other side, back to the middle and hiding the plane are one click each, and what the cut lays open can be clicked and selected. Only the view is cut: the design, its files and every export stay whole.
