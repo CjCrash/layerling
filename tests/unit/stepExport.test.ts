@@ -116,6 +116,14 @@ describe("stepSourceForShape", () => {
     expect(stepSourceForShape(shape({ kind: "spring", width: 20, depth: 12, height: 30, springTurns: 3, springWire: 1 }))).toBe("spring");
   });
 
+  it("baut Schraeg- und Kegelraeder als exakte Koerper", () => {
+    expect(stepSourceForShape(shape({ kind: "gear", width: 30, depth: 30, height: 6, gearType: "helical" }))).toBe("helicalGear");
+    expect(stepSourceForShape(shape({ kind: "gear", width: 30, depth: 30, height: 6, gearType: "bevel" }))).toBe("profile");
+    expect(stepSourceForShape(shape({ kind: "gear", width: 30, depth: 18, height: 6, gearType: "bevel" }))).toBe("profile");
+    // Ein ovales Schraegrad dreht keinen festen Zahnkranz: es bleibt ein Netz.
+    expect(stepSourceForShape(shape({ kind: "gear", width: 30, depth: 18, height: 6, gearType: "helical" }))).toBe("unsupported");
+  });
+
   it("laesst tragen, was STEP nicht abbilden kann", () => {
     // Eine Verdrillung hat noch keine exakte Form.
     expect(stepSourceForShape(shape({ kind: "box", extrudeTwist: 45 }))).toBe("unsupported");

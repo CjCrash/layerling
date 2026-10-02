@@ -203,6 +203,27 @@ export type CadModifierSpringPart = {
   expected?: { bounds: number[]; volume: number };
 };
 
+/**
+ * A helical gear, as the exact body its display mesh draws: the tooth ring's
+ * corners (radius and angle from +x towards +z, at the foot) turned evenly
+ * by `twist` radians about y from the foot to the top, every side the ruled
+ * face between the helices of its two corners; the result stretched by
+ * `stretch` (x and z) as the mesh is, then the straight round bore cut
+ * through it. Built in the shape's own frame (y up, the foot at y = 0);
+ * `transform` places it.
+ */
+export type CadModifierHelicalGearPart = {
+  corners: Array<{ angle: number; radius: number }>;
+  /** Radians; the corners turn from +x towards +z as they rise when positive. */
+  twist: number;
+  height: number;
+  stretch: { x: number; z: number };
+  /** 0 for none. */
+  boreRadius: number;
+  transform?: number[];
+  expected?: { bounds: number[]; volume: number };
+};
+
 export type CadModifierMeshPart = {
   positions?: Float32Array;
   indices?: Uint32Array;
@@ -220,6 +241,8 @@ export type CadModifierMeshPart = {
   thread?: CadModifierThreadPart;
   /** A spring's exact body; positions/indices (if any) are only the fallback if it cannot be built. */
   spring?: CadModifierSpringPart;
+  /** A helical gear's exact body; positions/indices (if any) are only the fallback if it cannot be built. */
+  helicalGear?: CadModifierHelicalGearPart;
   primitive?: CadModifierPrimitivePart;
   /** When set, positions/indices (if any) are only the fallback if the exact body fails. */
   profile?: CadModifierProfilePart;

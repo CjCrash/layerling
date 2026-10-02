@@ -52,7 +52,7 @@ Round shapes such as cylinder, cone, tube, ellipse or the bores have the switch 
 
 - **For the STEP export.** It writes the round shape, not the polygon.
 - **For chamfers and fillets** ({{ui:editor.tool.chamfer}}, {{ui:editor.tool.fillet}}) as long as the shape stays round. That is the case when you have not set a side count, when the count is at least the shape's default, or when the polygon strays at most {{value:EXACT_ROUND_TOLERANCE}} mm from the circle. The default is {{value:ROUND_FROM_SIDES}} sides for cylinder, ellipse, tube and cone, {{value:ROUND_FROM_ROOF_SIDES}} for the {{ui:shape.roundRoof}}, {{value:ROUND_FROM_SPHERE_STEPS}} steps for the {{ui:shape.sphere}}, {{value:ROUND_FROM_HALF_SPHERE_STEPS}} for the {{ui:shape.halfSphere}}, and a {{ui:prop.quality}} of {{value:ROUND_FROM_BENT_TUBE_QUALITY}} for a round {{ui:shape.bentTube}}.
-- **For a thread or a spring.** The edge tool and the STEP export take its exact body; its {{ui:prop.quality}} only sets how finely it is drawn.
+- **For a thread, a spring or a helical gear.** The edge tool and the STEP export take its exact body; its {{ui:prop.quality}} only sets how finely it is drawn.
 
 **Where it matters again**
 

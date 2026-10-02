@@ -464,6 +464,12 @@ function loftSolid(cad: OcctKernel, profile: CadModifierProfilePart, tolerance: 
   };
   const solidOf = (index: number) => {
     const [lower, upper] = [profile.loops[index], top[index]];
+    // A straight-sided loop whose sides stay flat is built face by face even
+    // beside a round one (a bevel gear round its bore): planes, not B-splines.
+    const single: CadModifierProfilePart = { ...profile, loops: [lower], topLoops: [upper] };
+    if ([lower, upper].every((loop) => loop.segments.every((segment) => segment.kind === "line")) && sidesAreFlat(single, tolerance)) {
+      return flatLoftSolid(cad, single, tolerance);
+    }
     const split = lower.segments.length === 1 && isWholeEllipse(lower.segments[0]) && build(lower) !== build(upper);
     const bottomWire = loopWire(cad, split ? halves(lower) : lower, tolerance);
     const raw = loopWire(cad, split ? halves(upper) : upper, tolerance);
