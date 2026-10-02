@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { WorkplaneShape } from "@/types/layerling";
-import type { CadModifierProfileLoop, CadModifierProfilePart, CadModifierProfileSegment, CadModifierSweepPiece } from "@/lib/cadModifierTypes";
+import type { CadModifierProfileLoop, CadModifierProfilePart, CadModifierProfileSegment, CadModifierSweepPiece, CadModifierThreadPart } from "@/lib/cadModifierTypes";
 import { profileArcPoint, profileLoopBounds, validateCadProfile } from "@/lib/cadProfileSolid";
 import { cadTransformFromMatrix } from "@/lib/cadBakeMetadata";
 import { CAD_MODIFIER_EXACT_SEGMENT_LIMIT } from "@/lib/cadModifierRuntime";
@@ -20,6 +20,7 @@ import { screwHoleProfile } from "@/lib/screwHoleGeometry";
 import { DEFAULT_ROUNDED_BOX_CORNER_FILLET, DEFAULT_ROUNDED_BOX_TOP_BOTTOM_FILLET, normalizeCornerFillet, normalizeTopBottomFillet } from "@/lib/roundedBoxGeometry";
 import { textFont } from "@/lib/textFonts";
 import { buildCurvedText, curvedTextFitScale, curvedTextLayout } from "@/lib/textGeometry";
+import { threadBuildPlan, WHITWORTH_PROFILE_CONSTANTS } from "@/lib/threadGeometry";
 import { gearToothPitch, normalizeGearCenterHoleSize, normalizeGearToothSize, normalizeGearToothWidth, normalizeGearTeeth, normalizeGearType } from "@/lib/gearGeometry";
 
 /*
@@ -982,6 +983,72 @@ export function cadModifierProfileForShape(shape: WorkplaneShape, options: { des
     // Whatever goes wrong here, the shape still has its display mesh.
     return null;
   }
+}
+
+/**
+ * A thread shape as the exact body its display mesh draws, or null: the
+ * measures come from the same `threadBuildPlan` the mesh is built from, and
+ * `threadSolid.ts` builds the body from them.
+ */
+export function cadModifierThreadForShape(shape: WorkplaneShape): CadModifierThreadPart | null {
+  if (shape.kind !== "thread") return null;
+  if (shape.importedMesh || shape.groupedShapes?.length || shape.cadBrep || shape.imagePlate || shapeHasShapeDeform(shape)) return null;
+  const width = shapeWidth(shape);
+  const depth = shapeDepth(shape);
+  if (![width, depth, shape.height].every((value) => Number.isFinite(value) && value > 0)) return null;
+  const plan = threadBuildPlan({
+    width,
+    depth,
+    height: shape.height,
+    threadRole: shape.threadRole,
+    threadHead: shape.threadHead,
+    threadHand: shape.threadHand,
+    threadProfile: shape.threadProfile,
+    threadDiameter: shape.threadDiameter,
+    threadPitch: shape.threadPitch,
+    threadClearance: shape.threadClearance,
+    threadQuality: shape.threadQuality,
+    threadHeadHeight: shape.threadHeadHeight,
+    threadChamfer: shape.threadChamfer,
+    threadHeadChamfer: shape.threadHeadChamfer,
+  });
+  const { settings, spec } = plan;
+  const part: CadModifierThreadPart = {
+    role: settings.role,
+    profile: plan.profile.points.map((point) => ({ u: point.u, level: point.level })),
+    major: plan.major,
+    minor: plan.minor,
+    pitch: settings.pitch,
+    hand: plan.handSign === -1 ? -1 : 1,
+    height: plan.height,
+    shaftBottom: plan.shaftBottom,
+    chamfer: plan.chamfer > 0.001 ? plan.chamfer : 0,
+    chamferBottom: plan.chamferBottom,
+    // The mesh is drawn at its natural footprint and stretched to the shape's
+    // width and depth; the body takes the same stretch.
+    transform: profileTransformForShape(shape, new THREE.Matrix4().makeScale(plan.scaleX, 1, plan.scaleZ)),
+  };
+  // The Whitworth points sample arcs; the body takes the arcs themselves, five
+  // faces per turn instead of one per chord. They are circles only at the
+  // profile's full depth, which a very coarse pitch on a thin rod can cut
+  // short - then the points stay the profile.
+  if (settings.profile === "whitworth" && Math.abs(plan.major - plan.minor - settings.pitch * plan.profile.depthPerPitch) < 1e-9) {
+    part.curve = { kind: "whitworth", radius: WHITWORTH_PROFILE_CONSTANTS.radiusPerPitch, halfAngle: (WHITWORTH_PROFILE_CONSTANTS.flankAngleDegrees / 2) * (Math.PI / 180) };
+  }
+  if (settings.role === "screw") {
+    part.head = {
+      kind: settings.head,
+      height: plan.headHeight,
+      radius: settings.head === "countersunk" ? plan.headCrown : spec.headDiameter / 2,
+      acrossFlats: spec.acrossFlats,
+      neckRadius: settings.diameter / 2,
+      chamferFaceRadius: plan.headBroken ? plan.headFaceRadius : 0,
+      socketAcrossFlats: spec.socket,
+      socketDepth: plan.hasSocket ? plan.socketDepth : 0,
+    };
+  }
+  if (settings.role === "nut") part.nut = { acrossFlats: spec.acrossFlats, chamferFaceRadius: plan.rimBroken ? plan.rimFaceRadius : 0 };
+  return part;
 }
 
 /** Outline pieces of a profile, the measure its kernel cost grows with. */

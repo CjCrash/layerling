@@ -6,6 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
+- **Threads as exact bodies for the edge tool and STEP:** A thread - rod, screw, nut or tapped hole, in every profile and either hand - is now built as an exact body (its profile swept along the helix) instead of being refused for its triangle count. Chamfers and fillets work on it, also grouped, so a block with a tapped hole can have its edges rounded and a screw head its rim; listing the edges takes a few seconds (an M6 screw about 4 s, a G1/2 rod about 20 s). STEP export now writes threads as exact bodies too; the head chamfer is part of the body. The drawn thread and the quality setting are unchanged, and when the exact body cannot be built the mesh is used as before. Springs and helical and bevel gears are still meshes. Contributed by @plazmabokor (#75).
 - **Clearer message for shapes too dense for the edge tool:** The message no longer tells you to simplify the mesh, which layerling has no tool for. It now points a shape from the shape list to its own settings, and an imported part to STEP or a version with fewer triangles. Threads keep their own message (edges first, then the thread). Pointed out by @plazmabokor (#74).
 
 ## 1.27.1

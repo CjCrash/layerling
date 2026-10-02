@@ -106,8 +106,13 @@ describe("stepSourceForShape", () => {
     expect(stepSourceForShape(eingelesen)).toBe("imported");
   });
 
+  it("baut ein Gewinde als exakten Koerper aus seinen Massen", () => {
+    expect(stepSourceForShape(shape({ kind: "thread" }))).toBe("thread");
+    expect(stepSourceForShape(shape({ kind: "thread", threadRole: "nut" }))).toBe("thread");
+  });
+
   it("laesst tragen, was STEP nicht abbilden kann", () => {
-    expect(stepSourceForShape(shape({ kind: "thread" }))).toBe("unsupported");
+    expect(stepSourceForShape(shape({ kind: "spring" }))).toBe("unsupported");
     expect(stepSourceForShape(shape({ kind: "text" }))).toBe("unsupported");
     // Ein eingelesenes Netz ohne Quelle: kein B-Rep, nur Dreiecke.
     const netz = shape({

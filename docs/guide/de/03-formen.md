@@ -53,10 +53,11 @@ Runde Formen wie Zylinder, Kegel, Rohr, Ellipse oder die Bohrungen haben in den 
 
 - **Beim STEP-Export.** Er schreibt die runde Form, nicht das Vieleck.
 - **Bei Fasen und Verrundungen** ({{ui:editor.tool.chamfer}}, {{ui:editor.tool.fillet}}), solange die Form rund bleibt. Das ist der Fall, wenn du keine Seitenzahl eingestellt hast, wenn die Zahl mindestens so hoch ist wie der Vorgabewert der Form oder wenn das Vieleck höchstens {{value:EXACT_ROUND_TOLERANCE}} mm vom Kreis abweicht. Der Vorgabewert ist {{value:ROUND_FROM_SIDES}} Seiten bei Zylinder, Ellipse, Rohr und Kegel, {{value:ROUND_FROM_ROOF_SIDES}} beim {{ui:shape.roundRoof}}, {{value:ROUND_FROM_SPHERE_STEPS}} Schritte bei der {{ui:shape.sphere}}, {{value:ROUND_FROM_HALF_SPHERE_STEPS}} bei der {{ui:shape.halfSphere}} und eine {{ui:prop.quality}} von {{value:ROUND_FROM_BENT_TUBE_QUALITY}} bei einem runden {{ui:shape.bentTube}}.
-- **Gewinde und Feder** sind noch Dreiecksnetze, dort zählt die Feinheit auch für die Kantenbearbeitung.
+- **Bei einem Gewinde.** Das Kantenwerkzeug und der STEP-Export nehmen seinen exakten Körper; seine {{ui:prop.quality}} bestimmt nur, wie fein es gezeichnet wird.
 
 **Wo sie wieder wichtig wird**
 
+- **Bei der Kantenbearbeitung einer Feder.** Die {{ui:shape.spring}} ist noch ein Dreiecksnetz, dort zählt ihre Feinheit.
 - **Bei Fasen und Verrundungen einer Form mit wenigen Seiten.** Stellst du die Seitenzahl unter den Vorgabewert, behandelt das Kantenwerkzeug die Form so, wie sie gezeichnet ist: Ein Zylinder mit 6 Seiten bleibt ein Sechskant-Stab, und die Verrundung läuft um seine sechs Kanten. So lässt sich zum Beispiel eine Mutterntasche mit abgerundeten Ecken bauen. Für eine runde Form lass {{ui:prop.sidesFollowSize}} eingeschaltet.
 
 **Wie du es einsetzt**
