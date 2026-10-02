@@ -6,12 +6,9 @@ import type { ShellEdges, ShellOpenings } from "@/types/layerling";
 
 export function orientedFaceNormal(cad: OcctKernel, face: ShapeHandle, point: { x: number; y: number; z: number }) {
   const uv = cad.uvFromPoint(face, point);
+  // surfaceNormal already honours the face orientation (see shellOpeningFaces);
+  // flipping a reversed face again turned its normal inward.
   const normal = cad.surfaceNormal(face, uv.u, uv.v);
-  if (cad.shapeOrientation(face) === "reversed") {
-    normal.x *= -1;
-    normal.y *= -1;
-    normal.z *= -1;
-  }
   const length = Math.hypot(normal.x, normal.y, normal.z) || 1;
   return { x: normal.x / length, y: normal.y / length, z: normal.z / length };
 }

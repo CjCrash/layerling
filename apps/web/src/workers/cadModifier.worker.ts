@@ -100,8 +100,10 @@ function edgeAngle(cad: OcctKernel, points: number[], faceHashes: number[], face
     const a = orientedFaceNormal(cad, faceA, point);
     const b = orientedFaceNormal(cad, faceB, point);
     const dot = Math.max(-1, Math.min(1, a.x * b.x + a.y * b.y + a.z * b.z));
-    const rawAngle = (Math.acos(dot) * 180) / Math.PI;
-    return { angle: Math.min(rawAngle, 180 - rawAngle), boundary: false, manifold: true };
+    // Both normals point out of the solid, so this is the turn across the edge:
+    // 0 on a smooth seam, 90 on a box corner, near 180 on a knife edge.
+    const angle = (Math.acos(dot) * 180) / Math.PI;
+    return { angle, boundary: false, manifold: true };
   } catch {
     return { angle: 0, boundary: false, manifold: false };
   }
