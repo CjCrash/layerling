@@ -104,6 +104,7 @@ export type LayerlingMcpCommandName =
   | "inspect_errors"
   | "set_section_view"
   | "export_section_svg"
+  | "import_file"
   | "set_workplane"
   | "capture_image";
 

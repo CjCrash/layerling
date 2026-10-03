@@ -79,7 +79,7 @@ function objVertexColor(color: string | undefined) {
 }
 
 export function exportMeshesToObj(meshes: readonly ObjExportMesh[]) {
-  const lines = ["# Layerling OBJ export"];
+  const lines = ["# Layerling OBJ export", "# Y-up, millimetres"];
   let offset = 1;
 
   meshes.forEach((mesh) => {

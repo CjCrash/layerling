@@ -181,51 +181,134 @@ function importedObjShapeFromTriangles(
   };
 }
 
-export function importedShapeFromObj(fileName: string, source: string): WorkplaneShape {
-  // The header of our own OBJ export marks the file as Z-up.
-  const layerlingZUpExport = /^# Layerling OBJ export\b/m.test(source);
+/** Ein Teil der Datei: alle Dreiecke einer Farbe oder eines Materials. */
+type ObjPart = {
+  key: string;
+  color?: string;
+  material?: string;
+  positions: number[];
+  normals: number[];
+  completeNormals: boolean;
+};
+
+function colorChannel(value: number, scale: number) {
+  return Math.round(Math.min(1, Math.max(0, value / scale)) * 255).toString(16).padStart(2, "0");
+}
+
+function hexColor(r: number, g: number, b: number) {
+  // 0..1 ist die Regel; manche Programme schreiben 0..255.
+  const scale = r > 1 || g > 1 || b > 1 ? 255 : 1;
+  return `#${colorChannel(r, scale)}${colorChannel(g, scale)}${colorChannel(b, scale)}`;
+}
+
+/** Die Grundfarben (Kd) einer .mtl, je Materialname. */
+export function parseMtlColors(source: string): Map<string, string> {
+  const colors = new Map<string, string>();
+  let current: string | null = null;
+  source.split(/\r?\n/).forEach((sourceLine) => {
+    const line = sourceLine.split("#", 1)[0].trim();
+    if (!line) return;
+    const [keyword, ...rest] = line.split(/\s+/);
+    if (keyword === "newmtl") {
+      current = rest.join(" ");
+      return;
+    }
+    if (keyword === "Kd" && current !== null) {
+      const values = rest.slice(0, 3).map(Number);
+      if (values.length === 3 && values.every(Number.isFinite)) colors.set(current, hexColor(values[0], values[1], values[2]));
+    }
+  });
+  return colors;
+}
+
+/**
+ * Tinkercad nennt seine Materialien nach der Farbe: "color_16089887" ist die
+ * Zahl 0xF58D1F. Das hilft, wenn die .mtl nicht mitgekommen ist.
+ */
+function colorFromMaterialName(name: string) {
+  const match = /^color_(\d{1,8})$/i.exec(name);
+  if (!match) return undefined;
+  const value = Number(match[1]);
+  return value >= 0 && value <= 0xffffff ? `#${value.toString(16).padStart(6, "0")}` : undefined;
+}
+
+/**
+ * Liest die Dreiecke einer OBJ und ordnet sie nach Farbe: Eckpunktfarben
+ * (`v x y z r g b`, so schreibt layerling selbst) gehen vor, sonst das
+ * Material aus `usemtl`. Ohne beides bleibt alles ein Teil.
+ */
+function parseObjParts(source: string, materialColors: ReadonlyMap<string, string>, legacyAxes = false) {
+  // Nur sehr alte Exporte waren Z-oben und sagen das im Kopf. Seit 1.0.0
+  // schreibt layerling Y-oben wie jedes OBJ-Programm; die erkannte Kopfzeile
+  // allein drehte die eigene Datei beim Wiedereinlesen auf die Seite.
+  // `legacyAxes` haelt diese alte Lesart fuer Projekte, die ihr Netz aus der
+  // mitgespeicherten Datei neu bauen - sonst kippte dort ein Koerper um.
+  const layerlingZUpExport = isLayerlingObj(source) && (legacyAxes || /^#.*\bZ-up\b/m.test(source));
   const vertices: THREE.Vector3[] = [];
+  const vertexColors: Array<string | undefined> = [];
   const normals: THREE.Vector3[] = [];
-  const rawPositions: number[] = [];
-  const rawNormals: number[] = [];
-  let hasCompleteNormals = true;
+  const parts = new Map<string, ObjPart>();
+  let material: string | undefined;
   let faceCount = 0;
 
   source.split(/\r?\n/).forEach((sourceLine) => {
     const line = sourceLine.split("#", 1)[0].trim();
     if (!line) return;
-    const parts = line.split(/\s+/);
-    const keyword = parts[0];
+    const fields = line.split(/\s+/);
+    const keyword = fields[0];
 
     if (keyword === "v") {
-      if (parts.length < 4) throw new Error("OBJ contains an invalid vertex");
-      const values = parts.slice(1, 4).map(Number);
+      if (fields.length < 4) throw new Error("OBJ contains an invalid vertex");
+      const values = fields.slice(1, 4).map(Number);
       if (values.some((value) => !Number.isFinite(value))) throw new Error("OBJ contains a non-finite vertex");
       vertices.push(new THREE.Vector3(values[0], values[1], values[2]));
+      const rgb = fields.length >= 7 ? fields.slice(4, 7).map(Number) : null;
+      vertexColors.push(rgb && rgb.every(Number.isFinite) ? hexColor(rgb[0], rgb[1], rgb[2]) : undefined);
       return;
     }
 
     if (keyword === "vn") {
-      if (parts.length < 4) throw new Error("OBJ contains an invalid normal");
-      const values = parts.slice(1, 4).map(Number);
+      if (fields.length < 4) throw new Error("OBJ contains an invalid normal");
+      const values = fields.slice(1, 4).map(Number);
       if (values.some((value) => !Number.isFinite(value))) throw new Error("OBJ contains a non-finite normal");
       normals.push(new THREE.Vector3(values[0], values[1], values[2]).normalize());
       return;
     }
 
-    if (keyword !== "f") return;
-    if (parts.length < 4) throw new Error("OBJ contains a face with fewer than three vertices");
+    if (keyword === "usemtl") {
+      material = fields.slice(1).join(" ") || undefined;
+      return;
+    }
 
-    const refs: ObjFaceVertex[] = parts.slice(1).map((token) => {
-      const fields = token.split("/");
-      const vertexIndex = resolveObjIndex(fields[0], vertices.length, "vertex");
-      const normalIndex = fields.length >= 3 && fields[2]
-        ? resolveObjIndex(fields[2], normals.length, "normal")
+    if (keyword !== "f") return;
+    if (fields.length < 4) throw new Error("OBJ contains a face with fewer than three vertices");
+
+    const refs: ObjFaceVertex[] = fields.slice(1).map((token) => {
+      const indices = token.split("/");
+      const vertexIndex = resolveObjIndex(indices[0], vertices.length, "vertex");
+      const normalIndex = indices.length >= 3 && indices[2]
+        ? resolveObjIndex(indices[2], normals.length, "normal")
         : undefined;
       return { vertexIndex, normalIndex };
     });
     if (refs.length > 3 && refs[0].vertexIndex === refs[refs.length - 1].vertexIndex) refs.pop();
     if (refs.length < 3) throw new Error("OBJ contains a degenerate face");
+
+    const vertexColor = vertexColors[refs[0].vertexIndex];
+    const key = vertexColor ? `rgb:${vertexColor}` : material !== undefined ? `mtl:${material}` : "";
+    let part = parts.get(key);
+    if (!part) {
+      part = {
+        key,
+        color: vertexColor ?? (material !== undefined ? materialColors.get(material) ?? colorFromMaterialName(material) : undefined),
+        material: vertexColor ? undefined : material,
+        positions: [],
+        normals: [],
+        completeNormals: true,
+      };
+      parts.set(key, part);
+    }
+    const target = part;
 
     const points = refs.map((ref) => vertices[ref.vertexIndex]);
     triangulateFace(points).forEach((triangle) => {
@@ -234,26 +317,107 @@ export function importedShapeFromObj(fileName: string, source: string): Workplan
         const ref = refs[faceIndex];
         const point = vertices[ref.vertexIndex];
         const position: [number, number, number] = [point.x, point.y, point.z];
-        rawPositions.push(...(layerlingZUpExport ? zUpToLayerling(position) : position));
+        target.positions.push(...(layerlingZUpExport ? zUpToLayerling(position) : position));
         if (ref.normalIndex === undefined) {
-          hasCompleteNormals = false;
+          target.completeNormals = false;
         } else {
           const normal = normals[ref.normalIndex];
           const sourceNormal: [number, number, number] = [normal.x, normal.y, normal.z];
-          rawNormals.push(...(layerlingZUpExport ? zUpToLayerling(sourceNormal) : sourceNormal));
+          target.normals.push(...(layerlingZUpExport ? zUpToLayerling(sourceNormal) : sourceNormal));
         }
       });
       faceCount += 1;
     });
   });
 
-  if (!vertices.length || !faceCount || !rawPositions.length) {
+  if (!vertices.length || !faceCount) {
     throw new Error("OBJ has no readable mesh geometry");
   }
+  return [...parts.values()].filter((part) => part.positions.length >= 9);
+}
 
-  return importedObjShapeFromTriangles(
-    fileName,
-    rawPositions,
-    hasCompleteNormals && rawNormals.length === rawPositions.length ? rawNormals : undefined,
-  );
+function partNormals(part: ObjPart) {
+  return part.completeNormals && part.normals.length === part.positions.length ? part.normals : undefined;
+}
+
+/**
+ * Die ganze Datei als ein Koerper, wie bisher. Darueber baut eine .lyl einen
+ * einteiligen OBJ-Import aus der mitgespeicherten Datei wieder auf.
+ */
+function isLayerlingObj(source: string) {
+  return /^# Layerling OBJ export\b/m.test(source);
+}
+
+export function importedShapeFromObj(fileName: string, source: string, legacyAxes = false): WorkplaneShape {
+  const parts = parseObjParts(source, new Map(), legacyAxes);
+  const positions = parts.flatMap((part) => part.positions);
+  const complete = parts.every((part) => partNormals(part));
+  return importedObjShapeFromTriangles(fileName, positions, complete ? parts.flatMap((part) => part.normals) : undefined);
+}
+
+/** Farben fuer Teile, deren Material keine Farbe verraet - gut unterscheidbar. */
+const FALLBACK_PART_COLORS = ["#0098c7", "#e8590c", "#2f9e44", "#ae3ec9", "#f2c200", "#495057", "#d6336c", "#1c7ed6"];
+
+export type ObjImportResult = {
+  shapes: WorkplaneShape[];
+  /** Mehr als ein Teil: dann tragen die Koerper ihr Netz selbst ("json"), nicht die Datei. */
+  split: boolean;
+  /** Materialien ohne bekannte Farbe - die .mtl fehlte vermutlich. */
+  missingMaterialColors: boolean;
+};
+
+function bounds(positions: readonly number[]) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let minZ = Infinity;
+  let maxX = -Infinity;
+  let maxZ = -Infinity;
+  for (let index = 0; index < positions.length; index += 3) {
+    minX = Math.min(minX, positions[index]);
+    maxX = Math.max(maxX, positions[index]);
+    minY = Math.min(minY, positions[index + 1]);
+    minZ = Math.min(minZ, positions[index + 2]);
+    maxZ = Math.max(maxZ, positions[index + 2]);
+  }
+  return { centerX: (minX + maxX) / 2, centerZ: (minZ + maxZ) / 2, minY };
+}
+
+/**
+ * Eine OBJ mit Farben wird zu einem Koerper je Farbe, alle an ihrer Stelle
+ * zueinander. Einfarbig bleibt es ein Koerper wie bisher, nur in seiner
+ * Farbe (Discussion #79).
+ */
+export function importedShapesFromObj(fileName: string, source: string, mtlSources: readonly string[] = []): ObjImportResult {
+  const materialColors = new Map<string, string>();
+  mtlSources.forEach((mtl) => parseMtlColors(mtl).forEach((color, name) => materialColors.set(name, color)));
+  const parts = parseObjParts(source, materialColors);
+  const missingMaterialColors = parts.some((part) => part.material !== undefined && !part.color);
+
+  const whole = importedShapeFromObj(fileName, source);
+  if (parts.length <= 1) {
+    const color = parts[0]?.color;
+    // Eine eigene OBJ traegt ihr Netz selbst: die .lyl baut OBJ-Quellen in der
+    // alten Achsen-Lesart nach (siehe `legacyAxes`).
+    const own = isLayerlingObj(source) ? { ...whole, importedMesh: { ...whole.importedMesh!, sourceFormat: "json" as const } } : whole;
+    return { shapes: [color ? { ...own, color } : own], split: false, missingMaterialColors };
+  }
+
+  const file = bounds(parts.flatMap((part) => part.positions));
+  let fallback = 0;
+  const shapes = parts.map((part, index): WorkplaneShape => {
+    const shape = importedObjShapeFromTriangles(fileName, part.positions, partNormals(part));
+    const own = bounds(part.positions);
+    const color = part.color ?? FALLBACK_PART_COLORS[fallback++ % FALLBACK_PART_COLORS.length];
+    const label = part.material && !colorFromMaterialName(part.material) ? part.material : String(index + 1);
+    return {
+      ...shape,
+      name: `${whole.name} ${label}`,
+      color,
+      x: whole.x + own.centerX - file.centerX,
+      z: whole.z + own.centerZ - file.centerZ,
+      elevation: own.minY - file.minY,
+      importedMesh: { ...shape.importedMesh!, sourceFormat: "json" },
+    };
+  });
+  return { shapes, split: true, missingMaterialColors };
 }

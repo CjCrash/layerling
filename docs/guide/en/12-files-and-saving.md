@@ -42,7 +42,7 @@ With {{ui:editor.import}} or [[Ctrl]]+[[I]] you bring foreign files into the des
 
 - **{{ui:import.openProject}}:** A layerling design (`.lyl`, or an older `.skf`) comes back as a new design.
 - **{{ui:import.insertProject}}:** The bodies of a layerling design are added to the open one. Handy for basic shapes you need again and again: build them once, save them and bring them in every time.
-- **Add geometry:** Drop STL, OBJ, 3MF, STEP or SVG files in the window or click to choose a file. Imported meshes can be turned, moved, cut with holes and built upon. An SVG becomes a shape you can build on.
+- **Add geometry:** Drop STL, OBJ, 3MF, STEP or SVG files in the window or click to choose a file. Imported meshes can be turned, moved, cut with holes and built upon. An SVG becomes a shape you can build on. A coloured OBJ comes in as one body per colour, each in its place: the colours sit either in the file itself, as in an OBJ from layerling, or in an `.mtl` beside it. Select that one too, or import the whole ZIP the way Tinkercad hands out its OBJ.
 
 Template pictures are added in sketch mode, see [Sketches](chapter:sketches).
 

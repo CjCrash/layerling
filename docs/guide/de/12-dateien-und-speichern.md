@@ -42,7 +42,7 @@ Aussparungen lassen sich nicht einzeln exportieren. Gruppiere sie zuerst mit ein
 
 - **{{ui:import.openProject}}:** Ein layerling-Entwurf (`.lyl`, oder eine ältere `.skf`) kommt als neuer Entwurf zurück.
 - **{{ui:import.insertProject}}:** Die Körper eines layerling-Entwurfs kommen in den offenen dazu. Praktisch für Grundformen, die du immer wieder brauchst: Baue sie einmal, speichere sie und hole sie jedes Mal herein.
-- **Geometrie hinzufügen:** Lege STL-, OBJ-, 3MF-, STEP- oder SVG-Dateien im Fenster ab oder klicke, um eine Datei auszuwählen. Importierte Netze kannst du drehen, verschieben, mit Aussparungen schneiden und dann weiterbauen. Ein SVG wird zu einer Form, die du weiterbauen kannst.
+- **Geometrie hinzufügen:** Lege STL-, OBJ-, 3MF-, STEP- oder SVG-Dateien im Fenster ab oder klicke, um eine Datei auszuwählen. Importierte Netze kannst du drehen, verschieben, mit Aussparungen schneiden und dann weiterbauen. Ein SVG wird zu einer Form, die du weiterbauen kannst. Eine farbige OBJ kommt als ein Körper je Farbe, alle an ihrem Platz zueinander: Die Farben stehen entweder in der Datei selbst, wie bei einer OBJ aus layerling, oder in einer `.mtl` daneben. Die wählst du mit aus, oder du importierst gleich das ganze ZIP, so wie Tinkercad die OBJ herausgibt.
 
 Bilder als Vorlage fügst du im Skizzenmodus ein, siehe [Skizzen](chapter:skizzen).
 

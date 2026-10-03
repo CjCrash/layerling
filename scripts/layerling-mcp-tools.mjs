@@ -219,6 +219,21 @@ export const tools = [
     },
   },
   {
+    name: "layerling_import_file",
+    description: "Import a file the way the editor's import window does: STL, OBJ, 3MF, STEP, SVG or a ZIP holding them. A coloured OBJ - vertex colours as layerling writes them, or materials with their .mtl (pass it as mtl, or inside the ZIP, as Tinkercad delivers it) - comes in as one body per colour, each in its place. Give the content as text (OBJ, SVG, ASCII STL, STEP) or as base64 (binary STL, 3MF, ZIP). Returns the imported bodies with id, name, colour, size and position.",
+    inputSchema: {
+      ...editorTargetSchema,
+      required: ["fileName"],
+      properties: {
+        ...editorTargetSchema.properties,
+        fileName: { type: "string", description: "File name with its extension, which decides the format, e.g. keyring.obj or obj.zip." },
+        text: { type: "string", description: "The file content as text. Give text or base64, not both." },
+        base64: { type: "string", description: "The file content as base64, for binary files." },
+        mtl: { type: "string", description: "The .mtl material file of an OBJ, as text, for its colours." },
+      },
+    },
+  },
+  {
     name: "layerling_import_mesh",
     description: "Import a triangle mesh into Layerling from raw position and optional normal arrays.",
     inputSchema: {

@@ -143,7 +143,8 @@ import { exportMeshesToObj } from "@/lib/objExport";
 import { boundsOverlap, exportColorGroups, meshBounds, overlappingExportClusters } from "@/lib/exportUnion";
 import { rotateSketchPoints, selectedClosedSketchPoints } from "@/lib/sketchRotation";
 import { PROJECT_THUMBNAIL_IDLE_MS, projectThumbnailSceneChanged, type ProjectThumbnailSceneKey } from "@/lib/projectThumbnail";
-import { importedShapeFromObj } from "@/lib/objImport";
+import { importedShapeFromObj, importedShapesFromObj } from "@/lib/objImport";
+import { unzipSync } from "fflate";
 import { importedShapeFrom3mf } from "@/lib/threemfImport";
 import { attachProjectAsset, dedupeProjectAssets, projectAssetFromBytes, sourceFormatForFileName } from "@/lib/projectAssets";
 import { findSketchOutlineIntersection } from "@/lib/sketchProfileValidation";
@@ -2928,6 +2929,38 @@ function triggerBrowserDownload(filename: string, content: string, type: string)
   link.click();
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/**
+ * Was zum Import ausgewaehlt wurde, zurechtgelegt: ein ZIP (so liefert
+ * Tinkercad seine OBJ, mit der .mtl daneben) wird ausgepackt, und .mtl-Dateien
+ * sind keine eigenen Teile, sondern die Farben fuer die OBJ daneben.
+ */
+async function prepareImportFiles(files: readonly File[]) {
+  const expanded: File[] = [];
+  const failures: Array<{ fileName: string; reason: string }> = [];
+  for (const file of files) {
+    if (!/\.zip$/i.test(file.name)) {
+      expanded.push(file);
+      continue;
+    }
+    try {
+      const entries = unzipSync(new Uint8Array(await file.arrayBuffer()), {
+        filter: (entry) => !entry.name.endsWith("/") && /\.(obj|mtl|stl|3mf|svg|step|stp)$/i.test(entry.name) && !/(^|\/)__MACOSX\//.test(entry.name),
+      });
+      const inside = Object.entries(entries).map(([name, bytes]) => new File([bytes as BlobPart], name.split("/").pop() || name));
+      if (!inside.some((entry) => !/\.mtl$/i.test(entry.name))) {
+        failures.push({ fileName: file.name, reason: t("status.importZipEmpty") });
+        continue;
+      }
+      expanded.push(...inside);
+    } catch {
+      failures.push({ fileName: file.name, reason: t("status.importZipUnreadable") });
+    }
+  }
+  const mtlFiles = expanded.filter((file) => /\.mtl$/i.test(file.name));
+  const mtlSources = await Promise.all(mtlFiles.map((file) => file.text()));
+  return { files: expanded.filter((file) => !/\.mtl$/i.test(file.name)), mtlSources, failures };
 }
 
 async function downloadTextFile(filename: string, content: string, type: string) {
@@ -9783,6 +9816,9 @@ export function LayerlingEditor({
     }
   }, [buildSectionSvg, projectName]);
 
+  // Der Dateiimport steht weiter unten; die MCP-Aktion nimmt denselben Weg.
+  const importFilesRef = useRef<((files: File[]) => Promise<{ importedIds: string[]; failures: Array<{ fileName: string; reason: string }> }>) | null>(null);
+
   const executeMcpCommand = useCallback(async (command: LayerlingMcpCommand): Promise<unknown> => {
     const params = command.params ?? {};
     const currentShapes = () => shapesRef.current;
@@ -10331,6 +10367,30 @@ export function LayerlingEditor({
           ...(params.center === true ? { center: true } : {}),
         });
         return result;
+      }
+
+      if (command.action === "import_file") {
+        // Wie eine Datei im Importfenster: dieselbe Auswertung, dieselben
+        // Farben, ZIP und .mtl eingeschlossen.
+        const importer = importFilesRef.current;
+        if (!importer) throw new Error("The import is not ready yet");
+        const fileName = mcpString(params.fileName, "").trim();
+        if (!fileName) throw new Error("fileName is required, with its extension (.obj, .stl, .3mf, .step, .svg or .zip)");
+        const hasText = typeof params.text === "string";
+        const hasBase64 = typeof params.base64 === "string";
+        if (hasText === hasBase64) throw new Error("Give the file either as text or as base64");
+        const bytes = hasText
+          ? new TextEncoder().encode(params.text as string)
+          : Uint8Array.from(atob(params.base64 as string), (char) => char.charCodeAt(0));
+        const files = [new File([bytes as BlobPart], fileName)];
+        if (typeof params.mtl === "string") files.push(new File([params.mtl], fileName.replace(/\.[^.]+$/, "") + ".mtl"));
+        const result = await importer(files);
+        if (!result.importedIds.length) throw new Error(result.failures.map((failure) => `${failure.fileName}: ${failure.reason}`).join("; ") || "Nothing was imported");
+        const imported = currentShapes().filter((shape) => result.importedIds.includes(shape.id));
+        return {
+          imported: imported.map((shape) => ({ id: shape.id, name: shape.name, color: shape.color, width: shape.width, depth: shape.depth, height: shape.height, x: shape.x, z: shape.z, elevation: shape.elevation ?? 0 })),
+          failures: result.failures,
+        };
       }
 
       if (command.action === "export_section_svg") {
@@ -11192,34 +11252,42 @@ export function LayerlingEditor({
     }
   }, [commitShapes]);
 
-  const importFiles = useCallback(async (files: File[]) => {
-    if (!files.length) return;
-    const projectFiles = files.filter((file) => /\.(lyl|skf)$/i.test(file.name));
+  const importFiles = useCallback(async (selected: File[]): Promise<{ importedIds: string[]; failures: Array<{ fileName: string; reason: string }> }> => {
+    const none = { importedIds: [] as string[], failures: [] as Array<{ fileName: string; reason: string }> };
+    if (!selected.length) return none;
+    const projectFiles = selected.filter((file) => /\.(lyl|skf)$/i.test(file.name));
     if (projectFiles.length) {
-      if (files.length !== 1) {
+      if (selected.length !== 1) {
         setNotice(t("status.oneLylAtATime"), true);
-        return;
+        return none;
       }
       if (!onOpenLylProjectFile) {
         setNotice(t("status.lylUnavailable"), true);
-        return;
+        return none;
       }
       setNotice(t("status.validatingFile", { name: projectFiles[0].name }), true);
       const result = await onOpenLylProjectFile(projectFiles[0]);
       if (result?.message) setNotice(result.message);
       if (result?.ok !== false) setTopPanel(null);
-      return;
+      return none;
     }
     const sourceProjectId = projectInfoRef.current.projectId;
     const importedShapes: WorkplaneShape[] = [];
     const importedAssets: ProjectAsset[] = [];
-    const failures: Array<{ fileName: string; reason: string }> = [];
+    const prepared = await prepareImportFiles(selected);
+    const files = prepared.files;
+    const failures: Array<{ fileName: string; reason: string }> = [...prepared.failures];
+    const notes: string[] = [];
+    if (!files.length && prepared.mtlSources.length && !failures.length) {
+      setNotice(t("status.importMtlAlone"), true);
+      return { importedIds: [], failures: [{ fileName: selected[0].name, reason: t("status.importMtlAlone") }] };
+    }
 
     for (let index = 0; index < files.length; index += 1) {
       const file = files[index];
       if (projectInfoRef.current.projectId !== sourceProjectId) {
         setNotice(t("status.importCancelled", { count: files.length }));
-        return;
+        return none;
       }
 
       const sourceFormat = sourceFormatForFileName(file.name) ?? (file.type === "image/svg+xml" ? "svg" : null);
@@ -11242,11 +11310,20 @@ export function LayerlingEditor({
         const bytes = new Uint8Array(await file.arrayBuffer());
         const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
         let nextShape: WorkplaneShape;
-        if (isStep) {
+        if (isObj) {
+          // Eine farbige OBJ wird zu einem Koerper je Farbe. Die tragen ihr
+          // Netz dann selbst; die Datei als Ganzes bauen sie nicht nach.
+          const obj = importedShapesFromObj(file.name, new TextDecoder().decode(bytes), prepared.mtlSources);
+          if (obj.missingMaterialColors) notes.push(t("status.importObjNoMtl", { name: file.name }));
+          if (obj.split) {
+            importedShapes.push(...obj.shapes);
+            notes.push(t("status.importObjParts", { name: file.name, count: obj.shapes.length }));
+            continue;
+          }
+          nextShape = obj.shapes[0];
+        } else if (isStep) {
           const { importedShapeFromStep } = await import("@/lib/stepImport");
           nextShape = await importedShapeFromStep(file.name, buffer);
-        } else if (isObj) {
-          nextShape = importedShapeFromObj(file.name, new TextDecoder().decode(bytes));
         } else if (isSvg) {
           nextShape = importedShapeFromSvg(file.name, new TextDecoder().decode(bytes));
         } else if (is3mf) {
@@ -11267,7 +11344,7 @@ export function LayerlingEditor({
 
     if (projectInfoRef.current.projectId !== sourceProjectId) {
       setNotice(t("status.importCancelled", { count: files.length }));
-      return;
+      return none;
     }
 
     const failureDetails = failures
@@ -11276,29 +11353,31 @@ export function LayerlingEditor({
       .join("; ");
     const remainingFailureCount = Math.max(0, failures.length - 3);
     const failureSummary = failures.length
-      ? ` Failed: ${failureDetails}${remainingFailureCount ? `; plus ${remainingFailureCount} more` : ""}`
+      ? " " + t("status.importFailedList", { details: failureDetails, more: remainingFailureCount ? t("status.importFailedMore", { count: remainingFailureCount }) : "" })
       : "";
 
     if (!importedShapes.length) {
-      setNotice(files.length === 1 && failures[0]
+      setNotice(failures.length === 1 && files.length <= 1
         ? failures[0].reason
-        : t("status.importNoneFailed", { total: files.length, summary: failureSummary }));
-      return;
+        : t("status.importNoneFailed", { total: Math.max(files.length, failures.length), summary: failureSummary }), true);
+      return { importedIds: [], failures };
     }
 
-    const successSummary = importedShapes.length === 1 && files.length === 1
-      ? `Imported ${files[0].name}`
-      : `Imported ${importedShapes.length} of ${files.length} files`;
+    const successSummary = files.length === 1
+      ? t("status.importedFile", { name: files[0].name })
+      : t("status.importedFiles", { count: files.length - failures.filter((failure) => files.some((file) => file.name === failure.fileName)).length, total: files.length });
     const nextAssets = dedupeProjectAssets([...projectAssetsRef.current, ...importedAssets]);
     projectAssetsRef.current = nextAssets;
     setProjectAssets(nextAssets);
     commitShapes(
       [...shapesRef.current, ...importedShapes],
       importedShapes.map((shape) => shape.id),
-      `${successSummary}.${failureSummary}`.trim(),
+      [successSummary, ...notes].join(" ") + failureSummary,
     );
     setTopPanel(null);
+    return { importedIds: importedShapes.map((shape) => shape.id), failures };
   }, [commitShapes, onOpenLylProjectFile]);
+  importFilesRef.current = importFiles;
 
   const selectFiles = useCallback(
     (files: FileList | File[]) => {
@@ -12090,7 +12169,7 @@ export function LayerlingEditor({
         className="hidden-file-input"
         type="file"
         multiple
-        accept=".stl,.obj,.3mf,.step,.stp,.svg,image/svg+xml"
+        accept=".stl,.obj,.mtl,.zip,.3mf,.step,.stp,.svg,image/svg+xml"
         onChange={(event) => {
           if (event.currentTarget.files) {
             selectFiles(event.currentTarget.files);
