@@ -363,7 +363,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "guide.group.shapes": "Mit Formen bauen",
   "guide.shapes.add": "Im Menüband Formen öffnen und einen Quader, Zylinder, eine Kugel, ein Zahnrad, Text oder ein Dach auf die Platte ziehen.",
   "guide.shapes.inspector": "Rechts stehen die echten Zahlen: Breite, Tiefe, Höhe, Position, Drehung, Farbe. Tippen ist genauer als ziehen. Ein Klick auf eine Ecke der Form öffnet Breite und Tiefe zusammen.",
-  "guide.shapes.handles": "Die Griffe an der Auswahl verschieben, skalieren und drehen. Das Raster unten rechts bestimmt, worauf sie einrastet. Beim Verschieben rastet eine Form außerdem an Kanten und Mitten anderer Formen ein (rosa Hilfslinie); Alt hält das an. Neben der Platte kannst du eine Form für später parken.",
+  "guide.shapes.handles": "Die Griffe an der Auswahl verschieben, skalieren und drehen. Umschalt an einer Ecke hält die Proportionen in allen drei Richtungen, Alt skaliert von der Mitte aus. Das Raster unten rechts bestimmt, worauf sie einrastet. Beim Verschieben rastet eine Form außerdem an Kanten und Mitten anderer Formen ein (rosa Hilfslinie); Alt hält das an. Neben der Platte kannst du eine Form für später parken.",
   "guide.group.select": "Auswählen und ordnen",
   "guide.select.click": "Klicken wählt aus, Shift nimmt dazu, ein Klick ins Leere hebt die Auswahl auf.",
   "guide.select.position": "Unter Position im Eigenschaftenfenster tippst du ein, wo ein Körper steht: X und Y auf der Platte, Z als Höhe seiner Unterkante.",

@@ -3306,6 +3306,44 @@ function patchWithResizeAnchor(
   });
 }
 
+/**
+ * Scales a shape's height by `scale` while the world height `anchorY` stays
+ * put, so a corner drag with Shift can grow all three axes at once. `patch` is
+ * what the width/depth part of the drag already decided; the height step is
+ * applied on top of that result, so rotated and tapered shapes work out which
+ * of their own axes is the vertical one.
+ */
+function patchWithUniformHeightScale(
+  shape: WorkplaneShape,
+  patch: Partial<WorkplaneShape>,
+  scale: number,
+  anchorY: number,
+): Partial<WorkplaneShape> {
+  if (!Number.isFinite(scale) || Math.abs(scale - 1) < 1e-6) {
+    return patch;
+  }
+  const base = { ...shape, ...patch } as WorkplaneShape;
+  const frame = selectionFrameForShapes([base], [base.id]);
+  if (!frame) {
+    return patch;
+  }
+  const startBottom = selectionWorldYBounds(frame).min;
+  const merged: Partial<WorkplaneShape> = {
+    ...patch,
+    ...resizeShapeAlongFrameNormal(base, frame, Math.max(MIN_SHAPE_SIZE, frame.height * scale), false),
+  };
+  const scaledFrame = selectionFrameForShapes([{ ...shape, ...merged } as WorkplaneShape], [shape.id]);
+  if (!scaledFrame) {
+    return merged;
+  }
+  const wantedBottom = anchorY + (startBottom - anchorY) * scale;
+  const delta = wantedBottom - selectionWorldYBounds(scaledFrame).min;
+  return {
+    ...merged,
+    elevation: cleanNearZero(clamp(((merged.elevation ?? shape.elevation) ?? 0) + delta, MIN_ELEVATION, MAX_ELEVATION), 0.0005),
+  };
+}
+
 function resizeShapeFromFrameHandle(
   transform: TransformDragState,
   point: THREE.Vector3,
@@ -3345,12 +3383,16 @@ function resizeShapeFromFrameHandle(
     nextDepth = diameter;
   }
 
+  // Shift on a corner keeps every proportion, height included.
+  let uniformScale = 1;
   if (shiftKey && signs.x && signs.z) {
     const scale = proportionalResizeScale(width, depth, nextWidth, nextDepth);
     const limitedScale = clamp(scale, MIN_SHAPE_SIZE / Math.max(MIN_SHAPE_SIZE, Math.min(width, depth)), maxSize / Math.max(width, depth));
     nextWidth = snapDimension(width * limitedScale, step, MIN_SHAPE_SIZE, maxSize);
     nextDepth = snapDimension(depth * limitedScale, step, MIN_SHAPE_SIZE, maxSize);
+    uniformScale = nextWidth / Math.max(MIN_SHAPE_SIZE, width);
   }
+  const heightAnchorY = altKey ? frame.center.y : selectionWorldYBounds(frame).min;
 
   const nextCenter = altKey
     ? frame.center.clone()
@@ -3359,14 +3401,14 @@ function resizeShapeFromFrameHandle(
     const scaleX = nextWidth / Math.max(MIN_SHAPE_SIZE, width);
     const scaleZ = nextDepth / Math.max(MIN_SHAPE_SIZE, depth);
     const scaled = scaledHorizontalShapePatch(shape, scaleX, scaleZ);
-    return {
+    return patchWithUniformHeightScale(shape, {
       ...scaled,
       x: cleanNearZero(nextCenter.x, 0.0005),
       z: cleanNearZero(nextCenter.z, 0.0005),
       elevation: cleanNearZero(nextCenter.y - shape.height / 2, 0.0005),
-    };
+    }, uniformScale, heightAnchorY);
   }
-  return resizedShapePatchFromFrame(shape, nextCenter, nextWidth, nextDepth);
+  return patchWithUniformHeightScale(shape, resizedShapePatchFromFrame(shape, nextCenter, nextWidth, nextDepth), uniformScale, heightAnchorY);
 }
 
 function axisScaleMatrix(axis: THREE.Vector3, scale: number, anchor: number) {
@@ -3585,6 +3627,7 @@ function resizeSelectionFromHandle(
 
   let nextX = axisResize(frame.width, localDelta.x, signs.x);
   let nextZ = axisResize(frame.depth, localDelta.z, signs.z);
+  let uniformScale = 1;
   if (shiftKey && signs.x && signs.z) {
     const scale = proportionalResizeScale(frame.width, frame.depth, nextX.size, nextZ.size);
     const limitedScale = clamp(scale, MIN_SHAPE_SIZE / Math.max(MIN_SHAPE_SIZE, Math.min(frame.width, frame.depth)), maxSize / Math.max(frame.width, frame.depth));
@@ -3598,7 +3641,10 @@ function resizeSelectionFromHandle(
       size: depth,
       scale: depth / Math.max(MIN_SHAPE_SIZE, frame.depth),
     };
+    // Shift on a corner keeps every proportion, height included.
+    uniformScale = nextX.scale;
   }
+  const heightAnchorY = altKey ? frame.center.y : selectionWorldYBounds(frame).min;
 
   const nextCenter = altKey
     ? frame.center.clone()
@@ -3623,7 +3669,7 @@ function resizeSelectionFromHandle(
     } satisfies Partial<WorkplaneShape>;
     return {
       id: item.id,
-      patch,
+      patch: patchWithUniformHeightScale(item.startShape, patch, uniformScale, heightAnchorY),
     };
   });
 }

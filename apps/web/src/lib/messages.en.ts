@@ -364,7 +364,7 @@ export const MESSAGES_EN = {
   "guide.group.shapes": "Building with shapes",
   "guide.shapes.add": "Open Shapes in the ribbon and drop a box, cylinder, sphere, gear, text or roof onto the plate.",
   "guide.shapes.inspector": "The panel on the right carries the real numbers: width, depth, height, position, rotation, colour. Typing beats dragging. A click on a corner of the shape opens width and depth together.",
-  "guide.shapes.handles": "The handles around a selection move, resize and rotate it. The grid at the bottom right decides what it snaps to. While moving, a shape also snaps to the edges and centres of other shapes (pink guide line); hold Alt to pause that. You can park a shape beside the plate to keep it for later.",
+  "guide.shapes.handles": "The handles around a selection move, resize and rotate it. Shift on a corner keeps the proportions in all three directions, Alt scales from the center. The grid at the bottom right decides what it snaps to. While moving, a shape also snaps to the edges and centres of other shapes (pink guide line); hold Alt to pause that. You can park a shape beside the plate to keep it for later.",
   "guide.group.select": "Selecting and ordering",
   "guide.select.click": "Click to select, hold Shift to add, click empty space to let go.",
   "guide.select.position": "Under Position in the properties panel you type where a body stands: X and Y on the plate, Z as the height of its underside.",

@@ -72,7 +72,7 @@ Runde Formen wie Zylinder, Kegel, Rohr, Ellipse oder die Bohrungen haben in den 
 
 Neben den Einstellungen gibt es Griffe an der Form selbst:
 
-- Die **Ecken und Kanten** ziehen die Form größer oder kleiner.
+- Die **Ecken und Kanten** ziehen die Form größer oder kleiner. Hältst du beim Ziehen an einer Ecke [[Umschalt]], wachsen Breite, Tiefe und Höhe gemeinsam und die Proportionen bleiben erhalten; mit [[Alt]] wächst die Form von der Mitte aus statt von der gegenüberliegenden Ecke.
 - Der **Pfeil oben** ändert die Höhe, der Griff **in der Mitte** hebt die Form an oder senkt sie.
 - Die **gebogenen Pfeile** drehen sie.
 - An den **Zahlen** neben der Form siehst du die Maße. Ein Klick darauf öffnet ein Feld, in das du die gewünschte Zahl tippst.

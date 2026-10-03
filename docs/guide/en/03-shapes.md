@@ -71,7 +71,7 @@ Round shapes such as cylinder, cone, tube, ellipse or the bores have the switch 
 
 Besides the settings there are handles on the shape itself:
 
-- The **corners and edges** make the shape larger or smaller.
+- The **corners and edges** make the shape larger or smaller. Hold [[Shift]] while dragging a corner to scale width, depth and height together and keep the proportions; hold [[Alt]] to scale from the center instead of the opposite corner.
 - The **arrow on top** changes the height, the handle **in the middle** lifts or lowers the shape.
 - The **curved arrows** rotate it.
 - The **numbers** beside the shape show the dimensions. A click on one opens a field in which you type the number you want.
