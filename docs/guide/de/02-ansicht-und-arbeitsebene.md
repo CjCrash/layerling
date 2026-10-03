@@ -40,7 +40,7 @@ Am linken Rand liegt eine schmale Leiste. Von oben nach unten:
 - {{ui:camera.sectionCoarse}} schiebt die Ebene über den ganzen Entwurf, {{ui:camera.sectionFine}} nur ein Stück um ihre aktuelle Stelle, für Zehntelmillimeter. Die Position kannst du auch eintippen.
 - Der Knopf neben den Achsen zeigt die andere Seite des Schnitts, {{ui:camera.sectionReset}} setzt die Ebene zurück in die Mitte, {{ui:camera.sectionShowPlane}} blendet die blaue Ebene aus.
 - Was der Schnitt freilegt, kannst du anklicken und auswählen, auch innere Wände.
-- Mit {{ui:camera.sectionExportSvg}} exportierst du die Schnittkontur der Schnittebene als maßhaltiges 2D-SVG (z. B. für Laserschneider, Schablonen oder Dichtungen).
+- {{ui:camera.sectionExportSvg}} speichert die Umrisse auf der Schnittebene als SVG im Maßstab 1:1, für Laser, Plotter, Schablonen oder Dichtungen. Ein X-Schnitt ist von rechts gesehen, ein Y-Schnitt von oben, ein Z-Schnitt von vorn. Wie beim Export kommen nur sichtbare Körper hinein, Aussparungen sind schon abgezogen, und Körper gleicher Farbe sind zu einem Umriss vereinigt. Jede Farbe bleibt ein eigener Pfad ohne Füllung, so dass eine Lasersoftware sie als Ebenen trennt.
 
 [[Esc]] schließt das Fenster; der Schnitt bleibt, bis du ihn ausschaltest oder zur Entwurfsübersicht zurückgehst. Solange er an ist, ist der Knopf hervorgehoben. Was du dann auf der weggeschnittenen Seite ablegst, siehst du erst, wenn du den Schnitt ausschaltest.
 

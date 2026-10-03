@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applySegmentDimension } from "@/lib/sketchDimensions";
+import { applySegmentDimension, SEGMENT_DIMENSION_CENTER } from "@/lib/sketchDimensions";
 import type { SketchPoint, SketchSegment } from "@/types/layerling";
 
 describe("applySegmentDimension", () => {
@@ -70,5 +70,27 @@ describe("applySegmentDimension", () => {
 
     const zeroSegment: SketchSegment = { id: "s2", startId: "p1", endId: "p1", kind: "line" };
     expect(applySegmentDimension(zeroSegment, [p1], 20)).toEqual([p1]);
+  });
+
+  it("grows to both sides around the middle with the centre anchor (Alt)", () => {
+    const p1: SketchPoint = { id: "p1", x: 0, z: 0 };
+    const p2: SketchPoint = { id: "p2", x: 6, z: 8 }; // Laenge 10, Mitte (3, 4)
+    const segment: SketchSegment = { id: "s1", startId: "p1", endId: "p2", kind: "line" };
+    const result = applySegmentDimension(segment, [p1, p2], 20, SEGMENT_DIMENSION_CENTER);
+    const a = result.find((p) => p.id === "p1")!;
+    const b = result.find((p) => p.id === "p2")!;
+    expect(Math.hypot(b.x - a.x, b.z - a.z)).toBeCloseTo(20, 9);
+    expect((a.x + b.x) / 2).toBeCloseTo(3, 9);
+    expect((a.z + b.z) / 2).toBeCloseTo(4, 9);
+  });
+
+  it("leaves every other point alone, so the neighbouring lines follow only the moved end", () => {
+    const p1: SketchPoint = { id: "p1", x: 0, z: 0 };
+    const p2: SketchPoint = { id: "p2", x: 10, z: 0 };
+    const p3: SketchPoint = { id: "p3", x: 10, z: 10 };
+    const segment: SketchSegment = { id: "s1", startId: "p1", endId: "p2", kind: "line" };
+    const result = applySegmentDimension(segment, [p1, p2, p3], 15);
+    expect(result.find((p) => p.id === "p3")).toBe(p3);
+    expect(result.find((p) => p.id === "p1")).toBe(p1);
   });
 });

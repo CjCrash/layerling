@@ -1,14 +1,14 @@
 "use client";
 
 import { Check, ChevronUp, CornerDownRight, Crosshair, Home, Link, Link2Off, LockKeyhole, LockKeyholeOpen, Minus, Plus, RulerDimensionLine, Slash, Spline, Split, Trash2, Waves, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import { SnapGridControl } from "@/components/workplane/ShapeInspector";
 import { SketchRevolvePreview } from "@/components/SketchRevolvePreview";
 import { canApplySketchCornerTreatment } from "@/lib/sketchFilletChamfer";
 import { t } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
-import { parseLengthMm, parseMeasurementInput } from "@/lib/measurementUnits";
-import { applySegmentDimension } from "@/lib/sketchDimensions";
+import { parseMeasurementInput } from "@/lib/measurementUnits";
+import { applySegmentDimension, SEGMENT_DIMENSION_CENTER } from "@/lib/sketchDimensions";
 import { workplaneGridLayout } from "@/lib/workplaneGrid";
 import { closestPointOnSketchSegment, type SketchSegmentPlacement } from "@/lib/sketchPointRefinement";
 import { isSketchPanGesture, SKETCH_MANUAL_MAX_ZOOM, SKETCH_MAX_ZOOM, SKETCH_WHEEL_ZOOM_BOOST, SKETCH_MIN_ZOOM, sketchWheelZoomFactor, zoomSketchViewAt, type SketchView } from "@/lib/sketchPointerControls";
@@ -639,25 +639,38 @@ export function SketchWorkspace({
     setCornerDialog(null);
   };
 
+  // Ein Enter, dem das Verschwinden des Felds noch ein blur hinterherschickt,
+  // darf die Laenge nicht zweimal setzen - und Escape gar nicht.
+  const dimensionEditDoneRef = useRef(false);
+  const startDimensionEdit = useCallback((segmentId: string, value: string, sketchPos: { x: number; z: number }) => {
+    dimensionEditDoneRef.current = false;
+    setEditingDimension({ segmentId, value, sketchPos });
+  }, []);
+
   const cancelDimensionEdit = useCallback(() => {
+    dimensionEditDoneRef.current = true;
     setEditingDimension(null);
   }, []);
 
-  const commitDimensionEdit = useCallback(() => {
-    if (!editingDimension) return;
-    const raw = editingDimension.value.trim();
-    const valMm = parseLengthMm(raw);
-    if (Number.isFinite(valMm) && valMm > 0.001) {
-      const segment = profile.segments.find((s) => s.id === editingDimension.segmentId);
-      if (segment) {
-        const anchorPointId = selectedPoint?.id === segment.startId || selectedPoint?.id === segment.endId
-          ? (selectedPoint.id === segment.startId ? segment.endId : segment.startId)
-          : segment.startId;
-        const updatedPoints = applySegmentDimension(segment, profile.points, valMm, anchorPointId);
-        if (updatedPoints !== profile.points) {
-          onTransformPoints(updatedPoints, t("sketch.dimensionUpdated"));
-        }
-      }
+  /**
+   * Die Laenge steht in der Skizze immer in Millimetern, also wird sie auch so
+   * gelesen - bei Zoll machte "40" sonst 40 Zoll daraus. Es bleibt der
+   * Anfangspunkt stehen, oder - ist ein Endpunkt markiert - der andere Punkt,
+   * so dass der markierte wandert. Mit Alt waechst die Linie zu beiden Seiten.
+   */
+  const commitDimensionEdit = useCallback((symmetric = false) => {
+    if (!editingDimension || dimensionEditDoneRef.current) return;
+    dimensionEditDoneRef.current = true;
+    const length = parseMeasurementInput(editingDimension.value);
+    const segment = profile.segments.find((entry) => entry.id === editingDimension.segmentId);
+    if (segment && Number.isFinite(length) && length > 0.001) {
+      const anchor = symmetric
+        ? SEGMENT_DIMENSION_CENTER
+        : selectedPoint?.id === segment.endId ? segment.startId
+        : selectedPoint?.id === segment.startId ? segment.endId
+        : segment.startId;
+      const updatedPoints = applySegmentDimension(segment, profile.points, length, anchor);
+      if (updatedPoints !== profile.points) onTransformPoints(updatedPoints, t("sketch.dimensionUpdated"));
     }
     setEditingDimension(null);
   }, [editingDimension, profile.segments, profile.points, selectedPoint, onTransformPoints]);
@@ -1032,7 +1045,7 @@ export function SketchWorkspace({
     placedPills.push(pillRect(offset));
     const labelPosition = { x: anchor.x + normal.x * offset, z: anchor.z + normal.z * offset };
     const samples = samplesFor(normal);
-    return [{ segment, label, pill, offset, labelPosition, samples }];
+    return [{ segment, label, pill, offset, labelPosition, samples, curved }];
   });
   const referenceFootprints = useMemo(
     () => new Map(referenceShapes.map((shape) => [shape.id, importedMeshFootprint(shape)])),
@@ -1236,7 +1249,7 @@ export function SketchWorkspace({
             />
           ) : null}
           <g className="sketch-segment-dimensions" pointerEvents="none">
-            {dimensionLayouts.map(({ segment, label, pill, offset, labelPosition, samples }) => {
+            {dimensionLayouts.map(({ segment, label, pill, offset, labelPosition, samples, curved }) => {
               const shift = ({ point, normal }: (typeof samples)[number], distance: number) => ({ x: point.x + normal.x * distance, z: point.z + normal.z * distance });
               const gap = 4 * screenUnit;
               const overshoot = 10 * screenUnit;
@@ -1260,24 +1273,25 @@ export function SketchWorkspace({
                   <path className="sketch-dimension-line" d={`M ${dimensionLine.map((point) => `${point.x} ${point.z}`).join(" L ")}`} />
                   <path className="sketch-dimension-arrow" d={`${arrowhead(dimensionLine[0], dimensionLine[1])} ${arrowhead(dimensionLine[dimensionLine.length - 1], dimensionLine[dimensionLine.length - 2])}`} />
                   <g
-                    className="sketch-dimension-pill clickable"
-                    style={{ cursor: "pointer" }}
-                    role="button"
-                    tabIndex={0}
-                    onPointerDown={(event) => {
-                      event.stopPropagation();
-                    }}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setEditingDimension({
-                        segmentId: segment.id,
-                        value: label,
-                        sketchPos: labelPosition,
-                      });
-                    }}
+                    className={curved ? "sketch-dimension-pill" : "sketch-dimension-pill clickable"}
+                    {...(curved ? {} : {
+                      role: "button",
+                      tabIndex: 0,
+                      "aria-label": `${t("sketch.clickToEditDimension")}: ${label}`,
+                      onPointerDown: (event: ReactPointerEvent<SVGGElement>) => event.stopPropagation(),
+                      onClick: (event: ReactMouseEvent<SVGGElement>) => {
+                        event.stopPropagation();
+                        startDimensionEdit(segment.id, label, labelPosition);
+                      },
+                      onKeyDown: (event: ReactKeyboardEvent<SVGGElement>) => {
+                        if (event.key !== "Enter" && event.key !== " ") return;
+                        event.preventDefault();
+                        startDimensionEdit(segment.id, label, labelPosition);
+                      },
+                    })}
                     transform={`translate(${labelPosition.x} ${labelPosition.z})`}
                   >
-                    <title>{t("sketch.clickToEditDimension")}</title>
+                    {curved ? null : <title>{t("sketch.clickToEditDimension")}</title>}
                     <rect x={-pill.width / 2} y={-pill.height / 2} width={pill.width} height={pill.height} rx={pill.radius} />
                     <text y={5 * screenUnit} fontSize={13 * screenUnit}>{label}</text>
                   </g>
@@ -1523,10 +1537,16 @@ export function SketchWorkspace({
               onPointerDown={(event) => event.stopPropagation()}
               onFocus={(event) => event.currentTarget.select()}
               onChange={(event) => setEditingDimension((prev) => prev ? { ...prev, value: event.target.value } : null)}
-              onBlur={commitDimensionEdit}
+              onBlur={() => commitDimensionEdit()}
               onKeyDown={(event) => {
-                if (event.key === "Enter") commitDimensionEdit();
-                if (event.key === "Escape") cancelDimensionEdit();
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  commitDimensionEdit(event.altKey);
+                }
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  cancelDimensionEdit();
+                }
               }}
             />
           );

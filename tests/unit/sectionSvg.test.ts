@@ -1,109 +1,121 @@
+import * as THREE from "three";
 import { describe, expect, it } from "vitest";
-import { generateSectionSvg, type SectionMeshSource } from "@/lib/sectionSvg";
+import { loopArea, projectSectionPoint, sectionSvgDocument, sliceMeshContours, type SectionMesh } from "@/lib/sectionSvg";
 
-describe("generateSectionSvg", () => {
-  // A simple 20x20x20 box centered at (0, 0, 0)
-  // min: (-10, -10, -10), max: (10, 10, 10)
-  function createBoxSource(): SectionMeshSource {
-    const p = 10;
-    const m = -10;
-    // 8 vertices
-    const vertices = [
-      m, m, m, // 0
-      p, m, m, // 1
-      p, p, m, // 2
-      m, p, m, // 3
-      m, m, p, // 4
-      p, m, p, // 5
-      p, p, p, // 6
-      m, p, p, // 7
-    ];
-    // 12 triangles (2 per face)
-    const indices = [
-      // front (z = p)
-      4, 5, 6, 4, 6, 7,
-      // back (z = m)
-      1, 0, 3, 1, 3, 2,
-      // top (y = p)
-      3, 2, 6, 3, 6, 7,
-      // bottom (y = m)
-      4, 5, 1, 4, 1, 0,
-      // right (x = p)
-      1, 5, 6, 1, 6, 2,
-      // left (x = m)
-      0, 4, 7, 0, 7, 3,
-    ];
-    return {
-      positions: new Float32Array(vertices),
-      indices: new Uint16Array(indices),
-      color: "#ff5500",
-      name: "TestBox",
-    };
-  }
+/** Ein three.js-Koerper als Netz, wie der Export es liefert: Ecken je Dreieck, ungeschweisst. */
+function meshFromGeometry(geometry: THREE.BufferGeometry): SectionMesh {
+  const source = geometry.index ? geometry.toNonIndexed() : geometry;
+  const position = source.getAttribute("position");
+  const vertices: Array<[number, number, number]> = [];
+  const faces: Array<[number, number, number]> = [];
+  for (let index = 0; index < position.count; index += 1) vertices.push([position.getX(index), position.getY(index), position.getZ(index)]);
+  for (let index = 0; index + 2 < position.count; index += 3) faces.push([index, index + 1, index + 2]);
+  return { vertices, faces };
+}
 
-  it("slices a box along Z axis and produces a 2D rectangular SVG path", () => {
-    const box = createBoxSource();
-    // Plane cut at Z = 0: normal = (0, 0, 1), constant = 0
-    const result = generateSectionSvg([box], { normal: { x: 0, y: 0, z: 1 }, constant: 0 }, "z", "Box Cut Z");
+/** Eine 20 x 20 mm Platte, 10 mm stark (entlang Z), mit einer Bohrung von 8 mm in der Mitte. */
+function plateWithBore() {
+  const outline = new THREE.Shape([new THREE.Vector2(-10, -10), new THREE.Vector2(10, -10), new THREE.Vector2(10, 10), new THREE.Vector2(-10, 10)]);
+  const bore = new THREE.Path();
+  bore.absarc(0, 0, 4, 0, Math.PI * 2, true);
+  outline.holes.push(bore);
+  return meshFromGeometry(new THREE.ExtrudeGeometry(outline, { depth: 10, bevelEnabled: false, curveSegments: 32 }));
+}
 
-    expect(result.segmentCount).toBeGreaterThan(0);
-    expect(result.svg).toContain("<svg");
-    expect(result.svg).toContain("</svg>");
-    expect(result.svg).toContain("<path");
-    expect(result.svg).toContain('data-name="TestBox"');
-    expect(result.svg).toContain('stroke="#ff5500"');
-    // Content width and height should be approximately 20mm
-    expect(result.bounds.width).toBeCloseTo(20, 1);
-    expect(result.bounds.height).toBeCloseTo(20, 1);
+const closedAreas = (mesh: SectionMesh, axis: "x" | "y" | "z", offset: number) =>
+  sliceMeshContours(mesh, axis, offset).map((loop) => {
+    expect(loop.closed).toBe(true);
+    return Math.abs(loopArea(loop.points));
+  }).sort((a, b) => b - a);
+
+describe("sliceMeshContours", () => {
+  it("cuts a box into one closed rectangle with four corners", () => {
+    const box = meshFromGeometry(new THREE.BoxGeometry(30, 20, 10).translate(0, 10, 0));
+    const loops = sliceMeshContours(box, "y", 7);
+    expect(loops).toHaveLength(1);
+    expect(loops[0].closed).toBe(true);
+    expect(loops[0].points).toHaveLength(4);
+    expect(Math.abs(loopArea(loops[0].points))).toBeCloseTo(300, 6);
   });
 
-  it("slices a box along X axis", () => {
-    const box = createBoxSource();
-    // Plane cut at X = 0: normal = (1, 0, 0), constant = 0
-    const result = generateSectionSvg([box], { normal: { x: 1, y: 0, z: 0 }, constant: 0 }, "x", "Box Cut X");
-
-    expect(result.segmentCount).toBeGreaterThan(0);
-    expect(result.svg).toContain("<svg");
-    expect(result.bounds.width).toBeCloseTo(20, 1);
-    expect(result.bounds.height).toBeCloseTo(20, 1);
+  it("keeps the bore as its own closed loop", () => {
+    const areas = closedAreas(plateWithBore(), "z", 5);
+    expect(areas).toHaveLength(2);
+    expect(areas[0]).toBeCloseTo(400, 6);
+    // Ein Vieleck mit 32 Ecken im Kreis von 4 mm: knapp unter pi * 16.
+    expect(areas[1]).toBeGreaterThan(49);
+    expect(areas[1]).toBeLessThan(Math.PI * 16);
   });
 
-  it("slices a box along Y axis", () => {
-    const box = createBoxSource();
-    // Plane cut at Y = 0: normal = (0, 1, 0), constant = 0
-    const result = generateSectionSvg([box], { normal: { x: 0, y: 1, z: 0 }, constant: 0 }, "y", "Box Cut Y");
-
-    expect(result.segmentCount).toBeGreaterThan(0);
-    expect(result.svg).toContain("<svg");
-    expect(result.bounds.width).toBeCloseTo(20, 1);
-    expect(result.bounds.height).toBeCloseTo(20, 1);
+  it("cuts straight through the bore into two closed walls", () => {
+    const areas = closedAreas(plateWithBore(), "x", 0);
+    expect(areas).toHaveLength(2);
+    expect(areas[0]).toBeCloseTo(60, 6);
+    expect(areas[1]).toBeCloseTo(60, 6);
   });
 
-  it("returns fallback empty SVG when plane does not intersect the mesh", () => {
-    const box = createBoxSource();
-    // Plane at Z = 50: box is in [-10, 10], so no intersection
-    const result = generateSectionSvg([box], { normal: { x: 0, y: 0, z: 1 }, constant: -50 }, "z");
-
-    expect(result.segmentCount).toBe(0);
-    expect(result.svg).toContain("<svg");
-    expect(result.svg).toContain("No section cut geometry");
+  it("stays closed where corners lie exactly on the plane", () => {
+    // Zwei aufeinandergestapelte Quader, geschweisst: ein Eckenring genau bei y = 10.
+    const lower = new THREE.BoxGeometry(10, 10, 10, 1, 1, 1).translate(0, 5, 0);
+    const upper = new THREE.BoxGeometry(10, 10, 10, 1, 1, 1).translate(0, 15, 0);
+    const tall = meshFromGeometry(new THREE.BoxGeometry(10, 20, 10, 1, 2, 1).translate(0, 10, 0));
+    expect(closedAreas(tall, "y", 10)).toEqual([expect.closeTo(100, 6)]);
+    // Genau auf einer Deckflaeche entscheidet die Regel "auf der Ebene zaehlt
+    // als oben": der untere Quader zeigt seinen Deckel, der obere nichts -
+    // eindeutig und ohne halbe Umrisse.
+    expect(closedAreas(meshFromGeometry(lower), "y", 10)).toEqual([expect.closeTo(100, 6)]);
+    expect(closedAreas(meshFromGeometry(upper), "y", 10)).toEqual([]);
   });
 
-  it("applies matrixWorld transformation before slicing", () => {
-    const box = createBoxSource();
-    // Transform matrix: translate +20 in X
-    const m = [
-      1, 0, 0, 0,
-      0, 1, 0, 0,
-      0, 0, 1, 0,
-      20, 0, 0, 1,
-    ];
-    box.matrixWorldElements = m;
+  it("finds nothing when the plane misses the body", () => {
+    const box = meshFromGeometry(new THREE.BoxGeometry(10, 10, 10));
+    expect(sliceMeshContours(box, "x", 20)).toEqual([]);
+  });
 
-    const result = generateSectionSvg([box], { normal: { x: 0, y: 0, z: 1 }, constant: 0 }, "z");
-    expect(result.segmentCount).toBeGreaterThan(0);
-    // Bounds in U (which is X) should now be centered around +20, i.e. [10, 30]
-    expect(result.bounds.minU).toBeCloseTo(10, 1);
-    expect(result.bounds.maxU).toBeCloseTo(30, 1);
+  it("joins an already welded mesh the same way", () => {
+    const geometry = new THREE.BoxGeometry(10, 10, 10);
+    const position = geometry.getAttribute("position");
+    const vertices: Array<[number, number, number]> = [];
+    for (let index = 0; index < position.count; index += 1) vertices.push([position.getX(index), position.getY(index), position.getZ(index)]);
+    const index = geometry.index!;
+    const faces: Array<[number, number, number]> = [];
+    for (let i = 0; i < index.count; i += 3) faces.push([index.getX(i), index.getX(i + 1), index.getX(i + 2)]);
+    expect(closedAreas({ vertices, faces }, "z", 1.5)).toEqual([expect.closeTo(100, 6)]);
+  });
+});
+
+describe("projectSectionPoint", () => {
+  it("shows an X cut from the right: front on the left, up on top", () => {
+    expect(projectSectionPoint([0, 0, 30], "x").u).toBe(-30);
+    expect(projectSectionPoint([0, 12, 0], "x").v).toBe(-12);
+  });
+
+  it("shows a Y cut from above like the sketch: front at the bottom", () => {
+    expect(projectSectionPoint([5, 0, 30], "y")).toEqual({ u: 5, v: 30 });
+  });
+
+  it("shows a Z cut from the front: right on the right, up on top", () => {
+    expect(projectSectionPoint([5, 12, 0], "z")).toEqual({ u: 5, v: -12 });
+  });
+});
+
+describe("sectionSvgDocument", () => {
+  it("draws at 1:1 in millimetres, unfilled, one path per body", () => {
+    const loops = sliceMeshContours(plateWithBore(), "z", 5);
+    const result = sectionSvgDocument([{ name: "Platte <A>", color: "#d41721", loops }], "z", 5, "Test & Co")!;
+    expect(result.width).toBeCloseTo(24, 6);
+    expect(result.height).toBeCloseTo(24, 6);
+    expect(result.svg).toContain('width="24mm" height="24mm" viewBox="-12 -12 24 24"');
+    expect(result.svg.match(/<path /g)).toHaveLength(1);
+    expect(result.svg).toContain('fill="none" fill-rule="evenodd" stroke="#d41721"');
+    expect(result.svg.match(/ d="[^"]*"/)![0].match(/ Z/g)).toHaveLength(2);
+    expect(result.svg).toContain("<title>Platte &lt;A&gt;</title>");
+    expect(result.svg).toContain("<title>Test &amp; Co</title>");
+    expect(result.loopCount).toBe(2);
+    expect(result.openCount).toBe(0);
+  });
+
+  it("returns nothing when no body is cut", () => {
+    expect(sectionSvgDocument([{ name: "Leer", color: "#000", loops: [] }], "x", 0, "Leer")).toBeNull();
   });
 });

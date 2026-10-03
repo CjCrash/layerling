@@ -193,7 +193,8 @@ import {
 } from "@/lib/layerlingMcpProtocol";
 import type { CadModifierComponentMesh, CadModifierDeflection, CadModifierDisplayEdge, CadModifierEdge, CadModifierHelicalGearPart, CadModifierKind, CadModifierMeshPart, CadModifierPrimitivePart, CadModifierProfilePart, CadModifierQuality, CadModifierSpringPart, CadModifierThreadPart, CadModifierWorkerRequest, CadModifierWorkerResponse } from "@/lib/cadModifierTypes";
 import type { SketchCadBuildResponse } from "@/lib/sketchCadTypes";
-import type { SectionPlaneAxis, SectionPlaneSettings } from "@/lib/sectionView";
+import { getSectionBounds, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
+import { SECTION_VIEW_FACE, sectionSvgDocument, sliceMeshContours } from "@/lib/sectionSvg";
 import type { AlignAxis, AlignHandleStatus, AlignTarget, GridSize, ParametricSource, ProjectAsset, ShapeAsset, ShapeCustomization, ShapeKind, SketchImage, SketchOperation, SketchPoint, SketchProfile, SketchRevolveSettings, SketchSegment, ShellEdges, ShellOpenings, WorkplaneNote, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 
 export { importedShapeFromObj, importedShapeFromStl, importedShapeFromSvg };
@@ -289,13 +290,8 @@ declare global {
     layerlingCaptureCanvas?: () => string;
     layerlingCaptureCanvasAsync?: () => Promise<string>;
     layerlingCaptureView?: (face?: LayerlingMcpViewFace) => Promise<string> | string;
-    /** The section view for MCP: applies what is given, returns the settings it ends on and the plane's range, or exports SVG. */
-    layerlingSectionView?: (patch: Partial<SectionPlaneSettings> & { center?: boolean; exportSvg?: boolean }) => {
-      settings?: SectionPlaneSettings;
-      bounds?: { min: number; max: number; center: number };
-      svg?: string;
-      segmentCount?: number;
-    };
+    /** The section view for MCP: applies what is given, returns the settings it ends on and the plane's range. */
+    layerlingSectionView?: (patch: Partial<SectionPlaneSettings> & { center?: boolean }) => { settings: SectionPlaneSettings; bounds: { min: number; max: number; center: number } };
   }
 }
 
@@ -4847,6 +4843,18 @@ async function unionOverlappingExportMeshes(shapes: WorkplaneShape[], meshes: Me
  * einer Platte steckt, schneidet sich dort seine Tasche, statt dass zwei
  * Koerper denselben Raum beanspruchen (Discussion #79).
  */
+/** Die Lage der Schnittebene fuer Dateiname und Titel: auf Zehntel, ohne ueberfluessige Nullen. */
+function formatSectionOffset(offset: number) {
+  const rounded = Math.round(offset * 100) / 100;
+  return String(Object.is(rounded, -0) ? 0 : rounded);
+}
+
+const SECTION_SEEN_FROM_KEYS = {
+  right: "camera.sectionSeenFromRight",
+  top: "camera.sectionSeenFromTop",
+  front: "camera.sectionSeenFromFront",
+} as const;
+
 /** Die sichtbaren Teile fuer einen Export, dazu der Satz, der die ausgeblendeten nennt. */
 function visibleExportShapes(source: readonly WorkplaneShape[]) {
   const visible = source.filter((shape) => !shape.hidden);
@@ -9735,6 +9743,46 @@ export function LayerlingEditor({
     };
   }, [initialSnap]);
 
+  /**
+   * Der Schnitt als SVG, aus denselben Koerpern wie STL und 3MF: nur
+   * Sichtbares, ohne Loecher, Gruppen verrechnet, Gleichfarbiges vereinigt und
+   * verschiedene Farben gegeneinander freigestellt. Geschnitten wird der ganze
+   * Entwurf, wie ihn die Schnittansicht zeigt - nicht nur die Auswahl.
+   */
+  const buildSectionSvg = useCallback(async (axis: SectionPlaneAxis, offset: number) => {
+    const { visible, hiddenNote } = visibleExportShapes(shapesRef.current);
+    const hiddenCount = shapesRef.current.length - visible.length;
+    const solids = visible.filter((shape) => !shape.hole && !isNonSolidShapeKind(shape.kind));
+    if (solids.length === 0) throw new Error(t("status.sectionSvgNothing"));
+    const { meshes, quellen, gescheitert } = await colorSeparatedExportMeshes(solids, solids.map(meshForShape));
+    const bodies = meshes.map((mesh, index) => {
+      const source = solids[quellen[index]];
+      return {
+        name: source ? displayShapeName(source) : mesh.name,
+        color: source?.color ?? "#000000",
+        loops: sliceMeshContours(mesh, axis, offset),
+      };
+    });
+    const result = sectionSvgDocument(bodies, axis, offset, `${projectName} - ${axis.toUpperCase()} ${formatSectionOffset(offset)} mm`);
+    if (!result) throw new Error(t("status.sectionSvgMissed"));
+    return { result, hiddenNote, hiddenCount, unionFailed: gescheitert > 0 };
+  }, [projectName]);
+
+  const exportSectionSvg = useCallback(async (axis: SectionPlaneAxis, offset: number) => {
+    setNotice(t("status.buildingSectionSvg"), true);
+    try {
+      const { result, hiddenNote, unionFailed } = await buildSectionSvg(axis, offset);
+      const name = `${projectName} ${t("camera.sectionFileSuffix")} ${axis.toUpperCase()} ${formatSectionOffset(offset)} mm`;
+      await downloadTextFile(projectExportFileName(name, "svg"), result.svg, "image/svg+xml;charset=utf-8");
+      const parts = [t("status.sectionSvgExported", { count: result.loopCount, face: t(SECTION_SEEN_FROM_KEYS[SECTION_VIEW_FACE[axis]]) })];
+      if (result.openCount > 0) parts.push(t("status.sectionSvgOpen", { count: result.openCount }));
+      if (unionFailed) parts.push(t("status.sectionSvgOverlap"));
+      setNotice(parts.join(" ") + hiddenNote, result.openCount > 0 || unionFailed);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : t("status.sectionSvgFailed"), true);
+    }
+  }, [buildSectionSvg, projectName]);
+
   const executeMcpCommand = useCallback(async (command: LayerlingMcpCommand): Promise<unknown> => {
     const params = command.params ?? {};
     const currentShapes = () => shapesRef.current;
@@ -10286,16 +10334,30 @@ export function LayerlingEditor({
       }
 
       if (command.action === "export_section_svg") {
-        if (!window.layerlingSectionView) throw new Error("The section view is not available in this editor");
-        const axis = params.axis === undefined ? undefined : mcpString(params.axis, "x").toLowerCase();
-        if (axis !== undefined && axis !== "x" && axis !== "y" && axis !== "z") throw new Error("axis must be x, y or z");
-        const offset = params.offset === undefined ? undefined : mcpNumber(params.offset, 0);
-        const result = window.layerlingSectionView({
-          ...(axis ? { axis: axis as SectionPlaneAxis } : {}),
-          ...(offset !== undefined ? { offset } : {}),
-          exportSvg: true,
-        });
-        return result;
+        // Ohne Angaben der Schnitt, wie er gerade eingestellt ist; die
+        // Schnittansicht selbst bleibt dabei unberuehrt.
+        const axisParam = params.axis === undefined ? undefined : mcpString(params.axis, "x").toLowerCase();
+        if (axisParam !== undefined && axisParam !== "x" && axisParam !== "y" && axisParam !== "z") throw new Error("axis must be x, y or z");
+        const current = window.layerlingSectionView?.({}).settings;
+        const axis = (axisParam ?? current?.axis ?? "x") as SectionPlaneAxis;
+        const offset = params.offset !== undefined
+          ? mcpNumber(params.offset, 0)
+          : current?.enabled && current.axis === axis
+            ? current.offset
+            : getSectionBounds(currentShapes(), axis, workspaceSettings.width, workspaceSettings.depth).center;
+        const built = await buildSectionSvg(axis, offset);
+        return {
+          axis,
+          offset,
+          seenFrom: SECTION_VIEW_FACE[axis],
+          bodies: built.result.bodyCount,
+          loops: built.result.loopCount,
+          openLoops: built.result.openCount,
+          widthMm: Number(built.result.width.toFixed(3)),
+          heightMm: Number(built.result.height.toFixed(3)),
+          hiddenSkipped: built.hiddenCount,
+          svg: built.result.svg,
+        };
       }
 
       if (command.action === "set_workplane") {
@@ -10349,6 +10411,9 @@ export function LayerlingEditor({
       throw error;
     }
   }, [
+    buildSectionSvg,
+    workspaceSettings.width,
+    workspaceSettings.depth,
     applyCadModifierForMcp,
     cancelOpenGroup,
     commitShapes,
@@ -11858,7 +11923,7 @@ export function LayerlingEditor({
           themePreference={themePreference}
           resolvedTheme={resolvedTheme}
           onThemePreferenceChange={onThemePreferenceChange}
-          onNotice={setNotice}
+          onExportSectionSvg={(axis, offset) => void exportSectionSvg(axis, offset)}
           />
         )}
       </div>

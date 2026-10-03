@@ -40,7 +40,7 @@ The small arrow at the very top of the bar hides it if it gets in the way.
 - {{ui:camera.sectionCoarse}} moves the plane across the whole design, {{ui:camera.sectionFine}} moves it a little either side of where it stands, for tenths of a millimetre. You can also type the position.
 - The button beside the axes shows the other side of the cut, {{ui:camera.sectionReset}} puts the plane back in the middle, and {{ui:camera.sectionShowPlane}} hides the blue plane.
 - You can click and select what the cut lays open, inner walls included.
-- {{ui:camera.sectionExportSvg}} exports the cross-section contour along the cutting plane as a dimensionally accurate 2D SVG (e.g. for laser cutting, templates or gaskets).
+- {{ui:camera.sectionExportSvg}} saves the outlines on the cutting plane as an SVG at 1:1, for a laser, a plotter, a template or a gasket. An X cut is seen from the right, a Y cut from above, a Z cut from the front. As in the export, only visible bodies go in, holes are already taken off, and bodies of the same colour are joined into one outline. Each colour stays its own path without a fill, so laser software keeps them apart as layers.
 
 [[Esc]] closes the panel; the cut stays until you switch it off or go back to the design overview. While it is on, its button stays highlighted. Anything you place on the side that is cut away only shows once you switch the cut off.
 

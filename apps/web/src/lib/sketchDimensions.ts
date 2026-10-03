@@ -1,81 +1,40 @@
 import type { SketchPoint, SketchSegment } from "@/types/layerling";
 
+/** Statt eines Endpunkts: die Mitte bleibt stehen, die Linie waechst zu beiden Seiten. */
+export const SEGMENT_DIMENSION_CENTER = "center";
+
 /**
- * Adjusts the length of a sketch segment to `newLength` (in millimeters).
- * The anchor point remains stationary while the other point moves along the segment's line/tangent.
- * Any Bezier control handles attached to the moving point are translated or scaled along with it.
+ * Bringt eine gerade Skizzenlinie auf `newLength` Millimeter, in ihrer
+ * Richtung. Es bleibt der Punkt `anchor` stehen (Vorgabe: der Anfangspunkt)
+ * oder mit `SEGMENT_DIMENSION_CENTER` die Mitte. Was wandert, nimmt seine
+ * Griffe mit; die Linien, die dort anschliessen, gehen mit dem Punkt mit.
  */
 export function applySegmentDimension(
   segment: SketchSegment,
   points: SketchPoint[],
   newLength: number,
-  anchorPointId?: string,
+  anchor: string = segment.startId,
 ): SketchPoint[] {
-  if (!Number.isFinite(newLength) || newLength <= 0.001) {
-    return points;
-  }
-
-  const start = points.find((p) => p.id === segment.startId);
-  const end = points.find((p) => p.id === segment.endId);
-  if (!start || !end) return points;
-
-  // Decide which point is anchored and which point moves.
-  // If anchorPointId is specified and matches end, start moves.
-  // Otherwise start is anchor and end moves.
-  const anchorIsEnd = anchorPointId === end.id;
-  const anchor = anchorIsEnd ? end : start;
-  const mover = anchorIsEnd ? start : end;
-
-  const dx = mover.x - anchor.x;
-  const dz = mover.z - anchor.z;
-  const currentLength = Math.hypot(dx, dz);
-
+  if (!Number.isFinite(newLength) || newLength <= 0.001) return points;
+  const start = points.find((point) => point.id === segment.startId);
+  const end = points.find((point) => point.id === segment.endId);
+  if (!start || !end || start.id === end.id) return points;
+  const currentLength = Math.hypot(end.x - start.x, end.z - start.z);
   if (currentLength < 1e-6) return points;
 
-  const scale = newLength / currentLength;
-  const newMoverX = anchor.x + dx * scale;
-  const newMoverZ = anchor.z + dz * scale;
-  const deltaX = newMoverX - mover.x;
-  const deltaZ = newMoverZ - mover.z;
-
-  const updatedMover: SketchPoint = {
-    ...mover,
-    x: newMoverX,
-    z: newMoverZ,
-    handleIn: mover.handleIn
-      ? { x: mover.handleIn.x + deltaX, z: mover.handleIn.z + deltaZ }
-      : undefined,
-    handleOut: mover.handleOut
-      ? { x: mover.handleOut.x + deltaX, z: mover.handleOut.z + deltaZ }
-      : undefined,
-  };
-
-  // If segment is curved and anchor has an outgoing handle along this segment,
-  // scale that handle proportionally relative to the anchor.
-  let updatedAnchor = anchor;
-  if (segment.kind !== "line") {
-    if (!anchorIsEnd && anchor.handleOut) {
-      updatedAnchor = {
-        ...anchor,
-        handleOut: {
-          x: anchor.x + (anchor.handleOut.x - anchor.x) * scale,
-          z: anchor.z + (anchor.handleOut.z - anchor.z) * scale,
-        },
-      };
-    } else if (anchorIsEnd && anchor.handleIn) {
-      updatedAnchor = {
-        ...anchor,
-        handleIn: {
-          x: anchor.x + (anchor.handleIn.x - anchor.x) * scale,
-          z: anchor.z + (anchor.handleIn.z - anchor.z) * scale,
-        },
-      };
-    }
-  }
-
-  return points.map((p) => {
-    if (p.id === updatedMover.id) return updatedMover;
-    if (p.id === updatedAnchor.id) return updatedAnchor;
-    return p;
+  const direction = { x: (end.x - start.x) / currentLength, z: (end.z - start.z) / currentLength };
+  const grow = newLength - currentLength;
+  // Wie weit jeder Endpunkt entlang der Linie nach aussen geht.
+  const startShift = anchor === SEGMENT_DIMENSION_CENTER ? grow / 2 : anchor === end.id ? grow : 0;
+  const endShift = anchor === SEGMENT_DIMENSION_CENTER ? grow / 2 : anchor === end.id ? 0 : grow;
+  const moved = (point: SketchPoint, dx: number, dz: number): SketchPoint => ({
+    ...point,
+    x: point.x + dx,
+    z: point.z + dz,
+    handleIn: point.handleIn ? { x: point.handleIn.x + dx, z: point.handleIn.z + dz } : point.handleIn,
+    handleOut: point.handleOut ? { x: point.handleOut.x + dx, z: point.handleOut.z + dz } : point.handleOut,
   });
+  const nextStart = startShift ? moved(start, -direction.x * startShift, -direction.z * startShift) : start;
+  const nextEnd = endShift ? moved(end, direction.x * endShift, direction.z * endShift) : end;
+  return points.map((point) => (point.id === start.id ? nextStart : point.id === end.id ? nextEnd : point));
 }
