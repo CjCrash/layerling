@@ -14,6 +14,8 @@ Scharfe Kanten sehen an einem gedruckten Teil selten gut aus, und sie sind auch 
 
 ![Das Werkzeug „Kanten verrunden“: alle scharfen Kanten sind ausgewählt, im Bild siehst du die Vorschau mit 4 mm Radius.](shot:fillet-preview)
 
+Das Fenster steht oben rechts. Verdeckt es Kanten, die du anklicken willst, ziehst du es an seiner Titelleiste weg; dort öffnet es sich auch beim nächsten Mal, und das gilt ebenso für {{ui:editor.tool.hollow}} und {{ui:editor.tool.array}}. Ein Doppelklick auf die Titelleiste bringt es zurück.
+
 Im Fenster findest du:
 
 - {{ui:edge.allSharpEdges}} wählt sämtliche Kanten auf einmal, {{ui:edge.clear}} leert die Auswahl.

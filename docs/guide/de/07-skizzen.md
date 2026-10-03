@@ -51,7 +51,7 @@ Beim Rotieren zeichnest du den halben Querschnitt **links von der Achse**, die i
 
 ## Ein Bild als Vorlage
 
-Mit {{ui:sketch.addImage}} legst du ein Foto oder eine Zeichnung unter die Skizze und zeichnest sie nach. Du kannst die Größe, die Deckkraft und die Lage einstellen. Sobald das Bild richtig liegt, sperrst du es mit [[L]], damit du es beim Zeichnen nicht versehentlich verschiebst.
+Mit {{ui:sketch.addImage}} legst du ein Foto oder eine Zeichnung unter die Skizze und zeichnest sie nach. Du kannst die Größe, die Deckkraft und die Lage einstellen. Sobald das Bild richtig liegt, sperrst du es mit [[L]], damit du es beim Zeichnen nicht versehentlich verschiebst. Verdecken seine Einstellungen am rechten Rand das Bild, ziehst du sie an ihrer Titelleiste weg; ein Doppelklick darauf dockt sie wieder an.
 
 ## Tasten im Skizzenmodus
 

@@ -2635,6 +2635,17 @@ button {
   display: block;
 }
 
+/* The title bar moves the tool panel across the workplane. */
+.edge-modifier-header.movable {
+  cursor: grab;
+  touch-action: none;
+}
+
+.edge-modifier-panel.moving,
+.edge-modifier-panel.moving .edge-modifier-header.movable {
+  cursor: grabbing;
+}
+
 .edge-modifier-header strong {
   font-size: 16px;
 }
@@ -5502,6 +5513,37 @@ button {
   position: relative;
 }
 
+/* A grip for panels without a title bar: it moves them across the workplane. */
+.panel-grip {
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  width: 16px;
+  color: #b4a08b;
+  border-radius: 6px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.panel-grip:hover {
+  color: #6b5641;
+  background: rgba(233, 224, 211, 0.7);
+}
+
+.tape-tool-popover.moving,
+.tape-tool-popover.moving .panel-grip {
+  cursor: grabbing;
+}
+
+html[data-theme="dark"] .panel-grip {
+  color: #8a7866;
+}
+
+html[data-theme="dark"] .panel-grip:hover {
+  color: #e8dccd;
+  background: rgba(68, 58, 48, 0.8);
+}
+
 .tape-tool-popover {
   position: absolute;
   top: 2px;
@@ -5594,6 +5636,20 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+/* The title bar moves the panel across the workplane, like the object list's. */
+.section-popover-header.movable {
+  margin: -4px -4px 0;
+  padding: 4px;
+  border-radius: 8px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.section-tool-popover.moving,
+.section-tool-popover.moving .section-popover-header.movable {
+  cursor: grabbing;
 }
 
 .section-popover-title {

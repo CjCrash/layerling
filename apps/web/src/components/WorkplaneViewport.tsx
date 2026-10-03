@@ -1,8 +1,9 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Crosshair, Cuboid, Download, Eye, EyeOff, FlipHorizontal, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, RotateCcw, Rows3, Ruler, RulerDimensionLine, Slice, X } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type DragEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type SetStateAction, type WheelEvent as ReactWheelEvent } from "react";
+import { ChevronLeft, ChevronRight, Crosshair, Cuboid, Download, Eye, EyeOff, FlipHorizontal, GripVertical, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, RotateCcw, Rows3, Ruler, RulerDimensionLine, Slice, X } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type DragEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type ReactNode, type SetStateAction, type WheelEvent as ReactWheelEvent } from "react";
 import { objectSnapOffset, shiftSnapBox, type ObjectSnapGuide, type SnapBox } from "@/lib/objectSnap";
+import { useMovablePanel, type MovablePanelOptions } from "@/lib/useMovablePanel";
 import { computeSectionPlaneVector, DEFAULT_SECTION_SETTINGS, getSectionBounds, sectionFineWindow, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
 import * as THREE from "three";
 import { Brush, Evaluator, HOLLOW_INTERSECTION } from "three-bvh-csg";
@@ -3624,6 +3625,61 @@ function resizeSelectionFromHandle(
       patch,
     };
   });
+}
+
+/**
+ * Die Massband-Werkzeuge: eine schmale Knopfleiste ohne Titelleiste, also
+ * mit einem Griff links. Er zieht sie frei ueber die Arbeitsflaeche, ein
+ * Doppelklick darauf oder das Ablegen am Knopf bringt sie zurueck.
+ */
+const TAPE_PANEL: MovablePanelOptions = {
+  floatingStyle: { animation: "none" },
+  area: (panel) => panel.closest<HTMLElement>(".workplane-stage"),
+};
+
+function MovableTapePanel({ children }: { children: ReactNode }) {
+  const movable = useMovablePanel<HTMLDivElement>("layerling.editor.tapePanelPosition", TAPE_PANEL);
+  return (
+    <div
+      id="tape-tool-popover"
+      ref={movable.panelRef}
+      className={`tape-tool-popover ${movable.moved ? "floating" : ""} ${movable.dragging ? "moving" : ""}`}
+      style={movable.style}
+      aria-label={t("camera.tapeActions")}
+    >
+      <span className="panel-grip" title={t("panel.moveHint")} aria-hidden="true" {...movable.handleProps}>
+        <GripVertical size={16} strokeWidth={2.2} />
+      </span>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Das Schnittfenster haengt an seinem Knopf in der Kameraleiste und laesst
+ * sich an seiner Titelleiste frei ueber die Arbeitsflaeche ziehen, wie
+ * Objektliste und Einstellungen. Ein Doppelklick auf die Titelleiste oder das
+ * Ablegen am Knopf bringt es zurueck. Eigene Komponente, weil das Fenster nur
+ * offen da ist - so liest es den gemerkten Platz bei jedem Oeffnen.
+ */
+const SECTION_PANEL: MovablePanelOptions = {
+  floatingStyle: { bottom: "auto", animation: "none" },
+  area: (panel) => panel.closest<HTMLElement>(".workplane-stage"),
+};
+
+function MovableSectionPanel({ children }: { children: (handleProps: ReturnType<typeof useMovablePanel>["handleProps"]) => ReactNode }) {
+  const movable = useMovablePanel<HTMLDivElement>("layerling.editor.sectionPanelPosition", SECTION_PANEL);
+  return (
+    <div
+      id="section-tool-popover"
+      ref={movable.panelRef}
+      className={`section-tool-popover ${movable.moved ? "floating" : ""} ${movable.dragging ? "moving" : ""}`}
+      style={movable.style}
+      aria-label={t("camera.sectionView")}
+    >
+      {children(movable.handleProps)}
+    </div>
+  );
 }
 
 export function WorkplaneViewport({
@@ -7707,7 +7763,7 @@ export function WorkplaneViewport({
                 <RulerDimensionLine size={26} strokeWidth={2.2} aria-hidden="true" />
               </button>
               {tapeToolsOpen ? (
-                <div id="tape-tool-popover" className="tape-tool-popover" aria-label={t("camera.tapeActions")}>
+                <MovableTapePanel>
                   <button className={tapeMode ? "active" : ""} aria-label={t("camera.addMeasurement")} title={t("camera.addMeasurement")} aria-pressed={tapeMode} onClick={activateTapeAdd}>
                     <Plus size={21} strokeWidth={2.4} aria-hidden="true" />
                   </button>
@@ -7718,7 +7774,7 @@ export function WorkplaneViewport({
                     <X size={20} strokeWidth={2.4} aria-hidden="true" />
                   </button>
                   <GuideHelpLink section="tapeMeasure" className="tape-popover-help" iconSize={20} strokeWidth={2.25} />
-                </div>
+                </MovableTapePanel>
               ) : null}
             </div>
             <div className="corner-ruler-control-group">
@@ -7744,8 +7800,9 @@ export function WorkplaneViewport({
                 <Slice size={23} strokeWidth={2.15} aria-hidden="true" />
               </button>
               {sectionViewOpen ? (
-                <div id="section-tool-popover" className="section-tool-popover" aria-label={t("camera.sectionView")}>
-                  <div className="section-popover-header">
+                <MovableSectionPanel>
+                  {(handleProps) => (<>
+                  <div className="section-popover-header movable" title={t("camera.sectionMoveHint")} {...handleProps}>
                     <span className="section-popover-title">{t("camera.sectionView")}</span>
                     <button
                       type="button"
@@ -7900,7 +7957,8 @@ export function WorkplaneViewport({
                       </div>
                     </>
                   ) : null}
-                </div>
+                  </>)}
+                </MovableSectionPanel>
               ) : null}
             </div>
           </>

@@ -14,6 +14,8 @@ Sharp edges rarely look good on a printed part, and they are not particularly st
 
 ![The "Fillet edges" tool: all sharp edges are selected, the picture shows the preview with a 4 mm radius.](shot:fillet-preview)
 
+The panel sits at the top right. If it covers edges you want to click, drag it away by its title bar; it opens there next time too, and so do {{ui:editor.tool.hollow}} and {{ui:editor.tool.array}}. Double-click the title bar to put it back.
+
 In the panel you find:
 
 - {{ui:edge.allSharpEdges}} selects every edge at once, {{ui:edge.clear}} empties the selection.

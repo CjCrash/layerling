@@ -7,7 +7,7 @@ Wer ein Teil genau bauen will, muss messen können. layerling hat dafür mehrere
 
 ## Das Maßband
 
-Das Maßband liegt am unteren Ende der Kameraleiste am linken Rand ({{ui:camera.tapeTools}}). Es misst Abstände zwischen Ecken, Kanten und Flächen. Ein Klick darauf öffnet drei Schaltflächen:
+Das Maßband liegt am unteren Ende der Kameraleiste am linken Rand ({{ui:camera.tapeTools}}). Es misst Abstände zwischen Ecken, Kanten und Flächen. Ein Klick darauf öffnet drei Schaltflächen. Verdecken sie, was du messen willst, ziehst du sie am Griff links frei über die Arbeitsfläche; ein Doppelklick auf den Griff bringt sie zurück:
 
 ![Das Maßband mit seinen drei Schaltflächen: Maß hinzufügen, Messpunkte verschieben, Maß entfernen.](shot:tape-menu)
 

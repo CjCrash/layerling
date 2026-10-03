@@ -1,6 +1,7 @@
 "use client";
 
 import { GuideHelpLink } from "@/components/GuideHelpLink";
+import { MovableToolPanel } from "@/components/workplane/MovableToolPanel";
 import { Check, LoaderCircle, X } from "lucide-react";
 import { EdgeModifierSlider } from "@/components/workplane/EdgeModifierPanel";
 import { cadModifierUserErrorMessage } from "@/lib/cadModifierRuntime";
@@ -50,8 +51,9 @@ export function ShellPanel({
   useLanguage();
   const title = t("shell.title");
   return (
-    <aside className="edge-modifier-panel shell-panel" aria-label={title}>
-      <div className="edge-modifier-header">
+    <MovableToolPanel className="edge-modifier-panel shell-panel" ariaLabel={title}>
+      {(handleProps) => (<>
+      <div className="edge-modifier-header movable" title={t("panel.moveHint")} {...handleProps}>
         <div>
           <strong>{title}</strong>
           <span>{t("shell.subtitle")}</span>
@@ -125,6 +127,7 @@ export function ShellPanel({
           {busy ? t("shell.working") : t("shell.apply")}
         </button>
       </div>
-    </aside>
+      </>)}
+    </MovableToolPanel>
   );
 }

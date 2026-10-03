@@ -1,6 +1,7 @@
 "use client";
 
 import { GuideHelpLink } from "@/components/GuideHelpLink";
+import { MovableToolPanel } from "@/components/workplane/MovableToolPanel";
 import { Check, X } from "lucide-react";
 import { EdgeModifierSlider } from "@/components/workplane/EdgeModifierPanel";
 import { t } from "@/lib/i18n";
@@ -39,8 +40,9 @@ export function ArrayPanel({
   const title = t("array.title");
   const halfPlate = Math.max(workspace.width, workspace.depth) / 2;
   return (
-    <aside className="edge-modifier-panel shell-panel array-panel" aria-label={title}>
-      <div className="edge-modifier-header">
+    <MovableToolPanel className="edge-modifier-panel shell-panel array-panel" ariaLabel={title}>
+      {(handleProps) => (<>
+      <div className="edge-modifier-header movable" title={t("panel.moveHint")} {...handleProps}>
         <div>
           <strong>{title}</strong>
           <span>{t("array.subtitle")}</span>
@@ -173,6 +175,7 @@ export function ArrayPanel({
           {t("array.apply")}
         </button>
       </div>
-    </aside>
+      </>)}
+    </MovableToolPanel>
   );
 }

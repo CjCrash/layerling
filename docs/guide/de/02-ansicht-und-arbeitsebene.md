@@ -42,6 +42,8 @@ Am linken Rand liegt eine schmale Leiste. Von oben nach unten:
 - Was der Schnitt freilegt, kannst du anklicken und auswählen, auch innere Wände.
 - {{ui:camera.sectionExportSvg}} speichert die Umrisse auf der Schnittebene als SVG im Maßstab 1:1, für Laser, Plotter, Schablonen oder Dichtungen. Ein X-Schnitt ist von rechts gesehen, ein Y-Schnitt von oben, ein Z-Schnitt von vorn. Wie beim Export kommen nur sichtbare Körper hinein, Aussparungen sind schon abgezogen, und Körper gleicher Farbe sind zu einem Umriss vereinigt. Jede Farbe bleibt ein eigener Pfad ohne Füllung, so dass eine Lasersoftware sie als Ebenen trennt.
 
+Das Fenster hängt an seinem Knopf. Verdeckt es etwas, ziehst du es an seiner Titelleiste frei über die Arbeitsfläche; dort öffnet es sich auch beim nächsten Mal. Ein Doppelklick auf die Titelleiste oder das Ablegen am Knopf bringt es zurück.
+
 [[Esc]] schließt das Fenster; der Schnitt bleibt, bis du ihn ausschaltest oder zur Entwurfsübersicht zurückgehst. Solange er an ist, ist der Knopf hervorgehoben. Was du dann auf der weggeschnittenen Seite ablegst, siehst du erst, wenn du den Schnitt ausschaltest.
 
 ## Die Arbeitsebene

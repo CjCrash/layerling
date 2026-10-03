@@ -7,6 +7,7 @@ import { SketchRevolvePreview } from "@/components/SketchRevolvePreview";
 import { canApplySketchCornerTreatment } from "@/lib/sketchFilletChamfer";
 import { t } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
+import { useMovablePanel, type MovablePanelOptions } from "@/lib/useMovablePanel";
 import { parseMeasurementInput } from "@/lib/measurementUnits";
 import { applySegmentDimension, SEGMENT_DIMENSION_CENTER } from "@/lib/sketchDimensions";
 import { workplaneGridLayout } from "@/lib/workplaneGrid";
@@ -223,6 +224,12 @@ function sketchSelectionBounds(selected: SketchSelection, profile: SketchProfile
   const zs = extent.map((point) => point.z);
   return { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
 }
+
+/** Am rechten Rand angedockt wie die Einstellungen im 3D-Editor; weggezogen schweben sie. */
+const IMAGE_SETTINGS_PANEL: MovablePanelOptions = {
+  floatingStyle: { right: "auto", bottom: "auto" },
+  dockedAt: (area, panel) => ({ left: area.width - panel.width, top: 0 }),
+};
 
 function formatDimension(value: number, accuracy: 1 | 2 | 3) {
   const threshold = 0.5 * 10 ** -accuracy;
@@ -1669,15 +1676,25 @@ function SketchImageInspector({
     ...(image.lockAspect !== false ? { width: Math.max(0.5, depth * aspect) } : {}),
   }, t("sketch.imageHeightUpdated"));
 
+  // Verdecken die Einstellungen das Bild, das man gerade nachzeichnet, zieht
+  // man sie an der Titelleiste weg - wie die Einstellungen im 3D-Editor.
+  const movable = useMovablePanel<HTMLElement>("layerling.sketch.imageSettingsPosition", IMAGE_SETTINGS_PANEL);
+
   return (
-    <aside className="shape-inspector sketch-image-inspector" aria-label={t("sketch.imageSettings", { name: image.name })} onPointerDown={(event) => event.stopPropagation()}>
-      <div className="shape-inspector-header">
+    <aside
+      ref={movable.panelRef}
+      className={`shape-inspector sketch-image-inspector ${movable.moved ? "floating" : ""} ${movable.dragging ? "moving" : ""}`}
+      style={movable.style}
+      aria-label={t("sketch.imageSettings", { name: image.name })}
+      onPointerDown={(event) => event.stopPropagation()}
+    >
+      <div className="shape-inspector-header movable" title={t("panel.moveHint")} {...movable.handleProps}>
         <button className="inspector-header-icon" type="button" aria-label={t("sketch.closeImageSettings")} onClick={onClose}>
-          <ChevronUp size={26} strokeWidth={2.8} />
+          <ChevronUp size={16} />
         </button>
         <strong>{image.name}</strong>
         <div className="inspector-header-actions">
-          <GuideHelpLink section="sketchImage" className="inspector-help-link" iconSize={31} strokeWidth={2.4} />
+          <GuideHelpLink section="sketchImage" className="inspector-help-link" />
           <button
             className={image.locked ? "inspector-header-icon active" : "inspector-header-icon"}
             type="button"
@@ -1685,10 +1702,10 @@ function SketchImageInspector({
             title={image.locked ? t("sketch.unlockImageHint") : t("sketch.lockImageHint")}
             onClick={() => onUpdate({ locked: !image.locked }, image.locked ? t("sketch.imageUnlocked") : t("sketch.imageLocked"))}
           >
-            {image.locked ? <LockKeyhole size={25} strokeWidth={2.2} /> : <LockKeyholeOpen size={25} strokeWidth={2.2} />}
+            {image.locked ? <LockKeyhole size={16} /> : <LockKeyholeOpen size={16} />}
           </button>
           <button className="inspector-header-icon danger" type="button" aria-label={t("sketch.deleteImage")} title={image.locked ? t("sketch.unlockBeforeDelete") : t("sketch.deleteImageHint")} onClick={onDelete} disabled={image.locked}>
-            <Trash2 size={25} strokeWidth={2.2} />
+            <Trash2 size={16} />
           </button>
         </div>
       </div>
