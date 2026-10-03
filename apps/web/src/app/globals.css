@@ -9251,6 +9251,22 @@ html[data-theme="dark"] .panel-grip:hover {
     left: 10px;
     /* Auch im schmalen Fenster so viele Spalten, wie hineinpassen. */
     width: min(672px, calc(100vw - 20px));
+    /* Das Menue beginnt unter der (evtl. zweizeiligen) Leiste, also muss die
+       Hoehe von dort bis zum sichtbaren Fensterende reichen. dvh statt vh,
+       weil iPad-Safari mit vh die eingeblendeten Leisten mitzaehlt und das
+       Listenende sonst ausserhalb des Bildschirms liegt. */
+    max-height: calc(100vh - var(--editor-toolbar-height) - 10px);
+    max-height: calc(100dvh - var(--editor-toolbar-height) - 10px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .shape-menu-dropdown .shape-menu-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   /* Haengt am Fenster statt an seinem Ausloeser, direkt unter der Leiste -
