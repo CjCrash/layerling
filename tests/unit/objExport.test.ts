@@ -40,4 +40,18 @@ describe("OBJ export", () => {
     expect(faces).toHaveLength(4);
     expect([...edgeUse.values()].every((count) => count === 2)).toBe(true);
   });
+
+  it("writes the body colour as a vertex colour", () => {
+    // Discussion #79: OrcaSlicer und Bambu Studio lesen `v x y z r g b`.
+    const obj = exportMeshesToObj([
+      { ...duplicatedTetrahedron(), name: "Platte", color: "#ff8000" },
+      { ...duplicatedTetrahedron(), name: "Ohne", color: "orange" },
+    ]);
+    const lines = obj.split("\n");
+    const first = lines.slice(lines.indexOf("o Platte") + 1).find((line) => line.startsWith("v "));
+    const second = lines.slice(lines.indexOf("o Ohne") + 1).find((line) => line.startsWith("v "));
+    expect(first?.split(" ").slice(4)).toEqual(["1", "0.502", "0"]);
+    expect(second?.split(" ")).toHaveLength(4);
+    expect(obj).not.toMatch(/mtllib|usemtl/);
+  });
 });

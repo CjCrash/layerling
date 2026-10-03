@@ -2,6 +2,8 @@ import type { MeshPoint } from "@/lib/meshCoordinates";
 
 export type ObjExportMesh = {
   name: string;
+  /** "#rrggbb"; written as a vertex colour, anything else leaves the body without one. */
+  color?: string;
   vertices: readonly MeshPoint[];
   faces: readonly (readonly [number, number, number])[];
 };
@@ -63,14 +65,28 @@ function objNumber(value: number) {
   return Math.abs(value) < 1e-12 ? "0" : String(value);
 }
 
+/**
+ * Die Farbe steht als Vertexfarbe hinter jedem Punkt (`v x y z r g b`, 0 bis
+ * 1). So bleibt die OBJ eine einzige Datei; Bambu Studio und OrcaSlicer lesen
+ * genau das und bieten dann die Zuordnung auf Filamente an, andere Programme
+ * nehmen die ersten drei Zahlen. Eine .mtl braeuchte eine zweite Datei, und
+ * ein `mtllib` ohne sie laesst OrcaSlicer das Laden abbrechen (Discussion #79).
+ */
+function objVertexColor(color: string | undefined) {
+  if (!color || !/^#[0-9a-f]{6}$/i.test(color)) return "";
+  const channel = (start: number) => objNumber(Math.round((parseInt(color.slice(start, start + 2), 16) / 255) * 10000) / 10000);
+  return ` ${channel(1)} ${channel(3)} ${channel(5)}`;
+}
+
 export function exportMeshesToObj(meshes: readonly ObjExportMesh[]) {
   const lines = ["# Layerling OBJ export"];
   let offset = 1;
 
   meshes.forEach((mesh) => {
     const welded = weldMeshVertices(mesh);
+    const color = objVertexColor(mesh.color);
     lines.push(`o ${mesh.name}`);
-    welded.vertices.forEach(([x, y, z]) => lines.push(`v ${objNumber(x)} ${objNumber(y)} ${objNumber(z)}`));
+    welded.vertices.forEach(([x, y, z]) => lines.push(`v ${objNumber(x)} ${objNumber(y)} ${objNumber(z)}${color}`));
     welded.faces.forEach(([a, b, c]) => lines.push(`f ${a + offset} ${b + offset} ${c + offset}`));
     offset += welded.vertices.length;
   });

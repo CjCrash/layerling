@@ -54,6 +54,22 @@ export function boundsOverlap(a: ExportBounds, b: ExportBounds, tolerance = EXPO
 }
 
 /**
+ * Teilt die Formen nach Farbe auf, in der Reihenfolge ihres ersten Auftretens.
+ * Fuer eine 3MF darf nur Gleichfarbiges verschmolzen werden - sonst geht ein
+ * eingelegtes Logo in der Platte auf und hat deren Farbe (Discussion #79).
+ */
+export function exportColorGroups(colors: readonly (string | undefined)[]): number[][] {
+  const gruppen = new Map<string, number[]>();
+  colors.forEach((color, index) => {
+    const key = (color ?? "").trim().toLowerCase();
+    const gruppe = gruppen.get(key);
+    if (gruppe) gruppe.push(index);
+    else gruppen.set(key, [index]);
+  });
+  return [...gruppen.values()];
+}
+
+/**
  * Gruppiert die Formen nach Ueberlappung, und zwar durchgereicht: beruehrt A
  * das B und B das C, gehoeren alle drei zusammen, auch wenn A und C weit
  * auseinander liegen. Die Reihenfolge bleibt die der Eingabe, damit die Datei

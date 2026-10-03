@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { boundsOverlap, meshBounds, overlappingExportClusters, type ExportBounds } from "@/lib/exportUnion";
+import { boundsOverlap, exportColorGroups, meshBounds, overlappingExportClusters, type ExportBounds } from "@/lib/exportUnion";
 
 /*
  * Magnetron hat gemeldet, dass zwei sich durchdringende Koerper als zwei
@@ -80,5 +80,17 @@ describe("overlappingExportClusters", () => {
 
   it("kommt mit einer leeren Szene zurecht", () => {
     expect(overlappingExportClusters([])).toEqual([]);
+  });
+});
+
+describe("exportColorGroups", () => {
+  // Discussion #79: ein weisses Logo in einer schwarzen Platte darf in der 3MF
+  // nicht mit der Platte verschmelzen.
+  it("keeps colours apart and groups the same colour regardless of case", () => {
+    expect(exportColorGroups(["#222222", "#FFFFFF", "#222222", "#ffffff", undefined, "#ff0000"])).toEqual([[0, 2], [1, 3], [4], [5]]);
+  });
+
+  it("returns one group when everything has one colour", () => {
+    expect(exportColorGroups(["#D97813", "#d97813"])).toEqual([[0, 1]]);
   });
 });

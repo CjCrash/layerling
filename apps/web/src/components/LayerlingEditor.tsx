@@ -140,7 +140,7 @@ import type { PivotPoint } from "@/lib/rotationPivot";
 import { createLocalId, derivedLocalId } from "@/lib/localIds";
 import { projectExportFileName } from "@/lib/exportNames";
 import { exportMeshesToObj } from "@/lib/objExport";
-import { meshBounds, overlappingExportClusters } from "@/lib/exportUnion";
+import { boundsOverlap, exportColorGroups, meshBounds, overlappingExportClusters } from "@/lib/exportUnion";
 import { rotateSketchPoints, selectedClosedSketchPoints } from "@/lib/sketchRotation";
 import { PROJECT_THUMBNAIL_IDLE_MS, projectThumbnailSceneChanged, type ProjectThumbnailSceneKey } from "@/lib/projectThumbnail";
 import { importedShapeFromObj } from "@/lib/objImport";
@@ -4828,6 +4828,94 @@ async function unionOverlappingExportMeshes(shapes: WorkplaneShape[], meshes: Me
       gescheitert += 1;
     }
   }
+  return { meshes: ergebnis, quellen, verschmolzen, gescheitert };
+}
+
+/**
+ * Fuer die 3MF: Farben bleiben eigene Koerper, damit der Slicer sie Filamenten
+ * zuordnen kann. Gleichfarbiges wird wie bei STL verschmolzen. Wo sich zwei
+ * Farben durchdringen, gewinnt die spaeter angelegte Form - ein Logo, das in
+ * einer Platte steckt, schneidet sich dort seine Tasche, statt dass zwei
+ * Koerper denselben Raum beanspruchen (Discussion #79).
+ */
+async function colorSeparatedExportMeshes(shapes: WorkplaneShape[], meshes: MeshData[]) {
+  const farben = exportColorGroups(shapes.map((shape) => shape.color));
+  if (farben.length <= 1) {
+    return unionOverlappingExportMeshes(shapes, meshes);
+  }
+  const koerper: { mesh: MeshData; quelle: number; farbe: number }[] = [];
+  let verschmolzen = 0;
+  let gescheitert = 0;
+  for (const [farbe, gruppe] of farben.entries()) {
+    const teil = await unionOverlappingExportMeshes(gruppe.map((index) => shapes[index]), gruppe.map((index) => meshes[index]));
+    teil.meshes.forEach((mesh, index) => koerper.push({ mesh, quelle: gruppe[teil.quellen[index]], farbe }));
+    verschmolzen += teil.verschmolzen;
+    gescheitert += teil.gescheitert;
+  }
+
+  const grenzen = koerper.map((entry) => meshBounds(entry.mesh.vertices));
+  // Echte Durchdringung, kein blosses Beruehren: das schneidet nichts weg.
+  const durchdringt = (a: number, b: number) => {
+    const ka = grenzen[a];
+    const kb = grenzen[b];
+    return Boolean(ka && kb && boundsOverlap(ka, kb, -1e-4));
+  };
+  const runtime = koerper.some((_, a) => koerper.some((entry, b) => entry.farbe !== koerper[a].farbe && durchdringt(a, b)))
+    ? await getManifoldRuntime().catch(() => null)
+    : null;
+
+  const ergebnis: MeshData[] = [];
+  const quellen: number[] = [];
+  koerper.forEach((entry, index) => {
+    const schneider = koerper
+      .map((other, otherIndex) => ({ other, otherIndex }))
+      .filter(({ other, otherIndex }) => other.farbe !== entry.farbe && other.quelle > entry.quelle && durchdringt(index, otherIndex));
+    if (schneider.length === 0 || !runtime) {
+      if (schneider.length > 0) gescheitert += 1;
+      ergebnis.push(entry.mesh);
+      quellen.push(entry.quelle);
+      return;
+    }
+    const created: ManifoldSolid[] = [];
+    let rest: MeshData | null = null;
+    let leer = false;
+    try {
+      const ofMesh = (mesh: MeshData) => {
+        const manifoldMesh = meshDataToManifoldMesh(runtime, mesh);
+        try {
+          const solid = runtime.Manifold.ofMesh(manifoldMesh);
+          created.push(solid);
+          return solid.status() === "NoError" && solid.numTri() > 0 ? solid : null;
+        } finally {
+          disposeManifold(manifoldMesh);
+        }
+      };
+      const basis = ofMesh(entry.mesh);
+      const werkzeuge = schneider.map(({ other }) => ofMesh(other.mesh));
+      if (basis && werkzeuge.every(Boolean)) {
+        const vereinigt = werkzeuge.length === 1 ? werkzeuge[0]! : runtime.Manifold.union(werkzeuge as ManifoldSolid[]);
+        created.push(vereinigt);
+        const differenz = basis.subtract(vereinigt);
+        created.push(differenz);
+        if (differenz.status() === "NoError") {
+          if (differenz.numTri() > 0) rest = manifoldMeshToMeshData(differenz.getMesh(), entry.mesh.name);
+          else leer = true;
+        }
+      }
+    } catch {
+      rest = null;
+    } finally {
+      Array.from(new Set(created)).forEach(disposeManifold);
+    }
+    if (leer) return;
+    if (rest && rest.faces.length > 0) {
+      ergebnis.push(rest);
+    } else {
+      gescheitert += 1;
+      ergebnis.push(entry.mesh);
+    }
+    quellen.push(entry.quelle);
+  });
   return { meshes: ergebnis, quellen, verschmolzen, gescheitert };
 }
 
@@ -10467,7 +10555,7 @@ export function LayerlingEditor({
     }
     const label = format === "stl" ? "STL" : format === "3mf" ? "3MF" : "OBJ";
     const meshes = exportable.map(meshForShape);
-    void unionOverlappingExportMeshes(exportable, meshes)
+    void (format === "stl" ? unionOverlappingExportMeshes(exportable, meshes) : colorSeparatedExportMeshes(exportable, meshes))
       .then(async ({ meshes: fertig, quellen, verschmolzen, gescheitert }) => {
         if (format === "stl") {
           await downloadBlobFile(projectExportFileName(exportName, "stl"), new Blob([exportMeshesToStl(fertig)], { type: "model/stl" }));
@@ -10479,7 +10567,8 @@ export function LayerlingEditor({
           const bytes = exportMeshesTo3mf(bodies, { title: exportName.trim() || projectName });
           await downloadBlobFile(projectExportFileName(exportName, "3mf"), new Blob([bytes as BlobPart], { type: THREE_MF_MEDIA_TYPE }));
         } else {
-          await downloadTextFile(projectExportFileName(exportName, "obj"), exportMeshesToObj(fertig), "text/plain");
+          const bodies = fertig.map((mesh, index) => ({ ...mesh, color: exportable[quellen[index]]?.color }));
+          await downloadTextFile(projectExportFileName(exportName, "obj"), exportMeshesToObj(bodies), "text/plain");
         }
         // The file is written either way; the notice below only adds a caveat.
         setTopPanel(null);

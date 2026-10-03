@@ -26,8 +26,8 @@ At the top is the file name, below it you choose the format. You decide whether 
 | Format | For | What to know |
 | --- | --- | --- |
 | **STL** | slicer and 3D printing | A triangle mesh. The simplest and most widespread format. |
-| **3MF** | slicer with colours | Every body stays a part of its own with name and colour. Suited to PrusaSlicer, Bambu Studio, OrcaSlicer and Cura. Bambu Studio and OrcaSlicer ask on opening how to map the colours onto your filaments, and call the file "not from Bambu" - the message is harmless. |
-| **OBJ** | modelling and exchange | A widely supported mesh format. |
+| **3MF** | slicer with colours | Every body stays a part of its own with name and colour. Overlapping bodies are only joined when they share a colour; where a shape sits inside one of another colour, say a logo in a plate, the one built first leaves room for the later one. Suited to PrusaSlicer, Bambu Studio, OrcaSlicer and Cura. Bambu Studio and OrcaSlicer ask on opening how to map the colours onto your filaments, and call the file "not from Bambu" - the message is harmless. |
+| **OBJ** | modelling and exchange | A widely supported mesh format. Colours are stored as vertex colours in the same file, with no extra `.mtl`. Bambu Studio and OrcaSlicer read them and ask, as with 3MF, how to map them onto your filaments; other programs see only the shape. As with 3MF, overlapping bodies are only joined when they share a colour. |
 | **STEP** | a full CAD program | Keeps boxes, cylinders, spheres and cones as exact geometry, and so shapes made from an outline (star, heart, ellipse, tube, half sphere, round roof, rounded box, dovetail, the bores and more), the bent tube, threads, springs and gears, plus fillets and chamfers. The first STEP export in a session loads the CAD kernel (about 22 MB) once. |
 | **SVG** | laser cutter and plotter | A clean top view in millimetres, including holes and curved outlines. |
 | **LYL** | layerling itself | The editable design with everything that belongs to it. |
