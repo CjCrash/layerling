@@ -4,6 +4,12 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.32.0
+
+- **Shift on a corner scales all three directions:** Dragging a corner handle with Shift now keeps the proportions in height too, not just in width and depth; the bottom edge stays where it is. With Alt as well the shape grows from its center. Works for single shapes, rotated and tapered ones, and for several selected shapes. Asked for in the forum by SteveOHHH.
+- **Shape list on narrow screens:** On a tablet the list of shapes could reach past the bottom of the screen, so the last shapes were out of reach and it did not scroll. It now ends at the visible edge and scrolls inside. Reported by a user on an iPad.
+- **New icon for the framing square:** The framing square (Winkellineal) in the camera bar looked too much like the tape measure. It now has its own icon, and the English name is "framing square" instead of "corner ruler". The German name stays. Thanks to gogades (PR #86).
+
 ## 1.31.0
 
 - **Edit a group inside a group:** "Open group" is now **Edit group**, also on the new key E. While a group is being edited, a group among its parts can be edited too, and so on as deep as the design goes; the bar shows the path, for example "Bracket › Screw boss", and Done or Cancel always finish the innermost level and step one level back out. Undo and redo bring the bar back along with the parts. `layerling_open_group` opens a group inside the open one the same way, and `layerling_read_scene` lists every level as `openGroups`, outermost first.
