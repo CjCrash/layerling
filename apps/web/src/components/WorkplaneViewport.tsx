@@ -3689,7 +3689,8 @@ export function WorkplaneViewport({
   onExportSectionSvg,
 }: WorkplaneViewportProps) {
   const [snapOpen, setSnapOpen] = useState(false);
-  const [inspectorMinimized, setInspectorMinimized] = useState(false);
+  // The inspector hands the snap grid control back to the workplane while collapsed or floating.
+  const [inspectorSnapGridAway, setInspectorSnapGridAway] = useState(false);
   const [snap, setSnap] = useState<GridSize>(() => normalizeSnapGrid(initialSnap, DEFAULT_SNAP_GRID));
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [workspace, setWorkspace] = useState<WorkspaceSettings>(() => normalizeWorkspaceSettings(initialWorkspace));
@@ -8100,11 +8101,11 @@ export function WorkplaneViewport({
           canSeparateParts={canSeparateParts}
           onSeparateParts={onSeparateParts}
           onInteractionActiveChange={onInteractionActiveChange}
-          onMinimizedChange={setInspectorMinimized}
+          onSnapGridAwayChange={setInspectorSnapGridAway}
         />
       ) : null}
 
-      {!selectedShape || inspectorMinimized ? (
+      {!selectedShape || inspectorSnapGridAway ? (
         <div className="grid-settings">
           <SnapGridControl
             units={workspace.units}

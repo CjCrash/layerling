@@ -2,9 +2,8 @@
 
 import { GuideHelpLink } from "@/components/GuideHelpLink";
 import { guideChapterForShape } from "@/lib/guideLinks";
-import { ChevronDown, ChevronUp, LockKeyhole, LockKeyholeOpen, Pencil, Split } from "lucide-react";
+import { ChevronDown, ChevronUp, Eye, EyeOff, Lock, Pencil, Split, Unlock } from "lucide-react";
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from "react";
-import { ToolbarHideSelectedIcon } from "@/components/icons";
 import {
   DEFAULT_GEAR_HELIX_ANGLE,
   DEFAULT_GEAR_HELIX_QUALITY,
@@ -133,6 +132,7 @@ import { MAX_SCREW_HOLE_ANGLE, MIN_SCREW_HOLE_ANGLE, normalizeScrewHoleAngle, no
 import { MAX_TEARDROP_TIP_ANGLE, MIN_TEARDROP_TIP_ANGLE, normalizeTeardropTipAngle, teardropHeightForTipAngle, teardropTipAngle } from "@/lib/teardropGeometry";
 import { MAX_DOVETAIL_CLEARANCE, normalizeDovetailClearance, normalizeDovetailNeckWidth } from "@/lib/dovetailGeometry";
 import { useLanguage } from "@/lib/useLanguage";
+import { useMovablePanel, type MovablePanelOptions } from "@/lib/useMovablePanel";
 import { isNonSolidShapeKind, resizedShapeSize, shapeDepth, shapeHasTaper, shapeOverallFootprintDimensions, shapeSupportsTaper, shapeTaperDimensions, shapeWidth } from "@/lib/workplaneShapes";
 import { normalizeSketchRevolveSettings } from "@/lib/sketchRevolve";
 import { roundSideCount } from "@/lib/roundSideCount";
@@ -151,6 +151,15 @@ import { regularPolygonAspect } from "@/lib/regularPolygonFootprint";
 import { DEFAULT_TAPER_DIMENSION_MAX, MAX_HIGH_RESOLUTION_SIDES, MAX_HIGH_RESOLUTION_STEPS, shapeDimensionLimit, snapGridOptionsForUnits } from "@/lib/workplaneSettings";
 import type { BentTubeInnerProfile, BentTubeProfile, GearType, GridSize, MeasurementAccuracy, ThreadHead, ThreadProfile, ThreadRole, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 import { selectWholeValue } from "@/lib/numberField";
+
+/**
+ * Docked at the right edge, full height. Moved away, it floats: no longer
+ * pinned to the right and bottom. Dropped back at the top right, it docks.
+ */
+const INSPECTOR_PANEL: MovablePanelOptions = {
+  floatingStyle: { right: "auto", bottom: "auto" },
+  dockedAt: (area, panel) => ({ left: area.width - panel.width, top: 0 }),
+};
 
 const MIN_SHAPE_SIZE = 0.01;
 const SOLID_COLORS = [
@@ -1394,7 +1403,7 @@ export function ShapeInspector({
   canSeparateParts = false,
   onSeparateParts,
   onInteractionActiveChange,
-  onMinimizedChange,
+  onSnapGridAwayChange,
 }: {
   shape: WorkplaneShape;
   snap: GridSize;
@@ -1411,7 +1420,8 @@ export function ShapeInspector({
   onSeparateParts?: () => void;
   onInteractionActiveChange?: (active: boolean) => void;
   /** The snap control lives in the expanded panel; collapsed, the workplane shows its own. */
-  onMinimizedChange?: (minimized: boolean) => void;
+  /** Called with true while the inspector does not carry the snap grid control (collapsed, or floating), so the workplane shows it. */
+  onSnapGridAwayChange?: (away: boolean) => void;
 }) {
   useLanguage();
   const solidColor = shape.color;
@@ -1525,7 +1535,9 @@ export function ShapeInspector({
     { id: "positionZ", label: t("prop.positionZ"), value: shape.elevation ?? 0, min: -180, max: 220, step: 0.5, onChange: (elevation) => onUpdate({ elevation }) },
   ];
   const isSketchRevolve = shape.sketchOperation === "revolve" || Boolean(shape.sketchRevolve);
-  const inspectorRef = useRef<HTMLElement>(null);
+  // Docked at the right edge until its title bar is dragged; then it floats where it was dropped.
+  const movable = useMovablePanel<HTMLElement>("layerling.editor.inspectorPosition", INSPECTOR_PANEL);
+  const inspectorRef = movable.panelRef;
   const [propertiesOpen, setPropertiesOpen] = useState(true);
   const [positionOpen, setPositionOpen] = useState(false);
   const [taperOpen, setTaperOpen] = useState(false);
@@ -1546,10 +1558,12 @@ export function ShapeInspector({
   };
 
   useEffect(() => () => onInteractionActiveChange?.(false), [onInteractionActiveChange]);
+  // The snap grid control belongs to the inspector only while it is docked and open.
+  const snapGridAway = minimized || movable.moved;
   useEffect(() => {
-    onMinimizedChange?.(minimized);
-    return () => onMinimizedChange?.(false);
-  }, [minimized, onMinimizedChange]);
+    onSnapGridAwayChange?.(snapGridAway);
+    return () => onSnapGridAwayChange?.(false);
+  }, [snapGridAway, onSnapGridAwayChange]);
   useEffect(() => {
     const input = customColorInputRef.current;
     if (!colorOpen || !input) {
@@ -1575,15 +1589,21 @@ export function ShapeInspector({
   }, [editingName]);
 
   return (
-    <aside ref={inspectorRef} className={`shape-inspector ${isSketchRevolve ? "sketch-revolve-inspector" : ""} ${shape.kind === "gear" ? "gear-inspector" : ""} ${minimized ? "minimized" : ""}`} aria-label={t("inspector.settingsFor", { name: displayShapeName(shape) })} onPointerDown={(event) => event.stopPropagation()}>
-      <div className="shape-inspector-header">
+    <aside
+      ref={inspectorRef}
+      className={`shape-inspector ${isSketchRevolve ? "sketch-revolve-inspector" : ""} ${shape.kind === "gear" ? "gear-inspector" : ""} ${minimized ? "minimized" : ""} ${movable.moved ? "floating" : ""} ${movable.dragging ? "moving" : ""}`}
+      style={movable.style}
+      aria-label={t("inspector.settingsFor", { name: displayShapeName(shape) })}
+      onPointerDown={(event) => event.stopPropagation()}
+    >
+      <div className="shape-inspector-header movable" title={t("inspector.moveHint")} {...movable.handleProps}>
         <button
           className="inspector-header-icon"
           aria-label={minimized ? t("inspector.expand") : t("inspector.minimize")}
           aria-expanded={!minimized}
           onClick={() => setMinimized((current) => !current)}
         >
-          {minimized ? <ChevronDown size={26} strokeWidth={2.8} /> : <ChevronUp size={26} strokeWidth={2.8} />}
+          {minimized ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
         </button>
         <div className="inspector-name">
           {nameDraft !== null ? (
@@ -1609,18 +1629,18 @@ export function ShapeInspector({
               {/* One long word ("Schwalbenschwanz") cannot wrap; it gets a smaller size instead. */}
               <strong className={displayShapeName(shape).split(/\s+/).some((word) => word.length > 11) ? "long-word" : undefined}>{displayShapeName(shape)}</strong>
               <button className="inspector-rename-button" title={t("outliner.rename")} aria-label={t("outliner.rename")} onClick={() => setNameDraft(displayShapeName(shape))}>
-                <Pencil size={16} strokeWidth={2.4} />
+                <Pencil size={14} />
               </button>
             </>
           )}
         </div>
         <div className="inspector-header-actions">
-          <GuideHelpLink chapter={guideChapterForShape(shape)} className="inspector-help-link" iconSize={31} strokeWidth={2.4} />
+          <GuideHelpLink chapter={guideChapterForShape(shape)} className="inspector-help-link" />
           <button className={locked ? "inspector-header-icon active" : "inspector-header-icon"} aria-label={locked ? t("outliner.unlock") : t("outliner.lock")} onClick={() => onUpdate({ locked: !locked })}>
-            {locked ? <LockKeyhole size={31} strokeWidth={2.4} /> : <LockKeyholeOpen size={31} strokeWidth={2.4} />}
+            {locked ? <Lock size={16} /> : <Unlock size={16} />}
           </button>
           <button className={shape.hidden ? "inspector-header-icon active" : "inspector-header-icon"} aria-label={shape.hidden ? t("outliner.show") : t("outliner.hide")} onClick={() => onUpdate({ hidden: !shape.hidden })}>
-            <ToolbarHideSelectedIcon />
+            {shape.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>
       </div>
@@ -1895,9 +1915,11 @@ export function ShapeInspector({
           ) : null}
         </div>
       ) : null}
-      <div className="inspector-snap-dock">
-        <SnapGridControl units={workspace.units} snap={snap} snapOpen={snapOpen} onSnapChange={onSnapChange} onSnapOpenChange={onSnapOpenChange} objectSnap={workspace.objectSnap} onObjectSnapChange={onObjectSnapChange} />
-      </div>
+      {!movable.moved ? (
+        <div className="inspector-snap-dock">
+          <SnapGridControl units={workspace.units} snap={snap} snapOpen={snapOpen} onSnapChange={onSnapChange} onSnapOpenChange={onSnapOpenChange} objectSnap={workspace.objectSnap} onObjectSnapChange={onObjectSnapChange} />
+        </div>
+      ) : null}
         </>
       ) : null}
     </aside>

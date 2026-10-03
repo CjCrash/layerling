@@ -5352,7 +5352,8 @@ button {
   /* Flush with the camera controls below it, so the left edge of the stage
      reads as one column instead of two slightly different indents. */
   left: 10px;
-  z-index: 4;
+  /* Above the movable object list (10), which passes underneath. */
+  z-index: 11;
   width: 82px;
   height: 82px;
   perspective: 420px;
@@ -5441,7 +5442,8 @@ button {
      flachen Fenster in die Fusszeile lief. */
   top: 120px;
   left: 10px;
-  z-index: 8;
+  /* Above the movable object list (10), which passes underneath. */
+  z-index: 11;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -7016,7 +7018,7 @@ button {
 
 .shape-inspector.minimized {
   bottom: auto;
-  height: 50px;
+  height: auto;
   overflow: hidden;
 }
 
@@ -7043,15 +7045,99 @@ button {
   min-width: 0;
   margin-right: 8px;
   padding-left: 13px;
-  font-size: 18px;
-  font-weight: 800;
+  /* The same size as the object list's title. */
+  font-size: 13px;
+  font-weight: 700;
   overflow-wrap: anywhere;
 }
 
 .shape-inspector-header strong.long-word {
   padding-left: 6px;
   margin-right: 4px;
-  font-size: 14px;
+}
+
+/* The title bar moves the inspector away from the edge. It looks exactly like
+   the object list's title bar: same height, colours, buttons and icon sizes. */
+.shape-inspector-header.movable {
+  gap: 8px;
+  height: auto;
+  padding: 10px 14px;
+  background: rgba(248, 246, 244, 0.98);
+  border-bottom: 1px solid #ede6da;
+  cursor: grab;
+  touch-action: none;
+}
+
+.shape-inspector-header.movable strong,
+.shape-inspector-header.movable strong.long-word {
+  margin-right: 0;
+  padding-left: 0;
+}
+
+.shape-inspector-header.movable .inspector-name {
+  gap: 4px;
+  margin-right: 0;
+}
+
+.shape-inspector-header.movable .inspector-header-actions {
+  gap: 2px;
+}
+
+.shape-inspector-header.movable .inspector-header-icon,
+.shape-inspector-header.movable .inspector-rename-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: #8c735d;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.shape-inspector-header.movable .inspector-header-icon:hover,
+.shape-inspector-header.movable .inspector-rename-button:hover {
+  color: #3b2817;
+  background: #e9e0d3;
+}
+
+.shape-inspector-header.movable .inspector-header-icon.active {
+  color: #d3710c;
+}
+
+.shape-inspector-header.movable .inspector-help-link {
+  width: 24px;
+  height: 24px;
+  color: inherit;
+  opacity: 0.6;
+}
+
+.shape-inspector-header.movable .inspector-help-link:hover,
+.shape-inspector-header.movable .inspector-help-link:focus-visible {
+  opacity: 1;
+}
+
+.shape-inspector-header.movable .inspector-name-input {
+  margin-left: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.shape-inspector.moving,
+.shape-inspector.moving .shape-inspector-header.movable {
+  cursor: grabbing;
+}
+
+/* Moved away from the edge: a window of its own, as tall as its content. */
+.shape-inspector.floating {
+  width: min(320px, calc(100% - 24px));
+  border: 1px solid #e9e2d6;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(86, 62, 36, 0.12);
 }
 
 /* The name, and the pencil that renames it right beside it. */
@@ -10023,6 +10109,10 @@ html[data-theme="dark"] .shape-inspector {
   box-shadow: -3px 0 14px rgba(0, 0, 0, 0.28);
 }
 
+html[data-theme="dark"] .shape-inspector.floating {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
 html[data-theme="dark"] .shape-inspector .edit-sketch-button,
 html[data-theme="dark"] .shape-inspector .inspector-action-button {
   color: #ede3d2;
@@ -11057,7 +11147,9 @@ html[data-theme="dark"] .theme-check {
    ========================================================================== */
 .outliner-panel {
   position: absolute;
-  /* below the floating status message, which shares this corner */
+  /* Docked just right of the view cube, below the floating status message,
+     which shares this corner. OBJECT_LIST_PANEL in ObjectListPanel.tsx knows
+     this spot, to dock the panel when it is dropped near it. */
   top: 64px;
   left: 104px;
   z-index: 10;
@@ -11077,6 +11169,11 @@ html[data-theme="dark"] .theme-check {
   animation: outlinerFadeIn 140ms ease-out;
 }
 
+.outliner-panel.moving,
+.outliner-panel.moving .outliner-header {
+  cursor: grabbing;
+}
+
 @keyframes outlinerFadeIn {
   from {
     opacity: 0;
@@ -11093,6 +11190,9 @@ html[data-theme="dark"] .theme-check {
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
+  /* The title bar moves the panel. */
+  cursor: grab;
+  touch-action: none;
   background: rgba(248, 246, 244, 0.98);
   border-bottom: 1px solid #ede6da;
 }
@@ -11454,9 +11554,26 @@ html[data-theme="dark"] .outliner-panel {
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
 }
 
-html[data-theme="dark"] .outliner-header {
+html[data-theme="dark"] .outliner-header,
+html[data-theme="dark"] .shape-inspector-header.movable {
+  color: #ddd2c4;
   background: rgba(24, 21, 18, 0.98);
   border-color: #443a30;
+}
+
+html[data-theme="dark"] .shape-inspector-header.movable .inspector-header-icon,
+html[data-theme="dark"] .shape-inspector-header.movable .inspector-rename-button {
+  color: #a8947f;
+}
+
+html[data-theme="dark"] .shape-inspector-header.movable .inspector-header-icon:hover,
+html[data-theme="dark"] .shape-inspector-header.movable .inspector-rename-button:hover {
+  color: #ffffff;
+  background: #443a30;
+}
+
+html[data-theme="dark"] .shape-inspector-header.movable .inspector-header-icon.active {
+  color: #f0973a;
 }
 
 html[data-theme="dark"] .outliner-header-icon {
@@ -11726,6 +11843,17 @@ html[data-theme="dark"] .open-group-cancel {
 .outliner-help-link {
   width: 24px;
   height: 24px;
+}
+
+.outliner-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Collapsed: the title bar alone, without the line that separates it from the list. */
+.outliner-panel.collapsed .outliner-header {
+  border-bottom: none;
 }
 
 .guide-modal h3 {
