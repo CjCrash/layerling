@@ -1,9 +1,10 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Crosshair, Cuboid, Eye, EyeOff, FlipHorizontal, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, RotateCcw, Rows3, Ruler, RulerDimensionLine, Slice, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crosshair, Cuboid, Download, Eye, EyeOff, FlipHorizontal, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, RotateCcw, Rows3, Ruler, RulerDimensionLine, Slice, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type DragEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type SetStateAction, type WheelEvent as ReactWheelEvent } from "react";
 import { objectSnapOffset, shiftSnapBox, type ObjectSnapGuide, type SnapBox } from "@/lib/objectSnap";
 import { computeSectionPlaneVector, DEFAULT_SECTION_SETTINGS, getSectionBounds, sectionFineWindow, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
+import { generateSectionSvg, type SectionMeshSource } from "@/lib/sectionSvg";
 import * as THREE from "three";
 import { Brush, Evaluator, HOLLOW_INTERSECTION } from "three-bvh-csg";
 import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
@@ -293,6 +294,7 @@ type WorkplaneViewportProps = {
   themePreference?: AppThemePreference;
   resolvedTheme?: ResolvedAppTheme;
   onThemePreferenceChange?: (preference: AppThemePreference) => void;
+  onNotice?: (message: string) => void;
 };
 
 type WorkspaceSettings = WorkplaneWorkspaceSettings;
@@ -420,8 +422,13 @@ declare global {
     layerlingCaptureCanvas?: () => string;
     layerlingCaptureCanvasAsync?: () => Promise<string>;
     layerlingCaptureView?: (face?: LayerlingMcpViewFace) => Promise<string> | string;
-    /** The section view for MCP: applies what is given, returns the settings it ends on and the plane's range. */
-    layerlingSectionView?: (patch: Partial<SectionPlaneSettings> & { center?: boolean }) => { settings: SectionPlaneSettings; bounds: { min: number; max: number; center: number } };
+    /** The section view for MCP: applies what is given, returns the settings it ends on and the plane's range, or exports SVG. */
+    layerlingSectionView?: (patch: Partial<SectionPlaneSettings> & { center?: boolean; exportSvg?: boolean }) => {
+      settings?: SectionPlaneSettings;
+      bounds?: { min: number; max: number; center: number };
+      svg?: string;
+      segmentCount?: number;
+    };
   }
 }
 
@@ -3684,6 +3691,7 @@ export function WorkplaneViewport({
   themePreference = "system",
   resolvedTheme = "light",
   onThemePreferenceChange,
+  onNotice,
 }: WorkplaneViewportProps) {
   const [snapOpen, setSnapOpen] = useState(false);
   const [inspectorMinimized, setInspectorMinimized] = useState(false);
@@ -7398,6 +7406,76 @@ export function WorkplaneViewport({
     }));
   }, []);
 
+  const exportSectionCutSvg = useCallback((customAxis?: SectionPlaneAxis, customOffset?: number) => {
+    const state = threeRef.current;
+    if (!state) return null;
+
+    const current = sectionSettingsRef.current;
+    const axis = customAxis ?? current.axis;
+    const offset = typeof customOffset === "number" && Number.isFinite(customOffset) ? customOffset : current.offset;
+
+    const planeVec = computeSectionPlaneVector({
+      ...current,
+      axis,
+      offset,
+    });
+
+    const meshSources: SectionMeshSource[] = [];
+    state.shapeLayer.traverse((obj: THREE.Object3D) => {
+      const mesh = obj as THREE.Mesh;
+      if (mesh.isMesh && mesh.visible) {
+        const geom = mesh.geometry as THREE.BufferGeometry;
+        const posAttr = geom?.getAttribute?.("position");
+        if (posAttr && posAttr.array) {
+          const colorHex = (mesh.material as any)?.color
+            ? `#${(mesh.material as any).color.getHexString()}`
+            : "#0098c7";
+          meshSources.push({
+            positions: posAttr.array,
+            indices: geom.index ? geom.index.array : null,
+            matrixWorldElements: mesh.matrixWorld.elements,
+            color: colorHex,
+            name: mesh.name || "Part",
+          });
+        }
+      }
+    });
+
+    const planeNormal = { x: planeVec.normal.x, y: planeVec.normal.y, z: planeVec.normal.z };
+    const planeConstant = planeVec.constant;
+
+    const result = generateSectionSvg(
+      meshSources,
+      { normal: planeNormal, constant: planeConstant },
+      axis,
+      `${projectId || "layerling"} section`,
+    );
+
+    return { ...result, axis, offset };
+  }, [projectId]);
+
+  const handleExportSectionSvg = useCallback(() => {
+    const result = exportSectionCutSvg();
+    if (!result) return;
+    const axisStr = result.axis.toUpperCase();
+    const offsetStr = Math.round(result.offset * 10) / 10;
+    const nameBase = projectId ? projectId.replace(/\.[^/.]+$/, "") : "layerling";
+    const filename = `${nameBase}-section-${axisStr}-${offsetStr}mm.svg`;
+
+    const blob = new Blob([result.svg], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    onNotice?.(t("status.sectionSvgExported"));
+  }, [exportSectionCutSvg, onNotice, projectId]);
+
   // MCP: the same rules as the buttons - a new axis, switching on from the
   // start position or `center` put the plane in the middle of the design,
   // unless an offset is given.
@@ -7417,12 +7495,23 @@ export function WorkplaneViewport({
       };
       sectionSettingsRef.current = next;
       setSectionSettings(next);
+
+      if (patch.exportSvg) {
+        const exportRes = exportSectionCutSvg(patch.axis, patch.offset);
+        return {
+          settings: next,
+          bounds: { min: bounds.min, max: bounds.max, center: bounds.center },
+          svg: exportRes?.svg,
+          segmentCount: exportRes?.segmentCount,
+        };
+      }
+
       return { settings: next, bounds: { min: bounds.min, max: bounds.max, center: bounds.center } };
     };
     return () => {
       delete window.layerlingSectionView;
     };
-  }, []);
+  }, [exportSectionCutSvg]);
 
   // The editor stays mounted when you go back to the overview, so a cut set in
   // one design used to carry over into the next one: shapes placed there
@@ -7863,16 +7952,28 @@ export function WorkplaneViewport({
                       })()}
 
                       <div className="section-popover-footer">
-                        <button
-                          type="button"
-                          className="section-action-btn"
-                          onClick={handleResetSectionToCenter}
-                          title={t("camera.sectionResetHint")}
-                          aria-label={t("camera.sectionReset")}
-                        >
-                          <RotateCcw size={14} strokeWidth={2.2} aria-hidden="true" />
-                          <span>{t("camera.sectionReset")}</span>
-                        </button>
+                        <div className="section-footer-actions">
+                          <button
+                            type="button"
+                            className="section-action-btn"
+                            onClick={handleResetSectionToCenter}
+                            title={t("camera.sectionResetHint")}
+                            aria-label={t("camera.sectionReset")}
+                          >
+                            <RotateCcw size={14} strokeWidth={2.2} aria-hidden="true" />
+                            <span>{t("camera.sectionReset")}</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="section-action-btn"
+                            onClick={handleExportSectionSvg}
+                            title={t("camera.sectionExportSvgHint")}
+                            aria-label={t("camera.sectionExportSvg")}
+                          >
+                            <Download size={14} strokeWidth={2.2} aria-hidden="true" />
+                            <span>{t("camera.sectionExportSvg")}</span>
+                          </button>
+                        </div>
                         <label className="section-checkbox-label">
                           <input
                             type="checkbox"

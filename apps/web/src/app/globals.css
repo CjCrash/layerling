@@ -4969,6 +4969,22 @@ button {
   text-anchor: middle;
 }
 
+.sketch-dimension-pill.clickable {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.sketch-dimension-pill.clickable:hover rect {
+  fill: #fff9f0;
+  stroke: #d56100;
+  stroke-width: 1.5;
+}
+
+.sketch-dimension-pill.clickable:hover text {
+  fill: #d56100;
+  font-weight: 600;
+}
+
 .sketch-dimension-extension {
   stroke: rgba(90, 57, 23, 0.45);
   stroke-width: 1;
@@ -5816,9 +5832,17 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
   padding-top: 6px;
   border-top: 1px solid #ebe4db;
+}
+
+.section-footer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .camera-controls .section-tool-popover .section-action-btn {
@@ -10371,6 +10395,16 @@ html[data-theme="dark"] .sketch-dimension-line {
 
 html[data-theme="dark"] .sketch-dimension-arrow {
   fill: #f0d6ba;
+}
+
+html[data-theme="dark"] .sketch-dimension-pill.clickable:hover rect {
+  fill: #2e2418;
+  stroke: #ffa726;
+  stroke-width: 1.5;
+}
+
+html[data-theme="dark"] .sketch-dimension-pill.clickable:hover text {
+  fill: #ffb74d;
 }
 
 html[data-theme="dark"] .sketch-command-button {

@@ -475,6 +475,18 @@ export const tools = [
     },
   },
   {
+    name: "layerling_export_section_svg",
+    description: "Export the 2D cross-section contour of the scene along the active or specified cutting plane as an SVG vector string. Axis and offset default to the currently configured section view.",
+    inputSchema: {
+      ...editorTargetSchema,
+      properties: {
+        ...editorTargetSchema.properties,
+        axis: { type: "string", enum: ["x", "y", "z"], description: "Cutting axis (x, y, or z). Defaults to the current section view axis." },
+        offset: { type: "number", description: "Cutting plane position in millimetres. Defaults to current section view offset." },
+      },
+    },
+  },
+  {
     name: "layerling_set_workplane",
     description: "Set, reset or hide the workplane. A workplane on a face of a body makes new shapes land on that face (layerling_create_shape places onto it), and rotating turns about its normal - the editor's W and a click. id with face puts it on that side of the object's own box, snapped to the real face and centred on it; a face standing up keeps the sketch's up pointing up. flip: true turns it to face inwards. reset: true puts it back on the base plate. visible: false hides a face workplane without dropping it - it still applies, only the drawing goes, which gives a clear view or picture; visible: true shows it again. Setting a new workplane shows it again by itself. Call with no settings to read the state; layerling_read_scene reports it as workplane.",
     inputSchema: {

@@ -58,6 +58,7 @@ The AI works with the same functions as you, through the same path as your opera
 | `layerling_array_objects` | multiplies in a row or on a circle |
 | `layerling_inspect_errors` | shows the last message and the last error, plus the messages and errors of the session |
 | `layerling_set_section_view` | cuts the view open along a plane to look inside (only the view, nothing is cut apart) |
+| `layerling_export_section_svg` | exports the 2D cross-section contour of the cutting plane as dimensionally accurate SVG (e.g. for laser cutting or gaskets) |
 | `layerling_set_workplane` | puts the workplane on a side of a body or back on the base plate, and hides or shows it |
 | `layerling_capture_image` | takes a picture of the view: front, top, side and more |
 

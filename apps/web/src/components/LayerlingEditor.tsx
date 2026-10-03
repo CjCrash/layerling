@@ -289,8 +289,13 @@ declare global {
     layerlingCaptureCanvas?: () => string;
     layerlingCaptureCanvasAsync?: () => Promise<string>;
     layerlingCaptureView?: (face?: LayerlingMcpViewFace) => Promise<string> | string;
-    /** The section view for MCP: applies what is given, returns the settings it ends on and the plane's range. */
-    layerlingSectionView?: (patch: Partial<SectionPlaneSettings> & { center?: boolean }) => { settings: SectionPlaneSettings; bounds: { min: number; max: number; center: number } };
+    /** The section view for MCP: applies what is given, returns the settings it ends on and the plane's range, or exports SVG. */
+    layerlingSectionView?: (patch: Partial<SectionPlaneSettings> & { center?: boolean; exportSvg?: boolean }) => {
+      settings?: SectionPlaneSettings;
+      bounds?: { min: number; max: number; center: number };
+      svg?: string;
+      segmentCount?: number;
+    };
   }
 }
 
@@ -10280,6 +10285,19 @@ export function LayerlingEditor({
         return result;
       }
 
+      if (command.action === "export_section_svg") {
+        if (!window.layerlingSectionView) throw new Error("The section view is not available in this editor");
+        const axis = params.axis === undefined ? undefined : mcpString(params.axis, "x").toLowerCase();
+        if (axis !== undefined && axis !== "x" && axis !== "y" && axis !== "z") throw new Error("axis must be x, y or z");
+        const offset = params.offset === undefined ? undefined : mcpNumber(params.offset, 0);
+        const result = window.layerlingSectionView({
+          ...(axis ? { axis: axis as SectionPlaneAxis } : {}),
+          ...(offset !== undefined ? { offset } : {}),
+          exportSvg: true,
+        });
+        return result;
+      }
+
       if (command.action === "set_workplane") {
         // Wie W und ein Klick auf eine Flaeche: eine Seite des eigenen Rahmens
         // des Koerpers, eingerastet auf die echte Flaeche, die Ebene in ihrer Mitte.
@@ -11840,6 +11858,7 @@ export function LayerlingEditor({
           themePreference={themePreference}
           resolvedTheme={resolvedTheme}
           onThemePreferenceChange={onThemePreferenceChange}
+          onNotice={setNotice}
           />
         )}
       </div>

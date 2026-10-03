@@ -7,7 +7,8 @@ import { SketchRevolvePreview } from "@/components/SketchRevolvePreview";
 import { canApplySketchCornerTreatment } from "@/lib/sketchFilletChamfer";
 import { t } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
-import { parseMeasurementInput } from "@/lib/measurementUnits";
+import { parseLengthMm, parseMeasurementInput } from "@/lib/measurementUnits";
+import { applySegmentDimension } from "@/lib/sketchDimensions";
 import { workplaneGridLayout } from "@/lib/workplaneGrid";
 import { closestPointOnSketchSegment, type SketchSegmentPlacement } from "@/lib/sketchPointRefinement";
 import { isSketchPanGesture, SKETCH_MANUAL_MAX_ZOOM, SKETCH_MAX_ZOOM, SKETCH_WHEEL_ZOOM_BOOST, SKETCH_MIN_ZOOM, sketchWheelZoomFactor, zoomSketchViewAt, type SketchView } from "@/lib/sketchPointerControls";
@@ -513,6 +514,12 @@ export function SketchWorkspace({
   const [pointerAction, setPointerAction] = useState<PointerAction | null>(null);
   const [svgSize, setSvgSize] = useState({ width: 0, height: 0 });
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const wrapRef = useRef<HTMLElement | null>(null);
+  const [editingDimension, setEditingDimension] = useState<{
+    segmentId: string;
+    value: string;
+    sketchPos: { x: number; z: number };
+  } | null>(null);
   const width = workspace.width / zoom;
   const depth = workspace.depth / zoom;
   const screenUnit = useMemo(() => {
@@ -631,6 +638,50 @@ export function SketchWorkspace({
     }
     setCornerDialog(null);
   };
+
+  const cancelDimensionEdit = useCallback(() => {
+    setEditingDimension(null);
+  }, []);
+
+  const commitDimensionEdit = useCallback(() => {
+    if (!editingDimension) return;
+    const raw = editingDimension.value.trim();
+    const valMm = parseLengthMm(raw);
+    if (Number.isFinite(valMm) && valMm > 0.001) {
+      const segment = profile.segments.find((s) => s.id === editingDimension.segmentId);
+      if (segment) {
+        const anchorPointId = selectedPoint?.id === segment.startId || selectedPoint?.id === segment.endId
+          ? (selectedPoint.id === segment.startId ? segment.endId : segment.startId)
+          : segment.startId;
+        const updatedPoints = applySegmentDimension(segment, profile.points, valMm, anchorPointId);
+        if (updatedPoints !== profile.points) {
+          onTransformPoints(updatedPoints, t("sketch.dimensionUpdated"));
+        }
+      }
+    }
+    setEditingDimension(null);
+  }, [editingDimension, profile.segments, profile.points, selectedPoint, onTransformPoints]);
+
+  const getOverlayPos = useCallback((sketchPos: { x: number; z: number }) => {
+    const svg = svgRef.current;
+    const wrap = wrapRef.current;
+    if (!svg || !wrap) return null;
+    const matrix = svg.getScreenCTM();
+    if (!matrix) return null;
+    const pt = svg.createSVGPoint();
+    pt.x = sketchPos.x;
+    pt.y = sketchPos.z;
+    const screenPt = pt.matrixTransform(matrix);
+    const wrapRect = wrap.getBoundingClientRect();
+    return {
+      x: screenPt.x - wrapRect.left,
+      y: screenPt.y - wrapRect.top,
+    };
+  }, []);
+
+  useEffect(() => {
+    setEditingDimension(null);
+  }, [selected, tool]);
   const gridLayout = workplaneGridLayout(workspace);
   const gridStep = gridLayout.step;
   // Counted from the origin, like the plate's own grid: a stronger line every
@@ -1015,7 +1066,7 @@ export function SketchWorkspace({
           <RulerDimensionLine size={26} strokeWidth={2.2} aria-hidden="true" />
         </button>
       </div>
-      <section className="sketch-plate-wrap" aria-label="2D sketch plate">
+      <section ref={wrapRef} className="sketch-plate-wrap" aria-label="2D sketch plate">
         <svg
           ref={svgRef}
           className={`sketch-plate tool-${tool} ${pointerAction?.kind === "pan" ? "panning" : ""}`}
@@ -1208,7 +1259,25 @@ export function SketchWorkspace({
                   ))}
                   <path className="sketch-dimension-line" d={`M ${dimensionLine.map((point) => `${point.x} ${point.z}`).join(" L ")}`} />
                   <path className="sketch-dimension-arrow" d={`${arrowhead(dimensionLine[0], dimensionLine[1])} ${arrowhead(dimensionLine[dimensionLine.length - 1], dimensionLine[dimensionLine.length - 2])}`} />
-                  <g transform={`translate(${labelPosition.x} ${labelPosition.z})`}>
+                  <g
+                    className="sketch-dimension-pill clickable"
+                    style={{ cursor: "pointer" }}
+                    role="button"
+                    tabIndex={0}
+                    onPointerDown={(event) => {
+                      event.stopPropagation();
+                    }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setEditingDimension({
+                        segmentId: segment.id,
+                        value: label,
+                        sketchPos: labelPosition,
+                      });
+                    }}
+                    transform={`translate(${labelPosition.x} ${labelPosition.z})`}
+                  >
+                    <title>{t("sketch.clickToEditDimension")}</title>
                     <rect x={-pill.width / 2} y={-pill.height / 2} width={pill.width} height={pill.height} rx={pill.radius} />
                     <text y={5 * screenUnit} fontSize={13 * screenUnit}>{label}</text>
                   </g>
@@ -1438,6 +1507,30 @@ export function SketchWorkspace({
           ) : null}
           {hover && ["line", "bezier", "smooth", "measure"].includes(tool) ? <circle className="sketch-cursor-point" cx={hover.x} cy={hover.z} r={hoverPointRadius} pointerEvents="none" /> : null}
         </svg>
+        {editingDimension ? (() => {
+          const overlayPos = getOverlayPos(editingDimension.sketchPos);
+          if (!overlayPos) return null;
+          return (
+            <input
+              className="dimension-input sketch-dimension-input"
+              style={{
+                "--overlay-x": `${overlayPos.x}px`,
+                "--overlay-y": `${overlayPos.y}px`,
+              } as CSSProperties}
+              value={editingDimension.value}
+              autoFocus
+              inputMode="decimal"
+              onPointerDown={(event) => event.stopPropagation()}
+              onFocus={(event) => event.currentTarget.select()}
+              onChange={(event) => setEditingDimension((prev) => prev ? { ...prev, value: event.target.value } : null)}
+              onBlur={commitDimensionEdit}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") commitDimensionEdit();
+                if (event.key === "Escape") cancelDimensionEdit();
+              }}
+            />
+          );
+        })() : null}
       </section>
       {selectedImage && tool === "select" ? (
         <SketchImageInspector

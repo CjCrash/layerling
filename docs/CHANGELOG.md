@@ -6,6 +6,8 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## 1.29.1
 
+- **Direct dimension input on sketch lines:** Clicking the dimension pill of any straight sketch line opens an inline input field to enter the exact desired length directly. The line resizes along its direction immediately (with symmetric resizing when Alt is held), adjusting connected segments accurately.
+- **Export 2D cross-section contour as SVG:** The section view panel now features an "Export cut as SVG" button that slices all visible 3D bodies along the active cutting plane (X, Y, or Z) and generates a dimensionally accurate 2D vector graphic. Ideal for laser cutting, CNC routing templates, custom gaskets, or technical drawings. Also available to AI assistants via the new MCP tool `layerling_export_section_svg`.
 - **A stretched sketch body keeps its face:** Pulling the height handle of a sketch body that stands on a side face turned it into a plain mesh lying on the plate's axes - its rotation was baked in and set to 0. "Edit sketch" then put the sketch on the base plane, and after finishing it the body lay flat. A pull along one of the body's own axes now only changes that size, so the rotation and the sketch's plane stay. A slanted pull still bakes the body; it then loses its sketch link, so editing can no longer rebuild it wrongly. Reported by Fratercula in the forum, with the files that showed it.
 - **Thread sizes readable in dark themes:** In Chrome on Linux the size list showed the option under the mouse pointer white on white in Graphite and Dark. Reported by Fratercula in the forum.
 

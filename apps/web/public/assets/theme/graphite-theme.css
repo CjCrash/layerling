@@ -1994,6 +1994,15 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   fill: #2d2d2d;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-dimension-pill.clickable:hover rect {
+  fill: #f8f8f8;
+  stroke: #d56100;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .sketch-dimension-pill.clickable:hover text {
+  fill: #d56100;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .sketch-dimension-extension {
   stroke: rgba(90, 57, 23, 0.45);
 }
@@ -4875,6 +4884,15 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-dimension-line 
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-dimension-arrow {
   fill: #d5d5d5;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-dimension-pill.clickable:hover rect {
+  fill: #282828;
+  stroke: #ffa726;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-dimension-pill.clickable:hover text {
+  fill: #ffb74d;
 }
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .sketch-command-button {
