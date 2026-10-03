@@ -26,7 +26,7 @@ function guideSections(sharedStore: boolean): GuideSection[] {
     {
       title: "guide.group.view",
       chapter: "view",
-      lines: ["guide.view.orbit", "guide.view.touch", "guide.view.cube", "guide.view.projection", "guide.view.section"],
+      lines: ["guide.view.orbit", "guide.view.touch", "guide.view.cube", "guide.view.projection", "guide.view.section", "guide.view.panels"],
     },
     {
       title: "guide.group.workplane",
@@ -51,7 +51,7 @@ function guideSections(sharedStore: boolean): GuideSection[] {
     {
       title: "guide.group.solid",
       chapter: "solids",
-      lines: ["guide.solid.modes", "guide.solid.group", "guide.solid.intersect"],
+      lines: ["guide.solid.modes", "guide.solid.group", "guide.solid.intersect", "guide.solid.edit"],
     },
     {
       title: "guide.group.edges",
