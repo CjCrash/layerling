@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Crosshair, Cuboid, Download, Eye, EyeOff, FlipHorizontal, GripVertical, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, RotateCcw, Rows3, Ruler, RulerDimensionLine, Slice, X } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type DragEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type ReactNode, type SetStateAction, type WheelEvent as ReactWheelEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type DragEvent, type MouseEvent as ReactMouseEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type ReactNode, type SetStateAction, type WheelEvent as ReactWheelEvent } from "react";
 import { objectSnapOffset, shiftSnapBox, type ObjectSnapGuide, type SnapBox } from "@/lib/objectSnap";
 import { useMovablePanel, type MovablePanelOptions } from "@/lib/useMovablePanel";
 import { computeSectionPlaneVector, DEFAULT_SECTION_SETTINGS, getSectionBounds, sectionFineWindow, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
@@ -25,6 +25,7 @@ import { cadModifierPrimitiveForBakedShape, cadTransformFromMatrix, cadTransform
 import { t } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
 import { orthographicFramingZoom, perspectiveFramingDistance } from "@/lib/cameraFraming";
+import { beginViewCubeDrag, moveViewCubeDrag, orbitOffsetByDrag, viewCubeAngles, type ViewCubeDrag } from "@/lib/viewCubeDrag";
 import { createGearGeometry } from "@/lib/gearGeometry";
 import { createStarGeometry } from "@/lib/starGeometry";
 import { createHeartGeometry } from "@/lib/heartGeometry";
@@ -3834,6 +3835,11 @@ export function WorkplaneViewport({
   const lastWorkspaceSettingsSyncRef = useRef("");
   const pendingWorkspaceHydrationFingerprintRef = useRef<string | null>(null);
   const viewCubeRef = useRef<HTMLDivElement | null>(null);
+  // Dragging the view cube orbits the camera; a press that never passes the
+  // drag threshold stays a click so the faces keep snapping to their views.
+  const viewCubeDragRef = useRef<ViewCubeDrag | null>(null);
+  const suppressViewCubeClickRef = useRef(false);
+  const [viewCubeDragging, setViewCubeDragging] = useState(false);
   // Der Umschalter fuer das Drehen mit einem Finger steht nur dort, wo er
   // gebraucht wird. Anfangs falsch, damit das ausgelieferte HTML passt.
   const [touchDevice, setTouchDevice] = useState(false);
@@ -7242,6 +7248,62 @@ export function WorkplaneViewport({
     syncViewCube(state, viewCubeRef.current);
   }, []);
 
+  const handleViewCubePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    if (event.button !== 0 || viewCubeDragRef.current) {
+      return;
+    }
+    suppressViewCubeClickRef.current = false;
+    viewCubeDragRef.current = beginViewCubeDrag(event.pointerId, event.clientX, event.clientY);
+  }, []);
+
+  const handleViewCubePointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = viewCubeDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+    const move = moveViewCubeDrag(drag, event.clientX, event.clientY);
+    if (!move) {
+      return;
+    }
+    if (move.started) {
+      // Capture only once the press becomes a drag, so a plain click still
+      // lands on the face button underneath.
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setViewCubeDragging(true);
+    }
+    const state = threeRef.current;
+    if (!state) {
+      return;
+    }
+    orbitCameraByDrag(state, move.dx, move.dy);
+    syncViewCube(state, viewCubeRef.current);
+  }, []);
+
+  const endViewCubeDrag = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = viewCubeDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+    viewCubeDragRef.current = null;
+    if (drag.dragging) {
+      suppressViewCubeClickRef.current = true;
+      setViewCubeDragging(false);
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    }
+  }, []);
+
+  const handleViewCubeClickCapture = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+    // The click that ends a drag must not also snap to the face it ended on.
+    if (suppressViewCubeClickRef.current) {
+      suppressViewCubeClickRef.current = false;
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }, []);
+
   const zoomCamera = useCallback((scale: number) => {
     const state = threeRef.current;
     if (!state) {
@@ -7663,7 +7725,15 @@ export function WorkplaneViewport({
 
   return (
     <main className="workplane-stage">
-      <div className="view-cube" aria-label={t("view.cube")} onPointerDown={(event) => event.stopPropagation()}>
+      <div
+        className={`view-cube ${viewCubeDragging ? "dragging" : ""}`}
+        aria-label={t("view.cube")}
+        onPointerDown={handleViewCubePointerDown}
+        onPointerMove={handleViewCubePointerMove}
+        onPointerUp={endViewCubeDrag}
+        onPointerCancel={endViewCubeDrag}
+        onClickCapture={handleViewCubeClickCapture}
+      >
         <div className="view-cube-inner" ref={viewCubeRef}>
           <button type="button" className="cube-face cube-top" aria-label={t("view.bottom")} aria-keyshortcuts="6" title={t("camera.shortcut", { label: t("view.bottom"), keys: "6" })} onClick={() => setViewCubeFace("bottom")}>{t("view.bottomShort")}</button>
           <button type="button" className="cube-face cube-bottom" aria-label={t("view.top")} aria-keyshortcuts="5" title={t("camera.shortcut", { label: t("view.top"), keys: "5" })} onClick={() => setViewCubeFace("top")}>{t("view.topShort")}</button>
@@ -8502,6 +8572,18 @@ function setCameraToViewFace(state: ThreeState, face: ViewCubeFace) {
   state.needsRender = true;
 }
 
+/** Orbits the camera around the controls target for a drag on the view cube. */
+function orbitCameraByDrag(state: ThreeState, dx: number, dy: number) {
+  const offset = orbitOffsetByDrag(state.camera.position.clone().sub(state.controls.target), dx, dy);
+
+  state.camera.up.set(0, 1, 0);
+  state.camera.position.copy(state.controls.target).add(offset);
+  state.camera.lookAt(state.controls.target);
+  state.camera.updateProjectionMatrix();
+  state.controls.update();
+  state.needsRender = true;
+}
+
 function constrainCamera(state: ThreeState, workspace: WorkspaceSettings) {
   const target = state.controls.target;
   const previousTarget = target.clone();
@@ -8521,10 +8603,7 @@ function syncViewCube(state: ThreeState, cube: HTMLDivElement | null) {
     return;
   }
 
-  const offset = state.camera.position.clone().sub(state.controls.target);
-  const horizontalDistance = Math.max(0.001, Math.hypot(offset.x, offset.z));
-  const pitch = THREE.MathUtils.radToDeg(Math.atan2(offset.y, horizontalDistance));
-  const yaw = THREE.MathUtils.radToDeg(Math.atan2(offset.x, offset.z));
+  const { pitch, yaw } = viewCubeAngles(state.camera.position.clone().sub(state.controls.target));
   cube.style.transform = `rotateX(${-pitch}deg) rotateY(${-yaw}deg)`;
 }
 

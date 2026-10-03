@@ -5377,6 +5377,13 @@ button {
   filter: drop-shadow(0 2px 3px rgba(82, 64, 45, 0.14));
   opacity: 0.9;
   pointer-events: auto;
+  /* Touch drags orbit the camera instead of scrolling the page. */
+  touch-action: none;
+}
+
+.view-cube.dragging,
+.view-cube.dragging .cube-face {
+  cursor: grabbing;
 }
 
 .view-cube-inner {
