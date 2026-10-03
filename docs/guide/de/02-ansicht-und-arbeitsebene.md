@@ -20,6 +20,8 @@ Auf einem Tablet oder Handy zoomen zwei Finger (spreizen und zusammenziehen) und
 
 Der Würfel links oben zeigt, wohin du gerade schaust. Ein Klick auf eine seiner Seiten springt in die gerade Ansicht von oben, unten, vorn, hinten, links oder rechts. Das geht auch mit den Zifferntasten [[1]] bis [[6]].
 
+Ziehst du am Würfel, drehst du die Ansicht, genau wie beim Ziehen mit der rechten Maustaste. Auf einem Touchscreen geht das mit einem Finger, auch ohne {{ui:camera.touchRotate}} einzuschalten.
+
 ### Die Kameraleiste
 
 Am linken Rand liegt eine schmale Leiste. Von oben nach unten:
