@@ -94,7 +94,7 @@ export const MESSAGES_EN = {
   "welcome.step2Title": "Place shapes",
   "welcome.step2Body": "Drag a box, cylinder, text or any other shape from the panel on the right onto the workplane, then set size and position. Sizes take percentages too: 50% halves them. \"Transparent\" lets you look through a body.",
   "welcome.step3Title": "Group in the cut-outs",
-  "welcome.step3Body": "Every shape is either a solid or a cut-out. Grouping makes the cut-out remove material - that is how holes, slots and pockets are made. The object list (Ctrl+Shift+O) shows every part, grouped ones too, and whether it is a solid or a cut-out. \"Open group\" lets you change single parts of a group; \"Done\" rebuilds it.",
+  "welcome.step3Body": "Every shape is either a solid or a cut-out. Grouping makes the cut-out remove material - that is how holes, slots and pockets are made. The object list (Ctrl+Shift+O) shows every part, grouped ones too, and whether it is a solid or a cut-out. \"Edit group\" (E) lets you change single parts of a group; \"Done\" rebuilds it.",
   "welcome.step4Title": "Break the edges and export",
   "welcome.step4Body": "Chamfer and fillet work on the edges you click. When done, send it to the slicer as STL or 3MF, or to CAD as STEP.",
   "welcome.moreTitle": "What else layerling does",

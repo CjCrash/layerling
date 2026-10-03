@@ -60,8 +60,7 @@ export type LayerlingMcpSceneSummary = {
   workspace: WorkplaneWorkspaceSettings;
   snap: GridSize | null;
   shapes: LayerlingMcpShapeSummary[];
-  /** The group opened for editing, if any: its parts lie loose until it is closed. */
-  /** The innermost group being edited. */
+  /** The innermost group being edited, if any: its parts lie loose until it is closed. */
   openGroup?: { groupId: string; name: string; partIds: string[] } | null;
   /** Every group being edited, outermost first; each is a part of the one before. */
   openGroups?: { groupId: string; name: string; partIds: string[] }[];

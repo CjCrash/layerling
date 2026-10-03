@@ -4,6 +4,11 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Edit a group inside a group:** "Open group" is now **Edit group**, also on the new key E. While a group is being edited, a group among its parts can be edited too, and so on as deep as the design goes; the bar shows the path, for example "Bracket › Screw boss", and Done or Cancel always finish the innermost level and step one level back out. Undo and redo bring the bar back along with the parts. `layerling_open_group` opens a group inside the open one the same way, and `layerling_read_scene` lists every level as `openGroups`, outermost first.
+- **An edited group stays the same group:** Done rebuilds the group under its own id, so the object list, the AI and the group around it still find it. A part replaced while the group is open - grouped with another part, cut, separated or ungrouped - now stays in the group; before, the result was left outside it on Done. New shapes, pastes and duplicates still stay outside.
+
 ## 1.30.0
 
 - **Type a line's length in the sketch:** Click the dimension pill of a selected straight line and type the length in millimetres; Enter applies it, Esc cancels. The line keeps its direction and its start point - or, with an end point selected, that point moves - and the lines at the other end follow. Alt+Enter grows it to both sides around its middle. Curves show their length as before. Built with Google Antigravity.

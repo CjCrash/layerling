@@ -93,7 +93,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "welcome.step2Title": "Formen aufsetzen",
   "welcome.step2Body": "Zieh Quader, Zylinder, Text oder eine der anderen Formen aus der Ablage am rechten Rand auf die Arbeitsebene und stell Maße und Lage ein. Maße gehen auch in Prozent: 50 % halbiert. Mit „Durchsichtig darstellen“ siehst du durch einen Körper hindurch.",
   "welcome.step3Title": "Aussparungen gruppieren",
-  "welcome.step3Body": "Jede Form ist Körper oder Aussparung. Beim Gruppieren nimmt die Aussparung Material weg - so entstehen Bohrung, Nut und Tasche. Die Objektliste (Strg+Umschalt+O) zeigt alle Teile, auch die in einer Gruppe, und ob sie Körper oder Aussparung sind. Mit „Gruppe öffnen“ änderst du einzelne Teile einer Gruppe, „Fertig“ rechnet sie neu.",
+  "welcome.step3Body": "Jede Form ist Körper oder Aussparung. Beim Gruppieren nimmt die Aussparung Material weg - so entstehen Bohrung, Nut und Tasche. Die Objektliste (Strg+Umschalt+O) zeigt alle Teile, auch die in einer Gruppe, und ob sie Körper oder Aussparung sind. Mit „Gruppe bearbeiten“ (E) änderst du einzelne Teile einer Gruppe, „Fertig“ rechnet sie neu.",
   "welcome.step4Title": "Kanten brechen und exportieren",
   "welcome.step4Body": "Fase und Verrundung wirken auf angeklickte Kanten. Fertig geht es als STL oder 3MF in den Slicer, als STEP ins CAD.",
   "welcome.moreTitle": "Was layerling außerdem kann",
