@@ -167,6 +167,8 @@ export type LylProjectExportInput = {
   placementWorkplane?: PlacementWorkplane;
   sketchPlacementWorkplane?: PlacementWorkplane;
   compressionLevel?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  /** Weitere Dateien im Paket, etwa der Fehlerbericht; ein Leser uebergeht sie. */
+  extraFiles?: Record<string, Uint8Array>;
 };
 
 export type LylRestoredProject = {
@@ -896,6 +898,10 @@ export async function exportLylProject(input: LylProjectExportInput) {
     throw new Error("Project data exceeds the 64 MB project file limit. Export with fewer history steps or simplify the project.");
   }
   builder.files["project.json"] = projectJson;
+  for (const [path, bytes] of Object.entries(input.extraFiles ?? {})) {
+    if (path in builder.files || !safeArchivePath(path)) throw new Error(`Cannot add '${path}' to the project package`);
+    builder.files[path] = bytes;
+  }
   if (Object.keys(builder.files).length > LYL_LIMITS.entries) {
     throw new Error("Project has too many stored assets for the project format. Export with fewer history steps.");
   }

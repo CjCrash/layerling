@@ -46,6 +46,10 @@ With {{ui:editor.import}} or [[Ctrl]]+[[I]] you bring foreign files into the des
 
 Template pictures are added in sketch mode, see [Sketches](chapter:sketches).
 
+## Reporting a bug
+
+If layerling does something unexpected, save a {{ui:editor.bugReport}}: the link sits in the footer at the bottom, next to the forum. It is an ordinary .lyl file with your design that opens in layerling, and it also carries a short text file with the version, browser, screen size, the last messages and any errors. Nothing personal is in it. Attach the file to your post in the forum or on GitHub, so the problem can be followed with exactly your design.
+
 ## Shared designs on a server
 
 When layerling runs on your own computer or web server, it can offer a shared folder in which all users keep designs. On the start page it then appears as {{ui:dashboard.sharedProjects}}. You create folders there, move designs by dragging and search across the whole folder. A design that lives there saves itself back to it.

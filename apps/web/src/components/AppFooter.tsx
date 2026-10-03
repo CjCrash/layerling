@@ -98,10 +98,13 @@ export function AppFooter({
   variant = "dashboard",
   version,
   updateInfo,
+  onBugReport,
 }: {
   variant?: "dashboard" | "editor";
   version: string;
   updateInfo?: AppUpdateInfo | null;
+  /** Im Editor: den Entwurf als Fehlerbericht speichern. */
+  onBugReport?: () => void;
 }) {
   const language = useLanguage();
   const { update: hookUpdate } = useAppUpdate(version);
@@ -136,6 +139,22 @@ export function AppFooter({
           <a href={communityUrl(language)} target="_blank" rel="noreferrer" key="community">
             {t("dashboard.forum")}
           </a>,
+          // Ein Link in Knopfrolle: so traegt er die Farben der Fusszeile in
+          // jedem Thema, und die Werkzeugleiste wird nicht breiter.
+          onBugReport ? (
+            <a
+              href="#"
+              role="button"
+              key="bug-report"
+              title={t("editor.bugReportHint")}
+              onClick={(event) => {
+                event.preventDefault();
+                onBugReport();
+              }}
+            >
+              {t("editor.bugReport")}
+            </a>
+          ) : null,
           ...legalLinks(language).map((link) => (
             <a key={link.href} href={link.href}>{link.label}</a>
           )),

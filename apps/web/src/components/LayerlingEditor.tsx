@@ -173,12 +173,15 @@ import {
   placementWorkplaneFingerprint,
   placementWorkplaneFromSurface,
   placementWorkplaneIsBase,
+  placementWorkplanePoint,
   horizontalPlacementWorkplane,
   translationToWorkplane,
   type PlacementPoint,
   type PlacementWorkplane,
 } from "@/lib/placementWorkplane";
 import { placeSketchExtrusion, placeSketchShape } from "@/lib/sketchPlacement";
+import { BUG_REPORT_FILE, bugReportText, rememberBugReportEvent, type BugReportEvent } from "@/lib/bugReport";
+import { lengthDisplayUnit } from "@/lib/measurementUnits";
 import {
   LAYERLING_MCP_HEARTBEAT_MS,
   LAYERLING_MCP_POLL_RETRY_MS,
@@ -6353,7 +6356,24 @@ export function LayerlingEditor({
    * bleibt stehen, bis es abgeloest wird: Eine Aufforderung, die sich von
    * selbst zurueckzieht, ist keine.
    */
+  // Fuer den Fehlerbericht: die letzten Meldungen und Fehler dieser Sitzung.
+  const reportNoticesRef = useRef<BugReportEvent[]>([]);
+  const reportErrorsRef = useRef<BugReportEvent[]>([]);
+  useEffect(() => {
+    const remember = (text: string) => {
+      reportErrorsRef.current = rememberBugReportEvent(reportErrorsRef.current, text);
+    };
+    const onError = (event: ErrorEvent) => remember(`${event.message}${event.filename ? ` (${event.filename.split("/").pop()}:${event.lineno})` : ""}`);
+    const onRejection = (event: PromiseRejectionEvent) => remember(`Unhandled: ${event.reason instanceof Error ? event.reason.message : String(event.reason)}`);
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
+  }, []);
   const setNotice = useCallback((message: string, patient = false) => {
+    reportNoticesRef.current = rememberBugReportEvent(reportNoticesRef.current, message);
     setNoticeText(message);
     if (noticeTimerRef.current !== null) window.clearTimeout(noticeTimerRef.current);
     noticeTimerRef.current = window.setTimeout(() => {
@@ -6883,6 +6903,7 @@ export function LayerlingEditor({
   }, []);
   const exportTargetShapes = useMemo(() => (hasSelection ? selectedShapes : shapes), [hasSelection, selectedShapes, shapes]);
   const exportableShapeCount = useMemo(() => exportTargetShapes.filter((shape) => !shape.hole && !shape.hidden).length, [exportTargetShapes]);
+  const exportHiddenCount = useMemo(() => exportTargetShapes.filter((shape) => shape.hidden).length, [exportTargetShapes]);
   const exportHolesOnly = useMemo(() => exportTargetShapes.length > 0 && exportTargetShapes.every((shape) => shape.hole), [exportTargetShapes]);
   const exportScopeLabel = hasSelection ? "selected" : "total";
   const effectiveAlignAnchorId = useMemo(
@@ -9821,6 +9842,14 @@ export function LayerlingEditor({
         } else {
           throw new Error(`MCP create_shape does not know a shape called "${rawKind}"`);
         }
+        // Auf einer Arbeitsebene an einer Flaeche steht die neue Form auf ihr,
+        // wie beim Ablegen von Hand; x und z zaehlen dann auf dieser Flaeche.
+        // Wer Hoehe oder Drehung selbst angibt, meint die Grundplatte.
+        const activeWorkplane = placementWorkplaneRef.current;
+        if (!placementWorkplaneIsBase(activeWorkplane) && [params.elevation, params.rotation, params.rotationX, params.rotationZ].every((value) => value === undefined)) {
+          const point = placementWorkplanePoint(activeWorkplane, x, z);
+          shape = canonicalizeShape({ ...shape, ...placementPatchForNewShape(shape, activeWorkplane, point) });
+        }
         const committedShape = canonicalizeShape(bakeShapeTransformIntoMesh(shape));
         commitShapes([...currentShapes(), committedShape], committedShape.id, t("status.shapeAddedMcp", { name: displayShapeName(committedShape) }));
         return { object: mcpShapeSummary(committedShape) };
@@ -10230,6 +10259,8 @@ export function LayerlingEditor({
           notice: noticeRef.current || t("status.ready"),
           edgeModifierError: edgeModifierRef.current?.error ?? null,
           lastMcpError: lastMcpErrorRef.current,
+          recentNotices: reportNoticesRef.current.map((event) => ({ at: new Date(event.at).toISOString(), text: event.text })),
+          recentErrors: reportErrorsRef.current.map((event) => ({ at: new Date(event.at).toISOString(), text: event.text })),
         };
       }
 
@@ -10250,17 +10281,36 @@ export function LayerlingEditor({
       }
 
       if (command.action === "set_workplane") {
-        // Setzen geht nur per Klick auf eine Flaeche; die KI kann die Ebene
-        // zuruecksetzen und ein- oder ausblenden.
+        // Wie W und ein Klick auf eine Flaeche: eine Seite des eigenen Rahmens
+        // des Koerpers, eingerastet auf die echte Flaeche, die Ebene in ihrer Mitte.
+        let placed: PlacementWorkplane | null = null;
+        if (typeof params.id === "string") {
+          const target = shapesRef.current.find((shape) => shape.id === params.id);
+          if (!target) throw new Error(`No object with id ${params.id}`);
+          if (target.hidden) throw new Error("Show the object before setting the workplane on it");
+          const side = typeof params.face === "string" ? params.face : "top";
+          if (!(side in LAY_FLAT_SIDES)) throw new Error("face must be top, bottom, left, right, front or back");
+          const quaternion = quaternionForShape(target);
+          const [sx, sy, sz] = LAY_FLAT_SIDES[side as LayFlatSide];
+          const normal = nearestFaceNormal(target, new THREE.Vector3(sx, sy, sz).applyQuaternion(quaternion)) ?? new THREE.Vector3(sx, sy, sz).applyQuaternion(quaternion);
+          const { vertices } = meshForShape(target);
+          const reach = Math.max(...vertices.map((v) => v[0] * normal.x + v[1] * normal.y + v[2] * normal.z));
+          const onFace = vertices.filter((v) => v[0] * normal.x + v[1] * normal.y + v[2] * normal.z >= reach - 1e-3);
+          const origin = onFace.reduce((sum, v) => ({ x: sum.x + v[0] / onFace.length, y: sum.y + v[1] / onFace.length, z: sum.z + v[2] / onFace.length }), { x: 0, y: 0, z: 0 });
+          const tangent = new THREE.Vector3(side === "left" || side === "right" ? 0 : 1, 0, side === "left" || side === "right" ? 1 : 0).applyQuaternion(quaternion);
+          placed = placementWorkplaneFromSurface(origin, { x: normal.x, y: normal.y, z: normal.z }, { x: tangent.x, y: tangent.y, z: tangent.z }, params.flip === true, true);
+          setActivePlacementWorkplane(placed, "shape");
+        }
         if (params.reset === true) setActivePlacementWorkplane(horizontalPlacementWorkplane(), "base");
-        const onBase = params.reset === true || placementWorkplaneIsBase(placementWorkplaneRef.current);
+        const current = params.reset === true ? horizontalPlacementWorkplane() : placed ?? placementWorkplaneRef.current;
+        const onBase = placementWorkplaneIsBase(current);
         if (typeof params.visible === "boolean") {
           if (onBase && !params.visible) throw new Error("The workplane is the base plate; only a workplane set on a face can be hidden");
           setWorkplaneHidden(!params.visible);
           workplaneHiddenRef.current = !params.visible;
           setNotice(params.visible ? t("status.workplaneShown") : t("status.workplaneHidden"));
         }
-        return { onBase, hidden: !onBase && workplaneHiddenRef.current };
+        return { onBase, hidden: !onBase && workplaneHiddenRef.current, origin: current.origin, normal: current.normal };
       }
 
       if (command.action === "capture_image") {
@@ -10276,6 +10326,7 @@ export function LayerlingEditor({
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       lastMcpErrorRef.current = message;
+      reportErrorsRef.current = rememberBugReportEvent(reportErrorsRef.current, `MCP ${command.action}: ${message}`);
       setNotice(message);
       throw error;
     }
@@ -10711,6 +10762,80 @@ export function LayerlingEditor({
       setLylExporting(false);
     }
   }, [onSaveSharedProject, placementElevation, placementWorkplane, projectCreatedAt, projectModifiedAt, projectName, lylExporting, snapGrid]);
+
+  /** Der Entwurf als .lyl samt einer Textdatei, die sagt, wo und womit es passiert ist. */
+  const saveBugReport = useCallback(async () => {
+    if (projectInteractionActiveRef.current) {
+      setNotice(t("status.finishBeforeSave"));
+      return;
+    }
+    setNotice(t("status.bugReportBuilding"), true);
+    try {
+      const currentShapes = shapesRef.current;
+      const shapeKinds: Record<string, number> = {};
+      currentShapes.forEach((shape) => {
+        const kind = shape.groupedShapes?.length ? "group" : shape.kind;
+        shapeKinds[kind] = (shapeKinds[kind] ?? 0) + 1;
+      });
+      let webgl = "";
+      try {
+        const gl = document.createElement("canvas").getContext("webgl");
+        const debug = gl?.getExtension("WEBGL_debug_renderer_info");
+        webgl = gl ? String(gl.getParameter(debug ? debug.UNMASKED_RENDERER_WEBGL : gl.RENDERER)) : "no WebGL";
+      } catch {
+        webgl = "unknown";
+      }
+      const workplane = placementWorkplaneRef.current;
+      const lastMcpError = lastMcpErrorRef.current;
+      const text = bugReportText({
+        version: LYL_CREATED_WITH_VERSION,
+        createdAt: Date.now(),
+        language: editorLanguage,
+        userAgent: navigator.userAgent,
+        screen: { width: window.screen.width, height: window.screen.height, pixelRatio: window.devicePixelRatio },
+        viewport: { width: window.innerWidth, height: window.innerHeight },
+        touch: navigator.maxTouchPoints > 0,
+        webgl,
+        unit: lengthDisplayUnit(workspaceSettingsRef.current).label,
+        printer: printerPresetById(workspaceSettingsRef.current.printer)?.model ?? "",
+        shapeCount: currentShapes.length,
+        shapeKinds,
+        selectedCount: selectedIdsRef.current.length,
+        workplane: placementWorkplaneIsBase(workplane)
+          ? "base plate"
+          : `on a face, origin ${[workplane.origin.x, workplane.origin.y, workplane.origin.z].map((v) => v.toFixed(2)).join(", ")}, normal ${[workplane.normal.x, workplane.normal.y, workplane.normal.z].map((v) => v.toFixed(3)).join(", ")}${workplaneHiddenRef.current ? ", hidden" : ""}`,
+        openGroup: Boolean(openGroupRef.current),
+        sketchActive,
+        notices: reportNoticesRef.current,
+        errors: lastMcpError && !reportErrorsRef.current.some((event) => event.text.includes(lastMcpError))
+          ? rememberBugReportEvent(reportErrorsRef.current, lastMcpError)
+          : reportErrorsRef.current,
+      });
+      const exportedHistory = editorHistoryForExport(historyRef.current, historyIndexRef.current, "unlimited");
+      const bytes = await exportLylProject({
+        projectId: projectInfoRef.current.projectId,
+        projectName,
+        createdAt: projectCreatedAt,
+        modifiedAt: projectModifiedAt,
+        shapes: currentShapes,
+        notes: notesRef.current,
+        history: exportedHistory.entries,
+        historyIndex: exportedHistory.index,
+        assets: projectAssetsRef.current,
+        workspace: workspaceSettingsRef.current,
+        snapGrid,
+        placementElevation,
+        placementWorkplane,
+        sketchPlacementWorkplane: placementWorkplane,
+        extraFiles: { [BUG_REPORT_FILE]: new TextEncoder().encode(text) },
+      });
+      const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+      await downloadBlobFile(projectExportFileName(`${projectName}-${t("bugReport.fileSuffix")}`, "lyl"), new Blob([buffer], { type: LYL_MEDIA_TYPE }));
+      setNotice(t("status.bugReportSaved"), true);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : t("status.saveProjectFailed"));
+    }
+  }, [editorLanguage, placementElevation, placementWorkplane, projectCreatedAt, projectModifiedAt, projectName, setNotice, sketchActive, snapGrid]);
 
   /**
    * A project opened from the server keeps working on the fast local copy, and
@@ -11718,7 +11843,7 @@ export function LayerlingEditor({
           />
         )}
       </div>
-      <AppFooter variant="editor" version={LYL_CREATED_WITH_VERSION} />
+      <AppFooter variant="editor" version={LYL_CREATED_WITH_VERSION} onBugReport={() => void saveBugReport()} />
       {openGroup ? (
         <div className="open-group-banner" role="status">
           <span>
@@ -11827,6 +11952,7 @@ export function LayerlingEditor({
           shapeCount={exportableShapeCount}
           scopeLabel={exportScopeLabel}
           onlyHoles={exportHolesOnly}
+          hiddenCount={exportHiddenCount}
           onClose={() => setTopPanel(null)}
           onExport={exportDesign}
           onExportLyl={exportLylDesign}
@@ -12854,6 +12980,7 @@ function TopActionPanel({
   shapeCount,
   scopeLabel,
   onlyHoles,
+  hiddenCount = 0,
   onClose,
   onExport,
   onExportLyl,
@@ -12873,6 +13000,8 @@ function TopActionPanel({
   shapeCount: number;
   scopeLabel: "selected" | "total";
   onlyHoles?: boolean;
+  /** Ausgeblendete Teile, die der Export auslaesst - gesagt, bevor er laeuft. */
+  hiddenCount?: number;
   onClose: () => void;
   onExport: (format: DirectExportFormat, exportName: string) => void;
   onExportLyl: (exportName: string, historyLimit: LylHistoryLimit, target?: LylExportTarget) => void;
@@ -13050,6 +13179,13 @@ function TopActionPanel({
               ))}
             </div>
           </section>
+
+          {exportFormat !== "lyl" && hiddenCount > 0 ? (
+            <div className="export-holes-only-warning export-hidden-note" role="status">
+              <EyeOff size={16} aria-hidden="true" />
+              <span>{hiddenCount === 1 ? t("export.hiddenOne") : t("export.hiddenMany", { count: hiddenCount })}</span>
+            </div>
+          ) : null}
 
           {exportFormat !== "lyl" && onlyHoles ? (
             <div className="export-holes-only-warning" role="status">

@@ -72,7 +72,7 @@ Useful tools:
 - `layerling_separate_parts`: split disconnected parts in one object.
 - `layerling_hollow_object`: hollow a solid into walls of equal thickness, open on top, bottom, both, or closed.
 - `layerling_array_objects`: repeat objects n times in a row or around a circle (hole rows, bolt circles, teeth) as one undo step.
-- `layerling_inspect_errors`: read the editor notice, edge modifier error, and last MCP error.
+- `layerling_inspect_errors`: read the editor notice, edge modifier error and last MCP error, plus `recentNotices` and `recentErrors` of the session - what the editor's bug report carries.
 
 ## Edge Features
 
@@ -107,7 +107,7 @@ To look inside a part - wall thickness after hollowing, a thread in its nut, a c
 
 ## Workplane
 
-The user can set the workplane on a face of a body (W, then a click on the face); new shapes then land on that face and `layerling_read_scene` reports `workplane.onBase: false`. `layerling_set_workplane({ editorNumber, reset: true })` puts it back on the base plate. `visible: false` hides a face workplane for a clear look or picture while it keeps applying; `visible: true` shows it again.
+To build on a side of a body - a hole in a wall, text on a front - put the workplane there with `layerling_set_workplane({ editorNumber, id, face: "front" })` (top, bottom, left, right, front or back of the object's own box, snapped to the real face). New shapes from `layerling_create_shape` then land on that face, and `layerling_read_scene` reports `workplane.onBase: false`; the user can do the same with W and a click. `layerling_set_workplane({ editorNumber, reset: true })` puts it back on the base plate. `visible: false` hides a face workplane for a clear look or picture while it keeps applying; `visible: true` shows it again.
 
 Use `layerling_capture_image` for viewport PNGs. `face` can be `current`, `home`, `top`, `bottom`, `front`, `back`, `right`, or `left`. These use the same camera/view-cube orientation logic as the editor UI.
 

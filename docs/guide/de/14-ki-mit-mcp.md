@@ -56,9 +56,9 @@ Die KI arbeitet mit denselben Funktionen wie du, sie läuft über denselben Weg 
 | `layerling_apply_edge_treatment` | fast oder verrundet ausgewählte Kanten |
 | `layerling_hollow_object` | höhlt einen Körper mit gleichmäßiger Wand aus |
 | `layerling_array_objects` | vervielfältigt in einer Reihe oder auf einem Kreis |
-| `layerling_inspect_errors` | zeigt die letzte Meldung und den letzten Fehler |
+| `layerling_inspect_errors` | zeigt die letzte Meldung und den letzten Fehler, dazu die Meldungen und Fehler der Sitzung |
 | `layerling_set_section_view` | schneidet die Ansicht entlang einer Ebene auf, um ins Innere zu sehen (nur die Ansicht, nichts wird zerteilt) |
-| `layerling_set_workplane` | setzt die Arbeitsebene auf die Grundplatte zurück oder blendet eine gesetzte Ebene aus und ein |
+| `layerling_set_workplane` | legt die Arbeitsebene auf eine Seite eines Körpers, setzt sie auf die Grundplatte zurück oder blendet sie aus und ein |
 | `layerling_capture_image` | nimmt ein Bild der Ansicht auf, von vorn, oben, seitlich und mehr |
 
 Die KI kann sich damit selbst kontrollieren: Sie legt etwas an, macht ein Bild, sieht nach und verbessert.

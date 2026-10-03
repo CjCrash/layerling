@@ -194,7 +194,7 @@ export const tools = [
   },
   {
     name: "layerling_create_shape",
-    description: "Create any of Layerling's shapes: boxes, cylinders, slots, polygons, spheres, cones, pyramids, wedges, roofs, tori, tubes, stars, hearts, crescents, honeycomb grids, raised text, threads (rod, screw, nut, tapped hole), springs, gears, or a simple extruded sketch. Width, depth and height default to what the editor uses for that shape; everything a shape has beyond its size is optional and falls back to the same defaults as a shape placed by hand.",
+    description: "Create any of Layerling's shapes: boxes, cylinders, slots, polygons, spheres, cones, pyramids, wedges, roofs, tori, tubes, stars, hearts, crescents, honeycomb grids, raised text, threads (rod, screw, nut, tapped hole), springs, gears, or a simple extruded sketch. Width, depth and height default to what the editor uses for that shape; everything a shape has beyond its size is optional and falls back to the same defaults as a shape placed by hand. With a workplane set on a face (layerling_set_workplane), the shape stands on that face and x and z count on it (0, 0 is where the workplane sits) - unless elevation or a rotation is given, which mean the base plate.",
     inputSchema: {
       ...editorTargetSchema,
       required: ["kind"],
@@ -455,7 +455,7 @@ export const tools = [
   },
   {
     name: "layerling_inspect_errors",
-    description: "Inspect the editor notice, last MCP error, and active edge modifier error.",
+    description: "Inspect the editor notice, last MCP error and active edge modifier error, plus the last messages and errors of this session (recentNotices, recentErrors, with times) - the same lists the editor's bug report carries.",
     inputSchema: editorTargetSchema,
   },
   {
@@ -476,11 +476,14 @@ export const tools = [
   },
   {
     name: "layerling_set_workplane",
-    description: "Reset or hide the workplane. A workplane set on a face of a body (by the user, with W and a click) makes new shapes land on that face, and rotating turns about its normal. reset: true puts it back on the base plate. visible: false hides a face workplane without dropping it - it still applies, only the drawing goes, which gives a clear view or picture; visible: true shows it again. Setting a new workplane shows it again by itself. Call with no settings to read the state; layerling_read_scene reports it as workplane.",
+    description: "Set, reset or hide the workplane. A workplane on a face of a body makes new shapes land on that face (layerling_create_shape places onto it), and rotating turns about its normal - the editor's W and a click. id with face puts it on that side of the object's own box, snapped to the real face and centred on it; a face standing up keeps the sketch's up pointing up. flip: true turns it to face inwards. reset: true puts it back on the base plate. visible: false hides a face workplane without dropping it - it still applies, only the drawing goes, which gives a clear view or picture; visible: true shows it again. Setting a new workplane shows it again by itself. Call with no settings to read the state; layerling_read_scene reports it as workplane.",
     inputSchema: {
       ...editorTargetSchema,
       properties: {
         ...editorTargetSchema.properties,
+        id: { type: "string", description: "Object whose face takes the workplane." },
+        face: { type: "string", enum: ["top", "bottom", "left", "right", "front", "back"], description: "Side of the object's own box, taken in its current turn. Defaults to top." },
+        flip: { type: "boolean", description: "Let the workplane face into the object instead of out of it." },
         reset: { type: "boolean", description: "Put the workplane back on the base plate." },
         visible: { type: "boolean", description: "Show (true) or hide (false) a workplane set on a face." },
       },

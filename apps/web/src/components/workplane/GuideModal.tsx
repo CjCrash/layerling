@@ -71,6 +71,7 @@ function guideSections(sharedStore: boolean): GuideSection[] {
         "guide.files.project",
         "guide.files.export",
         "guide.files.import",
+        "guide.files.bugReport",
         sharedStore ? "guide.files.storeOn" : "guide.files.storeOff",
       ],
     },

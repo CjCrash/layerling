@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
@@ -17,6 +17,13 @@ const CATALOGUES = { en: MESSAGES_EN, de: MESSAGES_DE } as const;
 
 function placeholders(value: string) {
   return [...value.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
+}
+
+/** Alle Bauteile der Oberflaeche, auch die Tafeln unter workplane/. */
+function alleBauteile(wurzel: string) {
+  return readdirSync(wurzel, { recursive: true, encoding: "utf8" })
+    .filter((datei) => datei.endsWith(".tsx"))
+    .map((datei) => datei.split(String.fromCharCode(92)).join("/"));
 }
 
 describe("message catalogues", () => {
@@ -142,7 +149,7 @@ describe("language detection", () => {
    */
   it("laesst keinen englischen Satz in die Statusanzeige", () => {
     const wurzel = fileURLToPath(new URL("../../apps/web/src/components/", import.meta.url));
-    const dateien = ["LayerlingEditor.tsx", "WorkplaneViewport.tsx", "SketchWorkspace.tsx"];
+    const dateien = alleBauteile(wurzel);
     const verdaechtig: string[] = [];
     for (const datei of dateien) {
       const zeilen = readFileSync(wurzel + datei, "utf8").split(String.fromCharCode(10));
@@ -165,7 +172,7 @@ describe("language detection", () => {
    */
   it("laesst keinen englischen Satz in einen Meldungsaufruf", () => {
     const wurzel = fileURLToPath(new URL("../../apps/web/src/components/", import.meta.url));
-    const dateien = ["LayerlingEditor.tsx", "WorkplaneViewport.tsx", "SketchWorkspace.tsx"];
+    const dateien = alleBauteile(wurzel);
     const aufruf = /\b(setNotice|commitSketchProfile|commitShapes|onUpdate|onUpdateImage|insertSketchCopy)\(/g;
     const satz = /[`"]([A-Z][a-z]+ [a-z${][^"`]*)[`"]/g;
     const verdaechtig: string[] = [];
