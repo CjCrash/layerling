@@ -46,7 +46,7 @@ Die KI arbeitet mit denselben Funktionen wie du, sie läuft über denselben Weg 
 | `layerling_update_object` | ändert Maße, Lage, Farbe, Name, Körper oder Aussparung und alles, was die Form sonst ausmacht |
 | `layerling_align_objects` | richtet Objekte aneinander aus |
 | `layerling_lay_flat` | legt ein Objekt mit einer Fläche auf die Platte |
-| `layerling_open_group` | öffnet eine Gruppe, damit ihre Teile einzeln änderbar sind |
+| `layerling_open_group` | öffnet eine Gruppe, damit ihre Teile einzeln änderbar sind, auch eine Gruppe in einer geöffneten |
 | `layerling_close_group` | schließt sie wieder („Fertig“) oder bricht ab |
 | `layerling_group_objects` | gruppiert Objekte |
 | `layerling_ungroup_objects` | löst Gruppen auf |

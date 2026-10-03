@@ -6,6 +6,8 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
+- **Edit a group inside a group:** "Open group" is now **Edit group**, also on the new key E. While a group is being edited, a group among its parts can be edited too, and so on as deep as the design goes; the bar shows the path, for example "Bracket › Screw boss", and Done or Cancel always finish the innermost level and step one level back out. Undo and redo bring the bar back along with the parts. `layerling_open_group` opens a group inside the open one the same way, and `layerling_read_scene` lists every level as `openGroups`, outermost first.
+- **An edited group stays the same group:** Done rebuilds the group under its own id, so the object list, the AI and the group around it still find it. A part replaced while the group is open - grouped with another part, cut, separated or ungrouped - now stays in the group; before, the result was left outside it on Done. New shapes, pastes and duplicates still stay outside.
 - **More panels move:** The section view's panel, the tool panel for fillets, chamfers, hollowing and patterns, the tape measure's buttons (by a grip on their left) and the settings of a sketch's template image can be dragged anywhere on the workplane, like the object list and the shape settings, and open there again next time. Double-clicking the title bar or grip, or dropping a panel back where it was, puts it back. The moving is one shared piece of code; it now also works for a panel fixed to the window or hung on a button in the camera bar, which shrinks on flat windows.
 
 ## 1.30.0

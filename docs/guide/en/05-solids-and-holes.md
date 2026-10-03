@@ -41,13 +41,17 @@ A whole group can also be a solid or a hole. A simple rule applies:
 
 {{ui:editor.tool.intersect}} keeps only what two or more bodies have in common. Lay two overlapping shapes on top of each other, select both and click it. That turns a cylinder and a box into a piece with one round and one straight side. A group counts the way it looks, holes included. If a hole is selected too, what remains is what all the solids share with all the holes.
 
-## Opening a group and changing it
+## Editing a group
 
-If a bore turned out too small, you do not have to dissolve the group and rebuild. Select the group and click {{ui:group.open}} in its settings, or the folder icon in the object list. The parts now lie separately and you change them with every tool: make a hole larger, move a body, add a hole.
+If a bore turned out too small, you do not have to dissolve the group and rebuild. Select the group and click {{ui:group.edit}} in its settings, the folder icon in the object list, or press [[E]]. The parts now lie separately and you change them with every tool: make a hole larger, move a body, add a hole.
 
-![The opened group: the bar at the bottom holds Cancel and Done, and the object list shows the parts.](shot:open-group)
+![The group being edited: the bar at the bottom holds Cancel and Done, and the object list shows the parts.](shot:open-group)
 
-A bar appears at the bottom of the picture. {{ui:group.done}} rebuilds the group, with its name, its colour and its state as solid or hole. {{ui:common.cancel}} puts it back untouched. While a group is open you cannot open a second one.
+A bar appears at the bottom of the picture. {{ui:group.done}} rebuilds the group, with its name, its colour and its state as solid or hole. {{ui:common.cancel}} puts it back untouched.
+
+If one of the parts is itself a group, you can edit it the same way, and so on as deep as your design goes. The bar shows where you are, for example "Bracket › Screw boss". {{ui:group.done}} and {{ui:common.cancel}} always finish the innermost group and take you one level back out. While you are inside a group, only the groups among its parts can be edited; to edit another one, finish first.
+
+Unlike {{ui:editor.tool.ungroup}}, which takes a group apart for good, editing keeps the group: its name and settings stay, and you can always go back with {{ui:common.cancel}}.
 
 A note: fillets and chamfers you had put on the **whole** group are lost on rebuild. The bar tells you so.
 

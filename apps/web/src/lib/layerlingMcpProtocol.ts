@@ -60,8 +60,10 @@ export type LayerlingMcpSceneSummary = {
   workspace: WorkplaneWorkspaceSettings;
   snap: GridSize | null;
   shapes: LayerlingMcpShapeSummary[];
-  /** The group opened for editing, if any: its parts lie loose until it is closed. */
+  /** The innermost group being edited, if any: its parts lie loose until it is closed. */
   openGroup?: { groupId: string; name: string; partIds: string[] } | null;
+  /** Every group being edited, outermost first; each is a part of the one before. */
+  openGroups?: { groupId: string; name: string; partIds: string[] }[];
   /** The active workplane: the base plate, or a plane set on a face; hidden means it still applies but is not drawn. */
   workplane?: { onBase: boolean; hidden: boolean; origin: { x: number; y: number; z: number }; normal: { x: number; y: number; z: number } };
 };

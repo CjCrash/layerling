@@ -41,13 +41,17 @@ Auch eine ganze Gruppe kann ein Körper oder eine Aussparung sein. Dabei gilt ei
 
 {{ui:editor.tool.intersect}} behält nur das, was zwei oder mehr Körper gemeinsam haben. Lege zwei überlappende Formen übereinander, markiere beide und klicke darauf. So entsteht zum Beispiel aus einem Zylinder und einem Quader ein Stück mit runder und gerader Seite. Eine Gruppe zählt dabei so, wie sie aussieht, also mit ihren Bohrungen. Ist eine Aussparung mit markiert, bleibt das, was alle Körper mit allen Aussparungen gemeinsam haben.
 
-## Eine Gruppe öffnen und ändern
+## Eine Gruppe bearbeiten
 
-Ist eine Bohrung zu klein geraten, musst du die Gruppe nicht auflösen und neu bauen. Wähle die Gruppe aus und klicke in ihren Einstellungen auf {{ui:group.open}} oder in der Objektliste auf das Ordnersymbol. Die Teile liegen jetzt einzeln da, und du änderst sie mit allen Werkzeugen: ein Loch größer machen, einen Körper verschieben, eine Aussparung hinzufügen.
+Ist eine Bohrung zu klein geraten, musst du die Gruppe nicht auflösen und neu bauen. Wähle die Gruppe aus und klicke in ihren Einstellungen auf {{ui:group.edit}}, in der Objektliste auf das Ordnersymbol, oder drücke [[E]]. Die Teile liegen jetzt einzeln da, und du änderst sie mit allen Werkzeugen: ein Loch größer machen, einen Körper verschieben, eine Aussparung hinzufügen.
 
-![Die geöffnete Gruppe: Unten steht der Balken mit Abbrechen und Fertig, die Objektliste zeigt die Teile.](shot:open-group)
+![Die Gruppe in Bearbeitung: Unten steht der Balken mit Abbrechen und Fertig, die Objektliste zeigt die Teile.](shot:open-group)
 
-Unten im Bild erscheint ein Balken. {{ui:group.done}} rechnet die Gruppe neu, mit ihrem Namen, ihrer Farbe und ihrem Zustand als Körper oder Aussparung. {{ui:common.cancel}} holt sie unverändert zurück. Solange die Gruppe offen ist, kannst du keine zweite öffnen.
+Unten im Bild erscheint ein Balken. {{ui:group.done}} rechnet die Gruppe neu, mit ihrem Namen, ihrer Farbe und ihrem Zustand als Körper oder Aussparung. {{ui:common.cancel}} holt sie unverändert zurück.
+
+Ist eines der Teile selbst eine Gruppe, bearbeitest du sie genauso, und so weiter, so tief dein Entwurf geht. Der Balken zeigt, wo du bist, zum Beispiel „Halter › Schraubdom“. {{ui:group.done}} und {{ui:common.cancel}} schließen immer die innerste Gruppe ab und führen dich eine Ebene zurück. Solange du in einer Gruppe bist, lassen sich nur die Gruppen unter ihren Teilen bearbeiten; für eine andere schließe erst ab.
+
+Anders als {{ui:editor.tool.ungroup}}, das eine Gruppe endgültig auflöst, behält das Bearbeiten die Gruppe: Name und Einstellungen bleiben, und mit {{ui:common.cancel}} kommst du jederzeit zurück.
 
 Ein Hinweis: Fasen und Verrundungen, die du auf die **ganze** Gruppe gelegt hattest, gehen beim Neuberechnen verloren. Darauf weist der Balken hin.
 

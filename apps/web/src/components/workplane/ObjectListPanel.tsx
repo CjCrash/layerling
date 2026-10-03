@@ -16,9 +16,9 @@ export interface ObjectListPanelProps {
   onToggleLock: (id: string) => void;
   onToggleHidden: (id: string) => void;
   onRenameShape?: (id: string, name: string) => void;
-  /** Opens a group so its parts can be changed one by one. */
+  /** Starts editing a group, so its parts can be changed one by one. */
   onOpenGroup?: (id: string) => void;
-  /** The loose parts of the group that is open right now. */
+  /** The loose parts of the innermost group being edited; only groups among them can be edited next. */
   openGroupPartIds?: string[];
   onClose: () => void;
 }
@@ -284,12 +284,12 @@ export function ObjectListPanel({
                       </div>
 
                       <div className="outliner-row-actions">
-                        {isGroup && onOpenGroup && !openParts.size ? (
+                        {isGroup && onOpenGroup && (!openParts.size || openParts.has(shape.id)) ? (
                           <button
                             type="button"
                             className="outliner-action-btn open-group-btn"
-                            title={t("group.open")}
-                            aria-label={t("group.open")}
+                            title={t("group.edit")}
+                            aria-label={t("group.edit")}
                             onClick={(e) => {
                               e.stopPropagation();
                               onOpenGroup(shape.id);

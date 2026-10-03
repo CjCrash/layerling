@@ -46,7 +46,7 @@ The AI works with the same functions as you, through the same path as your opera
 | `layerling_update_object` | changes dimensions, position, colour, name, solid or hole and everything else that makes up the shape |
 | `layerling_align_objects` | aligns objects with each other |
 | `layerling_lay_flat` | lays an object with one face on the plate |
-| `layerling_open_group` | opens a group so its parts can be changed one by one |
+| `layerling_open_group` | opens a group so its parts can be changed one by one, also a group inside an open one |
 | `layerling_close_group` | closes it again ("Done") or cancels |
 | `layerling_group_objects` | groups objects |
 | `layerling_ungroup_objects` | dissolves groups |
