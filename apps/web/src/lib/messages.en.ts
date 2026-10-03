@@ -403,7 +403,7 @@ export const MESSAGES_EN = {
   "guide.group.files": "Saving and sharing",
   "guide.files.autosave": "Designs and exports are computed and saved 100% locally in your browser. No account, nothing is uploaded.",
   "guide.files.project": "LYL is layerling's own design format: the whole design including history in one file. Older .skf files still open.",
-  "guide.files.export": "STL, 3MF and OBJ for the slicer (3MF and OBJ with colours), STEP for a full CAD program, SVG for flat outlines.",
+  "guide.files.export": "STL, 3MF and OBJ for the slicer (3MF and OBJ with colours), STEP for a full CAD program, SVG for flat outlines. Hidden parts stay out.",
   "guide.files.import": "STL, OBJ, 3MF, STEP and SVG can be imported and built around.",
   "guide.files.bugReport": "\"Bug report\" in the footer at the bottom saves the design as .lyl with its version, browser and the last messages, to attach in the forum or on GitHub.",
   "guide.files.storeOff": "On your own server, create a folder called \"store\" next to index.html to store designs on the server in addition to the browser. That needs PHP.",

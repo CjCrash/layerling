@@ -402,7 +402,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "guide.group.files": "Sichern und weitergeben",
   "guide.files.autosave": "Entwürfe und Exporte werden zu 100 % lokal in deinem Browser berechnet und gesichert. Kein Konto, keine Daten werden hochgeladen.",
   "guide.files.project": "LYL ist layerlings eigenes Entwurfsformat: der ganze Entwurf samt Verlauf in einer Datei. Ältere .skf-Dateien öffnen weiterhin.",
-  "guide.files.export": "STL, 3MF und OBJ für den Slicer (3MF und OBJ mit Farben), STEP für ein vollwertiges CAD, SVG für flache Umrisse.",
+  "guide.files.export": "STL, 3MF und OBJ für den Slicer (3MF und OBJ mit Farben), STEP für ein vollwertiges CAD, SVG für flache Umrisse. Ausgeblendete Teile bleiben draußen.",
   "guide.files.import": "STL, OBJ, 3MF, STEP und SVG lassen sich importieren und darum herum weiterbauen.",
   "guide.files.bugReport": "„Fehlerbericht“ unten in der Fußzeile speichert den Entwurf als .lyl samt Version, Browser und den letzten Meldungen, zum Anhängen im Forum oder bei GitHub.",
   "guide.files.storeOff": "Auf dem eigenen Server legst du neben der index.html einen Ordner „store\" an - dann lassen sich Entwürfe zusätzlich zum Browser auch auf dem Server ablegen. Dafür muss der Server PHP können.",

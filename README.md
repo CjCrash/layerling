@@ -55,6 +55,7 @@ You will recognise everything: the plate, the shapes, solids and holes, group an
 ### Building
 
 - **A real build plate** – grid, snapping, handles for moving, resizing and rotating, and a panel with the exact numbers when you need them.
+- **Type a position** – the Position card puts a body at exact X, Y and Z, and parts can be parked beside the plate, as in Tinkercad.
 - **Snap to other shapes** – while moving, a shape locks its edges or centre onto the edges and centres of the shapes around it, with a guide line, so parts sit flush without typing numbers. Hold Alt to pause it.
 - **Millimetres or inches** – with Imperial units every measure is shown in inches, as fractions like Tinkercad (1 5/8) or as decimals, the snap grid steps from 1/64 to 1 inch, and the plate's grid is drawn in inches.
 - **Your printer's plate** – pick one of 190 common printers and the plate takes its size. Its name and build volume show in the corner of the workplane, and a warning appears when a body reaches past the edge.
@@ -73,12 +74,14 @@ You will recognise everything: the plate, the shapes, solids and holes, group an
 - **Bring your own models** – import STL, OBJ, 3MF, STEP or SVG and build around it.
 - **Export what your slicer wants** – STL, 3MF with names and colours, or OBJ with colours, for the selection or the whole scene (hidden parts stay out), plus STEP if the design should travel on into a full CAD program.
 - **Projects as files** – save a whole project, history, sketches and groups included, as a `.lyl` file and carry on elsewhere. Older `.skf` files from earlier versions still open; saving then writes a `.lyl` beside them.
+- **Bug report** – one link in the footer saves the design as a `.lyl` with the version, browser and last messages inside, ready to attach in the forum or on GitHub.
 - **Designs you recognise** – everything lives in your own browser, each design with a thumbnail.
 
 ### Viewing
 
 - **Perspective or straight-on** – switch between the normal view and a flat, orthographic one with the cube button beside the zoom controls, or by pressing **O**. Your viewing direction and framing are kept.
 - **Section view** – cut the view open along a plane across X, Y or Z to look at walls, cavities and parts that fit into each other, with a coarse and a fine slider. Only the view is cut: the design and every export stay whole.
+- **Workplane on any face** – press W and click a face to build on it; an eye hides the plane for a clear view while it keeps applying. An AI can set it on a face too.
 - **On a tablet** – one finger works the design, exactly as the left mouse button does: tap to select, drag to move, drag on empty space for a selection box. **Two fingers belong to the view**: spread or pinch them to zoom, move them together to shift the workplane. Putting a second finger down takes back whatever the first one had started, so a pinch never nudges a part. Turning the view has no gesture of its own; the camera rail carries a switch for it, shown only on a touch screen, and while it is on, one finger orbits instead of selecting. Number fields hand you their whole value when you tap them, ready to be overwritten – a decimal keypad has no arrow keys to move the caret with.
 
 ### Videos

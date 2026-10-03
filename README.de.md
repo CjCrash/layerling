@@ -56,6 +56,7 @@ Du wirst alles wiedererkennen: die Platte, die Formen, Körper und Aussparung (d
 ### Bauen
 
 - **Eine echte Bauplatte** – Raster, Einrasten, Griffe zum Verschieben, Skalieren und Drehen, und ein Feld mit den genauen Zahlen, wenn du sie brauchst.
+- **Position eintippen** – die Karte Position setzt einen Körper auf genaue X-, Y- und Z-Werte, und Teile lassen sich wie bei Tinkercad neben der Platte parken.
 - **Fangen an anderen Formen** – beim Verschieben rastet eine Form mit Kante oder Mitte an Kanten und Mitten der Formen ringsum ein, eine Hilfslinie zeigt woran. So sitzen Teile bündig, ohne Zahlen zu tippen. Alt hält das kurz an.
 - **Millimeter oder Zoll** – mit Imperial erscheinen alle Maße in Zoll, als Bruch wie in Tinkercad (1 5/8) oder als Dezimalzahl, das Raster rastet von 1/64 bis 1 Zoll, und das Gitter der Platte ist in Zoll gezeichnet.
 - **Die Platte deines Druckers** – wähl einen von 190 gängigen Druckern, dann bekommt die Platte seine Größe. Name und Bauraum stehen in der Ecke der Arbeitsfläche, und eine Warnung erscheint, wenn ein Körper über den Rand ragt.
@@ -74,12 +75,14 @@ Du wirst alles wiedererkennen: die Platte, die Formen, Körper und Aussparung (d
 - **Eigene Modelle mitbringen** – STL, OBJ, 3MF, STEP oder SVG importieren und darum herum konstruieren.
 - **Exportieren, was dein Slicer will** – STL, 3MF mit Namen und Farben oder OBJ mit Farben, für die Auswahl oder die ganze Szene (Ausgeblendetes bleibt draußen), dazu STEP, wenn der Entwurf in ein vollwertiges CAD weiterreisen soll.
 - **Projekte als Datei** – ein ganzes Projekt samt Verlauf, Skizzen und Gruppen als `.lyl` sichern und anderswo weiterbauen. Ältere `.skf`-Dateien aus früheren Fassungen öffnen sich weiterhin; gespeichert wird dann als `.lyl` daneben.
+- **Fehlerbericht** – ein Link in der Fußzeile speichert den Entwurf als `.lyl` samt Version, Browser und den letzten Meldungen, fertig zum Anhängen im Forum oder bei GitHub.
 - **Entwürfe, die du wiedererkennst** – alles liegt in deinem eigenen Browser, jeder Entwurf mit Vorschaubild.
 
 ### Ansicht
 
 - **Perspektivisch oder gerade von vorn** – zwischen normaler und orthografischer Ansicht wechseln, über den Würfelknopf neben den Zoomtasten oder mit **O**. Blickrichtung und Ausschnitt bleiben erhalten.
 - **Schnittansicht** – die Ansicht entlang einer Ebene quer zu X, Y oder Z aufschneiden, um Wände, Hohlräume und ineinandergreifende Teile zu sehen, mit grobem und feinem Regler. Geschnitten wird nur die Ansicht: Entwurf und jeder Export bleiben ganz.
+- **Arbeitsebene auf jeder Fläche** – W drücken und eine Fläche anklicken, um darauf zu bauen; ein Auge blendet die Ebene für freie Sicht aus, sie gilt trotzdem weiter. Auch eine KI kann sie auf eine Fläche legen.
 - **Auf einem Tablet** – ein Finger arbeitet am Entwurf, genau wie die linke Maustaste: Antippen wählt aus, Ziehen verschiebt, Ziehen auf leerer Fläche spannt den Auswahlrahmen. **Zwei Finger gehören der Ansicht**: Spreizen und Zusammenziehen zoomt, gemeinsames Schieben verschiebt die Arbeitsfläche. Setzt der zweite Finger auf, wird zurückgenommen, was der erste angefangen hatte; ein Zoom verschiebt also nie versehentlich ein Teil. Fürs Drehen gibt es keine eigene Geste, dafür einen Umschalter in der Kameraleiste, der nur auf einem Berührungsbildschirm erscheint: Solange er an ist, dreht ein Finger die Ansicht, statt auszuwählen. Zahlenfelder geben beim Antippen ihren ganzen Wert zum Überschreiben frei – eine Dezimaltastatur hat keine Pfeiltasten, mit denen sich der Schreibzeiger setzen ließe.
 
 ### Videos
