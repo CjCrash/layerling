@@ -6097,6 +6097,18 @@ button {
   gap: 8px;
 }
 
+.note-card-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.note-help-link,
+.sketch-corner-help {
+  width: 24px;
+  height: 24px;
+}
+
 .note-action {
   border: 0;
   background: none;

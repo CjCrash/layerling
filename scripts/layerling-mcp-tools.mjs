@@ -475,6 +475,18 @@ export const tools = [
     },
   },
   {
+    name: "layerling_set_workplane",
+    description: "Reset or hide the workplane. A workplane set on a face of a body (by the user, with W and a click) makes new shapes land on that face, and rotating turns about its normal. reset: true puts it back on the base plate. visible: false hides a face workplane without dropping it - it still applies, only the drawing goes, which gives a clear view or picture; visible: true shows it again. Setting a new workplane shows it again by itself. Call with no settings to read the state; layerling_read_scene reports it as workplane.",
+    inputSchema: {
+      ...editorTargetSchema,
+      properties: {
+        ...editorTargetSchema.properties,
+        reset: { type: "boolean", description: "Put the workplane back on the base plate." },
+        visible: { type: "boolean", description: "Show (true) or hide (false) a workplane set on a face." },
+      },
+    },
+  },
+  {
     name: "layerling_capture_image",
     description: "Capture a PNG image of the editor viewport from current/home/top/bottom/front/back/right/left view.",
     inputSchema: {

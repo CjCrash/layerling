@@ -105,6 +105,10 @@ Group the pattern with the body afterwards when the pieces are holes.
 
 To look inside a part - wall thickness after hollowing, a thread in its nut, a cavity, parts that fit into each other - cut the view open with `layerling_set_section_view({ editorNumber, enabled: true, axis, offset })`, then capture an image. Only the view is cut; the design and its exports stay whole. `axis` uses the editor's coordinates like an object's position: `x` cuts across left-right (`offset` is an x position), `z` across front-back (a z position), `y` horizontally (`offset` is a height above the plate, like `elevation`). Switching on, a new axis or `center: true` put the plane in the middle of the design unless `offset` is given; the result returns the plane's useful range (`min`, `max`, `center`). The far side (greater x, z or height) stays visible; `flipped: true` shows the other one. `showPlane: false` hides the blue plane for a clean picture. Call it with no settings to read the current state, and switch it off with `enabled: false` when done.
 
+## Workplane
+
+The user can set the workplane on a face of a body (W, then a click on the face); new shapes then land on that face and `layerling_read_scene` reports `workplane.onBase: false`. `layerling_set_workplane({ editorNumber, reset: true })` puts it back on the base plate. `visible: false` hides a face workplane for a clear look or picture while it keeps applying; `visible: true` shows it again.
+
 Use `layerling_capture_image` for viewport PNGs. `face` can be `current`, `home`, `top`, `bottom`, `front`, `back`, `right`, or `left`. These use the same camera/view-cube orientation logic as the editor UI.
 
 ## Visual Verification

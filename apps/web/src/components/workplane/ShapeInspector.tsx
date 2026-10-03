@@ -278,7 +278,7 @@ function formatPropertyNumber(value: number, accuracy: MeasurementAccuracy, step
 const RELATIVE_SIZE_PROPERTY_IDS = new Set(["width", "height", "length", "diameter", "starOuterSize"]);
 
 function propertyUsesLengthUnit(key: string) {
-  return ["radius", "length", "width", "height", "bevel", "topRadius", "baseRadius", "thickness", "toothSize", "toothWidth", "centerHole", "topLength", "topWidth", "bottomLength", "bottomWidth", "diameter", "pitch", "clearance", "boltClearance", "threadLength", "headHeight", "chamfer", "headChamfer", "wire", "starOuterSize", "starInnerSize", "starOuterFillet", "starInnerFillet", "heartTipFillet", "crescentThickness", "crescentTipFillet", "honeycombCellSize", "honeycombWallThickness", "honeycombFrameWidth", "cornerFillet", "topBottomFillet", "bentTubeSize", "bentTubeWall", "bentTubeSegmentLength", "bentTubeBendRadius", "dovetailNeckWidth", "dovetailClearance", "screwHoleShaft", "screwHoleHeadDepth"].includes(key);
+  return ["positionX", "positionY", "positionZ", "radius", "length", "width", "height", "bevel", "topRadius", "baseRadius", "thickness", "toothSize", "toothWidth", "centerHole", "topLength", "topWidth", "bottomLength", "bottomWidth", "diameter", "pitch", "clearance", "boltClearance", "threadLength", "headHeight", "chamfer", "headChamfer", "wire", "starOuterSize", "starInnerSize", "starOuterFillet", "starInnerFillet", "heartTipFillet", "crescentThickness", "crescentTipFillet", "honeycombCellSize", "honeycombWallThickness", "honeycombFrameWidth", "cornerFillet", "topBottomFillet", "bentTubeSize", "bentTubeWall", "bentTubeSegmentLength", "bentTubeBendRadius", "dovetailNeckWidth", "dovetailClearance", "screwHoleShaft", "screwHoleHeadDepth"].includes(key);
 }
 
 /**
@@ -1511,9 +1511,23 @@ export function ShapeInspector({
       onChange: (extrudeTopOffsetZ) => onUpdate({ extrudeTopOffsetZ }),
     },
   ];
+  /*
+   * Wo der Koerper steht, zum Eintippen: X und Y auf der Platte (die Mitte
+   * seines Rahmens, mit denselben Vorzeichen wie die Masse auf der
+   * Arbeitsflaeche), Z als Hoehe seiner Unterkante. Die Regler reichen so weit
+   * wie das Ziehen, eine Plattengroesse ueber jeden Rand.
+   */
+  const reachX = workspace.width * 1.5;
+  const reachY = workspace.depth * 1.5;
+  const positionProperties: ShapePropertyConfig[] = [
+    { id: "positionX", label: t("prop.positionX"), value: shape.x, min: -reachX, max: reachX, step: 0.5, onChange: (x) => onUpdate({ x }) },
+    { id: "positionY", label: t("prop.positionY"), value: shape.z, min: -reachY, max: reachY, step: 0.5, onChange: (z) => onUpdate({ z }) },
+    { id: "positionZ", label: t("prop.positionZ"), value: shape.elevation ?? 0, min: -180, max: 220, step: 0.5, onChange: (elevation) => onUpdate({ elevation }) },
+  ];
   const isSketchRevolve = shape.sketchOperation === "revolve" || Boolean(shape.sketchRevolve);
   const inspectorRef = useRef<HTMLElement>(null);
   const [propertiesOpen, setPropertiesOpen] = useState(true);
+  const [positionOpen, setPositionOpen] = useState(false);
   const [taperOpen, setTaperOpen] = useState(false);
   const [twistOpen, setTwistOpen] = useState(false);
   const [gearTeethOpen, setGearTeethOpen] = useState(true);
@@ -1757,6 +1771,23 @@ export function ShapeInspector({
               />
             ) : null}
             <ShapePropertyRows properties={primaryProperties} workspace={workspace} disabled={locked} onInteractionActiveChange={onInteractionActiveChange} />
+          </div>
+        ) : null}
+      </div>
+      <div className={`property-card ${positionOpen ? "" : "collapsed"}`}>
+        <button
+          className="property-card-header"
+          type="button"
+          aria-expanded={positionOpen}
+          aria-controls={`position-${shape.id}`}
+          onClick={() => setPositionOpen((open) => !open)}
+        >
+          <span>{t("inspector.position")}</span>
+          <ChevronUp className={positionOpen ? "" : "collapsed"} size={25} strokeWidth={2.8} />
+        </button>
+        {positionOpen ? (
+          <div className="property-list" id={`position-${shape.id}`}>
+            <ShapePropertyRows properties={positionProperties} workspace={workspace} disabled={locked} onInteractionActiveChange={onInteractionActiveChange} />
           </div>
         ) : null}
       </div>

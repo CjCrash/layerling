@@ -31,7 +31,7 @@ function guideSections(sharedStore: boolean): GuideSection[] {
     {
       title: "guide.group.workplane",
       chapter: "view",
-      lines: ["guide.workplane.place", "guide.workplane.reset", "guide.workplane.grid"],
+      lines: ["guide.workplane.place", "guide.workplane.reset", "guide.workplane.hide", "guide.workplane.grid"],
     },
     {
       title: "guide.group.shapes",
@@ -41,7 +41,7 @@ function guideSections(sharedStore: boolean): GuideSection[] {
     {
       title: "guide.group.select",
       chapter: "select",
-      lines: ["guide.select.click", "guide.select.group", "guide.select.align", "guide.select.pivot", "guide.select.layFlat", "guide.select.pattern", "guide.select.notes"],
+      lines: ["guide.select.click", "guide.select.position", "guide.select.group", "guide.select.align", "guide.select.pivot", "guide.select.layFlat", "guide.select.pattern", "guide.select.notes"],
     },
     {
       title: "guide.group.measure",

@@ -173,6 +173,7 @@ import {
   placementWorkplaneFingerprint,
   placementWorkplaneFromSurface,
   placementWorkplaneIsBase,
+  horizontalPlacementWorkplane,
   translationToWorkplane,
   type PlacementPoint,
   type PlacementWorkplane,
@@ -4838,6 +4839,14 @@ async function unionOverlappingExportMeshes(shapes: WorkplaneShape[], meshes: Me
  * einer Platte steckt, schneidet sich dort seine Tasche, statt dass zwei
  * Koerper denselben Raum beanspruchen (Discussion #79).
  */
+/** Die sichtbaren Teile fuer einen Export, dazu der Satz, der die ausgeblendeten nennt. */
+function visibleExportShapes(source: readonly WorkplaneShape[]) {
+  const visible = source.filter((shape) => !shape.hidden);
+  const hidden = source.length - visible.length;
+  const hiddenNote = hidden === 0 ? "" : hidden === 1 ? t("status.exportHiddenSkippedOne") : t("status.exportHiddenSkippedMany", { count: hidden });
+  return { visible, hiddenNote };
+}
+
 async function colorSeparatedExportMeshes(shapes: WorkplaneShape[], meshes: MeshData[]) {
   const farben = exportColorGroups(shapes.map((shape) => shape.color));
   if (farben.length <= 1) {
@@ -6273,6 +6282,15 @@ export function LayerlingEditor({
   const [placementWorkplane, setPlacementWorkplane] = useState<PlacementWorkplane>(
     () => workplaneForHistoryIndex(initialHistory, initialHistoryIndex, initialNormalizedWorkplane) ?? initialNormalizedWorkplane,
   );
+  // Die gesetzte Ebene vorlaeufig nicht zeichnen (Forum 617200). Sie gilt
+  // weiter; eine neue Ebene zeigt sich wieder.
+  const [workplaneHidden, setWorkplaneHidden] = useState(false);
+  const workplaneHiddenRef = useRef(false);
+  workplaneHiddenRef.current = workplaneHidden;
+  const placementWorkplaneKey = placementWorkplaneFingerprint(placementWorkplane);
+  useEffect(() => {
+    setWorkplaneHidden(false);
+  }, [placementWorkplaneKey]);
   const [placementElevation, setPlacementElevation] = useState(() => {
     const resolved = workplaneForHistoryIndex(initialHistory, initialHistoryIndex, initialNormalizedWorkplane) ?? initialNormalizedWorkplane;
     return Math.abs(resolved.normal.x) < 1e-6
@@ -6864,7 +6882,7 @@ export function LayerlingEditor({
     if (notice) setNotice(notice, true);
   }, []);
   const exportTargetShapes = useMemo(() => (hasSelection ? selectedShapes : shapes), [hasSelection, selectedShapes, shapes]);
-  const exportableShapeCount = useMemo(() => exportTargetShapes.filter((shape) => !shape.hole).length, [exportTargetShapes]);
+  const exportableShapeCount = useMemo(() => exportTargetShapes.filter((shape) => !shape.hole && !shape.hidden).length, [exportTargetShapes]);
   const exportHolesOnly = useMemo(() => exportTargetShapes.length > 0 && exportTargetShapes.every((shape) => shape.hole), [exportTargetShapes]);
   const exportScopeLabel = hasSelection ? "selected" : "total";
   const effectiveAlignAnchorId = useMemo(
@@ -9195,7 +9213,7 @@ export function LayerlingEditor({
     commitShapes(
       shapes.map((shape) => (selected.has(shape.id) && !shape.locked ? { ...shape, hidden: shouldHide } : shape)),
       selectedIds,
-      shouldHide ? "Selection hidden" : "Selection visible",
+      shouldHide ? t("status.selectionHidden") : t("status.selectionShown"),
     );
   }, [commitShapes, hasSelection, selectedIds, selectedShapes, shapes]);
 
@@ -9222,7 +9240,7 @@ export function LayerlingEditor({
     commitShapes(
       shapes.map((shape) => (selected.has(shape.id) ? { ...shape, locked: shouldLock } : shape)),
       selectedIds,
-      shouldLock ? "Selection locked" : "Selection unlocked",
+      shouldLock ? t("status.selectionLockedNow") : t("status.selectionUnlocked"),
     );
   }, [commitShapes, hasSelection, selectedIds, selectedShapes, shapes]);
 
@@ -9272,7 +9290,7 @@ export function LayerlingEditor({
             : shape,
         ),
         selectedIds,
-        hole ? "Changed selection to hole" : "Changed selection to solid",
+        hole ? t("status.selectionToHole") : t("status.selectionToSolid"),
       );
     },
     [commitShapes, hasSelection, selectedIds, shapes],
@@ -9314,7 +9332,7 @@ export function LayerlingEditor({
             : shape,
         ),
         selectedIds,
-        delta > 0 ? "Moved selection up" : "Moved selection down",
+        delta > 0 ? t("status.selectionRaised") : t("status.selectionLowered"),
       );
     },
     [commitShapes, hasSelection, placementWorkplane, selectedIds, shapes],
@@ -9410,7 +9428,7 @@ export function LayerlingEditor({
         ? { ...shape, x: cleanNearZero(shape.x + offsetX), z: cleanNearZero(shape.z + offsetZ) }
         : shape)),
       selectedIds,
-      movable.length === 1 ? "Centered selection on the workplane" : `Centered ${movable.length} objects on the workplane`,
+      movable.length === 1 ? t("status.centeredOne") : t("status.centeredMany", { count: movable.length }),
     );
   }, [commitShapes, hasSelection, selectedIds, shapes]);
 
@@ -9681,6 +9699,12 @@ export function LayerlingEditor({
       openGroup: openGroupRef.current
         ? { groupId: openGroupRef.current.original.id, name: displayShapeName(openGroupRef.current.original), partIds: openGroupRef.current.childIds }
         : null,
+      workplane: {
+        onBase: placementWorkplaneIsBase(placementWorkplaneRef.current),
+        hidden: workplaneHiddenRef.current && !placementWorkplaneIsBase(placementWorkplaneRef.current),
+        origin: placementWorkplaneRef.current.origin,
+        normal: placementWorkplaneRef.current.normal,
+      },
       ...(includeRawShapes ? { rawShapes: currentShapes.map((shape) => canonicalizeShape(shape)) } : {}),
     };
   }, [initialSnap]);
@@ -10225,6 +10249,20 @@ export function LayerlingEditor({
         return result;
       }
 
+      if (command.action === "set_workplane") {
+        // Setzen geht nur per Klick auf eine Flaeche; die KI kann die Ebene
+        // zuruecksetzen und ein- oder ausblenden.
+        if (params.reset === true) setActivePlacementWorkplane(horizontalPlacementWorkplane(), "base");
+        const onBase = params.reset === true || placementWorkplaneIsBase(placementWorkplaneRef.current);
+        if (typeof params.visible === "boolean") {
+          if (onBase && !params.visible) throw new Error("The workplane is the base plate; only a workplane set on a face can be hidden");
+          setWorkplaneHidden(!params.visible);
+          workplaneHiddenRef.current = !params.visible;
+          setNotice(params.visible ? t("status.workplaneShown") : t("status.workplaneHidden"));
+        }
+        return { onBase, hidden: !onBase && workplaneHiddenRef.current };
+      }
+
       if (command.action === "capture_image") {
         const face = mcpString(params.face, "current") as LayerlingMcpViewFace;
         const image = await (window.layerlingCaptureView?.(face) ?? window.layerlingCaptureCanvas?.() ?? "");
@@ -10252,6 +10290,7 @@ export function LayerlingEditor({
     mcpSceneSnapshot,
     placementElevation,
     prepareCadModifierForMcp,
+    setActivePlacementWorkplane,
   ]);
 
   useEffect(() => {
@@ -10519,10 +10558,12 @@ export function LayerlingEditor({
   }, [commitShapes]);
 
   const exportDesign = useCallback((format: DirectExportFormat, exportName: string) => {
-    const sourceShapes = hasSelection ? selectedShapes : shapes;
+    // Ausgeblendetes bleibt draussen, wie bei Tinkercad: ein beiseitegelegtes
+    // Teil soll nicht unbemerkt mitgedruckt werden (Discussion #80).
+    const { visible: sourceShapes, hiddenNote } = visibleExportShapes(hasSelection ? selectedShapes : shapes);
     const exportable = sourceShapes.filter((shape) => !shape.hole && !isNonSolidShapeKind(shape.kind));
     if (exportable.length === 0) {
-      setNotice(hasSelection ? t("status.selectSolidBeforeExport") : t("status.addSolidBeforeExport"));
+      setNotice(hiddenNote ? t("status.exportOnlyHidden") : hasSelection ? t("status.selectSolidBeforeExport") : t("status.addSolidBeforeExport"));
       return;
     }
     const invalidSvg = exportable.map(invalidSvgMeshReason).find((reason): reason is string => Boolean(reason));
@@ -10535,9 +10576,9 @@ export function LayerlingEditor({
       : t("status.exportedSelectedMany", { count: exportable.length });
     const finishNotice = (label: string) => {
       setTopPanel(null);
-      setNotice(hasSelection
+      setNotice((hasSelection
         ? t("status.exportedSelectedAs", { selected: selectedNotice, label })
-        : t("status.exportedAs", { label }));
+        : t("status.exportedAs", { label })) + hiddenNote);
     };
     const failNotice = (label: string, error: unknown) => {
       setNotice(error instanceof Error ? error.message : t("status.exportFailed", { label }));
@@ -10572,7 +10613,7 @@ export function LayerlingEditor({
         const exportOverhangs = bedPrinter ? bedOverhangs(exportable, bedPrinter.width, bedPrinter.depth, bedPrinter.height) : [];
         if (gescheitert > 0) setNotice(t("status.exportUnionFailed"), true);
         else if (bedPrinter && exportOverhangs.length > 0) setNotice(bedOverhangMessage(exportOverhangs, `${bedPrinter.vendor} ${bedPrinter.model}`), true);
-        else if (verschmolzen > 0) setNotice(t("status.exportUnioned", { count: verschmolzen, label }));
+        else if (verschmolzen > 0) setNotice(t("status.exportUnioned", { count: verschmolzen, label }) + hiddenNote);
         else finishNotice(label);
       })
       .catch((error: unknown) => failNotice(label, error));
@@ -10582,7 +10623,11 @@ export function LayerlingEditor({
     if (stepExporting) {
       return;
     }
-    const sourceShapes = hasSelection ? selectedShapes : shapes;
+    const { visible: sourceShapes, hiddenNote } = visibleExportShapes(hasSelection ? selectedShapes : shapes);
+    if (sourceShapes.length === 0 && hiddenNote) {
+      setNotice(t("status.exportOnlyHidden"));
+      return;
+    }
     if (sourceShapes.some((shape) => shape.hole) && !sourceShapes.some((shape) => !shape.hole)) {
       setNotice(t("status.selectSolidForStep"));
       return;
@@ -10600,9 +10645,9 @@ export function LayerlingEditor({
         : skipped.length === 1
           ? t("status.exportStepSkippedOne")
           : t("status.exportStepSkippedMany", { count: skipped.length });
-      setNotice(exportedCount === 1
+      setNotice((exportedCount === 1
         ? t("status.exportedStepOne", { skipNote })
-        : t("status.exportedStepMany", { count: exportedCount, skipNote }));
+        : t("status.exportedStepMany", { count: exportedCount, skipNote })) + hiddenNote);
     } catch (error: unknown) {
       // Dass nichts dabei ist, was STEP tragen kann, ist keine Stoerung -
       // dafuer gibt es einen Satz, der sagt, woran es liegt.
@@ -11617,6 +11662,13 @@ export function LayerlingEditor({
           mirrorMode={mirrorMode}
           mirrorReferenceShapes={shapes}
           placementWorkplane={placementWorkplane}
+          workplaneHidden={workplaneHidden}
+          onToggleWorkplaneHidden={() => {
+            const next = !workplaneHiddenRef.current;
+            workplaneHiddenRef.current = next;
+            setWorkplaneHidden(next);
+            setNotice(next ? t("status.workplaneHidden") : t("status.workplaneShown"));
+          }}
           workplaneMode={workplaneMode}
           initialSnap={snapGrid}
           initialWorkspace={workspaceSettings}

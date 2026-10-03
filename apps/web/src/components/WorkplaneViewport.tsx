@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Crosshair, Cuboid, FlipHorizontal, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, RotateCcw, Rows3, Ruler, RulerDimensionLine, Slice, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crosshair, Cuboid, Eye, EyeOff, FlipHorizontal, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, RotateCcw, Rows3, Ruler, RulerDimensionLine, Slice, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type DragEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type SetStateAction, type WheelEvent as ReactWheelEvent } from "react";
 import { objectSnapOffset, shiftSnapBox, type ObjectSnapGuide, type SnapBox } from "@/lib/objectSnap";
 import { computeSectionPlaneVector, DEFAULT_SECTION_SETTINGS, getSectionBounds, sectionFineWindow, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
@@ -237,6 +237,9 @@ type WorkplaneViewportProps = {
   mirrorMode: boolean;
   mirrorReferenceShapes: WorkplaneShape[];
   placementWorkplane: PlacementWorkplane;
+  /** Die gesetzte Arbeitsebene gilt weiter, wird aber nicht gezeichnet. */
+  workplaneHidden?: boolean;
+  onToggleWorkplaneHidden?: () => void;
   workplaneMode: boolean;
   initialSnap?: GridSize;
   initialWorkspace?: WorkplaneWorkspaceSettings;
@@ -1908,7 +1911,10 @@ function NoteOverlay({
                   {note.attached ? (
                     <button type="button" className="note-action" onClick={() => onDetach(note.id)}>{t("note.detach")}</button>
                   ) : <span className="note-hint">{t("note.free")}</span>}
-                  <button type="button" className="note-action danger" onClick={() => onRemove(note.id)}>{t("common.delete")}</button>
+                  <span className="note-card-end">
+                    <GuideHelpLink section="notes" className="note-help-link" iconSize={16} />
+                    <button type="button" className="note-action danger" onClick={() => onRemove(note.id)}>{t("common.delete")}</button>
+                  </span>
                 </div>
               </div>
             ) : null}
@@ -3257,6 +3263,11 @@ function patchWithResizeAnchor(
   axis: ShapeInspectorUpdateOptions["resizeAxis"] | DimensionMark["axis"],
   anchor: ResizeAnchorMemory | null,
 ) {
+  // Eine eingetippte Position ist selbst der Wunsch; die Unterkante
+  // festzuhalten wuerde die neue Hoehe gleich wieder zuruecksetzen.
+  if ("elevation" in patch || "x" in patch || "z" in patch) {
+    return patch;
+  }
   if (axis === "height") {
     return patchWithPreservedWorldYEdge(shape, patch, anchor?.shapeId === shape.id && anchor.pressedY === "bottom" ? "top" : "bottom");
   }
@@ -3610,6 +3621,8 @@ export function WorkplaneViewport({
   mirrorMode,
   mirrorReferenceShapes,
   placementWorkplane,
+  workplaneHidden = false,
+  onToggleWorkplaneHidden,
   workplaneMode,
   initialSnap,
   initialWorkspace,
@@ -3796,6 +3809,11 @@ export function WorkplaneViewport({
   const projectNameRef = useRef(projectName);
   const workplaneModeRef = useRef(workplaneMode);
   placementWorkplaneRef.current = placementWorkplane;
+  const workplaneHiddenRef = useRef(workplaneHidden);
+  workplaneHiddenRef.current = workplaneHidden;
+  // Ausgeblendet zeichnet die Szene nur die Grundplatte; Platzieren, Drehen
+  // und Verschieben richten sich weiter nach der gesetzten Ebene.
+  const drawnWorkplane = () => (workplaneHiddenRef.current ? horizontalPlacementWorkplane() : placementWorkplaneRef.current);
   workplaneModeRef.current = workplaneMode;
   const perfRef = useRef({
     fps: 0,
@@ -4034,7 +4052,7 @@ export function WorkplaneViewport({
     workspaceRef.current = nextWorkspace;
     setMeasureUnit(nextWorkspace);
     if (threeRef.current) {
-      rebuildWorkplane(threeRef.current, nextWorkspace, resolvedThemeRef.current, placementWorkplaneRef.current, projectNameRef.current);
+      rebuildWorkplane(threeRef.current, nextWorkspace, resolvedThemeRef.current, drawnWorkplane(), projectNameRef.current);
       constrainCamera(threeRef.current, nextWorkspace);
       threeRef.current.needsRender = true;
     }
@@ -4388,7 +4406,7 @@ export function WorkplaneViewport({
     workspaceRef.current = workspace;
     setMeasureUnit(workspace);
     if (threeRef.current) threeRef.current.palette = appThemePalette(themePreference);
-    rebuildWorkplane(threeRef.current, workspace, resolvedTheme, placementWorkplane, projectName);
+    rebuildWorkplane(threeRef.current, workspace, resolvedTheme, workplaneHidden ? horizontalPlacementWorkplane() : placementWorkplane, projectName);
     rebuildSelectionHelpers(threeRef.current, shapesRef.current, renderSelectionIds(), placementWorkplane);
     if (threeRef.current) {
       syncTransformOverlay(
@@ -4411,7 +4429,7 @@ export function WorkplaneViewport({
       syncMoveDimensionWorldLines(threeRef.current, moveDimensionSessionRef.current, resolvedTheme);
       threeRef.current.needsRender = true;
     }
-  }, [language, placementWorkplane, projectName, resolvedTheme, themePreference, workspace]);
+  }, [language, placementWorkplane, projectName, resolvedTheme, themePreference, workplaneHidden, workspace]);
 
   useEffect(() => {
     setSelectionHelpersVisible(threeRef.current, !workplaneMode && activeTransformKind !== "rotate");
@@ -4426,7 +4444,7 @@ export function WorkplaneViewport({
     const state = createThreeScene(host);
     state.palette = themePaletteRef.current;
     threeRef.current = state;
-    rebuildWorkplane(state, workspaceRef.current, resolvedThemeRef.current, placementWorkplaneRef.current, projectNameRef.current);
+    rebuildWorkplane(state, workspaceRef.current, resolvedThemeRef.current, drawnWorkplane(), projectNameRef.current);
     window.layerlingCaptureCanvas = () => {
       state.camera.updateMatrixWorld();
       state.renderer.render(state.scene, state.camera);
@@ -7648,6 +7666,17 @@ export function WorkplaneViewport({
               >
                 <PanelsTopLeft size={25} strokeWidth={2.1} aria-hidden="true" />
               </button>
+              {!placementWorkplaneIsBase(placementWorkplane) && onToggleWorkplaneHidden ? (
+                <button
+                  className={`workplane-visibility-toggle ${workplaneHidden ? "active" : ""}`}
+                  aria-label={workplaneHidden ? t("camera.showWorkplane") : t("camera.hideWorkplane")}
+                  title={workplaneHidden ? t("camera.showWorkplane") : t("camera.hideWorkplane")}
+                  aria-pressed={workplaneHidden}
+                  onClick={onToggleWorkplaneHidden}
+                >
+                  {workplaneHidden ? <EyeOff size={22} strokeWidth={2.1} aria-hidden="true" /> : <Eye size={22} strokeWidth={2.1} aria-hidden="true" />}
+                </button>
+              ) : null}
             </div>
             <div className="tape-control-group">
               <button

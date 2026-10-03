@@ -152,13 +152,44 @@ describe("language detection", () => {
         // anfaengt und mehr als ein Wort traegt - ein Feldname nicht.
         const literal = ohneKommentar.match(/^\s*[`"]([A-Z][a-z]+ [a-z][^"`]*)[`"],?\s*$/);
         if (literal) verdaechtig.push(`${datei}:${index + 1}  ${literal[1].slice(0, 60)}`);
-        // Dasselbe, wenn der Satz direkt im Aufruf steht - so rutschten die
-        // Meldungen des Skizzenmodus durch („Half circle added to sketch").
-        const imAufruf = /\b(setNotice|commitSketchProfile|commitShapes)\(/.test(ohneKommentar)
-          ? ohneKommentar.match(/[`"]([A-Z][a-z]+ [a-z${][^"`]*)[`"]/)
-          : null;
-        if (imAufruf) verdaechtig.push(`${datei}:${index + 1}  ${imAufruf[1].slice(0, 60)}`);
       });
+    }
+    expect(verdaechtig).toEqual([]);
+  });
+
+  /*
+   * Dasselbe, wenn der Satz direkt im Aufruf steht, auch ueber mehrere Zeilen
+   * - so rutschten die Meldungen des Skizzenmodus durch („Half circle added to
+   * sketch", „Sketch image moved"). Gelesen wird der ganze Aufruf bis zu seiner
+   * schliessenden Klammer.
+   */
+  it("laesst keinen englischen Satz in einen Meldungsaufruf", () => {
+    const wurzel = fileURLToPath(new URL("../../apps/web/src/components/", import.meta.url));
+    const dateien = ["LayerlingEditor.tsx", "WorkplaneViewport.tsx", "SketchWorkspace.tsx"];
+    const aufruf = /\b(setNotice|commitSketchProfile|commitShapes|onUpdate|onUpdateImage|insertSketchCopy)\(/g;
+    const satz = /[`"]([A-Z][a-z]+ [a-z${][^"`]*)[`"]/g;
+    const verdaechtig: string[] = [];
+    for (const datei of dateien) {
+      const text = readFileSync(wurzel + datei, "utf8").replace(/\/\/.*$/gm, "");
+      for (const treffer of text.matchAll(aufruf)) {
+        let tiefe = 1;
+        let ende = treffer.index! + treffer[0].length;
+        let zeichen: string | null = null;
+        for (; ende < text.length && tiefe > 0; ende += 1) {
+          const c = text[ende];
+          if (zeichen) {
+            if (c === "\\") ende += 1;
+            else if (c === zeichen) zeichen = null;
+          } else if (c === '"' || c === "'" || c === "`") zeichen = c;
+          else if (c === "(") tiefe += 1;
+          else if (c === ")") tiefe -= 1;
+        }
+        const argumente = text.slice(treffer.index! + treffer[0].length, ende);
+        for (const literal of argumente.matchAll(satz)) {
+          const zeile = text.slice(0, treffer.index!).split(String.fromCharCode(10)).length;
+          verdaechtig.push(`${datei}:${zeile}  ${literal[1].slice(0, 60)}`);
+        }
+      }
     }
     expect(verdaechtig).toEqual([]);
   });

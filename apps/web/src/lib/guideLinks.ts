@@ -36,6 +36,9 @@ export type GuideChapter = keyof typeof GUIDE_CHAPTERS;
 export const GUIDE_SECTIONS = {
   sectionView: { chapter: "view", de: "ins-innere-schauen-die-schnittansicht", en: "looking-inside-the-section-view" },
   tapeMeasure: { chapter: "measuring", de: "das-massband", en: "the-tape-measure" },
+  notes: { chapter: "measuring", de: "notizen", en: "notes" },
+  sketchCorners: { chapter: "sketches", de: "ecken-runden-oder-fasen", en: "rounding-or-chamfering-corners" },
+  sketchImage: { chapter: "sketches", de: "ein-bild-als-vorlage", en: "a-picture-as-template" },
 } as const satisfies Record<string, { chapter: GuideChapter } & Record<Language, string>>;
 
 export type GuideSection = keyof typeof GUIDE_SECTIONS;

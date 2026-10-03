@@ -119,6 +119,8 @@ async function callTool(name, args) {
       return bridgeCommand("inspect_errors", args);
     case "layerling_set_section_view":
       return bridgeCommand("set_section_view", args);
+    case "layerling_set_workplane":
+      return bridgeCommand("set_workplane", args);
     case "layerling_capture_image":
       return bridgeCommand("capture_image", args, 30000);
     default:

@@ -71,7 +71,7 @@ You will recognise everything: the plate, the shapes, solids and holes, group an
 ### Files
 
 - **Bring your own models** – import STL, OBJ, 3MF, STEP or SVG and build around it.
-- **Export what your slicer wants** – STL, 3MF with names and colours, or OBJ, for the selection or the whole scene, plus STEP if the design should travel on into a full CAD program.
+- **Export what your slicer wants** – STL, 3MF with names and colours, or OBJ with colours, for the selection or the whole scene (hidden parts stay out), plus STEP if the design should travel on into a full CAD program.
 - **Projects as files** – save a whole project, history, sketches and groups included, as a `.lyl` file and carry on elsewhere. Older `.skf` files from earlier versions still open; saving then writes a `.lyl` beside them.
 - **Designs you recognise** – everything lives in your own browser, each design with a thumbnail.
 

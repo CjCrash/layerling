@@ -7,7 +7,7 @@ summary: Formen auswählen, in der Objektliste finden, ausrichten, spiegeln, dre
 
 Ein Klick auf eine Form wählt sie aus. Mit [[Umschalt]] nimmst du weitere dazu oder wieder weg. Ein Klick ins Leere hebt die Auswahl auf, ebenso [[Esc]]. Ziehst du auf der leeren Arbeitsebene einen Rahmen auf, wählst du alles darin aus, und [[Strg]]+[[A]] wählt alle sichtbaren Körper.
 
-Was du im Weg hast, blendest du aus ({{ui:editor.tool.hideSelected}}, [[Strg]]+[[H]]). Ausgeblendete Formen bleiben im Entwurf, sie sind nur nicht zu sehen. Mit [[Strg]]+[[Umschalt]]+[[H]] holst du alle zurück. Was liegen bleiben soll, sperrst du mit dem Schloss oben in den Einstellungen oder mit [[Strg]]+[[L]]. Gesperrte Formen lassen sich weder verschieben noch versehentlich löschen.
+Was du im Weg hast, blendest du aus ({{ui:editor.tool.hideSelected}}, [[Strg]]+[[H]]). Ausgeblendete Formen bleiben im Entwurf, sie sind nur nicht zu sehen und kommen nicht mit in den Export. Mit [[Strg]]+[[Umschalt]]+[[H]] holst du alle zurück. Was liegen bleiben soll, sperrst du mit dem Schloss oben in den Einstellungen oder mit [[Strg]]+[[L]]. Gesperrte Formen lassen sich weder verschieben noch versehentlich löschen.
 
 ## Die Objektliste
 
@@ -21,9 +21,13 @@ Bei vielen Teilen verliert man in der Ansicht leicht den Überblick. Die Objektl
 - Über {{ui:outliner.rename}} gibst du einem Teil einen eigenen Namen; der Stift neben dem Namen oben in den Einstellungen macht dasselbe für die ausgewählte Form. Vernünftige Namen helfen bei größeren Entwürfen enorm.
 - Das Suchfeld findet Formen nach Namen und nach Art, also auch „Zylinder“ oder „Aussparung“.
 
+## Position eintippen
+
+Die Karte {{ui:inspector.position}} im Eigenschaftenfenster zeigt, wo der ausgewählte Körper steht, und du kannst es eintippen: {{ui:prop.positionX}} und {{ui:prop.positionY}} sind die Mitte seines Rahmens auf der Platte, mit denselben Vorzeichen wie die Abstände auf der Arbeitsfläche, {{ui:prop.positionZ}} ist die Höhe seiner Unterkante. Die Werte gelten in der eingestellten Einheit, und die Regler reichen so weit wie das Ziehen.
+
 ## Teile neben der Platte parken
 
-Du kannst eine Form über den Rand der Platte hinausziehen und dort liegen lassen, etwa eine Plattenbreite weit auf jeder Seite, um sie für später aufzuheben. Mit den Pfeiltasten geht es beliebig weit. Ein geparktes Teil gehört weiter zum Entwurf und landet mit im Export; soll es draußen bleiben, wähle die gewünschten Teile aus und exportiere nur die Auswahl. Hast du einen Drucker gewählt, warnt layerling beim Export, wenn etwas außerhalb seiner Platte liegt.
+Du kannst eine Form über den Rand der Platte hinausziehen und dort liegen lassen, etwa eine Plattenbreite weit auf jeder Seite, um sie für später aufzuheben. Mit den Pfeiltasten geht es beliebig weit. Ein geparktes Teil gehört weiter zum Entwurf und landet mit im Export. Soll es draußen bleiben, blende es aus oder exportiere nur die Auswahl. Hast du einen Drucker gewählt, warnt layerling beim Export, wenn etwas außerhalb seiner Platte liegt.
 
 ## Fangen beim Verschieben
 

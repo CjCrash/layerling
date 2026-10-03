@@ -62,6 +62,8 @@ export type LayerlingMcpSceneSummary = {
   shapes: LayerlingMcpShapeSummary[];
   /** The group opened for editing, if any: its parts lie loose until it is closed. */
   openGroup?: { groupId: string; name: string; partIds: string[] } | null;
+  /** The active workplane: the base plate, or a plane set on a face; hidden means it still applies but is not drawn. */
+  workplane?: { onBase: boolean; hidden: boolean; origin: { x: number; y: number; z: number }; normal: { x: number; y: number; z: number } };
 };
 
 export type LayerlingMcpEditorSummary = {
@@ -101,6 +103,7 @@ export type LayerlingMcpCommandName =
   | "array_objects"
   | "inspect_errors"
   | "set_section_view"
+  | "set_workplane"
   | "capture_image";
 
 export type LayerlingMcpCommand = {
