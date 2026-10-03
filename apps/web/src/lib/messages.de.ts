@@ -1085,6 +1085,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "camera.sectionFine": "Fein",
   "camera.sectionFineHint": "Feinregler: ±{span} um die Stelle des Grobreglers",
   "camera.sectionShowPlane": "Schnittebene anzeigen",
+  "panel.moveHint": "Ziehen zum Verschieben; doppelklicken oder an der alten Stelle ablegen bringt die Tafel zurück",
   "camera.sectionMoveHint": "Ziehen zum Verschieben; am Schnitt-Knopf ablegen oder doppelklicken bringt es zurück",
   "camera.sectionExportSvg": "Schnitt als SVG",
   "camera.sectionExportSvgHint": "Die Umrisse auf der Schnittebene als SVG im Maßstab 1:1 speichern, für Laser, Plotter oder Schablone",

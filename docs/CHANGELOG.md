@@ -6,7 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
-- **Movable section panel:** The section view's panel can be dragged by its title bar anywhere on the workplane, like the object list and the shape settings, and opens there again next time. Double-clicking the title bar or dropping it at its button puts it back. The moving itself is shared with the two other panels; it now works for a panel that hangs on a button in a bar, too.
+- **More panels move:** The section view's panel, the tool panel for fillets, chamfers, hollowing and patterns, the tape measure's buttons (by a grip on their left) and the settings of a sketch's template image can be dragged anywhere on the workplane, like the object list and the shape settings, and open there again next time. Double-clicking the title bar or grip, or dropping a panel back where it was, puts it back. The moving is one shared piece of code; it now also works for a panel fixed to the window or hung on a button in the camera bar, which shrinks on flat windows.
 
 ## 1.30.0
 

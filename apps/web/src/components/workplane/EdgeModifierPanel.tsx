@@ -1,6 +1,7 @@
 "use client";
 
 import { GuideHelpLink } from "@/components/GuideHelpLink";
+import { MovableToolPanel } from "@/components/workplane/MovableToolPanel";
 import { useEffect, useState, type CSSProperties } from "react";
 import { Check, LoaderCircle, Minus, Plus, RotateCcw, X } from "lucide-react";
 import { displayStepFromMillimeters, displayToMillimeters, formatMeasurementNumber, lengthDisplayUnit, millimetersToDisplay, parseMeasurementInput } from "@/lib/measurementUnits";
@@ -217,8 +218,9 @@ export function EdgeModifierPanel({
   const amountMin = Math.min(MIN_EDGE_MODIFIER_AMOUNT, Math.max(Number.EPSILON, maxAmount));
   const amountMax = Math.max(amountMin, maxAmount);
   return (
-    <aside className="edge-modifier-panel" aria-label={title}>
-      <div className="edge-modifier-header">
+    <MovableToolPanel className="edge-modifier-panel" ariaLabel={title}>
+      {(handleProps) => (<>
+      <div className="edge-modifier-header movable" title={t("panel.moveHint")} {...handleProps}>
         <div>
           <strong>{title}</strong>
           <span>{edgeModifierSelectionStatus(prepared, selectedCount, availableCount)}</span>
@@ -326,6 +328,7 @@ export function EdgeModifierPanel({
           {t("edge.apply")}
         </button>
       </div>
-    </aside>
+      </>)}
+    </MovableToolPanel>
   );
 }

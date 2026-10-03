@@ -1086,6 +1086,7 @@ export const MESSAGES_EN = {
   "camera.sectionFine": "Fine",
   "camera.sectionFineHint": "Fine slider: ±{span} around the coarse position",
   "camera.sectionShowPlane": "Show cutting plane",
+  "panel.moveHint": "Drag to move; double-click or drop it at its old spot to put it back",
   "camera.sectionMoveHint": "Drag to move; drop it at the section button or double-click to put it back",
   "camera.sectionExportSvg": "Section as SVG",
   "camera.sectionExportSvgHint": "Save the outlines on the cutting plane as an SVG at 1:1, for a laser, a plotter or a template",

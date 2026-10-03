@@ -2272,6 +2272,24 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   box-shadow: inset 3px 0 0 #c56808;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .panel-grip {
+  color: #8c8c8c;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .panel-grip:hover {
+  color: #565656;
+  background: rgba(222, 222, 222, 0.7);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .panel-grip {
+  color: #6a6a6a;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .panel-grip:hover {
+  color: #dbdbdb;
+  background: rgba(61, 61, 61, 0.8);
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .tape-tool-popover {
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid rgba(207, 207, 207, 0.94);

@@ -25,7 +25,7 @@ export type MovablePanelOptions = {
 };
 
 /** Where the panel stands in its area, and what that means for its own offset parent. */
-type Placement = { position: PanelPosition; origin: PanelPosition; areaHeight: number };
+type Placement = { position: PanelPosition; origin: PanelPosition; scale: number; areaHeight: number };
 
 /**
  * Lets a docked panel be moved by its title bar, inside its area, and docked
@@ -47,21 +47,40 @@ export function useMovablePanel<T extends HTMLElement = HTMLDivElement>(storageK
   const areaRef = useRef(area);
   areaRef.current = area;
 
-  /** The area, and how far its offset parent's corner lies from the area's. */
+  /**
+   * The area, where the panel stands in it, and where the corner its own
+   * left/top count from lies in it. It works the same for a panel placed
+   * absolutely, fixed to the window (no offset parent: the window) or hung on
+   * a button. Positions are screen pixels in the area; a panel inside a scaled
+   * bar (the camera bar shrinks on flat windows) is converted by `scale`.
+   */
   const measure = useCallback(() => {
     const panel = panelRef.current;
-    const parent = panel?.offsetParent;
-    if (!panel || !(parent instanceof HTMLElement)) return null;
+    if (!panel) return null;
+    const parent = panel.offsetParent instanceof HTMLElement ? panel.offsetParent : null;
     const areaElement = areaRef.current?.(panel) ?? parent;
-    if (areaElement === parent) return { panel, area: areaElement, origin: { left: 0, top: 0 } };
-    const parentRect = parent.getBoundingClientRect();
+    if (!areaElement) return null;
+    // Layout offsets, not the panel's own screen box: a panel opening with a
+    // scale animation would otherwise be measured a few pixels off.
+    const parentRect = parent?.getBoundingClientRect();
+    const base = parent && parentRect
+      ? { left: parentRect.left + parent.clientLeft, top: parentRect.top + parent.clientTop }
+      : { left: 0, top: 0 };
+    const scale = parent && parentRect && parent.offsetWidth > 0 ? parentRect.width / parent.offsetWidth || 1 : 1;
     const areaRect = areaElement.getBoundingClientRect();
+    const current = {
+      left: base.left + panel.offsetLeft * scale - (areaRect.left + areaElement.clientLeft),
+      top: base.top + panel.offsetTop * scale - (areaRect.top + areaElement.clientTop),
+    };
+    const computed = window.getComputedStyle(panel);
     return {
       panel,
       area: areaElement,
+      current,
+      scale,
       origin: {
-        left: parentRect.left + parent.clientLeft - (areaRect.left + areaElement.clientLeft),
-        top: parentRect.top + parent.clientTop - (areaRect.top + areaElement.clientTop),
+        left: current.left - (Number.parseFloat(computed.left) || 0) * scale,
+        top: current.top - (Number.parseFloat(computed.top) || 0) * scale,
       },
     };
   }, []);
@@ -69,9 +88,9 @@ export function useMovablePanel<T extends HTMLElement = HTMLDivElement>(storageK
   const place = useCallback((next: PanelPosition) => {
     const measured = measure();
     if (!measured) return null;
-    const { panel, area: areaElement, origin } = measured;
-    const position = clampPanelPosition(next, { width: panel.offsetWidth }, { width: areaElement.clientWidth, height: areaElement.clientHeight });
-    return { position, origin, areaHeight: areaElement.clientHeight };
+    const { panel, area: areaElement, origin, scale } = measured;
+    const position = clampPanelPosition(next, { width: panel.offsetWidth * scale }, { width: areaElement.clientWidth, height: areaElement.clientHeight });
+    return { position, origin, scale, areaHeight: areaElement.clientHeight };
   }, [measure]);
 
   const store = useCallback((next: PanelPosition | null) => {
@@ -110,9 +129,7 @@ export function useMovablePanel<T extends HTMLElement = HTMLDivElement>(storageK
     if (event.target instanceof Element && event.target.closest(NOT_A_HANDLE)) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
-    const { panel, origin } = measured;
-    const left = panel.offsetLeft + origin.left;
-    const top = panel.offsetTop + origin.top;
+    const { left, top } = measured.current;
     if (!placementRef.current) dockRef.current = { left, top };
     dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, left, top };
     setDragging(true);
@@ -134,7 +151,7 @@ export function useMovablePanel<T extends HTMLElement = HTMLDivElement>(storageK
     if (!dropped) return;
     const measured = measure();
     const dock = measured && dockedAt
-      ? dockedAt({ width: measured.area.clientWidth, height: measured.area.clientHeight }, { width: measured.panel.offsetWidth })
+      ? dockedAt({ width: measured.area.clientWidth, height: measured.area.clientHeight }, { width: measured.panel.offsetWidth * measured.scale })
       : dockRef.current;
     if (dock && isNearDock(dropped, dock)) {
       setPlacement(null);
@@ -153,10 +170,10 @@ export function useMovablePanel<T extends HTMLElement = HTMLDivElement>(storageK
   const style: CSSProperties | undefined = placement
     ? {
         ...floatingStyle,
-        left: placement.position.left - placement.origin.left,
-        top: placement.position.top - placement.origin.top,
+        left: (placement.position.left - placement.origin.left) / placement.scale,
+        top: (placement.position.top - placement.origin.top) / placement.scale,
         // Down to the area's lower edge, but never less than the title bar, which stays inside it.
-        maxHeight: Math.max(PANEL_GRAB_HEIGHT, placement.areaHeight - placement.position.top - 32),
+        maxHeight: Math.max(PANEL_GRAB_HEIGHT, placement.areaHeight - placement.position.top - 32) / placement.scale,
       }
     : undefined;
 
