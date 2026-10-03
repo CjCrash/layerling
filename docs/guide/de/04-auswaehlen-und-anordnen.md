@@ -21,6 +21,10 @@ Bei vielen Teilen verliert man in der Ansicht leicht den Überblick. Die Objektl
 - Über {{ui:outliner.rename}} gibst du einem Teil einen eigenen Namen; der Stift neben dem Namen oben in den Einstellungen macht dasselbe für die ausgewählte Form. Vernünftige Namen helfen bei größeren Entwürfen enorm.
 - Das Suchfeld findet Formen nach Namen und nach Art, also auch „Zylinder“ oder „Aussparung“.
 
+## Teile neben der Platte parken
+
+Du kannst eine Form über den Rand der Platte hinausziehen und dort liegen lassen, etwa eine Plattenbreite weit auf jeder Seite, um sie für später aufzuheben. Mit den Pfeiltasten geht es beliebig weit. Ein geparktes Teil gehört weiter zum Entwurf und landet mit im Export; soll es draußen bleiben, wähle die gewünschten Teile aus und exportiere nur die Auswahl. Hast du einen Drucker gewählt, warnt layerling beim Export, wenn etwas außerhalb seiner Platte liegt.
+
 ## Fangen beim Verschieben
 
 Ziehst du eine Form über die Arbeitsebene, rastet sie an anderen Formen ein: Ihre linke, rechte, vordere oder hintere Kante oder ihre Mitte legt sich genau auf eine Kante oder Mitte einer anderen Form. Eine rosa Hilfslinie zeigt, woran sie gerade hängt. So stellst du zwei Teile bündig nebeneinander oder mittig hintereinander, ohne Zahlen einzutippen. Das gilt auch, wenn das Raster ausgeschaltet ist.

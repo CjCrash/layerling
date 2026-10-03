@@ -280,12 +280,12 @@ function derivedSizeSpec(diameter: number): ThreadSizeSpec {
   };
 }
 
-/** Die Normgroesse zu Durchmesser und Steigung, oder nichts bei freien Werten. */
 /** Die Reihe, zu der eine Normgroesse gehoert. */
 export function threadSeriesFor(size: ThreadSizeSpec): ThreadSeries | null {
   return THREAD_SIZE_GROUPS.find((group) => group.sizes.includes(size))?.series ?? null;
 }
 
+/** Die Normgroesse zu Durchmesser und Steigung, oder nichts bei freien Werten. */
 export function threadSizeFor(diameter: number, pitch: number): ThreadSizeSpec | null {
   return THREAD_SIZES.find((size) => (
     Math.abs(size.diameter - diameter) < SIZE_MATCH_TOLERANCE && Math.abs(size.pitch - pitch) < SIZE_MATCH_TOLERANCE

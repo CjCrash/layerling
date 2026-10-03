@@ -657,6 +657,9 @@ function snapDimension(value: number, step: number, min = MIN_SHAPE_SIZE, max = 
   return clamp(snapped, effectiveMin, max);
 }
 
+/** Wie weit ein gezogenes Teil ueber den Plattenrand hinaus darf, als Anteil der Plattengroesse je Seite. */
+const PLATE_DRAG_REACH = 1;
+
 function snapPositionValue(value: number, step: number, min: number, max: number) {
   return clamp(step > 0 ? snapValue(value, step) : value, min, max);
 }
@@ -4664,10 +4667,14 @@ export function WorkplaneViewport({
     const local = placementWorkplaneCoordinates(workplane, raw);
     const step = snapStep(snapRef.current);
     const bounds = workspaceRef.current;
+    // Wie bei Tinkercad darf ein Teil neben der Platte geparkt werden (Discussion #80);
+    // die Grenze faengt nur den flachen Blick ab, bei dem der Strahl die Ebene weit draussen trifft.
+    const reachX = bounds.width / 2 + bounds.width * PLATE_DRAG_REACH;
+    const reachZ = bounds.depth / 2 + bounds.depth * PLATE_DRAG_REACH;
     return placementWorkplanePoint(
       workplane,
-      clamp(snapValue(local.x, step), -bounds.width / 2 + 6, bounds.width / 2 - 6),
-      clamp(snapValue(local.z, step), -bounds.depth / 2 + 6, bounds.depth / 2 - 6),
+      clamp(snapValue(local.x, step), -reachX, reachX),
+      clamp(snapValue(local.z, step), -reachZ, reachZ),
     );
   }, [toRawPlanePoint]);
 

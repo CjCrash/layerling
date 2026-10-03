@@ -34,7 +34,7 @@ The small arrow at the very top of the bar hides it if it gets in the way.
 
 ## Looking inside: the section view
 
-{{ui:camera.sectionView}}, the last button in the bar, cuts the view open along a plane so you can check walls, cavities and parts that fit into each other. Nothing is cut for real: the design, its files and every export stay whole.
+{{ui:camera.sectionView}}, the last button in the bar (the cut tool), cuts the view open along a plane so you can check walls, cavities and parts that fit into each other. Nothing is cut for real: the design, its files and every export stay whole.
 
 - Choose the axis (X, Y or Z) the plane stands across. The plane starts in the middle of your design.
 - {{ui:camera.sectionCoarse}} moves the plane across the whole design, {{ui:camera.sectionFine}} moves it a little either side of where it stands, for tenths of a millimetre. You can also type the position.

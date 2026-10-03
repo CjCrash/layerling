@@ -34,7 +34,7 @@ Am linken Rand liegt eine schmale Leiste. Von oben nach unten:
 
 ## Ins Innere schauen: die Schnittansicht
 
-{{ui:camera.sectionView}}, der letzte Knopf der Leiste, schneidet die Ansicht entlang einer Ebene auf. So prüfst du Wände, Hohlräume und Teile, die ineinandergreifen. Geschnitten wird nur die Ansicht: Entwurf, Dateien und jeder Export bleiben vollständig.
+{{ui:camera.sectionView}}, der letzte Knopf der Leiste (das Schnittwerkzeug), schneidet die Ansicht entlang einer Ebene auf. So prüfst du Wände, Hohlräume und Teile, die ineinandergreifen. Geschnitten wird nur die Ansicht: Entwurf, Dateien und jeder Export bleiben vollständig.
 
 - Wähle die Achse (X, Y oder Z), quer zu der die Ebene steht. Sie beginnt in der Mitte deines Entwurfs.
 - {{ui:camera.sectionCoarse}} schiebt die Ebene über den ganzen Entwurf, {{ui:camera.sectionFine}} nur ein Stück um ihre aktuelle Stelle, für Zehntelmillimeter. Die Position kannst du auch eintippen.

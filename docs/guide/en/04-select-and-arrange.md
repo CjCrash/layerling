@@ -21,6 +21,10 @@ With many parts it is easy to lose track in the view. The object list ({{ui:edit
 - {{ui:outliner.rename}} gives a part a name of its own; the pencil beside the name at the top of the settings does the same for the selected shape. Sensible names help enormously in larger designs.
 - The search field finds shapes by name and by kind, so also "cylinder" or "hole".
 
+## Parking parts beside the plate
+
+You can drag a shape past the edge of the plate and leave it there, about one plate width beyond each side, to keep it for later. The arrow keys move it as far as you like. A parked part still belongs to the design and goes into the export with everything else; to leave it out, select the parts you want and export only the selection. If you have picked a printer, layerling warns at export when something sits outside its plate.
+
 ## Snapping while moving
 
 When you drag a shape across the workplane, it snaps to other shapes: its left, right, front or back edge or its centre lands exactly on an edge or centre of another shape. A pink guide line shows what it is holding on to. That way two parts sit flush side by side or centred one behind the other without typing numbers. It works with the grid switched off, too.
