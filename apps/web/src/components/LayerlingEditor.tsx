@@ -7483,7 +7483,7 @@ export function LayerlingEditor({
     setSketchMeasurement(null);
     setEditingSketchShapeId(editingId);
     setNotice(editingId
-      ? t("status.editingProfile", { operation })
+      ? t(operation === "revolve" ? "status.editingRevolveProfile" : "status.editingProfile")
       : operation === "revolve" ? t("status.revolveStarted") : t("status.sketchStarted"));
   }, []);
 
@@ -7652,7 +7652,7 @@ export function LayerlingEditor({
           };
       const smoothed = sketchTool === "smooth" ? withSmoothSketchHandles(next) : next;
       const closed = orderedSketchPaths(smoothed).some((path) => path.closed && path.steps.some((step) => step.segment.startId === sketchActivePointId || step.segment.endId === sketchActivePointId));
-      if (!duplicate) commitSketchProfile(smoothed, closed ? "Profile closed—edit the path or finish the sketch" : "Sketch segment added");
+      if (!duplicate) commitSketchProfile(smoothed, closed ? t("status.sketchProfileClosed") : t("status.sketchSegmentAdded"));
       setSketchActivePointId(closed ? null : pointId);
       setSketchSelection({ kind: "point", id: pointId });
       if (closed) setSketchTool("select");
@@ -7685,7 +7685,7 @@ export function LayerlingEditor({
         next.segments = [...next.segments, { id: createLocalId("sketch-segment"), startId: sketchActivePointId, endId: point.id, kind: curveKind }];
       }
       const prepared = sketchTool === "smooth" ? withSmoothSketchHandles(next) : next;
-      commitSketchProfile(prepared, sketchActivePointId ? "Sketch point and segment added" : "Sketch point added");
+      commitSketchProfile(prepared, sketchActivePointId ? t("status.sketchPointSegmentAdded") : t("status.sketchPointAdded"));
       setSketchActivePointId(point.id);
       setSketchSelection({ kind: "point", id: point.id });
     },
@@ -7701,10 +7701,7 @@ export function LayerlingEditor({
         points: [...sketchProfile.points, ...points],
         segments: [...sketchProfile.segments, ...segments],
       };
-      // Aus "halfCircle" wird "Half circle": Der Name steht so im Verlauf, und
-      // dort liest ihn jemand.
-      const worte = primitive.replace(/([A-Z])/g, " $1").toLowerCase();
-      commitSketchProfile(next, `${worte[0]!.toUpperCase()}${worte.slice(1)} added to sketch`);
+      commitSketchProfile(next, t("status.sketchPrimitiveAdded", { shape: t(`sketch.${primitive}`) }));
       setSketchActivePointId(null);
       setSketchSelection(null);
       setSketchTool("select");
@@ -7755,7 +7752,7 @@ export function LayerlingEditor({
         points: sketchProfile.points.filter((point) => point.id !== id),
         segments: remainingSegments,
       };
-      commitSketchProfile(next.segments.some((segment) => segment.kind === "smooth") ? withSmoothSketchHandles(next) : next, "Sketch point removed");
+      commitSketchProfile(next.segments.some((segment) => segment.kind === "smooth") ? withSmoothSketchHandles(next) : next, t("status.sketchPointRemoved"));
       if (sketchActivePointId === id) setSketchActivePointId(null);
       setSketchSelection(null);
     },
@@ -7764,7 +7761,7 @@ export function LayerlingEditor({
 
   const deleteSketchSegment = useCallback(
     (id: string) => {
-      commitSketchProfile({ ...sketchProfile, segments: sketchProfile.segments.filter((segment) => segment.id !== id) }, "Sketch line removed");
+      commitSketchProfile({ ...sketchProfile, segments: sketchProfile.segments.filter((segment) => segment.id !== id) }, t("status.sketchLineRemoved"));
       setSketchActivePointId(null);
       setSketchSelection(null);
     },
@@ -7796,7 +7793,7 @@ export function LayerlingEditor({
     commitSketchProfile({
       ...sketchProfile,
       images: (sketchProfile.images ?? []).filter((image) => image.id !== id),
-    }, "Sketch image removed");
+    }, t("status.sketchImageRemoved"));
     setSketchSelection(null);
   }, [commitSketchProfile, sketchProfile]);
 
@@ -7824,7 +7821,7 @@ export function LayerlingEditor({
         lockAspect: true,
         locked: false,
       };
-      commitSketchProfile({ ...sketchProfile, images: [...(sketchProfile.images ?? []), image] }, `Added ${file.name} to the sketch`);
+      commitSketchProfile({ ...sketchProfile, images: [...(sketchProfile.images ?? []), image] }, t("status.sketchImageAdded", { name: file.name }));
       setSketchSelection({ kind: "image", id: image.id });
       setSketchActivePointId(null);
     } catch (error) {
@@ -7866,7 +7863,7 @@ export function LayerlingEditor({
         points: sketchProfile.points.filter((point) => !pointIds.has(point.id)),
         segments: sketchProfile.segments.filter((segment) => !segmentIds.has(segment.id) && !pointIds.has(segment.startId) && !pointIds.has(segment.endId)),
         images: (sketchProfile.images ?? []).filter((image) => !imageIds.has(image.id)),
-      }, "Selected sketch geometry removed");
+      }, t("status.sketchSelectionRemoved"));
       setSketchActivePointId(null);
       setSketchSelection(null);
     }
@@ -7941,7 +7938,7 @@ export function LayerlingEditor({
         handleOut: point.handleOut ? { x: point.handleOut.x + deltaX, z: point.handleOut.z + deltaZ } : undefined,
       } : point),
     };
-    commitSketchProfile(next, "Sketch point moved");
+    commitSketchProfile(next, t("status.sketchPointMoved"));
   }, [commitSketchProfile, sketchProfile]);
 
   const transformSketchPoints = useCallback((points: SketchPoint[], message = "Sketch geometry transformed") => {
@@ -7977,7 +7974,7 @@ export function LayerlingEditor({
       if (handle === "in") point.handleOut = opposite;
       else point.handleIn = opposite;
     }
-    commitSketchProfile(next, "Curve handle adjusted");
+    commitSketchProfile(next, t("status.sketchHandleAdjusted"));
   }, [commitSketchProfile, sketchProfile]);
 
   const setSketchPointMode = useCallback((id: string, mode: "corner" | "smooth" | "split") => {
@@ -7995,13 +7992,13 @@ export function LayerlingEditor({
       const updated = next.points.find((entry) => entry.id === id);
       if (updated) updated.mode = mode;
     }
-    commitSketchProfile(next, mode === "corner" ? "Made corner" : mode === "smooth" ? "Made smooth" : "Curve handles split");
+    commitSketchProfile(next, mode === "corner" ? t("status.sketchMadeCorner") : mode === "smooth" ? t("status.sketchMadeSmooth") : t("status.sketchHandlesSplit"));
   }, [commitSketchProfile, sketchProfile]);
 
   const insertSketchPoint = useCallback((segmentId: string, _position: { x: number; z: number }, amount: number) => {
     const result = splitSketchSegment(sketchProfile, segmentId, amount, createLocalId);
     if (!result.pointId) return;
-    if (result.inserted) commitSketchProfile(result.profile, "Point added to path");
+    if (result.inserted) commitSketchProfile(result.profile, t("status.sketchPointInserted"));
     setSketchSelection({ kind: "point", id: result.pointId });
     setSketchTool("select");
   }, [commitSketchProfile, sketchProfile]);
@@ -8035,7 +8032,7 @@ export function LayerlingEditor({
         resolved = placeSketchShape(extrusion, activeSketchWorkplane, existing);
       }
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : `The sketch profile cannot be ${sketchOperation === "revolve" ? "revolved" : "extruded"} to 3D`);
+      setNotice(error instanceof Error ? error.message : t(sketchOperation === "revolve" ? "status.sketchCannotRevolve" : "status.sketchCannotExtrude"));
       return;
     }
     if (!resolved) {

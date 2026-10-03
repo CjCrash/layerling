@@ -152,6 +152,12 @@ describe("language detection", () => {
         // anfaengt und mehr als ein Wort traegt - ein Feldname nicht.
         const literal = ohneKommentar.match(/^\s*[`"]([A-Z][a-z]+ [a-z][^"`]*)[`"],?\s*$/);
         if (literal) verdaechtig.push(`${datei}:${index + 1}  ${literal[1].slice(0, 60)}`);
+        // Dasselbe, wenn der Satz direkt im Aufruf steht - so rutschten die
+        // Meldungen des Skizzenmodus durch („Half circle added to sketch").
+        const imAufruf = /\b(setNotice|commitSketchProfile|commitShapes)\(/.test(ohneKommentar)
+          ? ohneKommentar.match(/[`"]([A-Z][a-z]+ [a-z${][^"`]*)[`"]/)
+          : null;
+        if (imAufruf) verdaechtig.push(`${datei}:${index + 1}  ${imAufruf[1].slice(0, 60)}`);
       });
     }
     expect(verdaechtig).toEqual([]);
