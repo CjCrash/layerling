@@ -31,6 +31,8 @@ import {
   MIN_THREAD_DIAMETER,
   MIN_THREAD_QUALITY,
   THREAD_SIZE_GROUPS,
+  THREAD_SERIES_TEXT,
+  threadSeriesFor,
   defaultThreadHeadHeight,
   normalizeThreadChamfer,
   normalizeThreadClearance,
@@ -255,6 +257,8 @@ type SelectPropertyConfig = {
   label: string;
   value: string;
   options: SelectPropertyOption[];
+  /** Eine Zeile unter dem Feld, die die getroffene Wahl erklaert. */
+  hint?: string;
   onChange: (value: string) => void;
 };
 
@@ -965,6 +969,7 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
   if (shape.kind === "thread") {
     const settings = threadSettings(shape);
     const standard = threadSizeFor(settings.diameter, settings.pitch);
+    const standardSeries = standard ? threadSeriesFor(standard) : null;
     const pitchLimits = threadPitchLimits(settings.diameter);
     const headLimits = threadHeadHeightLimits(settings);
     const chamferLimits = threadChamferLimits(settings);
@@ -975,7 +980,7 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
       ...THREAD_SIZE_GROUPS.flatMap((group) => group.sizes.map((size) => ({
         value: size.id,
         label: size.id,
-        group: group.series === "metric" ? t("thread.systemMetric") : group.series === "G" ? t("thread.systemPipe") : group.series,
+        group: t(THREAD_SERIES_TEXT[group.series].group),
       }))),
       { value: "custom", label: t("thread.customSize") },
     ];
@@ -1059,6 +1064,7 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
         label: t("prop.threadSize"),
         value: standard ? standard.id : "custom",
         options: sizeOptions,
+        hint: standardSeries ? t(THREAD_SERIES_TEXT[standardSeries].hint) : undefined,
         onChange: (value) => {
           const chosen = threadSizeById(value);
           // Eine G-Groesse bringt ihr Whitworth-Profil mit, eine M-, UNC- oder
@@ -2191,7 +2197,7 @@ function TextProperty({ label, value, disabled, onChange, onInteractionActiveCha
   );
 }
 
-function SelectProperty({ label, value, options, disabled, onChange }: Omit<SelectPropertyConfig, "id"> & { id?: string } & { disabled?: boolean }) {
+function SelectProperty({ label, value, options, hint, disabled, onChange }: Omit<SelectPropertyConfig, "id"> & { id?: string } & { disabled?: boolean }) {
   // Aufeinanderfolgende Eintraege mit derselben Ueberschrift werden zu einem
   // Block; ohne Ueberschrift stehen sie fuer sich.
   const blocks: Array<{ group?: string; items: SelectPropertyOption[] }> = [];
@@ -2220,6 +2226,7 @@ function SelectProperty({ label, value, options, disabled, onChange }: Omit<Sele
           )
         ))}
       </select>
+      {hint ? <small className="select-property-hint">{hint}</small> : null}
     </label>
   );
 }

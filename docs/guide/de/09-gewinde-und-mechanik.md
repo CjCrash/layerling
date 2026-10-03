@@ -18,6 +18,13 @@ Wähle {{ui:shape.thread}} in der Formenbibliothek. Unter {{ui:inspector.threadR
 
 Die Größe suchst du bei {{ui:prop.threadSize}} aus einer Liste: metrisch von M2 bis M12, die Zollgrößen UNC und UNF von Nr. 4 bis 1 Zoll und die Rohrgewinde G1/16 bis G4. Wählst du {{ui:thread.customSize}}, bestimmst du {{ui:prop.diameter}} und {{ui:prop.pitch}} selbst. Bei einer Zoll- oder G-Größe fragt das Feld nach {{ui:prop.threadsPerInch}} statt nach der Steigung in Millimetern.
 
+Die Liste ordnet die Größen nach Reihen, und eine Zeile unter dem Feld nennt die Reihe der gewählten Größe, mit Beispielen aus dem Alltag:
+
+- **M, Regelgewinde:** das metrische ISO-Regelgewinde nach ISO 261, wie bei Normschrauben und -muttern.
+- **UNC, US-Zoll grob:** Die Kamera- und Stativschraube ist 1/4"-20 UNC (ISO 1222), größere Stativköpfe nehmen 3/8"-16 UNC.
+- **UNF, US-Zoll fein:** dieselben Durchmesser wie UNC mit feinerer Steigung (ASME B1.1).
+- **G, Rohrgewinde:** Ein Duschschlauch wird mit G1/2 angeschlossen, ein Waschmaschinen-Zulaufschlauch mit G3/4. Ein Gartenwasserhahn endet in G3/4, kleinere Hähne in G1/2; dort wird der Hahnverbinder eines Schlauch-Stecksystems aufgeschraubt.
+
 Die G-Größen sind die zylindrischen Whitworth-Rohrgewinde nach ISO 228-1, wie sie an Fittings für Wasser, Gas, Hydraulik und Pneumatik sitzen. Die Größe nennt das Rohr, nicht das Gewinde: Ein G1 misst über das Gewinde 33,249 mm. Wählst du eine G-Größe, wechselt das Profil auf {{ui:thread.profileWhitworth}}, eine metrische oder Zollgröße stellt es wieder auf {{ui:thread.profileV}}. Ein {{ui:thread.profileTrapezoidal}} oder {{ui:thread.profileRound}}, das du selbst gewählt hast, bleibt. Die Norm legt nur das Gewinde fest; Schraubenkopf und Mutter bekommen bei einer G-Größe dieselben Verhältnisse wie bei einem selbst gewählten Durchmesser. Die kegeligen Rohrgewinde R, Rc und Rp sind nicht dabei.
 
 Weitere Einstellungen:

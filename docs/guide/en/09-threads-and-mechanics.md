@@ -18,6 +18,13 @@ Choose {{ui:shape.thread}} in the shape library. Under {{ui:inspector.threadRole
 
 You pick the size under {{ui:prop.threadSize}} from a list: metric from M2 to M12, the inch sizes UNC and UNF from No. 4 to 1 inch, and the pipe threads G1/16 to G4. If you choose {{ui:thread.customSize}}, you set {{ui:prop.diameter}} and {{ui:prop.pitch}} yourself. For an inch size or a G size the field asks for {{ui:prop.threadsPerInch}} instead of the pitch in millimetres.
 
+The list groups the sizes by series, and a line under the field names the series of the size you picked, with examples you know from everyday life:
+
+- **M, metric coarse:** the ISO metric coarse thread to ISO 261, as on standard screws and nuts.
+- **UNC, US inch coarse:** the camera and tripod screw is 1/4"-20 UNC (ISO 1222), larger tripod heads use 3/8"-16 UNC.
+- **UNF, US inch fine:** the same diameters as UNC with a finer pitch (ASME B1.1).
+- **G, pipe thread:** a shower hose connects with G1/2, a washing-machine inlet hose with G3/4. A garden tap ends in G3/4, smaller taps in G1/2; that is where the tap connector of a click-on hose system screws on.
+
 The G sizes are the parallel Whitworth pipe threads to ISO 228-1, found on fittings for water, gas, hydraulics and pneumatics. The size names the pipe, not the thread: a G1 measures 33.249 mm across the thread. Choosing a G size sets the profile to {{ui:thread.profileWhitworth}}, and choosing a metric or inch size sets it back to {{ui:thread.profileV}}. A {{ui:thread.profileTrapezoidal}} or {{ui:thread.profileRound}} profile you picked yourself stays. The standard only defines the thread, so the head of a screw and a nut on a G size get the same proportions as on a diameter you set yourself. The tapered pipe threads R, Rc and Rp are not included.
 
 More settings:
