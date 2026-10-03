@@ -65,6 +65,7 @@ import {
   type PlacementWorkplane,
 } from "@/lib/placementWorkplane";
 import { printerPresetById } from "@/lib/printBed";
+import { GuideHelpLink } from "@/components/GuideHelpLink";
 import { groundFootprintForFrame, liftGeometryForFrame, type SelectionFrame } from "@/lib/liftGeometry";
 import { regularPolygonFootprintScale } from "@/lib/regularPolygonFootprint";
 import { roundSideCount } from "@/lib/roundSideCount";
@@ -7670,6 +7671,7 @@ export function WorkplaneViewport({
                   <button className={`tape-delete-button ${tapeDeleteMode ? "active" : ""}`} aria-label={t("camera.deleteMeasurement")} title={t("camera.deleteMeasurement")} aria-pressed={tapeDeleteMode} onClick={activateTapeDelete}>
                     <X size={20} strokeWidth={2.4} aria-hidden="true" />
                   </button>
+                  <GuideHelpLink section="tapeMeasure" className="tape-popover-help" iconSize={20} strokeWidth={2.25} />
                 </div>
               ) : null}
             </div>
@@ -7708,6 +7710,7 @@ export function WorkplaneViewport({
                     >
                       {sectionSettings.enabled ? t("camera.sectionActive") : t("camera.sectionInactive")}
                     </button>
+                    <GuideHelpLink section="sectionView" className="section-popover-help" iconSize={17} strokeWidth={2.2} />
                     <button
                       type="button"
                       className="section-popover-close"

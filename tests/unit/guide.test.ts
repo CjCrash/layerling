@@ -15,7 +15,7 @@ import {
   webpSize,
 } from "../../scripts/build-guide.mjs";
 import { tools } from "../../scripts/layerling-mcp-tools.mjs";
-import { GUIDE_CHAPTERS, guideChapterForShape, guideHref } from "@/lib/guideLinks";
+import { GUIDE_CHAPTERS, GUIDE_SECTIONS, guideChapterForShape, guideHref } from "@/lib/guideLinks";
 
 const root = join(__dirname, "..", "..");
 const LANGUAGES = ["de", "en"] as const;
@@ -188,6 +188,19 @@ describe("guide content", () => {
         expect(slugs.has(files[language]), `${language}: ${name} -> ${files[language]}`).toBe(true);
       }
     }
+  });
+
+  it("has a heading behind every question mark that jumps into a chapter", () => {
+    for (const language of LANGUAGES) {
+      const directory = join(root, "docs", "guide", language);
+      for (const [name, section] of Object.entries(GUIDE_SECTIONS)) {
+        const file = readdirSync(directory).find((entry) => entry.endsWith(`-${GUIDE_CHAPTERS[section.chapter][language]}.md`));
+        expect(file, `${language}: ${name}`).toBeTruthy();
+        const ids = readFileSync(join(directory, file!), "utf8").split(/\r?\n/).filter((line) => line.startsWith("## ")).map((line) => slugify(line.slice(3).trim()));
+        expect(ids, `${language}: ${name}`).toContain(section[language]);
+      }
+    }
+    expect(guideHref("en", undefined, "sectionView")).toBe("/guide/view-and-workplane.html#looking-inside-the-section-view");
   });
 
   it("opens the chapter that fits a shape", () => {

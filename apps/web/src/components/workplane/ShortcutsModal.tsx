@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { Fragment, useEffect, useRef } from "react";
 import { t, type MessageKey } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
+import { GuideHelpLink } from "@/components/GuideHelpLink";
 
 /**
  * One shortcut: the keys stay literal in both languages, only the sentence
@@ -191,9 +192,12 @@ export function ShortcutsModal({ sketchMode, onClose }: { sketchMode: boolean; o
       <div className="workspace-modal-card shortcuts-modal-card" ref={cardRef} tabIndex={-1} onPointerDown={(event) => event.stopPropagation()}>
         <header className="workspace-modal-header">
           <strong>{t("shortcuts.title")}</strong>
-          <button aria-label={t("shortcuts.close")} onClick={onClose}>
-            <X size={18} />
-          </button>
+          <div className="panel-header-actions">
+            <GuideHelpLink chapter="shortcuts" />
+            <button aria-label={t("shortcuts.close")} onClick={onClose}>
+              <X size={18} />
+            </button>
+          </div>
         </header>
         <div className="workspace-modal-content">
           <div className="workspace-modal-body shortcuts-modal-body">

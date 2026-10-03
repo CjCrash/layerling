@@ -5505,6 +5505,13 @@ button {
   border-radius: 9px;
 }
 
+/* The question mark sits in the row like the tools beside it. */
+.camera-controls .tape-tool-popover .tape-popover-help {
+  width: 35px;
+  height: 35px;
+  border-radius: 9px;
+}
+
 .camera-controls .tape-tool-popover .tape-delete-button.active {
   color: #b42318;
   background: #fff0ee;
@@ -5611,6 +5618,12 @@ button {
   color: #8b7d6e;
   border-radius: 6px;
   cursor: pointer;
+}
+
+.section-tool-popover .section-popover-help {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
 }
 
 .camera-controls .section-tool-popover .section-popover-close:hover {

@@ -28,10 +28,25 @@ export const GUIDE_CHAPTERS = {
 
 export type GuideChapter = keyof typeof GUIDE_CHAPTERS;
 
-/** The address of a chapter, or of the guide's overview when none is named. */
-export function guideHref(language: Language, chapter?: GuideChapter): string {
+/**
+ * Sections inside a chapter that a question mark jumps to directly: the chapter
+ * and the id each language's heading gets (slugify in build-guide.mjs). The
+ * same test checks every id against the headings on disk.
+ */
+export const GUIDE_SECTIONS = {
+  sectionView: { chapter: "view", de: "ins-innere-schauen-die-schnittansicht", en: "looking-inside-the-section-view" },
+  tapeMeasure: { chapter: "measuring", de: "das-massband", en: "the-tape-measure" },
+} as const satisfies Record<string, { chapter: GuideChapter } & Record<Language, string>>;
+
+export type GuideSection = keyof typeof GUIDE_SECTIONS;
+
+/** The address of a chapter or one of its sections, or of the guide's overview when neither is named. */
+export function guideHref(language: Language, chapter?: GuideChapter, section?: GuideSection): string {
   const directory = language === "de" ? "anleitung" : "guide";
-  return chapter ? `/${directory}/${GUIDE_CHAPTERS[chapter][language]}.html` : `/${directory}/index.html`;
+  const target = section ? GUIDE_SECTIONS[section] : null;
+  const page = target?.chapter ?? chapter;
+  if (!page) return `/${directory}/index.html`;
+  return `/${directory}/${GUIDE_CHAPTERS[page][language]}.html${target ? `#${target[language]}` : ""}`;
 }
 
 /** Which chapter explains a shape - the one its question mark opens. */
