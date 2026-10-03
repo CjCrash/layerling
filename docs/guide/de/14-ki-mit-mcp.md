@@ -41,7 +41,7 @@ Die KI arbeitet mit denselben Funktionen wie du, sie läuft über denselben Weg 
 | `layerling_select_objects` | wählt Objekte aus |
 | `layerling_delete_objects` | löscht Objekte |
 | `layerling_create_shape` | legt eine Form an: Quader, Zylinder, Text (auch gebogen), Gewinde, Zahnrad, Skizzenkörper und alle anderen |
-| `layerling_import_file` | importiert eine Datei wie das Importfenster, eine farbige OBJ als ein Körper je Farbe |
+| `layerling_import_file` | importiert eine Datei wie das Importfenster, eine farbige OBJ oder 3MF als ein Körper je Farbe |
 | `layerling_import_mesh` | bringt ein Dreiecksnetz in den Entwurf |
 | `layerling_update_object` | ändert Maße, Lage, Farbe, Name, Körper oder Aussparung und alles, was die Form sonst ausmacht |
 | `layerling_align_objects` | richtet Objekte aneinander aus |

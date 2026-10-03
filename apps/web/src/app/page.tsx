@@ -9,11 +9,8 @@ import { useAppUpdate } from "@/lib/useAppUpdate";
 import { sharedProjectSaveTarget } from "@/lib/sharedProjectTarget";
 import { storeFolderNameProblem, suggestStoreFolderName } from "@/lib/storeFolderName";
 import dynamic from "next/dynamic";
-import { importedShapeFromObj } from "@/lib/objImport";
-import { importedShapeFromStl } from "@/lib/stlImport";
-import { importedShapeFromSvg } from "@/lib/svgImport";
+import { importFailureSummary, importModelFiles } from "@/lib/modelImport";
 import { loadTextFonts } from "@/lib/textFonts";
-import { importedShapeFrom3mf } from "@/lib/threemfImport";
 import { applyAppTheme, getAppThemePreference, readStoredAppTheme, resolveAppTheme, setAppTheme, storeAppTheme, subscribeToAppTheme, type AppThemePreference, type ResolvedAppTheme } from "@/lib/appTheme";
 import { hydrateEditorHistoryState, notesForHistoryIndex, type EditorHistoryEntry } from "@/lib/editorHistory";
 import { detectLanguage, setLanguage, t, translate, type Language } from "@/lib/i18n";
@@ -29,11 +26,10 @@ import {
   placementWorkplaneFingerprint,
   type PlacementWorkplane,
 } from "@/lib/placementWorkplane";
-import { attachProjectAsset, dedupeProjectAssets, projectAssetFromBytes, sourceFormatForFileName } from "@/lib/projectAssets";
+import { dedupeProjectAssets } from "@/lib/projectAssets";
 import { hydrateProjectShapeState, reconcileLoadedProjectShapeCacheEntry, type ImportedMeshResource } from "@/lib/projectShapePersistence";
 import { exportLylProject, importLylProject, LYL_CREATED_WITH_VERSION, LYL_MEDIA_TYPE } from "@/lib/lylProject";
-import { backupEntryNames, backupFileName, isBackupFileName, packBackup, unpackBackup } from "@/lib/projectBackup";
-import { importExtensionSupported } from "@/lib/importExtensions";
+import { backupEntryNames, backupFileName, isBackupFileName, packBackup, unpackBackup, zipHoldsDesigns } from "@/lib/projectBackup";
 import { DEFAULT_SNAP_GRID, DEFAULT_WORKPLANE_WORKSPACE, normalizeSnapGrid, normalizeWorkspaceSettings, readWorkspaceDefault, workplaneSettingsFingerprint } from "@/lib/workplaneSettings";
 import type { GridSize, ProjectAsset, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 
@@ -1675,7 +1671,9 @@ export default function Home() {
   const importFilesFromDashboard = useCallback(
     async (files: File[]) => {
       if (!files.length) return;
-      const backups = files.filter((file) => isBackupFileName(file.name));
+      const zips = files.filter((file) => isBackupFileName(file.name));
+      const zipContents = await Promise.all(zips.map(async (file) => zipHoldsDesigns(new Uint8Array(await file.arrayBuffer()))));
+      const backups = zips.filter((_, index) => zipContents[index]);
       if (backups.length) {
         if (files.length !== 1) {
           setDashboardNotice(t("notice.oneBackupAtATime"));
@@ -1693,66 +1691,27 @@ export default function Home() {
         await openLylProjectFromFile(projectFiles[0]);
         return;
       }
-      const importedShapes: WorkplaneShape[] = [];
-      const importedAssets: ProjectAsset[] = [];
-      const importedFileNames: string[] = [];
-      const failures: Array<{ fileName: string; reason: string }> = [];
-
-      for (let index = 0; index < files.length; index += 1) {
-        const file = files[index];
-        const sourceFormat = sourceFormatForFileName(file.name) ?? (file.type === "image/svg+xml" ? "svg" : null);
-        const isObj = sourceFormat === "obj";
-        const isSvg = sourceFormat === "svg";
-        const isStep = sourceFormat === "step";
-        const is3mf = sourceFormat === "3mf";
-        if (!sourceFormat || (!isSvg && !isStep && !importExtensionSupported(file.name))) {
-          failures.push({ fileName: file.name, reason: "Unsupported file type" });
-          continue;
-        }
-
-        setDashboardNotice(t("notice.importing", { index: index + 1, total: files.length, name: file.name }));
-        try {
-          const bytes = new Uint8Array(await file.arrayBuffer());
-          const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-          const parsedShape = isStep
-            ? await import("@/lib/stepImport").then(({ importedShapeFromStep }) => importedShapeFromStep(file.name, buffer))
-            : isObj
-              ? importedShapeFromObj(file.name, new TextDecoder().decode(bytes))
-              : isSvg
-                ? importedShapeFromSvg(file.name, new TextDecoder().decode(bytes))
-                : is3mf
-                  ? importedShapeFrom3mf(file.name, buffer)
-                  : importedShapeFromStl(file.name, buffer);
-          const asset = await projectAssetFromBytes(file.name, sourceFormat, bytes, file.type);
-          importedShapes.push(attachProjectAsset(parsedShape, asset.id));
-          importedAssets.push(asset);
-          importedFileNames.push(file.name);
-        } catch (error) {
-          failures.push({
-            fileName: file.name,
-            reason: error instanceof Error ? error.message : "Could not read file",
-          });
-        }
-      }
-
-      const failureDetails = failures
-        .slice(0, 3)
-        .map((failure) => `${failure.fileName}: ${failure.reason}`)
-        .join("; ");
-      const remainingFailureCount = Math.max(0, failures.length - 3);
-      const failureSummary = failures.length
-        ? ` Failed: ${failureDetails}${remainingFailureCount ? `; plus ${remainingFailureCount} more` : ""}`
-        : "";
+      const result = await importModelFiles(files, {
+        onProgress: (index, total, file) => setDashboardNotice(t("notice.importing", { index: index + 1, total, name: file.name })),
+      });
+      if (!result) return;
+      const { shapes: importedShapes, assets: importedAssets, importedFileNames, failures, notes } = result;
+      const failureSummary = importFailureSummary(failures);
 
       if (!importedShapes.length) {
-        setDashboardNotice(files.length === 1 && failures[0] ? failures[0].reason : `Could not import any of the ${files.length} selected files.${failureSummary}`);
+        setDashboardNotice(result.mtlOnly
+          ? t("status.importMtlAlone")
+          : failures.length === 1 && result.files.length <= 1
+            ? failures[0].reason
+            : t("status.importNoneFailed", { total: Math.max(result.files.length, failures.length), summary: failureSummary }));
         return;
       }
 
       try {
-        const projectName = importedShapes.length === 1
+        // Eine farbige Datei bringt mehrere Koerper, ist aber ein Entwurf mit ihrem Namen.
+        const projectName = importedFileNames.length === 1
           ? projectNameFromFileName(importedFileNames[0])
-          : `Imported design (${importedShapes.length} files)`;
+          : t("notice.importedDesignName", { count: importedFileNames.length });
         const project = newProject(projectName, projects.length, importedShapes.length);
         const revision = project.revision ?? project.updatedAt;
         const entry = projectShapeCacheEntry(revision, importedShapes, undefined, undefined, dedupeProjectAssets(importedAssets));
@@ -1761,10 +1720,10 @@ export default function Home() {
           ...current,
           [project.id]: entry,
         }));
-        const successSummary = importedShapes.length === 1 && files.length === 1
-          ? `Imported ${files[0].name}`
-          : `Imported ${importedShapes.length} of ${files.length} files`;
-        setDashboardNotice(`${successSummary}.${failureSummary}`.trim());
+        const successSummary = result.files.length === 1
+          ? t("status.importedFile", { name: result.files[0].name })
+          : t("status.importedFiles", { count: importedFileNames.length, total: result.files.length });
+        setDashboardNotice([successSummary, ...notes].join(" ") + failureSummary);
         setProjects((current) => [project, ...current]);
         openEditor(project.id, { allowMissingFromStorage: true });
       } catch (error) {
@@ -1894,7 +1853,7 @@ export default function Home() {
         className="hidden-file-input"
         type="file"
         multiple
-        accept=".lyl,.skf,.zip,.stl,.obj,.3mf,.step,.stp,.svg,image/svg+xml"
+        accept=".lyl,.skf,.zip,.stl,.obj,.mtl,.3mf,.step,.stp,.svg,image/svg+xml"
         onChange={(event) => {
           const files = event.currentTarget.files ? Array.from(event.currentTarget.files) : [];
           if (files.length) {

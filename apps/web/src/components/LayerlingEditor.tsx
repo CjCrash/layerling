@@ -143,10 +143,9 @@ import { exportMeshesToObj } from "@/lib/objExport";
 import { boundsOverlap, exportColorGroups, meshBounds, overlappingExportClusters } from "@/lib/exportUnion";
 import { rotateSketchPoints, selectedClosedSketchPoints } from "@/lib/sketchRotation";
 import { PROJECT_THUMBNAIL_IDLE_MS, projectThumbnailSceneChanged, type ProjectThumbnailSceneKey } from "@/lib/projectThumbnail";
-import { importedShapeFromObj, importedShapesFromObj } from "@/lib/objImport";
-import { unzipSync } from "fflate";
-import { importedShapeFrom3mf } from "@/lib/threemfImport";
-import { attachProjectAsset, dedupeProjectAssets, projectAssetFromBytes, sourceFormatForFileName } from "@/lib/projectAssets";
+import { importedShapeFromObj } from "@/lib/objImport";
+import { importFailureSummary, importModelFiles } from "@/lib/modelImport";
+import { dedupeProjectAssets } from "@/lib/projectAssets";
 import { findSketchOutlineIntersection } from "@/lib/sketchProfileValidation";
 import { addLineIntersectionPoints, splitSketchSegment } from "@/lib/sketchPointRefinement";
 import { copySketchSelection, freeSketchPasteOffset, pasteSketchClipboard, type SketchClipboard } from "@/lib/sketchClipboard";
@@ -158,7 +157,6 @@ import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { exportLylProject, importLylProject, LYL_CREATED_WITH_VERSION, LYL_MEDIA_TYPE } from "@/lib/lylProject";
 import { displayShapeName, makeShapeFromAsset, sceneShape, shapeAssetLabel, shapeAssetMenuLabel, toolbarShapeAssets } from "@/lib/shapeCatalog";
-import { importExtensionSupported } from "@/lib/importExtensions";
 import { importedShapeFromStl } from "@/lib/stlImport";
 import { exportMeshesToStl } from "@/lib/stlExport";
 import { exportMeshesTo3mf, THREE_MF_MEDIA_TYPE } from "@/lib/threemfExport";
@@ -2929,38 +2927,6 @@ function triggerBrowserDownload(filename: string, content: string, type: string)
   link.click();
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-/**
- * Was zum Import ausgewaehlt wurde, zurechtgelegt: ein ZIP (so liefert
- * Tinkercad seine OBJ, mit der .mtl daneben) wird ausgepackt, und .mtl-Dateien
- * sind keine eigenen Teile, sondern die Farben fuer die OBJ daneben.
- */
-async function prepareImportFiles(files: readonly File[]) {
-  const expanded: File[] = [];
-  const failures: Array<{ fileName: string; reason: string }> = [];
-  for (const file of files) {
-    if (!/\.zip$/i.test(file.name)) {
-      expanded.push(file);
-      continue;
-    }
-    try {
-      const entries = unzipSync(new Uint8Array(await file.arrayBuffer()), {
-        filter: (entry) => !entry.name.endsWith("/") && /\.(obj|mtl|stl|3mf|svg|step|stp)$/i.test(entry.name) && !/(^|\/)__MACOSX\//.test(entry.name),
-      });
-      const inside = Object.entries(entries).map(([name, bytes]) => new File([bytes as BlobPart], name.split("/").pop() || name));
-      if (!inside.some((entry) => !/\.mtl$/i.test(entry.name))) {
-        failures.push({ fileName: file.name, reason: t("status.importZipEmpty") });
-        continue;
-      }
-      expanded.push(...inside);
-    } catch {
-      failures.push({ fileName: file.name, reason: t("status.importZipUnreadable") });
-    }
-  }
-  const mtlFiles = expanded.filter((file) => /\.mtl$/i.test(file.name));
-  const mtlSources = await Promise.all(mtlFiles.map((file) => file.text()));
-  return { files: expanded.filter((file) => !/\.mtl$/i.test(file.name)), mtlSources, failures };
 }
 
 async function downloadTextFile(filename: string, content: string, type: string) {
@@ -11272,89 +11238,25 @@ export function LayerlingEditor({
       return none;
     }
     const sourceProjectId = projectInfoRef.current.projectId;
-    const importedShapes: WorkplaneShape[] = [];
-    const importedAssets: ProjectAsset[] = [];
-    const prepared = await prepareImportFiles(selected);
-    const files = prepared.files;
-    const failures: Array<{ fileName: string; reason: string }> = [...prepared.failures];
-    const notes: string[] = [];
-    if (!files.length && prepared.mtlSources.length && !failures.length) {
-      setNotice(t("status.importMtlAlone"), true);
-      return { importedIds: [], failures: [{ fileName: selected[0].name, reason: t("status.importMtlAlone") }] };
-    }
-
-    for (let index = 0; index < files.length; index += 1) {
-      const file = files[index];
-      if (projectInfoRef.current.projectId !== sourceProjectId) {
-        setNotice(t("status.importCancelled", { count: files.length }));
-        return none;
-      }
-
-      const sourceFormat = sourceFormatForFileName(file.name) ?? (file.type === "image/svg+xml" ? "svg" : null);
-      const isStep = sourceFormat === "step";
-      const isObj = sourceFormat === "obj";
-      const isSvg = sourceFormat === "svg";
-      const is3mf = sourceFormat === "3mf";
-      if (!sourceFormat || (!isStep && !isSvg && !importExtensionSupported(file.name))) {
-        failures.push({ fileName: file.name, reason: "Unsupported file type" });
-        continue;
-      }
-
-      setNotice(t("status.importingFile", {
+    const result = await importModelFiles(selected, {
+      cancelled: () => projectInfoRef.current.projectId !== sourceProjectId,
+      onProgress: (index, total, file, isStep) => setNotice(t("status.importingFile", {
         index: index + 1,
-        total: files.length,
+        total,
         name: file.name,
         stepNote: isStep ? t("status.stepKernelNote") : "",
-      }), true);
-      try {
-        const bytes = new Uint8Array(await file.arrayBuffer());
-        const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-        let nextShape: WorkplaneShape;
-        if (isObj) {
-          // Eine farbige OBJ wird zu einem Koerper je Farbe. Die tragen ihr
-          // Netz dann selbst; die Datei als Ganzes bauen sie nicht nach.
-          const obj = importedShapesFromObj(file.name, new TextDecoder().decode(bytes), prepared.mtlSources);
-          if (obj.missingMaterialColors) notes.push(t("status.importObjNoMtl", { name: file.name }));
-          if (obj.split) {
-            importedShapes.push(...obj.shapes);
-            notes.push(t("status.importObjParts", { name: file.name, count: obj.shapes.length }));
-            continue;
-          }
-          nextShape = obj.shapes[0];
-        } else if (isStep) {
-          const { importedShapeFromStep } = await import("@/lib/stepImport");
-          nextShape = await importedShapeFromStep(file.name, buffer);
-        } else if (isSvg) {
-          nextShape = importedShapeFromSvg(file.name, new TextDecoder().decode(bytes));
-        } else if (is3mf) {
-          nextShape = importedShapeFrom3mf(file.name, buffer);
-        } else {
-          nextShape = importedShapeFromStl(file.name, buffer);
-        }
-        const asset = await projectAssetFromBytes(file.name, sourceFormat, bytes, file.type);
-        importedShapes.push(attachProjectAsset(nextShape, asset.id));
-        importedAssets.push(asset);
-      } catch (error) {
-        failures.push({
-          fileName: file.name,
-          reason: error instanceof Error ? error.message : "Could not read file",
-        });
-      }
-    }
-
-    if (projectInfoRef.current.projectId !== sourceProjectId) {
-      setNotice(t("status.importCancelled", { count: files.length }));
+      }), true),
+    });
+    if (!result) {
+      setNotice(t("status.importCancelled", { count: selected.length }));
       return none;
     }
-
-    const failureDetails = failures
-      .slice(0, 3)
-      .map((failure) => `${failure.fileName}: ${failure.reason}`)
-      .join("; ");
-    const remainingFailureCount = Math.max(0, failures.length - 3);
-    const failureSummary = failures.length
-      ? " " + t("status.importFailedList", { details: failureDetails, more: remainingFailureCount ? t("status.importFailedMore", { count: remainingFailureCount }) : "" })
-      : "";
+    const { shapes: importedShapes, assets: importedAssets, files, failures, notes } = result;
+    if (result.mtlOnly) {
+      setNotice(t("status.importMtlAlone"), true);
+      return { importedIds: [], failures };
+    }
+    const failureSummary = importFailureSummary(failures);
 
     if (!importedShapes.length) {
       setNotice(failures.length === 1 && files.length <= 1
@@ -11365,7 +11267,7 @@ export function LayerlingEditor({
 
     const successSummary = files.length === 1
       ? t("status.importedFile", { name: files[0].name })
-      : t("status.importedFiles", { count: files.length - failures.filter((failure) => files.some((file) => file.name === failure.fileName)).length, total: files.length });
+      : t("status.importedFiles", { count: result.importedFileNames.length, total: files.length });
     const nextAssets = dedupeProjectAssets([...projectAssetsRef.current, ...importedAssets]);
     projectAssetsRef.current = nextAssets;
     setProjectAssets(nextAssets);

@@ -220,7 +220,7 @@ export const tools = [
   },
   {
     name: "layerling_import_file",
-    description: "Import a file the way the editor's import window does: STL, OBJ, 3MF, STEP, SVG or a ZIP holding them. A coloured OBJ - vertex colours as layerling writes them, or materials with their .mtl (pass it as mtl, or inside the ZIP, as Tinkercad delivers it) - comes in as one body per colour, each in its place. Give the content as text (OBJ, SVG, ASCII STL, STEP) or as base64 (binary STL, 3MF, ZIP). Returns the imported bodies with id, name, colour, size and position.",
+    description: "Import a file the way the editor's import window does: STL, OBJ, 3MF, STEP, SVG or a ZIP holding them. A coloured OBJ - vertex colours as layerling writes them, or materials with their .mtl (pass it as mtl, or inside the ZIP, as Tinkercad delivers it) - comes in as one body per colour, each in its place; so does a coloured 3MF (its own colours, or the filament of each part in a Bambu Studio, OrcaSlicer or PrusaSlicer project). Give the content as text (OBJ, SVG, ASCII STL, STEP) or as base64 (binary STL, 3MF, ZIP). Returns the imported bodies with id, name, colour, size and position.",
     inputSchema: {
       ...editorTargetSchema,
       required: ["fileName"],

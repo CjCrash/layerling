@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { placeColoredParts } from "@/lib/coloredImport";
 import { createLocalId } from "@/lib/localIds";
 import { zUpToLayerling } from "@/lib/meshCoordinates";
 import type { WorkplaneShape } from "@/types/layerling";
@@ -355,9 +356,6 @@ export function importedShapeFromObj(fileName: string, source: string, legacyAxe
   return importedObjShapeFromTriangles(fileName, positions, complete ? parts.flatMap((part) => part.normals) : undefined);
 }
 
-/** Farben fuer Teile, deren Material keine Farbe verraet - gut unterscheidbar. */
-const FALLBACK_PART_COLORS = ["#0098c7", "#e8590c", "#2f9e44", "#ae3ec9", "#f2c200", "#495057", "#d6336c", "#1c7ed6"];
-
 export type ObjImportResult = {
   shapes: WorkplaneShape[];
   /** Mehr als ein Teil: dann tragen die Koerper ihr Netz selbst ("json"), nicht die Datei. */
@@ -365,22 +363,6 @@ export type ObjImportResult = {
   /** Materialien ohne bekannte Farbe - die .mtl fehlte vermutlich. */
   missingMaterialColors: boolean;
 };
-
-function bounds(positions: readonly number[]) {
-  let minX = Infinity;
-  let minY = Infinity;
-  let minZ = Infinity;
-  let maxX = -Infinity;
-  let maxZ = -Infinity;
-  for (let index = 0; index < positions.length; index += 3) {
-    minX = Math.min(minX, positions[index]);
-    maxX = Math.max(maxX, positions[index]);
-    minY = Math.min(minY, positions[index + 1]);
-    minZ = Math.min(minZ, positions[index + 2]);
-    maxZ = Math.max(maxZ, positions[index + 2]);
-  }
-  return { centerX: (minX + maxX) / 2, centerZ: (minZ + maxZ) / 2, minY };
-}
 
 /**
  * Eine OBJ mit Farben wird zu einem Koerper je Farbe, alle an ihrer Stelle
@@ -402,22 +384,15 @@ export function importedShapesFromObj(fileName: string, source: string, mtlSourc
     return { shapes: [color ? { ...own, color } : own], split: false, missingMaterialColors };
   }
 
-  const file = bounds(parts.flatMap((part) => part.positions));
-  let fallback = 0;
-  const shapes = parts.map((part, index): WorkplaneShape => {
-    const shape = importedObjShapeFromTriangles(fileName, part.positions, partNormals(part));
-    const own = bounds(part.positions);
-    const color = part.color ?? FALLBACK_PART_COLORS[fallback++ % FALLBACK_PART_COLORS.length];
-    const label = part.material && !colorFromMaterialName(part.material) ? part.material : String(index + 1);
-    return {
-      ...shape,
-      name: `${whole.name} ${label}`,
-      color,
-      x: whole.x + own.centerX - file.centerX,
-      z: whole.z + own.centerZ - file.centerZ,
-      elevation: own.minY - file.minY,
-      importedMesh: { ...shape.importedMesh!, sourceFormat: "json" },
-    };
-  });
+  const shapes = placeColoredParts(
+    whole.name,
+    parts.map((part) => ({
+      color: part.color,
+      label: part.material && !colorFromMaterialName(part.material) ? part.material : undefined,
+      positions: part.positions,
+      normals: partNormals(part),
+    })),
+    (positions, normals) => importedObjShapeFromTriangles(fileName, positions, normals),
+  );
   return { shapes, split: true, missingMaterialColors };
 }

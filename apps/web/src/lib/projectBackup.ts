@@ -46,3 +46,23 @@ export function unpackBackup(bytes: Uint8Array): BackupEntry[] {
 export function isBackupFileName(fileName: string) {
   return /\.zip$/i.test(fileName);
 }
+
+/**
+ * Ein ZIP ist nur dann eine Sicherung, wenn Entwuerfe darin liegen. Tinkercad
+ * gibt seine OBJ ebenfalls als ZIP heraus (mit der .mtl), und die ist ein
+ * Import. Gelesen werden dafuer nur die Namen, nichts wird entpackt.
+ */
+export function zipHoldsDesigns(bytes: Uint8Array) {
+  let found = false;
+  try {
+    unzipSync(bytes, {
+      filter: (file) => {
+        if (/\.(lyl|skf)$/i.test(file.name)) found = true;
+        return false;
+      },
+    });
+  } catch {
+    return false;
+  }
+  return found;
+}
