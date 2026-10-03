@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Movable section panel:** The section view's panel can be dragged by its title bar anywhere on the workplane, like the object list and the shape settings, and opens there again next time. Double-clicking the title bar or dropping it at its button puts it back. The moving itself is shared with the two other panels; it now works for a panel that hangs on a button in a bar, too.
+
 ## 1.30.0
 
 - **Type a line's length in the sketch:** Click the dimension pill of a selected straight line and type the length in millimetres; Enter applies it, Esc cancels. The line keeps its direction and its start point - or, with an end point selected, that point moves - and the lines at the other end follow. Alt+Enter grows it to both sides around its middle. Curves show their length as before. Built with Google Antigravity.

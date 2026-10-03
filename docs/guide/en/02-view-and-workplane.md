@@ -42,6 +42,8 @@ The small arrow at the very top of the bar hides it if it gets in the way.
 - You can click and select what the cut lays open, inner walls included.
 - {{ui:camera.sectionExportSvg}} saves the outlines on the cutting plane as an SVG at 1:1, for a laser, a plotter, a template or a gasket. An X cut is seen from the right, a Y cut from above, a Z cut from the front. As in the export, only visible bodies go in, holes are already taken off, and bodies of the same colour are joined into one outline. Each colour stays its own path without a fill, so laser software keeps them apart as layers.
 
+The panel hangs on its button. If it covers something, drag it by its title bar anywhere on the workplane; it opens there next time too. Double-click the title bar or drop it at the button to put it back.
+
 [[Esc]] closes the panel; the cut stays until you switch it off or go back to the design overview. While it is on, its button stays highlighted. Anything you place on the side that is cut away only shows once you switch the cut off.
 
 ## The workplane
