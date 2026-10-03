@@ -7,6 +7,7 @@ code still carries it - so a lower number further down is older, not newer.
 ## Unreleased
 
 - **More panels move:** The section view's panel, the tool panel for fillets, chamfers, hollowing and patterns, the tape measure's buttons (by a grip on their left) and the settings of a sketch's template image can be dragged anywhere on the workplane, like the object list and the shape settings, and open there again next time. Double-clicking the title bar or grip, or dropping a panel back where it was, puts it back. The moving is one shared piece of code; it now also works for a panel fixed to the window or hung on a button in the camera bar, which shrinks on flat windows.
+- **Drag the view cube to rotate:** Dragging the view cube in the top left turns the view around, the same way dragging with the right button does, and on a touch screen with one finger. A click on a side still jumps straight to that view; a drag that ends on a side does not.
 
 ## 1.30.0
 
