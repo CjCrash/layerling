@@ -108,7 +108,7 @@ import type { AlignAxis, AlignHandleStatus, AlignTarget, GridSize, MeasurementAc
 import { NOTE_TEXT_LIMIT } from "@/lib/workplaneNotes";
 import { planarFaceCentroid, type PivotPoint } from "@/lib/rotationPivot";
 import { outwardFaceNormal } from "@/lib/layFlat";
-import { rotatedGeometryShapePatch } from "@/lib/geometryRotation";
+import { directionIsOwnShapeAxis, rotatedGeometryShapePatch } from "@/lib/geometryRotation";
 import type { CadModifierEdge } from "@/lib/cadModifierTypes";
 
 const WORKPLANE_WIDTH = 200;
@@ -3395,6 +3395,13 @@ function resizeImportedShapeAlongFrameNormal(
   if (!shape.importedMesh?.positions.length) {
     return null;
   }
+  // Zieht der Griff entlang einer eigenen Achse des Koerpers, reicht das Mass
+  // dieser Achse, und die Drehung bleibt. Einbacken wuerde sie auf 0 setzen -
+  // ein Skizzenkoerper landete dann beim Bearbeiten auf der Grundebene
+  // (Forum 617212).
+  if (directionIsOwnShapeAxis(shape, frame.yAxis)) {
+    return null;
+  }
 
   const positions = resizedImportedMeshPositions(shape);
   const scale = nextFrameHeight / Math.max(MIN_SHAPE_SIZE, frame.height);
@@ -3489,6 +3496,12 @@ function resizeImportedShapeAlongFrameNormal(
     edgeTreatments: undefined,
     edgeTreatmentHistory: undefined,
     edgeResizeMode: undefined,
+    // Schraeg gestreckt passt die Skizze nicht mehr zum Koerper, und ihre
+    // Ebene ist mit der Drehung weg: "Skizze bearbeiten" baute sonst einen
+    // flach liegenden Koerper ohne die Streckung.
+    sketchProfile: undefined,
+    sketchOperation: undefined,
+    sketchRevolve: undefined,
   };
 }
 

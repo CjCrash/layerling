@@ -4,6 +4,11 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.29.1
+
+- **A stretched sketch body keeps its face:** Pulling the height handle of a sketch body that stands on a side face turned it into a plain mesh lying on the plate's axes - its rotation was baked in and set to 0. "Edit sketch" then put the sketch on the base plane, and after finishing it the body lay flat. A pull along one of the body's own axes now only changes that size, so the rotation and the sketch's plane stay. A slanted pull still bakes the body; it then loses its sketch link, so editing can no longer rebuild it wrongly. Reported by Fratercula in the forum, with the files that showed it.
+- **Thread sizes readable in dark themes:** In Chrome on Linux the size list showed the option under the mouse pointer white on white in Graphite and Dark. Reported by Fratercula in the forum.
+
 ## 1.29.0
 
 - **Colours survive the 3MF export:** Before export, bodies that overlap or touch are joined into one, so a slicer gets clean shells. For 3MF this also joined bodies of different colours, and the joined body kept only the colour of the first one - a white logo set into a black plate arrived all black. A 3MF now joins only bodies of the same colour. Where one colour sits inside another, the body built first leaves room for the later one, so the logo stays whole and the plate gets a pocket for it. STL is unchanged; it carries no colour. Asked by @kwjaarsveld-star (#79).

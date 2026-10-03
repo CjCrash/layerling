@@ -7628,6 +7628,12 @@ button {
 
 .select-property select {
   cursor: pointer;
+  /*
+   * Das Feld bleibt in jedem Thema hell. Erbt es das dunkle Farbschema der
+   * Seite, malt Chrome unter Linux die Zeile unter dem Mauszeiger weiss auf
+   * weiss (Forum 617213, Gewindegroesse im Thema Graphit).
+   */
+  color-scheme: light;
 }
 
 /* Eine Zeile unter dem Feld, die die Wahl erklaert (beim Gewinde die Reihe mit Alltagsbeispielen). */

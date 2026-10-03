@@ -57,6 +57,20 @@ export function quaternionForShape(shape: ShapeRotation) {
   );
 }
 
+/**
+ * Liegt die Richtung auf einer eigenen Achse des Koerpers (in welche Richtung
+ * auch immer)? Dann laesst sich ein Zug entlang dieser Richtung als blosses
+ * Mass ausdruecken, und die Drehung bleibt stehen (Forum 617212).
+ */
+export function directionIsOwnShapeAxis(shape: ShapeRotation, direction: { x: number; y: number; z: number }) {
+  const wanted = new THREE.Vector3(direction.x, direction.y, direction.z);
+  if (wanted.lengthSq() < 1e-12) return false;
+  wanted.normalize();
+  const quaternion = quaternionForShape(shape);
+  return [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)]
+    .some((axis) => Math.abs(axis.applyQuaternion(quaternion).dot(wanted)) > 1 - 1e-6);
+}
+
 function rotationPatchFromQuaternion(quaternion: THREE.Quaternion) {
   const euler = new THREE.Euler().setFromQuaternion(quaternion, "XYZ");
   return {
