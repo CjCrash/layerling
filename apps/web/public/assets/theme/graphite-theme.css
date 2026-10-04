@@ -2455,6 +2455,47 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .panel-grip:hover {
   color: #252525;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-measure-row {
+  border-top: 1px solid #e3e3e3;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .camera-controls .section-tool-popover .section-measure-btn.active {
+  color: #fff;
+  background: #c86a12;
+  border-color: #b05c0e;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-measure-readout strong {
+  color: #252525;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-measure-readout span,
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-measure-help {
+  color: #606060;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-measure-outline {
+  stroke: #1677c8;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-measure-line {
+  stroke: #c86a12;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-measure-point {
+  fill: #c86a12;
+  stroke: #fff;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-measure-hover {
+  fill: none;
+  stroke: #c86a12;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .section-measure-hover.free {
+  stroke: #7a7a7a;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .section-checkbox-label {
   color: #606060;
 }
@@ -4574,6 +4615,23 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .section-tool-popover .
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .section-checkbox-label {
   color: #858585;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-measure-row {
+  border-top-color: #3d3d3d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-measure-readout strong {
+  color: #e4e4e4;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-measure-readout span,
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-measure-help {
+  color: #858585;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .section-measure-outline {
+  stroke: #4ba3ec;
 }
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .shape-inspector {

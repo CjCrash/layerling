@@ -475,6 +475,22 @@ export const tools = [
     inputSchema: editorTargetSchema,
   },
   {
+    name: "layerling_measure_section",
+    description: "Measure on a cut through the design, like \"Measure\" in the editor's section view: wall thickness, a gap, a clearance. Both points snap to the outline of the cut (within snapRadius mm, default 1): first to the nearest wall, then the second one preferably square to its wall as seen from the first - give it a point near the opposite wall and it returns the true thickness. Points are in the editor's coordinates (x, z, elevation); the one along the axis is set to the plane. axis and offset work like layerling_export_section_svg and default to the section view or the middle of the design. Returns the snapped points with their snap kind (perpendicular, corner, outline or free), distance and deltaX, deltaZ, deltaElevation. The section view itself is left as it is.",
+    inputSchema: {
+      ...editorTargetSchema,
+      properties: {
+        ...editorTargetSchema.properties,
+        axis: { type: "string", enum: ["x", "y", "z"], description: "Cutting axis, as in layerling_set_section_view." },
+        offset: { type: "number", description: "Where the plane cuts, in mm." },
+        from: { type: "object", description: "First point near a wall: { x, z, elevation }." },
+        to: { type: "object", description: "Second point near the other wall: { x, z, elevation }." },
+        snapRadius: { type: "number", description: "How far a point may be from the outline to snap, mm (default 1)." },
+      },
+      required: ["from", "to"],
+    },
+  },
+  {
     name: "layerling_show_overhangs",
     description: "Find overhangs that would need supports, like \"Show overhangs\" in the editor's visibility menu: faces that lean towards the plate more steeply than angle (degrees from vertical; a wall is 0, a flat ceiling 90). enabled switches the red tint in the view on or off; angle (30-70, default 45) is kept in the design's settings. Faces lying on the plate do not count. Returns enabled, angle and, for each visible solid (or the given ids), overhangAreaMm2 and lowestOverhangHeight - 0 means it prints without supports at that angle. A face resting on another body still counts. Use layerling_capture_image afterwards to see where the red is.",
     inputSchema: {

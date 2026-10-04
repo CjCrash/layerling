@@ -3,7 +3,7 @@ title: Messen und Notizen
 summary: Maßband, Lineal und Winkellineal, Abstände zum Nullpunkt – und Notizen, die an einem Teil hängen.
 ---
 
-Wer ein Teil genau bauen will, muss messen können. layerling hat dafür mehrere Werkzeuge. Keines davon landet in einem Export.
+Wer ein Teil genau bauen will, muss messen können. layerling hat dafür mehrere Werkzeuge. Keines davon landet in einem Export. Wandstärken und Spalte im Inneren misst du am besten in der [Schnittansicht](chapter:ansicht-und-arbeitsebene) mit {{ui:camera.sectionMeasure}}.
 
 ## Das Maßband
 

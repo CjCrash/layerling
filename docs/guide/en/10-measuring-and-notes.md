@@ -3,7 +3,7 @@ title: Measuring and notes
 summary: Tape measure, ruler and framing square, distances to the origin, and notes that stay attached to a part.
 ---
 
-To build a part exactly, you need to measure. layerling has several tools for that. None of them ends up in an export.
+To build a part exactly, you need to measure. layerling has several tools for that. None of them ends up in an export. Wall thickness and gaps inside a part are best measured in the [section view](chapter:view-and-workplane) with {{ui:camera.sectionMeasure}}.
 
 ## The tape measure
 

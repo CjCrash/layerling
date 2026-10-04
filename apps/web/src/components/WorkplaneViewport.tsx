@@ -1,10 +1,12 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Crosshair, Cuboid, Download, Eye, EyeOff, FlipHorizontal, GripVertical, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, RotateCcw, Rows3, RulerDimensionLine, Slice, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crosshair, Cuboid, Download, Eye, EyeOff, FlipHorizontal, GripVertical, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, RotateCcw, Rows3, Ruler, RulerDimensionLine, Slice, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type DragEvent, type MouseEvent as ReactMouseEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type ReactNode, type SetStateAction, type WheelEvent as ReactWheelEvent } from "react";
 import { objectSnapOffset, shiftSnapBox, type ObjectSnapGuide, type SnapBox } from "@/lib/objectSnap";
 import { useMovablePanel, type MovablePanelOptions } from "@/lib/useMovablePanel";
 import { computeSectionPlaneVector, DEFAULT_SECTION_SETTINGS, getSectionBounds, sectionFineWindow, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
+import { projectSectionPoint, type SectionLoop, type SectionPoint } from "@/lib/sectionSvg";
+import { sectionMeasurement, sectionPointToWorld, snapSectionPoint, type SectionSnap } from "@/lib/sectionMeasure";
 import * as THREE from "three";
 import { Brush, Evaluator, HOLLOW_INTERSECTION } from "three-bvh-csg";
 import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
@@ -311,6 +313,8 @@ type WorkplaneViewportProps = {
   onThemePreferenceChange?: (preference: AppThemePreference) => void;
   /** Der aktuelle Schnitt als SVG: rechnet der Editor, aus denselben Koerpern wie der Export. */
   onExportSectionSvg?: (axis: SectionPlaneAxis, offset: number) => void;
+  /** The cut's outlines, from the same bodies as the SVG - what section measuring snaps to. */
+  onSectionContours?: (axis: SectionPlaneAxis, offset: number) => Promise<SectionLoop[]>;
 };
 
 type WorkspaceSettings = WorkplaneWorkspaceSettings;
@@ -1941,6 +1945,102 @@ function NoteOverlay({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+type SectionMeasureModel = {
+  axis: SectionPlaneAxis;
+  offset: number;
+  loops: SectionLoop[];
+  a: SectionPoint | null;
+  b: SectionPoint | null;
+  hover: SectionSnap | null;
+};
+
+const EMPTY_SECTION_MEASURE: SectionMeasureModel = { axis: "x", offset: 0, loops: [], a: null, b: null, hover: null };
+
+type SectionMeasureOverlayState = {
+  signature: string;
+  outlines: string[];
+  a: { x: number; y: number } | null;
+  b: { x: number; y: number } | null;
+  hover: { x: number; y: number; kind: SectionSnap["kind"] } | null;
+  label: { x: number; y: number; text: string } | null;
+};
+
+/** The parts of a measurement that lie in the cutting plane, named like the position fields. */
+function sectionMeasureDeltas(result: ReturnType<typeof sectionMeasurement>, axis: SectionPlaneAxis, accuracy: MeasurementAccuracy) {
+  const parts: Array<[string, number]> = axis === "x"
+    ? [["Y", result.deltaDepth], ["Z", result.deltaHeight]]
+    : axis === "y"
+      ? [["X", result.deltaX], ["Y", result.deltaDepth]]
+      : [["X", result.deltaX], ["Z", result.deltaHeight]];
+  return parts.map(([name, value]) => `Δ${name} ${formatMeasure(Math.abs(value), accuracy)}`).join(" · ");
+}
+
+/** The cut's outlines and the measurement on screen; nothing in the scene itself. */
+function syncSectionMeasureOverlay(
+  state: ThreeState,
+  active: boolean,
+  model: SectionMeasureModel,
+  overlayRef: MutableRefObject<SectionMeasureOverlayState | null>,
+  setOverlay: Dispatch<SetStateAction<SectionMeasureOverlayState | null>>,
+  accuracy: MeasurementAccuracy,
+) {
+  if (!active) {
+    if (overlayRef.current) {
+      overlayRef.current = null;
+      setOverlay(null);
+    }
+    return;
+  }
+  const toScreen = (point: SectionPoint) => {
+    const [x, y, z] = sectionPointToWorld(point, model.axis, model.offset);
+    return projectToScreen(new THREE.Vector3(x, y, z), state);
+  };
+  const outlines = model.loops.map((loop) => {
+    const screen = loop.points.map(toScreen);
+    if (loop.closed && screen.length > 0) screen.push(screen[0]);
+    return screen.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
+  });
+  const a = model.a ? toScreen(model.a) : null;
+  const b = model.b ? toScreen(model.b) : null;
+  const hoverScreen = model.hover ? toScreen(model.hover.point) : null;
+  const label = model.a && model.b && a && b
+    ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 - 18, text: formatMeasure(sectionMeasurement(model.a, model.b, model.axis, model.offset).distance, accuracy) }
+    : null;
+  const next: SectionMeasureOverlayState = {
+    signature: "",
+    outlines,
+    a,
+    b,
+    hover: hoverScreen && model.hover ? { ...hoverScreen, kind: model.hover.kind } : null,
+    label,
+  };
+  next.signature = JSON.stringify([outlines.join("|").length, outlines[0]?.slice(0, 40), a, b, next.hover, label?.text, label?.x]);
+  if (overlayRef.current?.signature === next.signature) return;
+  overlayRef.current = next;
+  setOverlay(next);
+}
+
+function SectionMeasureOverlay({ overlay }: { overlay: SectionMeasureOverlayState }) {
+  return (
+    <div className="section-measure-overlay" aria-hidden="true">
+      <svg className="tape-guides" width="100%" height="100%">
+        {overlay.outlines.map((points, index) => (
+          <polyline key={index} className="section-measure-outline" points={points} fill="none" />
+        ))}
+        {overlay.a && overlay.b ? <line className="section-measure-line" x1={overlay.a.x} y1={overlay.a.y} x2={overlay.b.x} y2={overlay.b.y} /> : null}
+        {overlay.a ? <circle className="section-measure-point" cx={overlay.a.x} cy={overlay.a.y} r="4.5" /> : null}
+        {overlay.b ? <circle className="section-measure-point" cx={overlay.b.x} cy={overlay.b.y} r="4.5" /> : null}
+        {overlay.hover ? (
+          overlay.hover.kind === "perpendicular"
+            ? <rect className="section-measure-hover square" x={overlay.hover.x - 5} y={overlay.hover.y - 5} width="10" height="10" />
+            : <circle className={`section-measure-hover ${overlay.hover.kind}`} cx={overlay.hover.x} cy={overlay.hover.y} r="5" />
+        ) : null}
+      </svg>
+      {overlay.label ? <span className="tape-label section-measure-label" style={{ left: overlay.label.x, top: overlay.label.y }}>{overlay.label.text}</span> : null}
     </div>
   );
 }
@@ -3807,6 +3907,7 @@ export function WorkplaneViewport({
   resolvedTheme = "light",
   onThemePreferenceChange,
   onExportSectionSvg,
+  onSectionContours,
 }: WorkplaneViewportProps) {
   const [snapOpen, setSnapOpen] = useState(false);
   // The inspector hands the snap grid control back to the workplane while collapsed or floating.
@@ -3858,6 +3959,14 @@ export function WorkplaneViewport({
   sectionSettingsRef.current = sectionSettings;
   const sectionViewOpenRef = useRef(sectionViewOpen);
   sectionViewOpenRef.current = sectionViewOpen;
+  // Messen auf der Schnittebene: zwei Punkte, an den Umriss des Schnitts gerastet.
+  const [sectionMeasureMode, setSectionMeasureMode] = useState(false);
+  const sectionMeasureModeRef = useRef(false);
+  sectionMeasureModeRef.current = sectionMeasureMode;
+  const sectionMeasureRef = useRef<SectionMeasureModel>(EMPTY_SECTION_MEASURE);
+  const [sectionMeasureResult, setSectionMeasureResult] = useState<ReturnType<typeof sectionMeasurement> | null>(null);
+  const [sectionMeasureOverlay, setSectionMeasureOverlay] = useState<SectionMeasureOverlayState | null>(null);
+  const sectionMeasureOverlayRef = useRef<SectionMeasureOverlayState | null>(null);
   // Mitte des Feinreglers: folgt jeder Aenderung, die nicht vom Feinregler selbst kommt.
   const [sectionFineAnchor, setSectionFineAnchor] = useState(DEFAULT_SECTION_SETTINGS.offset);
   const sectionFineDraggingRef = useRef(false);
@@ -4461,6 +4570,40 @@ export function WorkplaneViewport({
   }, [showOverhangs, workspace.overhangAngle]);
 
   useEffect(() => {
+    if (!sectionSettings.enabled) setSectionMeasureMode(false);
+  }, [sectionSettings.enabled]);
+
+  useEffect(() => {
+    const { axis, offset } = sectionSettings;
+    const current = sectionMeasureRef.current;
+    if (current.axis !== axis || current.offset !== offset) {
+      // A measurement belongs to its plane.
+      sectionMeasureRef.current = { ...EMPTY_SECTION_MEASURE, axis, offset, loops: [] };
+      setSectionMeasureResult(null);
+    }
+    if (!sectionMeasureMode || !sectionSettings.enabled || !onSectionContours) {
+      if (threeRef.current) threeRef.current.needsRender = true;
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      onSectionContours(axis, offset)
+        .then((loops) => {
+          if (cancelled) return;
+          const model = sectionMeasureRef.current;
+          if (model.axis !== axis || model.offset !== offset) return;
+          sectionMeasureRef.current = { ...model, loops };
+          if (threeRef.current) threeRef.current.needsRender = true;
+        })
+        .catch(() => undefined);
+    }, 150);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [sectionMeasureMode, sectionSettings, shapes, onSectionContours]);
+
+  useEffect(() => {
     notesRef.current = notes;
     notesVisibleRef.current = notesVisible;
     if (threeRef.current) {
@@ -4654,6 +4797,7 @@ export function WorkplaneViewport({
         syncAlignOverlay(state, alignReferenceShapesRef.current, selectedIdsRef.current, alignModeRef.current, alignAnchorIdRef.current, alignHandlesRef.current, alignOverlayRef, setAlignOverlay);
         syncMirrorOverlay(state, mirrorReferenceShapesRef.current, selectedIdsRef.current, mirrorModeRef.current, mirrorOverlayRef, setMirrorOverlay);
         syncTapeOverlay(state, tapeModelRef.current, tapeOverlayRef, setTapeOverlay, workspaceRef.current.accuracy);
+        syncSectionMeasureOverlay(state, sectionMeasureModeRef.current && sectionSettingsRef.current.enabled, sectionMeasureRef.current, sectionMeasureOverlayRef, setSectionMeasureOverlay, workspaceRef.current.accuracy);
         syncRulerDimensionOverlay(state, previewShapes, rulerDimensionOverlayRef, setRulerDimensionOverlay, workspaceRef.current.accuracy);
         syncCornerRulerToolOverlay(state, cornerRulerModelRef.current, previewShapes, selectedIdsRef.current, cornerRulerOverlayRef, setCornerRulerOverlay, workspaceRef.current.accuracy);
         syncNoteOverlay(state, notesRef.current, notesVisibleRef.current, noteOverlayRef, setNoteOverlay);
@@ -4808,6 +4952,32 @@ export function WorkplaneViewport({
     }
 
     return hit;
+  }, []);
+
+  /** A point under the cursor on the cutting plane, snapped to the cut's outline (12 px around it). */
+  const pickSectionMeasurePoint = useCallback((clientX: number, clientY: number): SectionSnap | null => {
+    const state = threeRef.current;
+    const settings = sectionSettingsRef.current;
+    if (!state || !settings.enabled) return null;
+    const normal = settings.axis === "x" ? new THREE.Vector3(1, 0, 0) : settings.axis === "y" ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, 0, 1);
+    const hit = toRawPlanePoint(clientX, clientY, new THREE.Plane(normal, -settings.offset));
+    if (!hit) return null;
+    const target = projectSectionPoint([hit.x, hit.y, hit.z], settings.axis);
+    const [nx, ny, nz] = sectionPointToWorld({ u: target.u + 1, v: target.v }, settings.axis, settings.offset);
+    const here = projectToScreen(hit, state);
+    const there = projectToScreen(new THREE.Vector3(nx, ny, nz), state);
+    const pixelsPerMm = Math.max(1e-6, Math.hypot(there.x - here.x, there.y - here.y));
+    const model = sectionMeasureRef.current;
+    return snapSectionPoint(target, model.loops, 12 / pixelsPerMm, model.a && !model.b ? model.a : null);
+  }, [toRawPlanePoint]);
+
+  const placeSectionMeasurePoint = useCallback((point: SectionPoint) => {
+    const model = sectionMeasureRef.current;
+    // Third click starts the next measurement.
+    const next = !model.a || model.b ? { ...model, a: point, b: null } : { ...model, b: point };
+    sectionMeasureRef.current = { ...next, hover: null };
+    setSectionMeasureResult(next.a && next.b ? sectionMeasurement(next.a, next.b, next.axis, next.offset) : null);
+    if (threeRef.current) threeRef.current.needsRender = true;
   }, []);
 
   const toPlanePointAtY = useCallback((clientX: number, clientY: number, planeY = 0) => {
@@ -6517,6 +6687,13 @@ export function WorkplaneViewport({
         return;
       }
 
+      if (sectionMeasureModeRef.current && sectionSettingsRef.current.enabled) {
+        event.preventDefault();
+        const snap = pickSectionMeasurePoint(event.clientX, event.clientY);
+        if (snap) placeSectionMeasurePoint(snap.point);
+        return;
+      }
+
       if (tapeDeleteModeRef.current) {
         event.preventDefault();
         return;
@@ -6917,6 +7094,11 @@ export function WorkplaneViewport({
       }
       if (modifierActiveRef.current) {
         updateModifierEdgeHover(event.clientX, event.clientY);
+        return;
+      }
+      if (sectionMeasureModeRef.current && sectionSettingsRef.current.enabled) {
+        sectionMeasureRef.current = { ...sectionMeasureRef.current, hover: pickSectionMeasurePoint(event.clientX, event.clientY) };
+        if (threeRef.current) threeRef.current.needsRender = true;
         return;
       }
       if (tapeModeRef.current) {
@@ -7758,6 +7940,9 @@ export function WorkplaneViewport({
         event.preventDefault();
         cornerRulerModeRef.current = false;
         setCornerRulerMode(false);
+      } else if (event.key === "Escape" && sectionMeasureModeRef.current) {
+        event.preventDefault();
+        setSectionMeasureMode(false);
       } else if (event.key === "Escape" && sectionViewOpenRef.current) {
         event.preventDefault();
         setSectionViewOpen(false);
@@ -8063,6 +8248,29 @@ export function WorkplaneViewport({
                         );
                       })()}
 
+                      <div className="section-measure-row">
+                        <button
+                          type="button"
+                          className={`section-action-btn section-measure-btn ${sectionMeasureMode ? "active" : ""}`}
+                          aria-pressed={sectionMeasureMode}
+                          onClick={() => setSectionMeasureMode((current) => !current)}
+                          title={t("camera.sectionMeasureHint")}
+                        >
+                          <Ruler size={14} strokeWidth={2.2} aria-hidden="true" />
+                          <span>{t("camera.sectionMeasure")}</span>
+                        </button>
+                        {sectionMeasureMode ? (
+                          sectionMeasureResult ? (
+                            <div className="section-measure-readout" aria-live="polite">
+                              <strong>{formatMeasure(sectionMeasureResult.distance, workspace.accuracy)} {lengthDisplayUnit(workspace).label}</strong>
+                              <span>{sectionMeasureDeltas(sectionMeasureResult, sectionSettings.axis, workspace.accuracy)}</span>
+                            </div>
+                          ) : (
+                            <span className="section-measure-help">{t("camera.sectionMeasureHelp")}</span>
+                          )
+                        ) : null}
+                      </div>
+
                       <div className="section-popover-footer">
                         <div className="section-footer-actions">
                           <button
@@ -8105,7 +8313,7 @@ export function WorkplaneViewport({
         )}
       </div>
 
-      <section className={`workplane-wrap ${noteMode ? "note-mode" : ""} ${workplaneMode ? "placing-workplane" : ""} ${cruiseAsset ? "cruising" : ""} ${tapeMode ? "tape-mode" : ""} ${tapeDeleteMode ? "tape-delete-mode" : ""} ${tapeMoveMode ? "tape-move-mode" : ""} ${cornerRulerMode ? "corner-ruler-mode" : ""} ${pivotPickMode || layFlatPickMode ? "pivot-pick-mode" : ""} ${modifierActive ? "modifier-edge-pick" : ""}`} aria-label={t("aria.workplane")}>
+      <section className={`workplane-wrap ${noteMode ? "note-mode" : ""} ${workplaneMode ? "placing-workplane" : ""} ${cruiseAsset ? "cruising" : ""} ${tapeMode ? "tape-mode" : ""} ${tapeDeleteMode ? "tape-delete-mode" : ""} ${tapeMoveMode ? "tape-move-mode" : ""} ${cornerRulerMode ? "corner-ruler-mode" : ""} ${pivotPickMode || layFlatPickMode ? "pivot-pick-mode" : ""} ${modifierActive ? "modifier-edge-pick" : ""} ${sectionMeasureMode && sectionSettings.enabled ? "section-measure-mode" : ""}`} aria-label={t("aria.workplane")}>
         <div className="workplane-plane">
           <div
             className="three-workplane-host"
@@ -8186,6 +8394,7 @@ export function WorkplaneViewport({
           ) : null}
           {!workplaneMode && alignOverlay ? <AlignOverlay overlay={alignOverlay} onAlign={onAlignSelection} onPreview={onAlignPreview} onPreviewClear={onAlignPreviewClear} /> : null}
           {!workplaneMode && mirrorOverlay ? <MirrorOverlay overlay={mirrorOverlay} onMirror={onMirrorSelection} onPreview={onMirrorPreview} onPreviewClear={onMirrorPreviewClear} /> : null}
+          {sectionMeasureOverlay ? <SectionMeasureOverlay overlay={sectionMeasureOverlay} /> : null}
           {!workplaneMode && tapeOverlay && (tapeOverlay.points.length > 0 || tapeOverlay.hover) ? (
             <TapeOverlay
               overlay={tapeOverlay}

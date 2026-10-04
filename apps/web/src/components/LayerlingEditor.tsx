@@ -118,6 +118,7 @@ import { bakeCadMetadataForShapeTransform, cadBrepTransformForShape, cadModifier
 import { hasOneToOneCadComponentMapping } from "@/lib/cadModifierGroups";
 import { cadModifierHelicalGearForShape, cadModifierProfileForShape, cadModifierSpringForShape, cadModifierThreadForShape, cadProfileExpectation, cadProfileSegmentCount, closedMeshVolume, textGlyphProfiles, withinExactProfileLimit } from "@/lib/cadProfileExtrusion";
 import { DEFAULT_OVERHANG_ANGLE, normalizeOverhangAngle, overhangArea } from "@/lib/overhang";
+import { sectionMeasurement, sectionPointToWorld, snapSectionPoint } from "@/lib/sectionMeasure";
 import { DEFAULT_PRINT_MATERIAL, PRINT_MATERIAL_DENSITY, PRINT_MATERIALS, FILAMENT_DIAMETER_MM, normalizePrintMaterial, printEstimate, type PrintMaterial } from "@/lib/printEstimate";
 import {
   CAD_MODIFIER_MAX_SHARP_ANGLE,
@@ -197,7 +198,7 @@ import {
 import type { CadModifierComponentMesh, CadModifierDeflection, CadModifierDisplayEdge, CadModifierEdge, CadModifierHelicalGearPart, CadModifierKind, CadModifierMeshPart, CadModifierPrimitivePart, CadModifierProfilePart, CadModifierQuality, CadModifierSpringPart, CadModifierThreadPart, CadModifierWorkerRequest, CadModifierWorkerResponse } from "@/lib/cadModifierTypes";
 import type { SketchCadBuildResponse } from "@/lib/sketchCadTypes";
 import { getSectionBounds, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
-import { SECTION_VIEW_FACE, sectionSvgDocument, sliceMeshContours } from "@/lib/sectionSvg";
+import { projectSectionPoint, SECTION_VIEW_FACE, sectionSvgDocument, sliceMeshContours } from "@/lib/sectionSvg";
 import type { AlignAxis, AlignHandleStatus, AlignTarget, GridSize, ParametricSource, ProjectAsset, ShapeAsset, ShapeCustomization, ShapeKind, SketchImage, SketchOperation, SketchPoint, SketchProfile, SketchRevolveSettings, SketchSegment, ShellEdges, ShellOpenings, WorkplaneNote, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 
 export { importedShapeFromObj, importedShapeFromStl, importedShapeFromSvg };
@@ -9968,6 +9969,15 @@ export function LayerlingEditor({
     return { result, hiddenNote, hiddenCount, unionFailed: gescheitert > 0 };
   }, [projectName]);
 
+  /** Die Umrisse des Schnitts fuer das Messen - dieselben Koerper wie beim SVG. */
+  const sectionContours = useCallback(async (axis: SectionPlaneAxis, offset: number) => {
+    const visible = shapesRef.current.filter((shape) => !shape.hidden);
+    const solids = visible.filter((shape) => !shape.hole && !isNonSolidShapeKind(shape.kind));
+    if (solids.length === 0) return [];
+    const { meshes } = await colorSeparatedExportMeshes(solids, solids.map(meshForShape));
+    return meshes.flatMap((mesh) => sliceMeshContours(mesh, axis, offset));
+  }, []);
+
   const exportSectionSvg = useCallback(async (axis: SectionPlaneAxis, offset: number) => {
     setNotice(t("status.buildingSectionSvg"), true);
     try {
@@ -10510,6 +10520,49 @@ export function LayerlingEditor({
         return applyCadModifierForMcp(target, params);
       }
 
+      if (command.action === "measure_section") {
+        // Wie "Messen" in der Schnittansicht: beide Punkte rasten am Umriss
+        // des Schnitts ein, der zweite bevorzugt im rechten Winkel zur Wand.
+        const axisParam = params.axis === undefined ? undefined : mcpString(params.axis, "x").toLowerCase();
+        if (axisParam !== undefined && axisParam !== "x" && axisParam !== "y" && axisParam !== "z") throw new Error("axis must be x, y or z");
+        const current = window.layerlingSectionView?.({}).settings;
+        const axis = (axisParam ?? current?.axis ?? "x") as SectionPlaneAxis;
+        const offset = params.offset !== undefined
+          ? mcpNumber(params.offset, 0)
+          : current?.enabled && current.axis === axis
+            ? current.offset
+            : getSectionBounds(currentShapes(), axis, workspaceSettings.width, workspaceSettings.depth).center;
+        const readPoint = (value: unknown, name: string): [number, number, number] => {
+          if (!value || typeof value !== "object") throw new Error(`${name} must be an object with x, z and elevation`);
+          const point = value as Record<string, unknown>;
+          const x = mcpNumber(point.x, axis === "x" ? offset : 0);
+          const z = mcpNumber(point.z, axis === "z" ? offset : 0);
+          const elevation = mcpNumber(point.elevation, axis === "y" ? offset : 0);
+          return [axis === "x" ? offset : x, axis === "y" ? offset : elevation, axis === "z" ? offset : z];
+        };
+        const radius = Math.max(0, mcpNumber(params.snapRadius, 1));
+        const loops = await sectionContours(axis, offset);
+        if (loops.length === 0) throw new Error(t("status.sectionSvgMissed"));
+        const from = snapSectionPoint(projectSectionPoint(readPoint(params.from, "from"), axis), loops, radius);
+        const to = snapSectionPoint(projectSectionPoint(readPoint(params.to, "to"), axis), loops, radius, from.point);
+        const measured = sectionMeasurement(from.point, to.point, axis, offset);
+        const asEditor = (point: { u: number; v: number }) => {
+          const [x, y, z] = sectionPointToWorld(point, axis, offset);
+          return { x: Number(x.toFixed(4)), z: Number(z.toFixed(4)), elevation: Number(y.toFixed(4)) };
+        };
+        return {
+          axis,
+          offset,
+          outlines: loops.length,
+          from: { ...asEditor(from.point), snap: from.kind },
+          to: { ...asEditor(to.point), snap: to.kind },
+          distance: Number(measured.distance.toFixed(4)),
+          deltaX: Number(measured.deltaX.toFixed(4)),
+          deltaZ: Number(measured.deltaDepth.toFixed(4)),
+          deltaElevation: Number(measured.deltaHeight.toFixed(4)),
+        };
+      }
+
       if (command.action === "show_overhangs") {
         // Wie "Ueberhaenge zeigen" im Sichtbarkeitsmenue, dazu die Flaechen je Koerper.
         if (params.angle !== undefined) {
@@ -10714,6 +10767,7 @@ export function LayerlingEditor({
     prepareCadModifierForMcp,
     setActivePlacementWorkplane,
     updateProjectWorkspaceSettings,
+    sectionContours,
   ]);
 
   useEffect(() => {
@@ -12176,6 +12230,7 @@ export function LayerlingEditor({
           resolvedTheme={resolvedTheme}
           onThemePreferenceChange={onThemePreferenceChange}
           onExportSectionSvg={(axis, offset) => void exportSectionSvg(axis, offset)}
+          onSectionContours={sectionContours}
           />
         )}
       </div>

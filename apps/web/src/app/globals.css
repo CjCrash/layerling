@@ -5977,6 +5977,85 @@ html[data-theme="dark"] .panel-grip:hover {
   color: #2b1f14;
 }
 
+.section-measure-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #ebe4db;
+}
+
+.camera-controls .section-tool-popover .section-measure-btn.active {
+  color: #fff;
+  background: #c86a12;
+  border-color: #b05c0e;
+}
+
+.section-measure-readout {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.section-measure-readout strong {
+  color: #2b1f14;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.section-measure-readout span,
+.section-measure-help {
+  color: #7a6e60;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.section-measure-help {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.section-measure-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+}
+
+.section-measure-outline {
+  stroke: #1677c8;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.section-measure-line {
+  stroke: #c86a12;
+  stroke-width: 2;
+}
+
+.section-measure-point {
+  fill: #c86a12;
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.section-measure-hover {
+  fill: none;
+  stroke: #c86a12;
+  stroke-width: 2;
+}
+
+.section-measure-hover.free {
+  stroke: #9a8b7b;
+  stroke-dasharray: 3 2;
+}
+
+.workplane-wrap.section-measure-mode canvas {
+  cursor: crosshair;
+}
+
 .section-checkbox-label {
   display: inline-flex;
   align-items: center;
@@ -10220,6 +10299,23 @@ html[data-theme="dark"] .section-tool-popover .section-action-btn:hover {
 
 html[data-theme="dark"] .section-checkbox-label {
   color: #a89787;
+}
+
+html[data-theme="dark"] .section-measure-row {
+  border-top-color: #4a3a2a;
+}
+
+html[data-theme="dark"] .section-measure-readout strong {
+  color: #f0e7d9;
+}
+
+html[data-theme="dark"] .section-measure-readout span,
+html[data-theme="dark"] .section-measure-help {
+  color: #a89787;
+}
+
+html[data-theme="dark"] .section-measure-outline {
+  stroke: #4ba3ec;
 }
 
 html[data-theme="dark"] .shape-inspector {

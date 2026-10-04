@@ -106,6 +106,7 @@ export type LayerlingMcpCommandName =
   | "inspect_errors"
   | "estimate_print"
   | "show_overhangs"
+  | "measure_section"
   | "set_section_view"
   | "export_section_svg"
   | "import_file"
