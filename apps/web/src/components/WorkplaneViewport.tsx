@@ -86,7 +86,7 @@ import { regularPolygonFootprintScale } from "@/lib/regularPolygonFootprint";
 import { roundSideCount } from "@/lib/roundSideCount";
 import { createPyramidGeometry } from "@/lib/pyramidGeometry";
 import { projectThumbnailDimensions } from "@/lib/projectThumbnail";
-import { makeShapeFromAsset } from "@/lib/shapeCatalog";
+import { makeShapeFromAsset, parseDroppedShapeAsset } from "@/lib/shapeCatalog";
 import { canBeginShapeDrag, DEFAULT_SNAP_GRID, DEFAULT_WORKPLANE_WORKSPACE, normalizeSnapGrid, normalizeWorkspaceSettings, orbitControlsZoomSpeed, readWorkspaceDefault, saveWorkspaceDefault, shapeDimensionLimit, snapGridForUnits, snapGridStep as snapStep, workplaneSettingsFingerprint, workspaceHydrationSyncDecision, zoomDistanceScale } from "@/lib/workplaneSettings";
 import { workplaneGridLayout, workplaneGridLines, workplaneGridPalette, workplaneLabelLayout, workplaneThemePalette, WORKPLANE_LABEL_ASPECT, WORKPLANE_LINE_ELEVATION, type WorkplaneGridLayout } from "@/lib/workplaneGrid";
 import { cleanNearZero, cleanRotationDegrees, isNonSolidShapeKind, mirroredAxisCount, mirrorSign, preservesEdgeTreatmentSize, proportionalResizeScale, resizedImportedCoordinates, resizedImportedMeshPositions, resizedShapeSize, shapeDepth, shapeExtrudeDeformAt, shapeHasExtrudeDeform, shapeHasShapeDeform, shapeHasTaper, shapeOverallFootprintDimensions, shapeTaperDimensions, shapeTaperScaleAt, shapeWidth, shapeWithParametricSource } from "@/lib/workplaneShapes";
@@ -161,41 +161,6 @@ const RENDER_LAYER_HELPERS = 2;
 const RENDER_LAYER_MODIFIERS = 3;
 const RENDER_LAYER_PREVIEWS = 4;
 const BVH_PICKING_TRIANGLE_THRESHOLD = 512;
-const SHAPE_KINDS = new Set<ShapeAsset["kind"]>([
-  "box",
-  "cylinder",
-  "slot",
-  "ellipse",
-  "sphere",
-  "sketch",
-  "scribble",
-  "cone",
-  "pyramid",
-  "roof",
-  "text",
-  "roundRoof",
-  "halfSphere",
-  "torus",
-  "tube",
-  "bentTube",
-  "star",
-  "heart",
-  "crescent",
-  "gear",
-  "honeycomb",
-  "hinge",
-  "dovetail",
-  "teardrop",
-  "counterbore",
-  "countersink",
-  "thread",
-  "spring",
-  "ring",
-  "wedge",
-  "polygon",
-  "icosahedron",
-  "mesh",
-]);
 const importedGeometryCache = new WeakMap<
   NonNullable<WorkplaneShape["importedMesh"]>,
   { geometry: THREE.BufferGeometry; edges: Map<number, THREE.EdgesGeometry> }
@@ -223,36 +188,6 @@ const imageTextureLoader = new THREE.TextureLoader();
 const IMPORTED_SELECTED_EDGE_TRIANGLE_LIMIT = 40000;
 const NORMAL_IMPORTED_SELECTION_EDGE_ANGLE = 60;
 const MODIFIER_EDGE_PICK_RADIUS_PX = 14;
-
-function parseDroppedShapeAsset(raw: string): ShapeAsset | null {
-  try {
-    const value: unknown = JSON.parse(raw);
-    if (!value || typeof value !== "object") {
-      return null;
-    }
-    const asset = value as Partial<ShapeAsset>;
-    if (
-      typeof asset.id !== "string" ||
-      typeof asset.name !== "string" ||
-      typeof asset.src !== "string" ||
-      typeof asset.color !== "string" ||
-      !SHAPE_KINDS.has(asset.kind as ShapeAsset["kind"]) ||
-      (asset.hole !== undefined && typeof asset.hole !== "boolean")
-    ) {
-      return null;
-    }
-    return {
-      id: asset.id,
-      name: asset.name,
-      src: asset.src,
-      kind: asset.kind as ShapeAsset["kind"],
-      color: asset.color,
-      hole: asset.hole,
-    };
-  } catch {
-    return null;
-  }
-}
 
 type WorkplaneViewportProps = {
   shapes: WorkplaneShape[];

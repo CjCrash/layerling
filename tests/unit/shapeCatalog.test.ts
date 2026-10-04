@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ShapeAsset } from "@/types/layerling";
-import { makeShapeFromAsset, sceneShape, toolbarShapeAssets } from "@/lib/shapeCatalog";
+import { makeShapeFromAsset, parseDroppedShapeAsset, sceneShape, toolbarShapeAssets } from "@/lib/shapeCatalog";
 
 describe("shape catalog", () => {
   it("exposes roundedBox directly after box in the toolbar catalog", () => {
@@ -275,5 +275,19 @@ describe("shape catalog", () => {
     expect(text).toMatchObject({ textCurved: true, textRadius: 25, textSize: 8, textInward: true, textFlipped: true });
     const box = makeShapeFromAsset({ id: "box", name: "Box", src: "box.png", kind: "box", color: "#000" }, undefined, { textCurved: true });
     expect(box.textCurved).toBeUndefined();
+  });
+});
+
+describe("dragging from the shape library", () => {
+  it("lets every library shape onto the workplane", () => {
+    for (const asset of toolbarShapeAssets) {
+      expect(parseDroppedShapeAsset(JSON.stringify(asset))?.kind, asset.id).toBe(asset.kind);
+    }
+  });
+
+  it("refuses data that is not a library shape", () => {
+    expect(parseDroppedShapeAsset("not json")).toBeNull();
+    expect(parseDroppedShapeAsset(JSON.stringify({ ...toolbarShapeAssets[0], kind: "nonsense" }))).toBeNull();
+    expect(parseDroppedShapeAsset(JSON.stringify({ ...toolbarShapeAssets[0], hole: "yes" }))).toBeNull();
   });
 });

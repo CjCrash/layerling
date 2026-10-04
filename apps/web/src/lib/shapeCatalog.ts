@@ -228,6 +228,35 @@ export const toolbarShapeAssets: ToolbarShapeAsset[] = [
   { id: "crescent", name: "Crescent", src: "assets/editor/shape-icons-gray/crescent.png", menuIcon: "assets/editor/shape-icons-gray/crescent.png", kind: "crescent", color: "#f5c518" },
   { id: "ruler", name: "Ruler", src: "assets/editor/shape-icons-gray/ruler.png", menuIcon: "assets/editor/shape-icons-gray/ruler.png", kind: "ruler", color: "#f2e4b8" },
 ];
+/**
+ * Kinds a shape dragged from the library may have. Taken from the library
+ * itself: a hand-kept list here missed the rounded box and the ruler, and
+ * dragging them onto the workplane silently did nothing (#100).
+ */
+const DROPPABLE_SHAPE_KINDS = new Set<ShapeKind>(toolbarShapeAssets.map((asset) => asset.kind));
+
+/** The library shape carried by a drag, or null when the data is not one. */
+export function parseDroppedShapeAsset(raw: string): ShapeAsset | null {
+  try {
+    const value: unknown = JSON.parse(raw);
+    if (!value || typeof value !== "object") return null;
+    const asset = value as Partial<ShapeAsset>;
+    if (
+      typeof asset.id !== "string" ||
+      typeof asset.name !== "string" ||
+      typeof asset.src !== "string" ||
+      typeof asset.color !== "string" ||
+      !DROPPABLE_SHAPE_KINDS.has(asset.kind as ShapeKind) ||
+      (asset.hole !== undefined && typeof asset.hole !== "boolean")
+    ) {
+      return null;
+    }
+    return { id: asset.id, name: asset.name, src: asset.src, kind: asset.kind as ShapeKind, color: asset.color, hole: asset.hole };
+  } catch {
+    return null;
+  }
+}
+
 
 /** Feste Kreuzausdehnung und Dicke des Lineals - nur die Laenge (width) ist einstellbar. */
 export const RULER_DEPTH = 25;
