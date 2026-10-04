@@ -27,6 +27,7 @@ export const DEFAULT_WORKPLANE_WORKSPACE: WorkplaneWorkspaceSettings = {
   showShadows: true,
   overhangAngle: DEFAULT_OVERHANG_ANGLE,
   showGrid: true,
+  gridFromOrigin: true,
   clickToPlaceShapes: true,
   selectBeforeMove: false,
   objectSnap: true,
@@ -379,6 +380,7 @@ export function normalizeWorkspaceSettings(value: unknown, fallback: WorkplaneWo
     showShadows: booleanOrDefault(candidate.showShadows, fallback.showShadows),
     overhangAngle: normalizeOverhangAngle(candidate.overhangAngle, fallback.overhangAngle),
     showGrid: booleanOrDefault(candidate.showGrid, fallback.showGrid),
+    gridFromOrigin: booleanOrDefault(candidate.gridFromOrigin, fallback.gridFromOrigin),
     // Earlier names are ignored on purpose: "cruiseShapes" (until 1.18.6) was on
     // but did nothing, and "placeShapesByClick" (1.18.7) was off by default -
     // with 1.18.8 click placement is on for everyone unless switched off again.

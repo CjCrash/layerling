@@ -174,6 +174,8 @@ export type WorkplaneWorkspaceSettings = {
   /** Overhangs steeper than this (degrees from vertical) show red when overhangs are shown. */
   overhangAngle: number;
   showGrid: boolean;
+  /** Grid lines count from the origin, so the stronger lines meet the axes; off, they count from the plate's corner. */
+  gridFromOrigin: boolean;
   clickToPlaceShapes: boolean;
   selectBeforeMove: boolean;
   /** Moving a shape snaps its edges and centre to other shapes, with guide lines. */

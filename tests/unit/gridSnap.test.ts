@@ -76,7 +76,7 @@ describe("Snap to Grid", () => {
     expect(snapped.groupedShapes).toBe(group.groupedShapes);
   });
 
-  it("counts the grid from the origin for custom workplane dimensions", () => {
+  it("counts from the origin on custom workplane dimensions", () => {
     const group = groupedShape();
     const snapped = snapShapeFootprintToVisibleGrid(
       group,
@@ -84,9 +84,21 @@ describe("Snap to Grid", () => {
       { ...DEFAULT_WORKPLANE_WORKSPACE, width: 203, depth: 187, gridBlockSize: 10 },
     );
 
-    expect(snapped.x).toBeCloseTo(1.2, 6);
-    expect(snapped.z).toBeCloseTo(1.3, 6);
     expect(-18 + snapped.x - group.x).toBeCloseTo(-20, 6);
     expect(-13 + snapped.z - group.z).toBeCloseTo(-10, 6);
+  });
+
+  it("uses the plate's corner as grid origin when the grid is not aligned to the origin", () => {
+    const group = groupedShape();
+    const snapped = snapShapeFootprintToVisibleGrid(
+      group,
+      { minX: -18, maxX: 25.5, minZ: -13, maxZ: 6.8 },
+      { ...DEFAULT_WORKPLANE_WORKSPACE, width: 203, depth: 187, gridBlockSize: 10, gridFromOrigin: false },
+    );
+
+    expect(snapped.x).toBeCloseTo(6.2, 6);
+    expect(snapped.z).toBeCloseTo(-2, 6);
+    expect(25.5 + snapped.x - group.x).toBeCloseTo(28.5, 6);
+    expect(6.8 + snapped.z - group.z).toBeCloseTo(6.5, 6);
   });
 });

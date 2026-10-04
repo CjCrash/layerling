@@ -775,6 +775,12 @@ export function WorkspaceSettingsModal({
                     checked={workspace.showGrid}
                     onChange={(showGrid) => patchWorkspace({ showGrid })}
                   />
+                  <WorkspaceToggle
+                    label={t("workspace.gridFromOrigin")}
+                    checked={workspace.gridFromOrigin || workspace.units === "Imperial"}
+                    disabled={!workspace.showGrid || workspace.units === "Imperial"}
+                    onChange={(gridFromOrigin) => patchWorkspace({ gridFromOrigin })}
+                  />
                   <WorkspaceSelect label={t("workspace.gridBlockSize")} value={workspace.gridBlockPreset} options={workspace.units === "Imperial" ? [...IMPERIAL_GRID_BLOCK_PRESETS, "Custom"] : GRID_BLOCK_PRESETS}
                     optionLabel={gridBlockPresetLabel} onChange={setGridBlockPreset} />
                   <GridColorControl color={gridColor} onChange={(nextGridColor) => patchWorkspace({ gridColor: nextGridColor })} />
@@ -1229,20 +1235,22 @@ function WorkspaceToggle({
   label,
   description,
   checked,
+  disabled,
   onChange,
 }: {
   label: string;
   description?: string;
   checked: boolean;
+  disabled?: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="workspace-toggle">
+    <label className={disabled ? "workspace-toggle is-disabled" : "workspace-toggle"}>
       <span className="workspace-toggle-copy">
         <span>{label}</span>
         {description ? <small>{description}</small> : null}
       </span>
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.currentTarget.checked)} />
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(event) => onChange(event.currentTarget.checked)} />
     </label>
   );
 }
