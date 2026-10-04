@@ -2341,7 +2341,11 @@ function IconOptionSelector({
   );
 }
 
-/** Seitenansichten: Schraube und Stange stehen, Mutter und Loch liegen aufgeschnitten. */
+/**
+ * Seitenansichten: Schraube und Stange stehen, Mutter und Loch liegen aufgeschnitten.
+ * Ein Rechtsgewinde steigt nach rechts an ("/"), auch in Gewindeloch und Mutter, damit
+ * alle Symbole dieselbe Richtung zeigen.
+ */
 function ThreadRolePreview({ role }: { role: ThreadRole }) {
   const common = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinejoin: "round" as const, "aria-hidden": true };
   if (role === "screw") {
@@ -2349,7 +2353,7 @@ function ThreadRolePreview({ role }: { role: ThreadRole }) {
       <svg {...common}>
         <path d="M5 22v-5h14v5z" />
         <path d="M9.5 17V2h5v15" />
-        <path d="M9.5 5l5 1.1M9.5 8.5l5 1.1M9.5 12l5 1.1" />
+        <path d="M9.5 6.1l5-1.1M9.5 9.6l5-1.1M9.5 13.1l5-1.1" />
         <path d="M10.5 22v-5h3v5z" />
       </svg>
     );
@@ -2359,7 +2363,7 @@ function ThreadRolePreview({ role }: { role: ThreadRole }) {
       <svg {...common}>
         <path d="M12 2.2l8.5 4.9v9.8L12 21.8 3.5 16.9V7.1z" />
         <circle cx="12" cy="12" r="4.3" />
-        <path d="M7.7 10.4l8.6 1M7.7 13.6l8.6 1" />
+        <path d="M7.7 11.4l8.6-1M7.7 14.6l8.6-1" />
       </svg>
     );
   }
@@ -2368,14 +2372,14 @@ function ThreadRolePreview({ role }: { role: ThreadRole }) {
       <svg {...common}>
         <path d="M3 3h18v18H3z" />
         <path d="M9 3v18M15 3v18" />
-        <path d="M9 6.5l6 1.1M9 10.5l6 1.1M9 14.5l6 1.1M9 18.5l6 1.1" />
+        <path d="M9 7.6l6-1.1M9 11.6l6-1.1M9 15.6l6-1.1M9 19.6l6-1.1" />
       </svg>
     );
   }
   return (
     <svg {...common}>
       <path d="M8 2h8v20H8z" />
-      <path d="M8 5l8 1.4M8 9l8 1.4M8 13l8 1.4M8 17l8 1.4" />
+      <path d="M8 6.4l8-1.4M8 10.4l8-1.4M8 14.4l8-1.4M8 18.4l8-1.4" />
     </svg>
   );
 }
@@ -2388,7 +2392,7 @@ function ThreadHeadPreview({ head }: { head: ThreadHead }) {
       <svg {...common}>
         <path d="M4 22l5-6h6l5 6z" />
         <path d="M9 16V3h6v13" />
-        <path d="M9 6l6 1.1M9 10l6 1.1" />
+        <path d="M9 7.1l6-1.1M9 11.1l6-1.1" />
         <path d="M10 22v-2.6h4V22z" />
       </svg>
     );
@@ -2399,7 +2403,7 @@ function ThreadHeadPreview({ head }: { head: ThreadHead }) {
         <path d="M4 22v-6h16v6z" />
         <path d="M8 16v6M16 16v6" />
         <path d="M9 16V3h6v13" />
-        <path d="M9 6l6 1.1M9 10l6 1.1" />
+        <path d="M9 7.1l6-1.1M9 11.1l6-1.1" />
       </svg>
     );
   }
@@ -2407,7 +2411,7 @@ function ThreadHeadPreview({ head }: { head: ThreadHead }) {
     <svg {...common}>
       <path d="M5.5 22v-6h13v6z" />
       <path d="M9 16V3h6v13" />
-      <path d="M9 6l6 1.1M9 10l6 1.1" />
+      <path d="M9 7.1l6-1.1M9 11.1l6-1.1" />
       <path d="M10.5 22v-3h3v3z" />
     </svg>
   );
