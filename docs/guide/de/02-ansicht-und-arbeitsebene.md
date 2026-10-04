@@ -18,7 +18,7 @@ Auf einem Tablet oder Handy zoomen zwei Finger (spreizen und zusammenziehen) und
 
 ### Der Ansichtswürfel
 
-Der Würfel links oben zeigt, wohin du gerade schaust. Ein Klick auf eine seiner Seiten springt in die gerade Ansicht von oben, unten, vorn, hinten, links oder rechts. Das geht auch mit den Zifferntasten [[1]] bis [[6]].
+Der Würfel links oben zeigt, wohin du gerade schaust. Ein Klick auf eine seiner Seiten springt in die gerade Ansicht von oben, unten, vorn, hinten, links oder rechts. Das geht auch mit den Zifferntasten [[1]] bis [[6]]. Hältst du dabei [[Umschalt]] gedrückt, zoomt die Ansicht zugleich auf die Auswahl, wie mit [[Umschalt]]+[[F]].
 
 Ziehst du am Würfel, drehst du die Ansicht, genau wie beim Ziehen mit der rechten Maustaste. Auf einem Touchscreen geht das mit einem Finger, auch ohne {{ui:camera.touchRotate}} einzuschalten.
 

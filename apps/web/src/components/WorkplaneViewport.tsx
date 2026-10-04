@@ -28,7 +28,16 @@ import { cadModifierPrimitiveForBakedShape, cadTransformFromMatrix, cadTransform
 import { t } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
 import { orthographicFramingZoom, perspectiveFramingDistance } from "@/lib/cameraFraming";
-import { beginViewCubeDrag, moveViewCubeDrag, orbitOffsetByDrag, viewCubeAngles, type ViewCubeDrag } from "@/lib/viewCubeDrag";
+import {
+  beginViewCubeDrag,
+  moveViewCubeDrag,
+  orbitOffsetByDrag,
+  viewCubeAngles,
+  viewFaceDirection,
+  viewFaceForKey,
+  type ViewCubeDrag,
+  type ViewCubeFace,
+} from "@/lib/viewCubeDrag";
 import { createGearGeometry } from "@/lib/gearGeometry";
 import { createStarGeometry } from "@/lib/starGeometry";
 import { createHeartGeometry } from "@/lib/heartGeometry";
@@ -320,17 +329,6 @@ type WorkplaneViewportProps = {
 };
 
 type WorkspaceSettings = WorkplaneWorkspaceSettings;
-type ViewCubeFace = "top" | "bottom" | "front" | "back" | "right" | "left";
-
-const VIEW_FACE_SHORTCUTS: Readonly<Record<string, ViewCubeFace>> = {
-  "1": "front",
-  "2": "back",
-  "3": "left",
-  "4": "right",
-  "5": "top",
-  "6": "bottom",
-};
-
 function readSavedWorkspaceDefault(key: string | null) {
   if (!key || typeof window === "undefined") {
     return null;
@@ -7931,8 +7929,10 @@ export function WorkplaneViewport({
       }
 
       const key = event.key.toLowerCase();
+      // Shift turns the digit into "!" and the like on most layouts, so the
+      // view comes from the key's position then.
       const shortcutView = !event.ctrlKey && !event.metaKey && !event.altKey
-        ? VIEW_FACE_SHORTCUTS[event.key]
+        ? viewFaceForKey(event.key, event.code, event.shiftKey)
         : undefined;
       if (event.key === "Escape" && workplaneModeRef.current) {
         event.preventDefault();
@@ -7959,6 +7959,9 @@ export function WorkplaneViewport({
       } else if (shortcutView) {
         event.preventDefault();
         setViewCubeFace(shortcutView);
+        // With Shift, frame the selection from the new side, as Shift+F does;
+        // with nothing selected focusSelection does nothing.
+        if (event.shiftKey) focusSelection();
       } else if (key === "w") {
         event.preventDefault();
         if (!event.shiftKey || !setPlacementWorkplaneAtSelection()) {
@@ -8843,15 +8846,7 @@ function toggleCameraProjection(state: ThreeState) {
 function setCameraToViewFace(state: ThreeState, face: ViewCubeFace) {
   const offset = state.camera.position.clone().sub(state.controls.target);
   const distance = clamp(offset.length(), 22, 4200);
-  const directionByFace: Record<ViewCubeFace, THREE.Vector3> = {
-    top: new THREE.Vector3(0, 1, 0),
-    bottom: new THREE.Vector3(0, -1, 0),
-    front: new THREE.Vector3(0, 0, 1),
-    back: new THREE.Vector3(0, 0, -1),
-    right: new THREE.Vector3(1, 0, 0),
-    left: new THREE.Vector3(-1, 0, 0),
-  };
-  const direction = directionByFace[face].clone().normalize();
+  const direction = viewFaceDirection(face);
 
   state.camera.up.set(0, 1, 0);
   state.camera.position.copy(state.controls.target).add(direction.multiplyScalar(distance));
