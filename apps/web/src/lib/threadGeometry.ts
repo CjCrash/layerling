@@ -870,7 +870,12 @@ function threadWall(
          * Punkt mehrfach eingetragen, damit jede Spalte gleich viele Reihen
          * behaelt - die entarteten Dreiecke daraus fallen beim Verbinden raus.
          */
-        const dense = bandHeight > 0 && (segmentY < bottomY + bandHeight || segmentY > topY - bandHeight);
+        // Gerundet, weil beide Seiten der Naht dieselbe Hoehe auf verschiedenem
+        // Weg ausrechnen: Liegt sie genau auf der Bandgrenze, kippte sonst die
+        // letzte Stelle die Entscheidung nur auf einer Seite - ein T-Stoss.
+        const fromBottom = Math.round((segmentY - bottomY) * 1e6) / 1e6;
+        const fromTop = Math.round((topY - segmentY) * 1e6) / 1e6;
+        const dense = bandHeight > 0 && (fromBottom < bandHeight || fromTop < bandHeight);
         let firstOfSegment = -1;
         for (let sub = 0; sub < subdivisions; sub += 1) {
           if (!dense && sub > 0) {
@@ -978,7 +983,9 @@ export function threadBuildPlan(options: ThreadGeometryOptions) {
   const profile = threadProfileSpec(settings.profile);
   const major = settings.diameter / 2 + allowance;
   const minor = Math.max(0.02, major - settings.pitch * profile.depthPerPitch);
-  const handSign = settings.hand === "left" ? -1 : 1;
+  // Mit +1 steigt die Wendel, wenn der Winkel von +x nach +z waechst - um die
+  // Hochachse +y ist das linksherum. Ein Rechtsgewinde laeuft also mit -1.
+  const handSign = settings.hand === "left" ? 1 : -1;
 
   const headHeight = Math.min(height * 0.9, settings.headHeight);
   const shaftBottom = settings.role === "screw" ? headHeight : 0;

@@ -253,9 +253,13 @@ function outsideThread(cad: OcctKernel, part: CadModifierThreadPart, bottom: num
 
 /** The cone a chamfer cuts into an inside thread at z = `face`, opening outwards from it (`direction` 1 at the bottom, -1 at the top). */
 function insideChamferCone(cad: OcctKernel, part: CadModifierThreadPart, face: number, direction: 1 | -1) {
-  const { major, chamfer } = part;
+  const { major, minor, chamfer } = part;
   const beyond = Math.max(1, part.pitch);
-  const outline: Point[] = [[0, face - direction * beyond], [major + chamfer + beyond, face - direction * beyond], [major, face + direction * chamfer], [0, face + direction * chamfer]];
+  // The cone runs on a little past the crest into the tap, so it crosses the
+  // crest instead of ending on it: a ring lying on the crest made the boolean
+  // fail for some pitches and phases. The tap fills almost all of that sliver.
+  const past = (major - minor) * 0.25;
+  const outline: Point[] = [[0, face - direction * beyond], [major + chamfer + beyond, face - direction * beyond], [major - past, face + direction * (chamfer + past)], [0, face + direction * (chamfer + past)]];
   return revolved(cad, direction === 1 ? outline : [...outline].reverse());
 }
 
@@ -274,8 +278,8 @@ export function threadPartSolid(cad: OcctKernel, part: CadModifierThreadPart): S
   const { role, pitch, height, shaftBottom } = part;
   if (!(part.major > part.minor && part.minor > 0 && pitch > 0 && height > 0)) throw new Error("The thread's measures are out of range");
   if (part.chamfer > 0.001 && part.major - part.chamfer < 0.05) throw new Error("The thread's chamfer reaches its axis");
-  // As drawn, a right-hand thread climbs with the angle from +x towards +z,
-  // which the turn up to y maps to clockwise about +z seen from above.
+  // A thread that climbs with the angle from +x towards +z (hand 1) is a
+  // left-hand one; the turn up to y maps it to clockwise about +z seen from above.
   const counterClockwise = part.hand !== 1;
   let solid: ShapeHandle;
   if (role === "rod" || role === "screw") {

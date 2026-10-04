@@ -126,6 +126,9 @@ describe("the thread's exact body", () => {
     ["a nut", { threadRole: "nut" }],
     ["a nut with chamfered rims, left hand", { threadRole: "nut", threadHeadChamfer: 0.5, threadHand: "left" }],
     ["a tapped hole", { threadRole: "bore", hole: true }],
+    // Both failed once: the chamfer cone ended on the tap's crest.
+    ["a left-hand tapped hole, M6x0.8 with a 0.3 mm chamfer", { threadRole: "bore", hole: true, threadHand: "left", threadPitch: 0.8, threadChamfer: 0.3 }],
+    ["a nut M6x0.8 with a 0.3 mm chamfer", { threadRole: "nut", threadPitch: 0.8, threadChamfer: 0.3 }],
     ["a rod turned, tipped and lifted", { rotation: 30, rotationX: 90, elevation: 4, x: 12, z: -5 }],
   ];
 

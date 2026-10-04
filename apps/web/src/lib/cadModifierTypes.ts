@@ -154,7 +154,7 @@ export type CadModifierThreadPart = {
   major: number;
   minor: number;
   pitch: number;
-  /** 1: the thread climbs as the angle from +x towards +z grows (right hand as drawn); -1 the other way. */
+  /** 1: the thread climbs as the angle from +x towards +z grows, a left-hand thread about +y; -1 the other way, a right-hand one. */
   hand: 1 | -1;
   height: number;
   /** Where the thread starts: 0, or the top of a screw head. */

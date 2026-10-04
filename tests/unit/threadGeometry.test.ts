@@ -108,6 +108,38 @@ describe("thread geometry", () => {
     },
   );
 
+  /*
+   * Ein Rechtsgewinde steigt, wenn man es rechtsherum um die Hochachse dreht:
+   * Daumen der rechten Hand nach +y, die Finger zeigen den Weg von +z nach +x.
+   * Netz und CAD-Koerper werden nur gegeneinander geprueft; liefen beide
+   * falsch herum, fiele das dort nicht auf - hier schon. Gemessen an den
+   * Spitzen: Hoehe minus Vorschub ueber den Winkel bleibt fuer die richtige
+   * Richtung ueberall gleich (bis auf ganze Steigungen), fuer die falsche nicht.
+   */
+  it.each<["right" | "left", 1 | -1]>([["right", 1], ["left", -1]])("winds a %s-hand thread the right way round", (threadHand, climb) => {
+    const { geometry, settings } = geometryFor("rod", 20, { threadHand, threadChamfer: 0 });
+    const position = geometry.getAttribute("position") as unknown as Position;
+    const radii = Array.from({ length: position.count }, (_, index) => Math.hypot(position.getX(index), position.getZ(index)));
+    const crest = Math.max(...radii);
+    const coherence = (sign: number) => {
+      let sumCos = 0;
+      let sumSin = 0;
+      let count = 0;
+      for (let index = 0; index < position.count; index += 1) {
+        const y = position.getY(index);
+        if (radii[index] < crest - 0.02 || y < 3 || y > 17) continue;
+        const turn = Math.atan2(position.getX(index), position.getZ(index)) / (Math.PI * 2);
+        const phase = (y / settings.pitch - sign * turn) * Math.PI * 2;
+        sumCos += Math.cos(phase);
+        sumSin += Math.sin(phase);
+        count += 1;
+      }
+      return Math.hypot(sumCos, sumSin) / count;
+    };
+    expect(coherence(climb)).toBeGreaterThan(0.9);
+    expect(coherence(-climb)).toBeLessThan(0.5);
+  });
+
   it("stays closed on a left-hand thread and on a coarse pitch", () => {
     for (const overrides of [{ threadHand: "left" }, { threadPitch: 4 }, { threadPitch: 0.35 }]) {
       const { geometry } = geometryFor("rod", 12, overrides);

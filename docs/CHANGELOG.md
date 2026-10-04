@@ -4,6 +4,11 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.32.1
+
+- **Right-hand and left-hand threads were swapped:** Every thread wound the wrong way round. "Right-hand" made a left-hand thread and the other way round, on screen and in every export. A layerling screw still fitted a layerling nut, because both were wrong, but not a bought nut or bolt. Threads in saved projects now come out the right way when the project is opened; reprint parts that have to fit store-bought ones. A test now pins the direction itself, not only that the screen and the exact body agree.
+- **Tapped holes and nuts with a chamfer always get an exact body:** For some pitches and chamfers the exact body of an inside thread could not be built, for example a left-hand M6×0.8 hole with a 0.3 mm chamfer. Edge treatment then fell back to the mesh, and the STEP export left the nut out, or left out the cut of the hole. The chamfer cone now runs a little past the thread's crest instead of ending right on it.
+
 ## 1.32.0
 
 - **Shift on a corner scales all three directions:** Dragging a corner handle with Shift now keeps the proportions in height too, not just in width and depth; the bottom edge stays where it is. With Alt as well the shape grows from its center. Works for single shapes, rotated and tapered ones, and for several selected shapes. Asked for in the forum by SteveOHHH.
