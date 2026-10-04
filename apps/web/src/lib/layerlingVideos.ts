@@ -6,6 +6,13 @@
  */
 export const LAYERLING_VIDEOS = [
   {
+    // A whole playlist, so new videos in it arrive here without a release.
+    title: "Layerling – Playlist",
+    channel: "Making Layers",
+    lang: "EN",
+    url: "https://www.youtube.com/playlist?list=PLCsBmX2kOGWs",
+  },
+  {
     title: "Tinkercad Too Basic? Fusion 360 Too Much? Meet Layerling for 3D Printing",
     channel: "3D Jesus | 3D Printing & Design",
     lang: "EN",

@@ -90,6 +90,7 @@ You will recognise everything: the plate, the shapes, solids and holes, group an
 
 Made by others, not by this project:
 
+- [Layerling – Playlist](https://www.youtube.com/playlist?list=PLCsBmX2kOGWs) – Making Layers (English). A series about layerling: an introduction for people coming from Tinkercad, and the sketch tools.
 - [Tinkercad Too Basic? Fusion 360 Too Much? Meet Layerling for 3D Printing](https://youtu.be/kzV7fQ3rXhw) – 3D Jesus | 3D Printing & Design (English). A first-time test of layerling without any manual.
 
 ## Getting Started

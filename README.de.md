@@ -91,6 +91,7 @@ Du wirst alles wiedererkennen: die Platte, die Formen, Körper und Aussparung (d
 
 Von anderen gemacht, nicht von diesem Projekt:
 
+- [Layerling – Playlist](https://www.youtube.com/playlist?list=PLCsBmX2kOGWs) – Making Layers (Englisch). Eine Reihe zu layerling: eine Einführung für Tinkercad-Umsteiger und die Skizzenwerkzeuge.
 - [Tinkercad Too Basic? Fusion 360 Too Much? Meet Layerling for 3D Printing](https://youtu.be/kzV7fQ3rXhw) – 3D Jesus | 3D Printing & Design (Englisch). Ein erster Test von layerling ganz ohne Anleitung.
 
 ## Loslegen
