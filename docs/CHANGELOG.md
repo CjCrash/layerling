@@ -8,6 +8,8 @@ code still carries it - so a lower number further down is older, not newer.
 
 - **The guide goes back instead of opening the editor again:** The guide opens in a tab of its own, and its "Open the editor" button opened layerling in yet another tab. While layerling is open in another tab, the button now reads "Back to the editor" and closes the guide. If the browser does not let the tab close, because you have moved between chapters in it, a note says to switch to the other tab, and a second click opens the editor in the guide's tab after all. Reported by @bernbout in #103.
 - **The object list searches inside groups:** The search field of the object list only looked at the shapes at the top, so a part inside a group could not be found by its name or kind. It now looks inside groups at any depth: a group holding a match stays in the list and folds open to show the matching parts and the groups that lead to them. The arrows still fold groups shut during a search, and clearing the search brings back the groups you had open before. A group found by its own name shows all its parts when opened. Contributed by @gogades (#104).
+- **The framing square's midpoint switch is explained:** The small button left of the framing square's handle, which measures to the middle of a body instead of its edge, was in layerling since 1.15.0 but missing from the guide and the quick guide. Both describe it now. Prompted by #105.
+- **Welcome panel:** The lines below the video list run as wide as the lists above them.
 
 ## 1.35.1
 
