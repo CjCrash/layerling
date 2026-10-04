@@ -30,6 +30,7 @@ Am linken Rand liegt eine schmale Leiste. Von oben nach unten:
 - {{ui:camera.focusSelection}} zoomt auf die Auswahl ([[Umschalt]]+[[F]]).
 - {{ui:camera.zoomIn}} und {{ui:camera.zoomOut}} zoomen schrittweise.
 - {{ui:camera.orthographic}} schaltet auf eine flache Ansicht um, in der parallele Kanten parallel bleiben. Das ist zum Messen und zum Ausrichten von Kanten oft angenehmer als die perspektivische Ansicht. Mit [[O]] wechselst du hin und her, ein zweiter Klick geht zurück.
+- {{ui:camera.hideWorkplane}} (das Auge über dem Gitter) blendet die Platte mit ihrem Gitter aus, damit du die Unterseite eines Entwurfs von unten ansehen kannst. Es ändert sich nur die Ansicht: Neue Formen landen weiter auf der Arbeitsebene. Ein zweiter Klick blendet sie wieder ein.
 - {{ui:camera.placeWorkplane}}, das Massband und das Winkellineal sind eigene Werkzeuge, sie kommen weiter unten und im Kapitel [Messen und Notizen](chapter:messen-und-notizen) vor.
 
 Über den kleinen Pfeil ganz oben in der Leiste kannst du sie ausblenden, wenn sie stört.

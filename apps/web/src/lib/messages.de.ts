@@ -1111,6 +1111,8 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "camera.orthographic": "Orthografische Ansicht",
   "camera.perspective": "Zurück zur perspektivischen Ansicht",
   "camera.placeWorkplane": "Arbeitsebene setzen",
+  "camera.hideFaceWorkplane": "Arbeitsebene auf der Fläche ausblenden",
+  "camera.showFaceWorkplane": "Arbeitsebene auf der Fläche einblenden",
   "camera.hideWorkplane": "Arbeitsebene ausblenden",
   "camera.showWorkplane": "Arbeitsebene einblenden",
   "camera.tapeTools": "Massband",

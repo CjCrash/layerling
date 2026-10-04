@@ -127,6 +127,8 @@ async function callTool(name, args) {
       return bridgeCommand("estimate_print", args, 30000);
     case "layerling_set_section_view":
       return bridgeCommand("set_section_view", args);
+    case "layerling_show_workplane":
+      return bridgeCommand("show_workplane", args);
     case "layerling_export_section_svg":
       return bridgeCommand("export_section_svg", args);
     case "layerling_import_file":

@@ -532,6 +532,17 @@ export const tools = [
     },
   },
   {
+    name: "layerling_show_workplane",
+    description: "Show or hide the plate with its grid, labels and any workplane set on a face, like the eye over a grid in the editor's camera bar. Only the view changes: new shapes still land on the workplane, and nothing is saved with the design. Hide it before layerling_capture_image with view \"bottom\" to see the underside, for example with layerling_show_overhangs. Call without visible to read the state. Returns visible.",
+    inputSchema: {
+      ...editorTargetSchema,
+      properties: {
+        ...editorTargetSchema.properties,
+        visible: { type: "boolean", description: "true shows the plate, false hides it. Left out it stays as it is." },
+      },
+    },
+  },
+  {
     name: "layerling_set_section_view",
     description: "Cut the view open along a plane to look inside: walls, cavities, threads in their nuts, parts fitting into each other. Only the view is cut; the design and every export stay whole. Call with no settings to read the current state. axis uses the editor's own coordinates, the same as an object's x, z and elevation: \"x\" cuts across left-right (offset is an x position), \"z\" across front-back (a z position), \"y\" horizontally (offset is a height above the plate, like elevation). The editor's panel names them like its position fields instead: X, Y for the depth (z here) and Z for the height (y here). Switching on, changing the axis or center: true puts the plane in the middle of the design unless offset is given. By default the part on the far side of the plane (greater x, z or height) stays visible; flipped shows the other side. Returns the settings and the plane's useful range (min, max, center). Combine with layerling_capture_image to see the cut.",
     inputSchema: {

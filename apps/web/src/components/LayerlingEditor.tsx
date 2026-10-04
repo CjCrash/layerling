@@ -305,6 +305,8 @@ declare global {
     layerlingCaptureView?: (face?: LayerlingMcpViewFace) => Promise<string> | string;
     /** The section view for MCP: applies what is given, returns the settings it ends on and the plane's range. */
     layerlingSectionView?: (patch: Partial<SectionPlaneSettings> & { center?: boolean }) => { settings: SectionPlaneSettings; bounds: { min: number; max: number; center: number } };
+    /** "Hide workplane" in the camera bar for MCP: sets it when given, returns whether the plate is shown. */
+    layerlingWorkplaneDisplay?: (visible?: boolean) => { visible: boolean };
   }
 }
 
@@ -10733,6 +10735,12 @@ export function LayerlingEditor({
           recentNotices: reportNoticesRef.current.map((event) => ({ at: new Date(event.at).toISOString(), text: event.text })),
           recentErrors: reportErrorsRef.current.map((event) => ({ at: new Date(event.at).toISOString(), text: event.text })),
         };
+      }
+
+      if (command.action === "show_workplane") {
+        if (!window.layerlingWorkplaneDisplay) throw new Error("The workplane display is not available in this editor");
+        if (params.visible !== undefined && typeof params.visible !== "boolean") throw new Error("visible must be true or false");
+        return window.layerlingWorkplaneDisplay(params.visible as boolean | undefined);
       }
 
       if (command.action === "set_section_view") {
