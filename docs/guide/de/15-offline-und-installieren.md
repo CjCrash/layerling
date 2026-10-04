@@ -29,7 +29,7 @@ Die Sprache stellst du oben rechts ein, Deutsch oder Englisch. Das Farbschema da
 layerling ist freie Software (AGPL-3.0) und lässt sich auf einem eigenen Rechner oder Server betreiben, etwa in der Werkstatt, im Verein oder in der Schule. Dafür gibt es mehrere Wege, die in der [README auf GitHub](https://github.com/henmedia/layerling/blob/main/README.de.md#loslegen) beschrieben sind:
 
 - **Der Schnellstart unter Windows:** Eine einzige Zeile in PowerShell installiert alles und legt eine Verknüpfung auf dem Desktop an.
-- **Docker:** Für NAS-Geräte und Heimserver, ohne dass Node.js installiert sein muss.
+- **Docker:** Für NAS-Geräte und Heimserver, ohne dass Node.js installiert sein muss. Jedes Release gibt es als fertiges Image `ghcr.io/henmedia/layerling` für amd64 und arm64; `docker run -d -p 3000:3000 ghcr.io/henmedia/layerling:latest` startet es, auf einem NAS trägst du das Image in der Container-Verwaltung ein.
 - **Statischer Export:** Das Ergebnis besteht aus reinen Dateien, die jeder Webserver ausliefern kann. Mit einem beschreibbaren Ordner `store` neben der `index.html` und PHP auf dem Server wird daraus auch die gemeinsame Ablage für Entwürfe.
 
 Die MCP-Brücke für KI-Assistenten gibt es nur beim Entwicklungsserver, siehe [Mit einer KI bauen](chapter:ki-mit-mcp).

@@ -4,8 +4,9 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
-## Unreleased
+## 1.34.0
 
+- **Separated parts are named in your language:** "Separate Parts" named the pieces "Part 1", "Part 2" and so on in English even in the German interface. They are now named "Teil 1", "Teil 2" there.
 - **Question marks open the right paragraph:** The question mark of a shape now jumps to that shape's own section of the guide - the hinge to "Hinge", a thread to "Threads", a bundle to "Bundling" - instead of the top of the chapter. So do the ones on the pattern, chamfer and fillet, hollowing, object list, export and import panels, and the settings follow the page that is open.
 - **Ready-made Docker image:** Every release now publishes an image at `ghcr.io/henmedia/layerling`, under its version number and as `latest`, for amd64 and arm64. A NAS or home server runs layerling with `docker run -d -p 3000:3000 ghcr.io/henmedia/layerling:latest` or by adding the image in its container manager, without downloading and building the code first. Building it yourself with `docker/compose.yml` still works. Requested by @b1ggi (#94).
 - **Print-in-place hinge:** A new shape between Honeycomb and Dovetail. Two leaves lie open flat on the plate with alternating knuckles on one axis; the pin belongs to one part and runs through the other's knuckles with play, so the hinge prints in one piece without supports and turns afterwards. Length, opened width, knuckle diameter, number of knuckles, pin diameter, leaf thickness and clearance (0.4 mm by default, around the pin, between the knuckles and in front of the leaves) can be set. It is an exact body for the edge tool and STEP, and `layerling_create_shape` with `kind: "hinge"` makes one through MCP.

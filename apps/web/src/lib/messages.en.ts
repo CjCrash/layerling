@@ -840,6 +840,7 @@ export const MESSAGES_EN = {
   "inspector.customColor": "Custom color",
   "inspector.custom": "Custom",
   "inspector.separateParts": "Separate Parts",
+  "inspector.separatedPartName": "{name} Part {index}",
   "inspector.properties": "Properties",
   "inspector.position": "Position",
   "inspector.taper": "Taper",

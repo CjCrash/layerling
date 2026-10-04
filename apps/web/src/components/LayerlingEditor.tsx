@@ -3613,7 +3613,7 @@ function meshComponentShape(source: WorkplaneShape, mesh: MeshData, faceIndices:
 
   return canonicalizeShape({
     id: createLocalId(`${source.id}-part`),
-    name: totalParts > 1 ? `${source.name} Part ${partIndex + 1}` : source.name,
+    name: totalParts > 1 ? t("inspector.separatedPartName", { name: source.name, index: partIndex + 1 }) : source.name,
     kind: "mesh",
     color: source.color,
     hole: source.hole || undefined,

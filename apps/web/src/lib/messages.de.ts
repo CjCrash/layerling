@@ -839,6 +839,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "inspector.customColor": "Eigene Farbe",
   "inspector.custom": "Eigene",
   "inspector.separateParts": "Teile trennen",
+  "inspector.separatedPartName": "{name} Teil {index}",
   "inspector.properties": "Eigenschaften",
   "inspector.position": "Position",
   "inspector.taper": "Verjüngung",

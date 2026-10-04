@@ -29,7 +29,7 @@ You set the language at the top right, German or English. The colour scheme besi
 layerling is free software (AGPL-3.0) and can be run on your own computer or server, for example in a workshop, a club or a school. There are several ways, described in the [README on GitHub](https://github.com/henmedia/layerling/blob/main/README.md#getting-started):
 
 - **The quick start on Windows:** A single line in PowerShell installs everything and puts a shortcut on the desktop.
-- **Docker:** For NAS devices and home servers, without Node.js needing to be installed.
+- **Docker:** For NAS devices and home servers, without Node.js needing to be installed. Every release comes as a ready-made image `ghcr.io/henmedia/layerling` for amd64 and arm64; `docker run -d -p 3000:3000 ghcr.io/henmedia/layerling:latest` starts it, and on a NAS you add the image in its container manager.
 - **Static export:** The result is plain files that any web server can serve. With a writable folder `store` next to `index.html` and PHP on the server it also becomes the shared storage for designs.
 
 The MCP bridge for AI assistants exists only in the development server, see [Building with an AI](chapter:ai-with-mcp).
