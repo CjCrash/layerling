@@ -1,9 +1,12 @@
 import * as THREE from "three";
 import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import type { ThreadHand } from "@/types/layerling";
 
 export const DEFAULT_SPRING_TURNS = 6;
 export const DEFAULT_SPRING_WIRE = 3;
 export const DEFAULT_SPRING_QUALITY = 36;
+/** Druckfedern sind ueblicherweise rechtsgewickelt. */
+export const DEFAULT_SPRING_HAND: ThreadHand = "right";
 
 export const MIN_SPRING_TURNS = 1;
 export const MAX_SPRING_TURNS = 60;
@@ -30,13 +33,19 @@ export type SpringShapeFields = {
   springTurns?: number;
   springWire?: number;
   springQuality?: number;
+  springHand?: ThreadHand;
 };
 
 export type SpringSettings = {
   turns: number;
   wire: number;
   quality: number;
+  hand: ThreadHand;
 };
+
+export function normalizeSpringHand(value?: string): ThreadHand {
+  return value === "left" ? "left" : DEFAULT_SPRING_HAND;
+}
 
 /** Die Drahtstaerke passt in den Durchmesser und laesst noch eine Mitte frei. */
 export function springWireLimits(diameter: number, height: number) {
@@ -77,6 +86,7 @@ export function springSettings(shape: SpringShapeFields, diameter: number, heigh
     wire,
     turns: normalizeSpringTurns(shape.springTurns, diameter, height, wire),
     quality: normalizeSpringQuality(shape.springQuality),
+    hand: normalizeSpringHand(shape.springHand),
   };
 }
 
@@ -113,9 +123,10 @@ function triangle(builder: Builder, a: number, b: number, c: number) {
  * Koerper (`springSolid.ts`) gebaut wird - beide aus derselben Rechnung, damit
  * sie nicht auseinanderlaufen. Die Mittellinie ist eine Wendel um die
  * Hochachse: Halbmesser `coilRadius`, von `bottom` aus `span` hoch, in
- * `turns` Windungen, beginnend auf +x und mit dem Winkel von +x nach +z
- * steigend. Gezeichnet wird mit dem groesseren Durchmesser und danach auf
- * `scaleX`/`scaleZ` gezogen.
+ * `turns` Windungen, beginnend auf +x. Rechtsgewickelt laeuft sie von +x
+ * nach -z (rechtsherum um +y) und steigt dabei, linksgewickelt von +x nach
+ * +z: `zSign` ist -1 oder 1. Gezeichnet wird mit dem groesseren Durchmesser
+ * und danach auf `scaleX`/`scaleZ` gezogen.
  */
 export function springBuildPlan(options: SpringGeometryOptions) {
   const width = Math.max(0.2, options.width);
@@ -141,7 +152,8 @@ export function springBuildPlan(options: SpringGeometryOptions) {
     span = Math.max(0.01, height - settings.wire * horizontalShare);
   }
   const bottom = (height - span) / 2;
-  return { settings, wireRadius, coilRadius, twist, span, bottom, scaleX: width / diameter, scaleZ: depth / diameter };
+  const zSign = settings.hand === "left" ? 1 : -1;
+  return { settings, wireRadius, coilRadius, twist, span, bottom, zSign, scaleX: width / diameter, scaleZ: depth / diameter };
 }
 
 /**
@@ -155,7 +167,7 @@ export function springBuildPlan(options: SpringGeometryOptions) {
  * dreht sich der Querschnitt unterwegs auch nicht auf.
  */
 export function createSpringGeometry(options: SpringGeometryOptions) {
-  const { settings, wireRadius, coilRadius, twist, span, bottom, scaleX, scaleZ } = springBuildPlan(options);
+  const { settings, wireRadius, coilRadius, twist, span, bottom, zSign, scaleX, scaleZ } = springBuildPlan(options);
   const stations = Math.max(8, Math.round(settings.quality)) * settings.turns;
   const ringSegments = springRingSegments(settings.quality);
 
@@ -170,12 +182,12 @@ export function createSpringGeometry(options: SpringGeometryOptions) {
     const sin = Math.sin(angle);
     const centreX = cos * coilRadius;
     const centreY = bottom + span * progress;
-    const centreZ = sin * coilRadius;
+    const centreZ = zSign * sin * coilRadius;
 
     // Laufrichtung der Wendel an dieser Stelle.
     const tangentX = -sin * coilRadius * twist;
     const tangentY = span;
-    const tangentZ = cos * coilRadius * twist;
+    const tangentZ = zSign * cos * coilRadius * twist;
     const tangentLength = Math.hypot(tangentX, tangentY, tangentZ) || 1;
     const tx = tangentX / tangentLength;
     const ty = tangentY / tangentLength;

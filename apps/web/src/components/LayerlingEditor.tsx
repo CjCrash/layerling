@@ -2436,6 +2436,7 @@ function geometryMeshForShape(shape: WorkplaneShape): MeshData | null {
         height,
         springTurns: shape.springTurns,
         springWire: shape.springWire,
+        springHand: shape.springHand,
         springQuality: shape.springQuality,
       });
       break;

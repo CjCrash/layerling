@@ -250,6 +250,11 @@ export function normalizeShapeCustomizations(value: unknown, fallback: ShapeCust
       entry.springTurns = optionalShapeNumber(source.springTurns, fallbackEntry?.springTurns, 1, 60, true);
       entry.springWire = optionalShapeNumber(source.springWire, fallbackEntry?.springWire, 0.3, 120);
       entry.springQuality = optionalShapeNumber(source.springQuality, fallbackEntry?.springQuality, 12, 96, true);
+      entry.springHand = source.springHand === undefined
+        ? fallbackEntry?.springHand
+        : source.springHand === "right" || source.springHand === "left"
+          ? source.springHand
+          : fallbackEntry?.springHand;
     }
     if (kind === "thread") {
       entry.threadRole = source.threadRole === undefined

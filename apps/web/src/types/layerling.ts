@@ -114,6 +114,7 @@ export type ShapeCustomization = {
   threadHeadChamfer?: number;
   springTurns?: number;
   springWire?: number;
+  springHand?: ThreadHand;
   springQuality?: number;
   starPoints?: number;
   starInnerSize?: number;
@@ -418,6 +419,7 @@ export type WorkplaneShape = {
   threadHeadChamfer?: number;
   springTurns?: number;
   springWire?: number;
+  springHand?: ThreadHand;
   springQuality?: number;
   starPoints?: number;
   starInnerSize?: number;

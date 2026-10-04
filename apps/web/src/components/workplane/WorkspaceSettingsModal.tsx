@@ -34,6 +34,7 @@ import {
 import {
   DEFAULT_SPRING_QUALITY,
   DEFAULT_SPRING_TURNS,
+  DEFAULT_SPRING_HAND,
   DEFAULT_SPRING_WIRE,
   MAX_SPRING_QUALITY,
   MIN_SPRING_QUALITY,
@@ -135,7 +136,7 @@ const BENT_TUBE_PROFILE_OPTIONS: Array<{ value: BentTubeProfile; label: MessageK
 type ShapeSpecialNumberKey = "steps" | "sides" | "bevel" | "segments" | "topRadius" | "baseRadius" | "teeth" | "toothSize" | "toothWidth" | "centerHoleSize" | "helixAngle" | "helixQuality" | "threadDiameter" | "threadPitch" | "threadClearance" | "threadBoltClearance" | "threadQuality" | "threadChamfer" | "threadHeadChamfer" | "springTurns" | "springWire" | "springQuality" | "topWidth" | "topDepth" | "starPoints" | "starInnerSize" | "starOuterFillet" | "starInnerFillet" | "starQuality" | "heartTipFillet" | "heartQuality" | "crescentThickness" | "crescentTipFillet" | "crescentQuality" | "honeycombCellSize" | "honeycombWallThickness" | "honeycombFrameWidth" | "dovetailNeckWidth" | "dovetailClearance" | "screwHoleShaft" | "screwHoleHeadDepth" | "screwHoleAngle" | "cornerFillet" | "topBottomFillet" | "roundedBoxQuality" | "bentTubeSize" | "bentTubeWall" | "bentTubeQuality";
 type ShapeSpecialField =
   | { type: "number"; key: ShapeSpecialNumberKey; label: string; defaultValue: number; min: number; max: number; step?: number; unit?: string }
-  | { type: "select"; key: "font" | "gearType" | "threadRole" | "threadHead" | "threadHand" | "threadProfile" | "bentTubeProfile" | "bentTubeInnerProfile"; label: string; defaultValue: string; options: Array<{ value: string; label: string }> }
+  | { type: "select"; key: "font" | "gearType" | "threadRole" | "threadHead" | "threadHand" | "threadProfile" | "springHand" | "bentTubeProfile" | "bentTubeInnerProfile"; label: string; defaultValue: string; options: Array<{ value: string; label: string }> }
   | { type: "text"; key: "text"; label: string; defaultValue: string; maxLength: number };
 
 function clamp(value: number, min: number, max: number) {
@@ -211,6 +212,7 @@ function specialFieldsForShape(
       { type: "number", key: "springTurns", label: t("prop.turns"), defaultValue: defaults.springTurns ?? DEFAULT_SPRING_TURNS, min: turnLimits.min, max: turnLimits.max, step: 1 },
       { type: "number", key: "springWire", label: t("prop.wire"), defaultValue: defaults.springWire ?? DEFAULT_SPRING_WIRE, min: wireLimits.min, max: wireLimits.max, unit: "mm" },
       { type: "number", key: "springQuality", label: t("prop.quality"), defaultValue: defaults.springQuality ?? DEFAULT_SPRING_QUALITY, min: MIN_SPRING_QUALITY, max: MAX_SPRING_QUALITY, step: 4 },
+      { type: "select", key: "springHand", label: t("prop.springHand"), defaultValue: defaults.springHand ?? DEFAULT_SPRING_HAND, options: [{ value: "right", label: t("spring.right") }, { value: "left", label: t("spring.left") }] },
     ];
   }
   if (kind === "thread") {

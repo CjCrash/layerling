@@ -31,11 +31,13 @@ export function springPartSolid(cad: OcctKernel, part: CadModifierSpringPart): S
   const { coilRadius, wireRadius, turns, bottom, span } = part;
   if (!(Number.isInteger(turns) && turns >= 1 && wireRadius > 0 && coilRadius > wireRadius && span > 0)) throw new Error("The spring's measures are out of range");
   const pitch = span / turns;
-  // As drawn, the wire climbs with the angle from +x towards +z, which the
-  // turn up to y maps to clockwise about +z seen from above: a left-hand
-  // helix here. Its tangent at the start, on +x: (0, -2 pi r, pitch).
-  const helix = cad.makeHelixWireHanded({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 1 }, pitch, pitch / 2, coilRadius, true);
-  const section = cad.makeWire([cad.makeCircleEdge({ x: coilRadius, y: 0, z: 0 }, { x: 0, y: -2 * Math.PI * coilRadius, z: pitch }, wireRadius)]);
+  // A right-hand wire is drawn climbing with the angle from +x towards -z,
+  // right-handed about +y. The turn up to y maps that to counter-clockwise
+  // about +z seen from above: a right-hand helix here too, and a left-hand
+  // one the other way. Its tangent at the start, on +x: (0, +-2 pi r, pitch).
+  const leftHanded = part.hand === "left";
+  const helix = cad.makeHelixWireHanded({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 1 }, pitch, pitch / 2, coilRadius, leftHanded);
+  const section = cad.makeWire([cad.makeCircleEdge({ x: coilRadius, y: 0, z: 0 }, { x: 0, y: (leftHanded ? -2 : 2) * Math.PI * coilRadius, z: pitch }, wireRadius)]);
   const swept = cad.getSubShapes(cad.sweepAdvanced(section, helix, { mode: FIXED_UP, up: { x: 0, y: 0, z: 1 } }), "face");
   const wire = swept.filter((face) => cad.surfaceType(face) !== "plane");
   // The disc where the half turn starts; the spring's top end is the same disc

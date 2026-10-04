@@ -1090,6 +1090,7 @@ export function cadModifierSpringForShape(shape: WorkplaneShape): CadModifierSpr
     springTurns: shape.springTurns,
     springWire: shape.springWire,
     springQuality: shape.springQuality,
+    springHand: shape.springHand,
   });
   return {
     coilRadius: plan.coilRadius,
@@ -1097,6 +1098,7 @@ export function cadModifierSpringForShape(shape: WorkplaneShape): CadModifierSpr
     turns: plan.settings.turns,
     bottom: plan.bottom,
     span: plan.span,
+    hand: plan.settings.hand,
     meshSectionShare: springRingSectionShare(plan.settings.quality),
     // The mesh is drawn round at the larger of width and depth and stretched
     // to the shape's footprint; the body takes the same stretch.

@@ -1152,6 +1152,9 @@ function validateShapeDefinition(definition: Record<string, unknown>, label: str
       const springWire = finiteNumber(definition.springWire, `${label}.springWire`);
       if (springWire <= 0 || springWire > 480) throw new Error(`${label}.springWire is outside the supported range`);
     }
+    if (definition.springHand !== undefined && definition.springHand !== "right" && definition.springHand !== "left") {
+      throw new Error(`${label}.springHand is invalid`);
+    }
     if (definition.springQuality !== undefined) {
       const springQuality = finiteNumber(definition.springQuality, `${label}.springQuality`);
       if (!Number.isInteger(springQuality) || springQuality < 12 || springQuality > 96) {

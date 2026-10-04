@@ -30,7 +30,7 @@ export const MCP_SHAPE_SETTING_KEYS = [
   "threadRole", "threadHead", "threadHand", "threadProfile", "threadDiameter", "threadPitch",
   "threadClearance", "threadBoltClearance", "threadQuality", "threadHeadHeight", "threadChamfer",
   "threadHeadChamfer",
-  "springTurns", "springWire", "springQuality",
+  "springTurns", "springWire", "springQuality", "springHand",
   "starPoints", "starInnerSize", "starOuterFillet", "starInnerFillet", "starQuality",
   "heartTipFillet", "heartQuality",
   "crescentThickness", "crescentTipFillet", "crescentQuality",

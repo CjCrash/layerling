@@ -141,6 +141,7 @@ import {
   MAX_SPRING_QUALITY,
   MIN_SPRING_QUALITY,
   normalizeSpringQuality,
+  normalizeSpringHand,
   normalizeSpringTurns,
   normalizeSpringWire,
   springSettings,
@@ -938,6 +939,14 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
           const wire = normalizeSpringWire(value, across, shape.height);
           onUpdate({ springWire: wire, springTurns: normalizeSpringTurns(settings.turns, across, shape.height, wire) });
         },
+      },
+      {
+        type: "select",
+        id: "springHand",
+        label: t("prop.springHand"),
+        value: settings.hand,
+        options: [{ value: "right", label: t("spring.right") }, { value: "left", label: t("spring.left") }],
+        onChange: (hand) => onUpdate({ springHand: normalizeSpringHand(hand) }),
       },
       {
         id: "quality",

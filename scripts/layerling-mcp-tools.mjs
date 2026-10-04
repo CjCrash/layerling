@@ -95,6 +95,7 @@ export const shapeSettingSchema = {
   threadHeadChamfer: { type: "number", description: "Thread only, and only for a screw with a cylinder or hex head: the chamfer that breaks the sharp rim of the head. 0 leaves it sharp." },
   springTurns: { type: "number", description: "Spring only." },
   springWire: { type: "number", description: "Spring only: thickness of the wire." },
+  springHand: { type: "string", enum: ["right", "left"], description: "Spring only: winding direction; right-hand (default) like a usual compression spring, or left-hand." },
   springQuality: { type: "number", description: "Spring only." },
   starPoints: { type: "number", description: "Star only: number of points or rays (3 to 32)." },
   starInnerSize: { type: "number", description: "Star only: diameter of the inner valleys in mm." },

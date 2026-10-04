@@ -47,7 +47,7 @@ The edge tool and the STEP export take every gear as its exact body; a helical g
 
 ## Springs
 
-The {{ui:shape.spring}} has {{ui:prop.turns}} and a {{ui:prop.wire}}. Together with the height they decide how soft the spring is.
+The {{ui:shape.spring}} has {{ui:prop.turns}} and a {{ui:prop.wire}}. Together with the height they decide how soft the spring is. {{ui:prop.springHand}} sets which way the wire runs: {{ui:spring.right}} like a usual compression spring, or {{ui:spring.left}}.
 
 The edge tool and the STEP export take a spring as its exact body: a round wire along a helix, cut square at both ends. You can round or chamfer those two wire ends, for instance.
 

@@ -47,7 +47,7 @@ Das Kantenwerkzeug und der STEP-Export nehmen jedes Zahnrad als exakten Körper;
 
 ## Federn
 
-Die {{ui:shape.spring}} hat {{ui:prop.turns}} und eine {{ui:prop.wire}}. Zusammen mit der Höhe bestimmen sie, wie weich die Feder wird.
+Die {{ui:shape.spring}} hat {{ui:prop.turns}} und eine {{ui:prop.wire}}. Zusammen mit der Höhe bestimmen sie, wie weich die Feder wird. Unter {{ui:prop.springHand}} wählst du, wie herum der Draht läuft: {{ui:spring.right}} wie bei einer üblichen Druckfeder, oder {{ui:spring.left}}.
 
 Das Kantenwerkzeug und der STEP-Export nehmen eine Feder als exakten Körper: ein runder Draht entlang einer Schraubenlinie, an beiden Enden gerade abgeschnitten. Diese beiden Drahtenden kannst du zum Beispiel verrunden oder fasen.
 

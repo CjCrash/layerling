@@ -44,9 +44,11 @@ import {
 import {
   DEFAULT_SPRING_QUALITY,
   DEFAULT_SPRING_TURNS,
+  DEFAULT_SPRING_HAND,
   DEFAULT_SPRING_WIRE,
   normalizeSpringQuality,
   normalizeSpringTurns,
+  normalizeSpringHand,
   normalizeSpringWire,
 } from "@/lib/springGeometry";
 import {
@@ -360,6 +362,7 @@ export function shapeAssetSpecialDefaults(kind: ShapeKind, dimensions = shapeAss
       springTurns: DEFAULT_SPRING_TURNS,
       springWire: DEFAULT_SPRING_WIRE,
       springQuality: DEFAULT_SPRING_QUALITY,
+      springHand: DEFAULT_SPRING_HAND,
     };
   }
   if (kind === "thread") {
@@ -449,6 +452,7 @@ export function sceneShape(shape: Partial<WorkplaneShape> & Pick<WorkplaneShape,
     threadHeadChamfer: shape.threadHeadChamfer,
     springTurns: shape.springTurns,
     springWire: shape.springWire,
+    springHand: shape.springHand,
     springQuality: shape.springQuality,
     starPoints: shape.starPoints,
     starInnerSize: shape.starInnerSize,
@@ -605,6 +609,7 @@ export function makeShapeFromAsset(
     springTurns: asset.kind === "spring" ? normalizeSpringTurns(customization.springTurns ?? DEFAULT_SPRING_TURNS, Math.max(width, depth), height, customization.springWire) : undefined,
     springWire: asset.kind === "spring" ? normalizeSpringWire(customization.springWire ?? DEFAULT_SPRING_WIRE, Math.max(width, depth), height) : undefined,
     springQuality: asset.kind === "spring" ? normalizeSpringQuality(customization.springQuality ?? DEFAULT_SPRING_QUALITY) : undefined,
+    springHand: asset.kind === "spring" ? normalizeSpringHand(customization.springHand ?? DEFAULT_SPRING_HAND) : undefined,
     starPoints: asset.kind === "star" ? normalizeStarPoints(customization.starPoints ?? DEFAULT_STAR_POINTS) : undefined,
     starInnerSize: asset.kind === "star" ? normalizeStarInnerSize(customization.starInnerSize ?? DEFAULT_STAR_INNER_SIZE, width) : undefined,
     starOuterFillet: asset.kind === "star" ? normalizeStarFillet(customization.starOuterFillet ?? DEFAULT_STAR_OUTER_FILLET) : undefined,

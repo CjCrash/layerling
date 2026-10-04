@@ -103,7 +103,7 @@ function roundWireVolume(shape: WorkplaneShape) {
 function wirePoints(shape: WorkplaneShape, share: number, count: number) {
   const plan = springBuildPlan({ ...shape, width: shape.width, depth: shape.depth ?? shape.width, height: shape.height });
   const place = placer(shape);
-  const { coilRadius: radius, wireRadius, twist, span, bottom } = plan;
+  const { coilRadius: radius, wireRadius, twist, span, bottom, zSign } = plan;
   const points: Vec3[] = [];
   for (let k = 0; k < count; k += 1) {
     // Short of both ends, where the square cut leaves less wire.
@@ -111,9 +111,9 @@ function wirePoints(shape: WorkplaneShape, share: number, count: number) {
     const angle = twist * progress;
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
-    const centre: Vec3 = [cos * radius, bottom + span * progress, sin * radius];
-    const tangent = new THREE.Vector3(-sin * radius * twist, span, cos * radius * twist).normalize();
-    const outward = new THREE.Vector3(cos, 0, sin);
+    const centre: Vec3 = [cos * radius, bottom + span * progress, zSign * sin * radius];
+    const tangent = new THREE.Vector3(-sin * radius * twist, span, zSign * cos * radius * twist).normalize();
+    const outward = new THREE.Vector3(cos, 0, zSign * sin);
     const up = new THREE.Vector3().crossVectors(tangent, outward).normalize().negate();
     if (up.y < 0) up.negate();
     for (const direction of [outward, outward.clone().negate(), up, up.clone().negate()]) {
@@ -160,6 +160,7 @@ function surfaceSides(solid: ShapeHandle) {
 describe("the spring's exact body", () => {
   const cases: Array<[string, Partial<WorkplaneShape>]> = [
     ["default spring", {}],
+    ["left-hand spring", { springHand: "left" }],
     ["single turn", { springTurns: 1 }],
     ["spring of 60 turns of thin wire", { height: 60, springWire: 0.5, springTurns: 60 }],
     ["spring of the thinnest wire", { springWire: 0.3 }],

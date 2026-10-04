@@ -197,6 +197,8 @@ export type CadModifierSpringPart = {
   turns: number;
   bottom: number;
   span: number;
+  /** Right-hand: the wire climbs right-handed about the shape's up axis, like a usual compression spring. */
+  hand: "right" | "left";
   /** The display mesh's polygon wire section as a share of the round one, which the mesh's volume is short by. */
   meshSectionShare: number;
   transform?: number[];

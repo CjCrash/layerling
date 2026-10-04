@@ -72,6 +72,41 @@ describe("spring geometry", () => {
     expect(box.max.y).toBeCloseTo(height, 2);
   });
 
+  /*
+   * Druckfedern sind ueblicherweise rechtsgewickelt - so steht sie da, links auf Wunsch. Rechts steigt der Draht, wenn man
+   * rechtsherum um die Hochachse geht - Daumen der rechten Hand nach +y, die
+   * Finger von +z nach +x. Bis 1.32.3 lief sie andersherum, wie das Gewinde.
+   * Gemessen an der Aussenseite des Drahts: Hoehe minus Vorschub ueber den
+   * Winkel bleibt fuer die richtige Richtung ueberall gleich.
+   */
+  it.each<["right" | "left", 1 | -1]>([["right", 1], ["left", -1]])("winds %s-hand when asked", (springHand, climb) => {
+    const turns = 5;
+    const geometry = createSpringGeometry({ width: 20, depth: 20, height: 40, springTurns: turns, springWire: 2, springHand });
+    const position = geometry.getAttribute("position") as unknown as Position;
+    const radii = Array.from({ length: position.count }, (_, index) => Math.hypot(position.getX(index), position.getZ(index)));
+    const outer = Math.max(...radii);
+    const ys = Array.from({ length: position.count }, (_, index) => position.getY(index)).filter((_, index) => radii[index] > outer - 0.05);
+    const pitch = (Math.max(...ys) - Math.min(...ys)) / turns;
+    const coherence = (sign: number) => {
+      let sumCos = 0;
+      let sumSin = 0;
+      let count = 0;
+      for (let index = 0; index < position.count; index += 1) {
+        if (radii[index] < outer - 0.05) continue;
+        const turn = Math.atan2(position.getX(index), position.getZ(index)) / (Math.PI * 2);
+        const phase = (position.getY(index) / pitch - sign * turn) * Math.PI * 2;
+        sumCos += Math.cos(phase);
+        sumSin += Math.sin(phase);
+        count += 1;
+      }
+      return Math.hypot(sumCos, sumSin) / count;
+    };
+    expect(coherence(climb)).toBeGreaterThan(0.9);
+    expect(coherence(-climb)).toBeLessThan(0.5);
+    // Ohne Angabe ist sie rechtsgewickelt.
+    if (springHand === "right") expect(springSettings({}, 20, 40).hand).toBe("right");
+  });
+
   it("fills an oval footprint as well", () => {
     const geometry = createSpringGeometry({ width: 30, depth: 18, height: 25, springTurns: 5, springWire: 2.5 });
     const box = geometry.boundingBox!;
@@ -95,6 +130,6 @@ describe("spring geometry", () => {
   it("keeps the wire inside the body", () => {
     expect(normalizeSpringWire(50, 20, 30)).toBe(8);
     expect(normalizeSpringWire(0.01, 20, 30)).toBe(0.3);
-    expect(springSettings({}, 20, 30)).toEqual({ wire: 3, turns: 6, quality: 36 });
+    expect(springSettings({}, 20, 30)).toEqual({ wire: 3, turns: 6, quality: 36, hand: "right" });
   });
 });
