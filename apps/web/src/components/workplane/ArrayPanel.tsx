@@ -48,7 +48,7 @@ export function ArrayPanel({
           <span>{t("array.subtitle")}</span>
         </div>
         <div className="panel-header-actions">
-          <GuideHelpLink chapter="select" />
+          <GuideHelpLink section="pattern" />
           <button type="button" aria-label={t("array.cancel")} onClick={onCancel}><X size={20} /></button>
         </div>
       </div>

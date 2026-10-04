@@ -538,7 +538,7 @@ export function WorkspaceSettingsModal({
         <header className="workspace-modal-header">
           <strong>{t("workspace.title")}</strong>
           <div className="panel-header-actions">
-            <GuideHelpLink chapter="view" />
+            <GuideHelpLink section={activeSection === "history" ? "backingUp" : activeSection === "shapes" ? "shapeSettings" : "gridAndSnapping"} />
             <button aria-label={t("workspace.close")} onClick={onClose}>
               <X size={18} />
             </button>

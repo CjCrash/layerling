@@ -59,7 +59,7 @@ export function ShellPanel({
           <span>{t("shell.subtitle")}</span>
         </div>
         <div className="panel-header-actions">
-          <GuideHelpLink chapter="edges" />
+          <GuideHelpLink section="hollowing" />
           <button type="button" aria-label={t("shell.cancel")} onClick={onCancel}><X size={20} /></button>
         </div>
       </div>

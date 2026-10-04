@@ -226,7 +226,7 @@ export function EdgeModifierPanel({
           <span>{edgeModifierSelectionStatus(prepared, selectedCount, availableCount)}</span>
         </div>
         <div className="panel-header-actions">
-          <GuideHelpLink chapter="edges" />
+          <GuideHelpLink section="edgeTreatment" />
           <button type="button" aria-label={kind === "fillet" ? t("edge.cancelFillet") : t("edge.cancelChamfer")} onClick={onCancel}><X size={20} /></button>
         </div>
       </div>

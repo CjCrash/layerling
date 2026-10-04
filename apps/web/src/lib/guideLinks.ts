@@ -35,6 +35,29 @@ export type GuideChapter = keyof typeof GUIDE_CHAPTERS;
  */
 export const GUIDE_SECTIONS = {
   sectionView: { chapter: "view", de: "ins-innere-schauen-die-schnittansicht", en: "looking-inside-the-section-view" },
+  gridAndSnapping: { chapter: "view", de: "gitter-und-raster", en: "grid-and-snapping" },
+  shapeSettings: { chapter: "shapes", de: "die-einstellungen-der-form", en: "the-shape-s-settings" },
+  objectList: { chapter: "select", de: "die-objektliste", en: "the-object-list" },
+  pattern: { chapter: "select", de: "muster-reihe-und-kreis", en: "patterns-row-and-circle" },
+  grouping: { chapter: "solids", de: "gruppieren", en: "grouping" },
+  bundling: { chapter: "solids", de: "buendeln", en: "bundling" },
+  intersection: { chapter: "solids", de: "schnittmenge", en: "intersection" },
+  edgeTreatment: { chapter: "edges", de: "kanten-fasen-und-verrunden", en: "chamfering-and-filleting-edges" },
+  hollowing: { chapter: "edges", de: "koerper-aushoehlen", en: "hollowing-bodies" },
+  threads: { chapter: "threads", de: "gewinde", en: "threads" },
+  gears: { chapter: "threads", de: "zahnraeder", en: "gears" },
+  springs: { chapter: "threads", de: "federn", en: "springs" },
+  bentTubes: { chapter: "threads", de: "gebogene-rohre", en: "bent-tubes" },
+  honeycomb: { chapter: "threads", de: "wabengitter", en: "honeycomb" },
+  hinge: { chapter: "threads", de: "scharnier", en: "hinge" },
+  dovetail: { chapter: "threads", de: "schwalbenschwanz", en: "dovetail" },
+  teardrop: { chapter: "threads", de: "tropfenbohrung", en: "teardrop-hole" },
+  screwHoles: { chapter: "threads", de: "stufen-und-senkbohrung", en: "counterbore-and-countersink" },
+  ruler: { chapter: "measuring", de: "das-lineal", en: "the-ruler" },
+  printer: { chapter: "printing", de: "den-drucker-waehlen", en: "choosing-your-printer" },
+  backingUp: { chapter: "files", de: "sichern-und-weitergeben", en: "backing-up-and-passing-on" },
+  exporting: { chapter: "files", de: "exportieren", en: "exporting" },
+  importing: { chapter: "files", de: "importieren", en: "importing" },
   tapeMeasure: { chapter: "measuring", de: "das-massband", en: "the-tape-measure" },
   notes: { chapter: "measuring", de: "notizen", en: "notes" },
   sketchCorners: { chapter: "sketches", de: "ecken-runden-oder-fasen", en: "rounding-or-chamfering-corners" },
@@ -50,6 +73,47 @@ export function guideHref(language: Language, chapter?: GuideChapter, section?: 
   const page = target?.chapter ?? chapter;
   if (!page) return `/${directory}/index.html`;
   return `/${directory}/${GUIDE_CHAPTERS[page][language]}.html${target ? `#${target[language]}` : ""}`;
+}
+
+/**
+ * Where in its chapter a shape is explained - the heading its question mark
+ * jumps to. Text and sketches have a chapter of their own and open its top.
+ */
+export function guideSectionForShape(shape: { kind: ShapeKind; groupedShapes?: readonly unknown[]; groupOperation?: string }): GuideSection | undefined {
+  if (shape.groupedShapes?.length) {
+    if (shape.groupOperation === "bundle") return "bundling";
+    if (shape.groupOperation === "intersection") return "intersection";
+    return "grouping";
+  }
+  switch (shape.kind) {
+    case "text":
+    case "sketch":
+    case "scribble":
+      return undefined;
+    case "thread":
+      return "threads";
+    case "gear":
+      return "gears";
+    case "spring":
+      return "springs";
+    case "bentTube":
+      return "bentTubes";
+    case "honeycomb":
+      return "honeycomb";
+    case "hinge":
+      return "hinge";
+    case "dovetail":
+      return "dovetail";
+    case "teardrop":
+      return "teardrop";
+    case "counterbore":
+    case "countersink":
+      return "screwHoles";
+    case "ruler":
+      return "ruler";
+    default:
+      return "shapeSettings";
+  }
 }
 
 /** Which chapter explains a shape - the one its question mark opens. */

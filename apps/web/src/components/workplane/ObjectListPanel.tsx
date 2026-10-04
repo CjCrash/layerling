@@ -174,7 +174,7 @@ export function ObjectListPanel({
           <span className="outliner-count-badge">{shapes.length}</span>
         </div>
         <div className="outliner-header-actions">
-          <GuideHelpLink chapter="select" className="outliner-help-link" />
+          <GuideHelpLink section="objectList" className="outliner-help-link" />
           <button
             className="outliner-close-button"
             type="button"

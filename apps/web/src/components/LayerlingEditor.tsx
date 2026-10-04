@@ -13638,7 +13638,7 @@ function TopActionPanel({
           <strong>{title}</strong>
         </div>
         <div className="panel-header-actions">
-          <GuideHelpLink chapter="files" />
+          <GuideHelpLink section={panel === "import" ? "importing" : "exporting"} />
           <button aria-label={t("panel.close", { title })} onClick={onClose}>
             <X size={18} />
           </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { GuideHelpLink } from "@/components/GuideHelpLink";
-import { guideChapterForShape } from "@/lib/guideLinks";
+import { guideChapterForShape, guideSectionForShape } from "@/lib/guideLinks";
 import { ChevronDown, ChevronUp, Eye, EyeOff, Lock, Pencil, Split, Unlock } from "lucide-react";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
@@ -1682,7 +1682,7 @@ export function ShapeInspector({
           )}
         </div>
         <div className="inspector-header-actions">
-          <GuideHelpLink chapter={guideChapterForShape(shape)} className="inspector-help-link" />
+          <GuideHelpLink chapter={guideChapterForShape(shape)} section={guideSectionForShape(shape)} className="inspector-help-link" />
           <button className={locked ? "inspector-header-icon active" : "inspector-header-icon"} aria-label={locked ? t("outliner.unlock") : t("outliner.lock")} onClick={() => onUpdate({ locked: !locked })}>
             {locked ? <Lock size={16} /> : <Unlock size={16} />}
           </button>
