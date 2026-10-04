@@ -25,7 +25,7 @@ export type GridFootprintBounds = {
 };
 
 function nearestVisibleGridLine(value: number, workspaceSize: number, step: number, centered: boolean) {
-  // An inch grid runs through the origin, a millimetre grid from the plate's corner.
+  // The grid counts from the origin, or from the plate's corner when that is switched off.
   const gridOrigin = centered ? 0 : -workspaceSize / 2;
   return gridOrigin + Math.round((value - gridOrigin) / step) * step;
 }

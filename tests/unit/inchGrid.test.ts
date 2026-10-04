@@ -12,8 +12,10 @@ describe("inch grid", () => {
     expect(inchGridPresetMm("Custom")).toBeNull();
   });
 
-  it("keeps millimetre grids as they were and runs inch grids through the origin", () => {
-    expect(workplaneGridLayout({ gridBlockSize: 5, gridBlockPreset: "5 mm", units: "Metric (Default)" })).toEqual({ step: 5, majorInterval: 5, centered: false });
+  it("runs millimetre grids from the origin unless switched off, and inch grids always", () => {
+    expect(workplaneGridLayout({ gridBlockSize: 5, gridBlockPreset: "5 mm", units: "Metric (Default)" })).toEqual({ step: 5, majorInterval: 5, centered: true });
+    expect(workplaneGridLayout({ gridBlockSize: 5, gridBlockPreset: "5 mm", units: "Metric (Default)", gridFromOrigin: false }).centered).toBe(false);
+    expect(workplaneGridLayout({ gridBlockSize: 6.35, gridBlockPreset: "1/4 in", units: "Imperial", gridFromOrigin: false }).centered).toBe(true);
     expect(workplaneGridLayout({ gridBlockSize: 6.35, gridBlockPreset: "1/4 in", units: "Imperial" })).toEqual({ step: 6.35, majorInterval: 4, centered: true });
     expect(workplaneGridLayout({ gridBlockSize: 3.175, gridBlockPreset: "1/8 in", units: "Imperial" }).majorInterval).toBe(8);
     expect(workplaneGridLayout({ gridBlockSize: 25.4, gridBlockPreset: "1 in", units: "Imperial" }).majorInterval).toBe(12);

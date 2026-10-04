@@ -1170,6 +1170,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "workspace.overhangStrict": "30° (vorsichtig)",
   "workspace.overhangLoose": "70° (guter Lüfter)",
   "workspace.showGrid": "Gitter zeigen",
+  "workspace.gridFromOrigin": "Gitter am Ursprung ausrichten",
   "workspace.cruise": "Neue Formen im Flug platzieren",
   "workspace.zoomSpeed": "Zoomgeschwindigkeit",
   "workspace.slow": "Langsam",

@@ -8442,6 +8442,10 @@ html[data-theme="dark"] .inspector-bundle-note {
   accent-color: #bf6508;
 }
 
+.workspace-toggle.is-disabled .workspace-toggle-copy {
+  opacity: 0.5;
+}
+
 .workspace-grid-color-row {
   align-items: start;
 }

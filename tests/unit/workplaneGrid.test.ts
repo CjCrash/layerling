@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { interiorWorkplaneGridCoordinates, workplaneGridPalette, workplaneThemePalette, WORKPLANE_LINE_ELEVATION, WORKPLANE_MAJOR_GRID_INTERVAL } from "@/lib/workplaneGrid";
+import { interiorWorkplaneGridCoordinates, workplaneGridLayout, workplaneGridLines, workplaneGridPalette, workplaneThemePalette, WORKPLANE_LINE_ELEVATION, WORKPLANE_MAJOR_GRID_INTERVAL } from "@/lib/workplaneGrid";
 
 describe("workplane grid geometry", () => {
   it("excludes both perimeter coordinates when spacing divides the workplane", () => {
@@ -16,6 +16,19 @@ describe("workplane grid geometry", () => {
     const coordinates = interiorWorkplaneGridCoordinates(200, 30).map(({ coordinate }) => coordinate);
 
     expect(coordinates).toEqual([-70, -40, -10, 20, 50, 80]);
+  });
+
+  it("meets the axes with the stronger lines when the grid counts from the origin", () => {
+    // 360 mm plate, 5 mm grid: from the corner the strong lines fall 5 mm beside the axes.
+    const majors = (gridFromOrigin: boolean) =>
+      workplaneGridLines(360, workplaneGridLayout({ gridBlockSize: 5, gridBlockPreset: "5 mm", units: "Metric (Default)", gridFromOrigin }))
+        .filter((line) => line.kind === "major")
+        .map((line) => line.coordinate);
+
+    expect(majors(true)).toContain(25);
+    expect(majors(true)).not.toContain(20);
+    expect(majors(false)).toContain(20);
+    expect(majors(false)).not.toContain(25);
   });
 
   it("uses one elevation for grid and border lines", () => {

@@ -186,22 +186,23 @@ export type WorkplaneGridLayout = {
   /** Every how many lines a stronger one is drawn. */
   majorInterval: number;
   /**
-   * Lines run through the origin rather than from the plate's corner. An inch
-   * grid needs that: its steps do not divide a millimetre plate, and the snap
-   * grid counts from the origin.
+   * Lines run through the origin rather than from the plate's corner, so the
+   * stronger lines meet the axes whatever the plate measures. An inch grid
+   * always does: its steps do not divide a millimetre plate.
    */
   centered: boolean;
 };
 
 /**
- * How the plate's grid is laid out. Millimetre grids keep their old layout,
- * from the corner with a stronger line every fifth; inch grids run through
- * the origin with a stronger line on every whole inch.
+ * How the plate's grid is laid out. Millimetre grids draw a stronger line
+ * every fifth, from the origin or - with `gridFromOrigin` off - from the
+ * plate's corner; inch grids run through the origin with a stronger line on
+ * every whole inch.
  */
-export function workplaneGridLayout(workspace: { gridBlockSize: number; gridBlockPreset?: string; units?: string }): WorkplaneGridLayout {
+export function workplaneGridLayout(workspace: { gridBlockSize: number; gridBlockPreset?: string; units?: string; gridFromOrigin?: boolean }): WorkplaneGridLayout {
   const step = Math.min(200, Math.max(1, workspace.gridBlockSize));
   const inches = inchGridPresetMm(workspace.gridBlockPreset ?? "") !== null || workspace.units === "Imperial";
-  if (!inches) return { step, majorInterval: WORKPLANE_MAJOR_GRID_INTERVAL, centered: false };
+  if (!inches) return { step, majorInterval: WORKPLANE_MAJOR_GRID_INTERVAL, centered: workspace.gridFromOrigin !== false };
   const perInch = Math.round(MM_PER_INCH / step);
   const majorInterval = Math.abs(perInch * step - MM_PER_INCH) < 1e-6 && perInch >= 2 ? perInch : step >= MM_PER_INCH - 1e-6 ? 12 : WORKPLANE_MAJOR_GRID_INTERVAL;
   return { step, majorInterval, centered: true };

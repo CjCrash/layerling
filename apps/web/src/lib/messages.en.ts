@@ -1171,6 +1171,7 @@ export const MESSAGES_EN = {
   "workspace.overhangLoose": "70° (good cooling)",
   "workspace.showShadows": "Show shadows",
   "workspace.showGrid": "Show grid",
+  "workspace.gridFromOrigin": "Align grid to origin",
   "workspace.cruise": "Cruise when adding new shapes",
   "workspace.zoomSpeed": "Zoom speed",
   "workspace.slow": "Slow",
