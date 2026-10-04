@@ -197,7 +197,7 @@ import {
 } from "@/lib/layerlingMcpProtocol";
 import type { CadModifierComponentMesh, CadModifierDeflection, CadModifierDisplayEdge, CadModifierEdge, CadModifierHelicalGearPart, CadModifierKind, CadModifierMeshPart, CadModifierPrimitivePart, CadModifierProfilePart, CadModifierQuality, CadModifierSpringPart, CadModifierThreadPart, CadModifierWorkerRequest, CadModifierWorkerResponse } from "@/lib/cadModifierTypes";
 import type { SketchCadBuildResponse } from "@/lib/sketchCadTypes";
-import { getSectionBounds, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
+import { getSectionBounds, sectionAxisLetter, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
 import { projectSectionPoint, SECTION_VIEW_FACE, sectionSvgDocument, sliceMeshContours } from "@/lib/sectionSvg";
 import type { AlignAxis, AlignHandleStatus, AlignTarget, GridSize, ParametricSource, ProjectAsset, ShapeAsset, ShapeCustomization, ShapeKind, SketchImage, SketchOperation, SketchPoint, SketchProfile, SketchRevolveSettings, SketchSegment, ShellEdges, ShellOpenings, WorkplaneNote, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 
@@ -9964,7 +9964,7 @@ export function LayerlingEditor({
         loops: sliceMeshContours(mesh, axis, offset),
       };
     });
-    const result = sectionSvgDocument(bodies, axis, offset, `${projectName} - ${axis.toUpperCase()} ${formatSectionOffset(offset)} mm`);
+    const result = sectionSvgDocument(bodies, axis, offset, `${projectName} - ${sectionAxisLetter(axis)} ${formatSectionOffset(offset)} mm`);
     if (!result) throw new Error(t("status.sectionSvgMissed"));
     return { result, hiddenNote, hiddenCount, unionFailed: gescheitert > 0 };
   }, [projectName]);
@@ -9982,7 +9982,7 @@ export function LayerlingEditor({
     setNotice(t("status.buildingSectionSvg"), true);
     try {
       const { result, hiddenNote, unionFailed } = await buildSectionSvg(axis, offset);
-      const name = `${projectName} ${t("camera.sectionFileSuffix")} ${axis.toUpperCase()} ${formatSectionOffset(offset)} mm`;
+      const name = `${projectName} ${t("camera.sectionFileSuffix")} ${sectionAxisLetter(axis)} ${formatSectionOffset(offset)} mm`;
       await downloadTextFile(projectExportFileName(name, "svg"), result.svg, "image/svg+xml;charset=utf-8");
       const parts = [t("status.sectionSvgExported", { count: result.loopCount, face: t(SECTION_SEEN_FROM_KEYS[SECTION_VIEW_FACE[axis]]) })];
       if (result.openCount > 0) parts.push(t("status.sectionSvgOpen", { count: result.openCount }));

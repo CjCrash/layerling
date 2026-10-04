@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { computeSectionPlaneVector, DEFAULT_SECTION_SETTINGS, getSectionBounds, sectionFineWindow } from "@/lib/sectionView";
+import { MESSAGES_DE } from "@/lib/messages.de";
+import { MESSAGES_EN } from "@/lib/messages.en";
+import {
+  computeSectionPlaneVector,
+  DEFAULT_SECTION_SETTINGS,
+  getSectionBounds,
+  SECTION_AXES_SHOWN,
+  sectionAxisFromLetter,
+  sectionAxisLetter,
+  sectionFineWindow,
+  type SectionAxisLetter,
+} from "@/lib/sectionView";
 import type { WorkplaneShape } from "@/types/layerling";
 
 function sampleShape(overrides: Partial<WorkplaneShape> = {}): WorkplaneShape {
@@ -131,5 +142,52 @@ describe("sectionFineWindow", () => {
     const height = getSectionBounds([tipped], "y");
     expect(height.center).toBeCloseTo(30, 6);
     expect(height.max - height.min).toBeLessThan(15);
+  });
+});
+
+// The letters must name the real direction, not only agree with each other:
+// each one is checked against three.js's fixed axes (y up) and against the
+// shape fields the inspector shows (Position Y is shape.z, Z is the height).
+describe("section axis letters", () => {
+  const normalFor = (letter: SectionAxisLetter, flipped = false) =>
+    computeSectionPlaneVector({ enabled: true, axis: sectionAxisFromLetter(letter), offset: 0, flipped, showPlane: true }).normal;
+
+  it("shows the buttons as X, Y, Z, each letter for its own axis", () => {
+    expect(SECTION_AXES_SHOWN.map(sectionAxisLetter)).toEqual(["X", "Y", "Z"]);
+    for (const letter of ["X", "Y", "Z"] as const) expect(sectionAxisLetter(sectionAxisFromLetter(letter))).toBe(letter);
+  });
+
+  it("cuts Z with a horizontal plane, Y front to back and X left to right", () => {
+    for (const flipped of [false, true]) {
+      const sign = flipped ? -1 : 1;
+      expect(normalFor("Z", flipped)).toEqual({ x: 0, y: sign, z: 0 });
+      expect(normalFor("Y", flipped)).toEqual({ x: 0, y: 0, z: sign });
+      expect(normalFor("X", flipped)).toEqual({ x: sign, y: 0, z: 0 });
+    }
+  });
+
+  it("puts Z in the shape's height and Y at its Position Y", () => {
+    // A tall 10 x 10 x 40 box at x -25, Position Y -30, lifted 5 mm off the plate.
+    const tall = sampleShape({ x: -25, z: -30, elevation: 5, width: 10, depth: 10, height: 40 });
+    const height = getSectionBounds([tall], sectionAxisFromLetter("Z"));
+    expect(height.center).toBe(25);
+    expect(height.min).toBeLessThanOrEqual(5);
+    expect(height.min).toBeGreaterThan(0);
+    expect(height.max).toBeGreaterThanOrEqual(45);
+    const depth = getSectionBounds([tall], sectionAxisFromLetter("Y"));
+    expect(depth.center).toBe(-30);
+    expect(depth.min).toBeLessThanOrEqual(-35);
+    expect(depth.max).toBeGreaterThanOrEqual(-25);
+    expect(depth.max).toBeLessThan(-20);
+    expect(getSectionBounds([tall], sectionAxisFromLetter("X")).center).toBe(-25);
+  });
+
+  it("titles the buttons by what they cut, in English and German", () => {
+    expect(MESSAGES_EN["camera.sectionAxisX"]).toBe("X (width)");
+    expect(MESSAGES_EN["camera.sectionAxisY"]).toBe("Y (depth)");
+    expect(MESSAGES_EN["camera.sectionAxisZ"]).toBe("Z (height)");
+    expect(MESSAGES_DE["camera.sectionAxisX"]).toBe("X (Breite)");
+    expect(MESSAGES_DE["camera.sectionAxisY"]).toBe("Y (Tiefe)");
+    expect(MESSAGES_DE["camera.sectionAxisZ"]).toBe("Z (Höhe)");
   });
 });
