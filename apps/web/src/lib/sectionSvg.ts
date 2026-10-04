@@ -1,4 +1,4 @@
-import type { SectionPlaneAxis } from "@/lib/sectionView";
+import { sectionAxisLetter, type SectionPlaneAxis } from "@/lib/sectionView";
 
 /**
  * Der Schnitt als SVG: die Umrisse, die eine Ebene quer zu X, Y oder Z aus den
@@ -258,7 +258,7 @@ export function sectionSvgDocument(bodies: readonly SectionBody[], axis: Section
     '<?xml version="1.0" encoding="UTF-8"?>',
     `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${svgNumber(width)}mm" height="${svgNumber(height)}mm" viewBox="${svgNumber(viewU)} ${svgNumber(viewV)} ${svgNumber(width)} ${svgNumber(height)}">`,
     `  <title>${xmlEscape(title)}</title>`,
-    `  <desc>layerling section at ${axis.toUpperCase()} = ${svgNumber(offset)} mm, seen from the ${face}, scale 1:1 in millimetres</desc>`,
+    `  <desc>layerling section at ${sectionAxisLetter(axis)} = ${svgNumber(offset)} mm, seen from the ${face}, scale 1:1 in millimetres</desc>`,
     ...paths,
     "</svg>",
     "",

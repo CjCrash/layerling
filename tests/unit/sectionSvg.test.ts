@@ -115,6 +115,12 @@ describe("sectionSvgDocument", () => {
     expect(result.openCount).toBe(0);
   });
 
+  it("names the cut with the letter the editor shows: a cut across the depth is Y", () => {
+    const loops = sliceMeshContours(plateWithBore(), "z", 5);
+    expect(sectionSvgDocument([{ name: "Platte", color: "#000", loops }], "z", 5, "Test")!.svg)
+      .toContain("<desc>layerling section at Y = 5 mm, seen from the front,");
+  });
+
   it("returns nothing when no body is cut", () => {
     expect(sectionSvgDocument([{ name: "Leer", color: "#000", loops: [] }], "x", 0, "Leer")).toBeNull();
   });

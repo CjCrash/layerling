@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Crosshair, Cuboid, Download, Eye, EyeOff, Fl
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type DragEvent, type MouseEvent as ReactMouseEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type ReactNode, type SetStateAction, type WheelEvent as ReactWheelEvent } from "react";
 import { objectSnapOffset, shiftSnapBox, type ObjectSnapGuide, type SnapBox } from "@/lib/objectSnap";
 import { useMovablePanel, type MovablePanelOptions } from "@/lib/useMovablePanel";
-import { computeSectionPlaneVector, DEFAULT_SECTION_SETTINGS, getSectionBounds, sectionFineWindow, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
+import { computeSectionPlaneVector, DEFAULT_SECTION_SETTINGS, getSectionBounds, SECTION_AXES_SHOWN, sectionAxisLetter, sectionFineWindow, type SectionPlaneAxis, type SectionPlaneSettings } from "@/lib/sectionView";
 import { projectSectionPoint, type SectionLoop, type SectionPoint } from "@/lib/sectionSvg";
 import { sectionMeasurement, sectionPointToWorld, snapSectionPoint, type SectionSnap } from "@/lib/sectionMeasure";
 import * as THREE from "three";
@@ -8155,7 +8155,7 @@ export function WorkplaneViewport({
                         <span className="section-label">{t("camera.sectionAxis")}</span>
                         <div className="section-axis-buttons" role="radiogroup" aria-label={t("camera.sectionAxis")}>
                           {/* Named like the position fields: the depth (z inside) is Y, the height (y inside) is Z. */}
-                          {(["x", "z", "y"] as const).map((ax) => (
+                          {SECTION_AXES_SHOWN.map((ax) => (
                             <button
                               key={ax}
                               type="button"
@@ -8163,9 +8163,9 @@ export function WorkplaneViewport({
                               aria-checked={sectionSettings.axis === ax}
                               className={`section-axis-btn ${sectionSettings.axis === ax ? "active" : ""}`}
                               onClick={() => handleSelectSectionAxis(ax)}
-                              title={t(ax === "x" ? "camera.sectionAxisX" : ax === "z" ? "camera.sectionAxisY" : "camera.sectionAxisZ")}
+                              title={t(`camera.sectionAxis${sectionAxisLetter(ax)}`)}
                             >
-                              {ax === "x" ? "X" : ax === "z" ? "Y" : "Z"}
+                              {sectionAxisLetter(ax)}
                             </button>
                           ))}
                         </div>

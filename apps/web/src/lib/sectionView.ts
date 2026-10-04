@@ -5,6 +5,26 @@ import { shapeDepth, shapeWidth } from "@/lib/workplaneShapes";
 
 export type SectionPlaneAxis = "x" | "y" | "z";
 
+/** The letter the editor shows for an axis, as in the position fields: X width, Y depth, Z height. */
+export type SectionAxisLetter = "X" | "Y" | "Z";
+
+/**
+ * `axis` stays three.js (y up); what the user reads uses the position fields'
+ * letters (z up): x is X, z (depth) is Y, y (height) is Z.
+ */
+export const SECTION_AXIS_LETTER: Readonly<Record<SectionPlaneAxis, SectionAxisLetter>> = { x: "X", y: "Z", z: "Y" };
+
+/** The axes in the order the panel shows them: X, Y, Z. */
+export const SECTION_AXES_SHOWN: readonly SectionPlaneAxis[] = ["x", "z", "y"];
+
+export function sectionAxisLetter(axis: SectionPlaneAxis): SectionAxisLetter {
+  return SECTION_AXIS_LETTER[axis];
+}
+
+export function sectionAxisFromLetter(letter: SectionAxisLetter): SectionPlaneAxis {
+  return letter === "X" ? "x" : letter === "Y" ? "z" : "y";
+}
+
 export type SectionPlaneSettings = {
   enabled: boolean;
   axis: SectionPlaneAxis;
