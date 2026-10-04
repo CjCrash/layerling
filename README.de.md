@@ -130,7 +130,8 @@ du es ausführst, oder es herunterladen und lokal starten, statt es in PowerShel
 Die Zeile von oben legt außerdem eine Verknüpfung namens **„Start layerling“** auf deinem Desktop an. Einfach
 doppelklicken, um layerling erneut zu öffnen – kein PowerShell, keine Neuinstallation, kein erneuter Download: Der
 Server startet von selbst, und der Browser öffnet sich gleich mit. Außerdem **aktualisiert** die Verknüpfung layerling zuerst (sofern der Ordner keine eigenen
-Änderungen enthält) und öffnet den Browser erst, wenn der Server wirklich bereit ist. Soll layerling woanders liegen, etwa auf
+Änderungen enthält) und öffnet den Browser erst, wenn der Server wirklich bereit ist. Läuft layerling schon, startet sie keinen zweiten Server
+und aktualisiert nicht unter dem laufenden, sondern öffnet nur die Seite. Soll layerling woanders liegen, etwa auf
 einem anderen Laufwerk? Dann das Skript mit dem gewünschten Ordner starten:
 
 ```powershell
@@ -260,7 +261,7 @@ Ordner ein Terminal öffnen und mit `npm install` beginnen.
 Dann `http://127.0.0.1:3000/` öffnen. Lass das Terminal offen, solange du die App benutzt; `Strg+C` beendet den
 Entwicklungsserver.
 
-Unter Linux und macOS erledigt `scripts/start-layerling.sh` den täglichen Start: Es aktualisiert zuerst den Ordner (übersprungen, wenn du darin Dateien geändert hast), startet den Server, wartet, bis er antwortet, und öffnet dann den Browser. Aufrufen kannst du es von überall, etwa `~/layerling/scripts/start-layerling.sh`. Es braucht Git und Node.js wie oben. Ist Port 3000 schon belegt, starte es mit `PORT=3100 scripts/start-layerling.sh`. Ausprobiert ist es unter Debian Linux (ohne Desktop, der Browserschritt gibt dort nur die Adresse aus) und in einer Windows-Shell; macOS ist ungetestet – wenn es bei dir hakt, sag es bitte in den Diskussionen.
+Unter Linux und macOS erledigt `scripts/start-layerling.sh` den täglichen Start: Es aktualisiert zuerst den Ordner (übersprungen, wenn du darin Dateien geändert hast), startet den Server, wartet, bis er antwortet, und öffnet dann den Browser. Aufrufen kannst du es von überall, etwa `~/layerling/scripts/start-layerling.sh`. Es braucht Git und Node.js wie oben. Läuft layerling auf dem Port schon, öffnet es nur den Browser, statt einen zweiten Server zu starten. Hält ein anderes Programm Port 3000, starte es mit `PORT=3100 scripts/start-layerling.sh`. Ausprobiert ist es unter Debian Linux (ohne Desktop, der Browserschritt gibt dort nur die Adresse aus) und in einer Windows-Shell; macOS ist ungetestet – wenn es bei dir hakt, sag es bitte in den Diskussionen.
 
 ### Entwickeln in einem Container
 

@@ -20,7 +20,7 @@ Den Hinweis auf der Startseite kannst du mit {{ui:installHint.dismiss}} schließ
 
 Wenn es eine neuere Fassung gibt, zeigt layerling das auf der Startseite an. Über {{ui:dashboard.updateBannerLink}} liest du nach, was sich geändert hat. Die Versionsnummer steht unten rechts. Nach einem Neuladen der Seite hast du die neue Fassung.
 
-Ist layerling in mehreren Tabs offen, achten die Tabs aufeinander: Läuft in einem anderen Tab schon eine neuere Version, bittet ein Hinweis unten im alten Tab, ihn neu zu laden. Und ist derselbe Entwurf in zwei Tabs offen, warnen beide davor, denn sie speichern automatisch und würden sich gegenseitig überschreiben.
+Ist layerling in mehreren Tabs offen, achten die Tabs aufeinander: Läuft in einem anderen Tab schon eine neuere Version, bittet ein Hinweis unten im alten Tab, ihn neu zu laden. Und ist derselbe Entwurf in zwei Tabs offen, warnen beide davor, denn sie speichern automatisch und würden sich gegenseitig überschreiben. Öffnest du layerling in einem weiteren Tab, obwohl schon einer offen ist, rät dir der neue Tab, im alten weiterzuarbeiten, und bietet an, sich selbst zu schließen. Willst du bewusst zwei Tabs, etwa für zwei Entwürfe nebeneinander, klickst du dort auf {{ui:tabs.keepHere}}.
 
 ## Sprache und Aussehen
 
@@ -30,7 +30,7 @@ Die Sprache stellst du oben rechts ein, Deutsch oder Englisch. Das Farbschema da
 
 layerling ist freie Software (AGPL-3.0) und lässt sich auf einem eigenen Rechner oder Server betreiben, etwa in der Werkstatt, im Verein oder in der Schule. Dafür gibt es mehrere Wege, die in der [README auf GitHub](https://github.com/henmedia/layerling/blob/main/README.de.md#loslegen) beschrieben sind:
 
-- **Der Schnellstart unter Windows:** Eine einzige Zeile in PowerShell installiert alles und legt eine Verknüpfung auf dem Desktop an.
+- **Der Schnellstart unter Windows:** Eine einzige Zeile in PowerShell installiert alles und legt eine Verknüpfung auf dem Desktop an. Läuft layerling schon, startet ein weiterer Doppelklick keinen zweiten Server, sondern öffnet nur die Seite.
 - **Docker:** Für NAS-Geräte und Heimserver, ohne dass Node.js installiert sein muss. Jedes Release gibt es als fertiges Image `ghcr.io/henmedia/layerling` für amd64 und arm64; `docker run -d -p 3000:3000 ghcr.io/henmedia/layerling:latest` startet es, auf einem NAS trägst du das Image in der Container-Verwaltung ein.
 - **Statischer Export:** Das Ergebnis besteht aus reinen Dateien, die jeder Webserver ausliefern kann. Mit einem beschreibbaren Ordner `store` neben der `index.html` und PHP auf dem Server wird daraus auch die gemeinsame Ablage für Entwürfe.
 

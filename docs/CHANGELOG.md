@@ -4,6 +4,11 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.35.1
+
+- **Starting layerling again does not start a second server:** The desktop shortcut "Start layerling", `scripts/start-layerling.sh` and the Windows quick start now look first whether layerling already answers on port 3000. If it does, they start no second server and do not update underneath the running one; they only open the page. A second server used to move to port 3001 and share the build folder with the first, which then failed with errors. If another program holds port 3000, they say so instead of moving to another port. Reported by @bernbout in #102.
+- **A tab opened after another one says so:** When layerling is already open in a tab, a newly opened one suggests carrying on in the old tab, with "Close this tab" and "Keep working here". Starting layerling from the shortcut used to pile up tabs without a word. Reported by @bernbout in #102.
+
 ## 1.35.0
 
 - **One grid, no switch:** "Align grid to origin" is gone from Settings > Workplane. The grid always runs through the origin now, so its stronger lines meet the axes and "Snap to grid" agrees with moving; designs that had the switch off get the new grid. Suggested by @gogades in #92.

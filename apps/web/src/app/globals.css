@@ -1267,6 +1267,13 @@ button {
   color: #b7791f;
 }
 
+.tab-presence-actions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .tab-presence-reload {
   display: inline-flex;
   flex: none;

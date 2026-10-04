@@ -127,7 +127,8 @@ running it, or download it and run it locally instead of piping it into PowerShe
 The one-liner above also leaves a shortcut named **“Start layerling”** on your desktop. Double-click it whenever you
 want to open layerling again – no PowerShell, no re-installing, no re-downloading, just the server starting and your
 browser opening on its own. It also **updates layerling first** (when the folder has no changes of your own) and opens the
-browser only once the server is really ready. Wanted layerling somewhere else, say on another drive? Run the script with
+browser only once the server is really ready. If layerling is already running, it starts no second server and does not
+update underneath the running one - it just opens the page. Wanted layerling somewhere else, say on another drive? Run the script with
 the folder you want:
 
 ```powershell
@@ -251,7 +252,7 @@ extracted folder and start with `npm install`.
 
 Then open `http://127.0.0.1:3000/`. Leave the terminal open while you use the app; `Ctrl+C` stops the development server.
 
-On Linux and macOS, `scripts/start-layerling.sh` does the daily start for you: it updates the checkout first (skipped if you changed files in it), starts the server, waits until it answers and then opens the browser. Run it from anywhere, for example `~/layerling/scripts/start-layerling.sh`. It needs Git and Node.js, as above. Port 3000 already taken? Start it with `PORT=3100 scripts/start-layerling.sh`. It has been tried on Debian Linux (without a desktop, so the browser step only prints the address) and in a Windows shell; macOS is untested – if it misbehaves on your system, please tell us in the discussions.
+On Linux and macOS, `scripts/start-layerling.sh` does the daily start for you: it updates the checkout first (skipped if you changed files in it), starts the server, waits until it answers and then opens the browser. Run it from anywhere, for example `~/layerling/scripts/start-layerling.sh`. It needs Git and Node.js, as above. If layerling already runs on that port, it only opens the browser instead of starting a second server. Port 3000 taken by something else? Start it with `PORT=3100 scripts/start-layerling.sh`. It has been tried on Debian Linux (without a desktop, so the browser step only prints the address) and in a Windows shell; macOS is untested – if it misbehaves on your system, please tell us in the discussions.
 
 ### Developing in a Container
 

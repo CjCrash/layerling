@@ -6,6 +6,23 @@ setlocal
 cd /d "%~dp0.."
 title layerling
 
+rem Is layerling already running? A second server would share the build folder with
+rem the first and break it, and so would updating under a running server (#102).
+rem 0 = layerling answers on port 3000, 2 = something else holds the port, 1 = it is free.
+powershell -NoProfile -Command "try { if ((New-Object Net.WebClient).DownloadString('http://127.0.0.1:3000/manifest.webmanifest') -match 'layerling') { exit 0 } else { exit 2 } } catch { try { (New-Object Net.Sockets.TcpClient('127.0.0.1', 3000)).Close(); exit 2 } catch { exit 1 } }"
+if errorlevel 2 (
+  echo Port 3000 is taken by another program, so layerling cannot start there.
+  echo Close that program and start layerling again.
+  pause
+  exit /b 1
+)
+if not errorlevel 1 (
+  echo layerling is already running - opening it in the browser without a second server.
+  echo If a layerling tab is still open, you can simply keep using that one.
+  start "" "http://127.0.0.1:3000/"
+  exit /b 0
+)
+
 if not exist ".git" goto start
 where git >nul 2>nul
 if errorlevel 1 goto start
@@ -37,7 +54,7 @@ if not "%BEFORE%"=="%AFTER%" (
 )
 
 :start
-start "layerling server" cmd /k "npm run dev"
+start "layerling server" cmd /k "npm run dev -- -p 3000"
 echo Waiting for the server to come up...
 powershell -NoProfile -Command "for ($i = 0; $i -lt 90; $i++) { try { (New-Object Net.Sockets.TcpClient('127.0.0.1', 3000)).Close(); exit 0 } catch { Start-Sleep -Seconds 1 } }; exit 1"
 if errorlevel 1 (
