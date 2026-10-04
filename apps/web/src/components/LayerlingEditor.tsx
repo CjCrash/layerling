@@ -8526,6 +8526,21 @@ export function LayerlingEditor({
     commitShapes([...shapesRef.current, duplicate], [duplicate.id], t("status.duplicatedOne"));
   }, [commitShapes]);
 
+  /** Alt-drag: copies of the dragged shapes at the place they were dropped, selected like the drag was. */
+  const duplicateShapesMoved = useCallback((ids: string[], delta: { dx: number; dz: number; delevation: number }) => {
+    const duplicates = ids.flatMap((id) => {
+      const shape = shapesRef.current.find((entry) => entry.id === id);
+      return shape ? [applyShapeMoveDelta(cloneWorkplaneShapeTreeWithFreshIds(shape, "copy"), { ...ZERO_MOVE_DELTA, ...delta })] : [];
+    });
+    if (duplicates.length === 0) return;
+    smartDuplicateRef.current = null;
+    commitShapes(
+      [...shapesRef.current, ...duplicates],
+      duplicates.map((shape) => shape.id),
+      duplicates.length === 1 ? t("status.duplicatedOne") : t("status.duplicatedMany", { count: duplicates.length }),
+    );
+  }, [commitShapes]);
+
   const copySelected = useCallback(() => {
     if (!hasSelection) {
       setNotice(t("status.selectShapeFirst"));
@@ -12205,6 +12220,7 @@ export function LayerlingEditor({
           onSeparateParts={separateSelectedParts}
           onUpdateShape={updateShape}
           onDuplicateShapeAt={duplicateShapeAt}
+          onDuplicateShapesMoved={duplicateShapesMoved}
           notes={notes}
           notesVisible={notesVisible}
           showOverhangs={overhangsVisible}
