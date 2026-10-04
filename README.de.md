@@ -149,8 +149,17 @@ Dann selbst `http://127.0.0.1:3000/` öffnen. `Strg+C` in diesem Fenster beendet
 
 ### Docker
 
-Wer layerling auf einem Rechner, NAS (Synology, Unraid etc.) oder Heimserver ohne Node.js betreiben will, nutzt das
-mitgelieferte [`Dockerfile`](docker/Dockerfile) und [`compose.yml`](docker/compose.yml). Die App lauscht auf Port **3000**.
+Um layerling auf einem Rechner, NAS (Synology, Unraid usw.) oder Heimserver ohne Node.js zu betreiben, nimmst du das fertige Image **`ghcr.io/henmedia/layerling`**. Jedes Release veröffentlicht es für amd64 und arm64 (Raspberry Pi, ARM-NAS), unter seiner Versionsnummer und als `latest`. Die App lauscht auf Port **3000**.
+
+Am schnellsten geht es mit einem einzigen Befehl:
+
+```bash
+docker run -d --name layerling -p 3000:3000 --restart unless-stopped ghcr.io/henmedia/layerling:latest
+```
+
+Auf einem NAS mit Container-Verwaltung (Synology Container Manager, Unraid, Portainer) trägst du das Image `ghcr.io/henmedia/layerling:latest` ein und gibst Port 3000 frei. Zum Aktualisieren das Image neu holen und den Container neu anlegen (oder Watchtower das erledigen lassen).
+
+Willst du das Image lieber selbst bauen, nimm das mitgelieferte [`Dockerfile`](docker/Dockerfile) und [`compose.yml`](docker/compose.yml):
 
 1. **Docker installieren.** Unter Windows oder macOS [Docker Desktop](https://www.docker.com/products/docker-desktop/) installieren und starten. Unter Linux oder auf einem NAS brauchst du Docker mit Compose (`docker compose` oder das eigenständige `docker-compose`).
 2. **Dateien holen.** Entweder das Repository als ZIP herunterladen ([Code → Download ZIP](https://github.com/henmedia/layerling/archive/refs/heads/main.zip)) und entpacken oder per Git klonen:
@@ -162,14 +171,14 @@ mitgelieferte [`Dockerfile`](docker/Dockerfile) und [`compose.yml`](docker/compo
    ```bash
    docker compose -f docker/compose.yml up -d --build
    ```
-   Mit dem älteren eigenständigen Programm heißt es `docker-compose` statt `docker compose`. Docker baut das Image und startet den Container im Hintergrund (`-d`); beim ersten Mal dauert der Build etwa 2–3 Minuten.
+   Mit dem älteren eigenständigen Programm heißt es `docker-compose` statt `docker compose`. Docker baut das Image und startet den Container im Hintergrund (`-d`); beim ersten Mal dauert der Build etwa 2–3 Minuten. Ohne `--build` holt derselbe Befehl stattdessen das fertige Image.
 4. **Öffnen.** Auf demselben Rechner unter **`http://localhost:3000/`**, von anderen Geräten im Netz unter **`http://<IP-DEINES-SERVERS>:3000/`**.
 
 Befehle im Alltag:
 
 - **Stoppen:** `docker compose -f docker/compose.yml down`
 - **Wieder starten:** `docker compose -f docker/compose.yml up -d`
-- **Aktualisieren** (nach `git pull` oder neuem ZIP): `docker compose -f docker/compose.yml up -d --build`
+- **Aktualisieren** (nach `git pull` oder neuem ZIP): `docker compose -f docker/compose.yml up -d --build`; mit dem fertigen Image `docker compose -f docker/compose.yml pull` und danach `up -d`
 
 Das Image führt `next start` im Produktionsmodus aus, die MCP-Brücke steht dort also nicht zur Verfügung. Für einen
 gemeinsamen Projektordner ein beschreibbares Verzeichnis einbinden und in `compose.yml` `LAYERLING_SHARED_PROJECTS_DIR`
