@@ -59,7 +59,7 @@ export function MoveDimensionOverlay({
             <input
               key={`edit-${line.axis}`}
               className="dimension-input move-dimension-input"
-              aria-label={t("aria.axisMovement", { axis: line.axis.toUpperCase() })}
+              aria-label={t("aria.axisMovement", { axis: line.axis === "z" ? "Y" : "X" })}
               value={editing.value}
               autoFocus
               inputMode="decimal"
@@ -100,7 +100,7 @@ export function MoveDimensionOverlay({
             key={line.axis}
             className="dimension-label move-dimension-value"
             type="button"
-            aria-label={t("aria.axisMovement", { axis: line.axis.toUpperCase() })}
+            aria-label={t("aria.axisMovement", { axis: line.axis === "z" ? "Y" : "X" })}
             style={styleForLine(line)}
             onClick={() => setEditing({ axis: line.axis, value: line.label })}
             onPointerDown={stopPointerPropagation}

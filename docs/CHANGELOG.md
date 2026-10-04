@@ -6,6 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
+- **Section as SVG uses the panel's letters too:** Since 1.33.0 the section view calls the height Z and the depth Y, but "Section as SVG" still named its file, title and description with the old letters, so a Z cut was saved as "section Y". It now uses the same letters as the buttons. Screen readers also called the depth "Z movement" on the move dimensions; it is "Y" now. Contributed by @plazmabokor (#93).
 - **Bundle, as in Tinkercad:** Ctrl+B, or the new Bundle button next to Group, holds shapes together without merging them. A bundle moves, turns and scales as one, but every part keeps its colour and stays a solid or a hole, holes cut nothing, and an STL, 3MF or OBJ export writes each part as a body of its own - a white logo on a black plate stays two coloured parts. Ungroup takes it apart, E opens it for editing; chamfer, fillet and hollowing ask to group it first. `layerling_bundle_objects` does it through MCP. Suggested by @kwjaarsveld-star (#91).
 
 ## 1.33.0
