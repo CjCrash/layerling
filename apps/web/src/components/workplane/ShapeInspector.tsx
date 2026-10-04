@@ -131,6 +131,7 @@ import { displayShapeName, renamedShapeName } from "@/lib/shapeCatalog";
 import { MAX_SCREW_HOLE_ANGLE, MIN_SCREW_HOLE_ANGLE, normalizeScrewHoleAngle, normalizeScrewHoleHeadDepth, normalizeScrewHoleShaft } from "@/lib/screwHoleGeometry";
 import { MAX_TEARDROP_TIP_ANGLE, MIN_TEARDROP_TIP_ANGLE, normalizeTeardropTipAngle, teardropHeightForTipAngle, teardropTipAngle } from "@/lib/teardropGeometry";
 import { MAX_DOVETAIL_CLEARANCE, normalizeDovetailClearance, normalizeDovetailNeckWidth } from "@/lib/dovetailGeometry";
+import { MAX_HINGE_CLEARANCE, MAX_HINGE_KNUCKLES, MIN_HINGE_CLEARANCE, MIN_HINGE_KNUCKLES, hingePlan, minimumHingeDepth, normalizeHingeClearance, normalizeHingeKnuckles, normalizeHingeLeafThickness, normalizeHingePinDiameter } from "@/lib/hingeGeometry";
 import { useLanguage } from "@/lib/useLanguage";
 import { useMovablePanel, type MovablePanelOptions } from "@/lib/useMovablePanel";
 import { isNonSolidShapeKind, resizedShapeSize, shapeDepth, shapeHasTaper, shapeOverallFootprintDimensions, shapeSupportsTaper, shapeTaperDimensions, shapeWidth } from "@/lib/workplaneShapes";
@@ -288,7 +289,7 @@ function formatPropertyNumber(value: number, accuracy: MeasurementAccuracy, step
 const RELATIVE_SIZE_PROPERTY_IDS = new Set(["width", "height", "length", "diameter", "starOuterSize"]);
 
 function propertyUsesLengthUnit(key: string) {
-  return ["positionX", "positionY", "positionZ", "radius", "length", "width", "height", "bevel", "topRadius", "baseRadius", "thickness", "toothSize", "toothWidth", "centerHole", "topLength", "topWidth", "bottomLength", "bottomWidth", "diameter", "pitch", "clearance", "boltClearance", "threadLength", "headHeight", "chamfer", "headChamfer", "wire", "starOuterSize", "starInnerSize", "starOuterFillet", "starInnerFillet", "heartTipFillet", "crescentThickness", "crescentTipFillet", "honeycombCellSize", "honeycombWallThickness", "honeycombFrameWidth", "cornerFillet", "topBottomFillet", "bentTubeSize", "bentTubeWall", "bentTubeSegmentLength", "bentTubeBendRadius", "dovetailNeckWidth", "dovetailClearance", "screwHoleShaft", "screwHoleHeadDepth"].includes(key);
+  return ["positionX", "positionY", "positionZ", "radius", "length", "width", "height", "bevel", "topRadius", "baseRadius", "thickness", "toothSize", "toothWidth", "centerHole", "topLength", "topWidth", "bottomLength", "bottomWidth", "diameter", "pitch", "clearance", "boltClearance", "threadLength", "headHeight", "chamfer", "headChamfer", "wire", "starOuterSize", "starInnerSize", "starOuterFillet", "starInnerFillet", "heartTipFillet", "crescentThickness", "crescentTipFillet", "honeycombCellSize", "honeycombWallThickness", "honeycombFrameWidth", "cornerFillet", "topBottomFillet", "bentTubeSize", "bentTubeWall", "bentTubeSegmentLength", "bentTubeBendRadius", "dovetailNeckWidth", "dovetailClearance", "hingePinDiameter", "hingeLeafThickness", "hingeClearance", "screwHoleShaft", "screwHoleHeadDepth"].includes(key);
 }
 
 /**
@@ -743,6 +744,59 @@ function getShapePropertiesWithAppLimits(shape: WorkplaneShape, onUpdate: ShapeI
       },
       { id: "height", label: t("prop.height"), value: shape.height, min: MIN_SHAPE_SIZE, max: 160, onChange: setHeight },
       ...roundSideProperties(shape, width, width, onUpdate),
+    ];
+  }
+
+  if (shape.kind === "hinge") {
+    const plan = hingePlan({ ...shape, depth });
+    return [
+      { id: "width", label: t("prop.hingeLength"), value: width, min: MIN_SHAPE_SIZE, max: 300, onChange: setWidth },
+      { id: "length", label: t("prop.hingeOpenWidth"), value: depth, min: minimumHingeDepth(shape.height, plan.leaf, plan.clearance), max: 300, onChange: setDepth },
+      { id: "height", label: t("prop.hingeKnuckleDiameter"), value: shape.height, min: 2, max: 60, onChange: setHeight },
+      {
+        id: "hingeKnuckles",
+        label: t("prop.hingeKnuckles"),
+        value: plan.knuckles,
+        min: MIN_HINGE_KNUCKLES,
+        max: MAX_HINGE_KNUCKLES,
+        step: 2,
+        onChange: (value) => onUpdate({ hingeKnuckles: normalizeHingeKnuckles(value, width, plan.clearance) }),
+      },
+      {
+        id: "hingePinDiameter",
+        label: t("prop.hingePinDiameter"),
+        value: plan.pinRadius * 2,
+        min: 0.2,
+        max: Math.max(0.4, shape.height - 2 * (plan.clearance + 0.4)),
+        step: 0.1,
+        onChange: (value) => {
+          const pin = normalizeHingePinDiameter(value, shape.height, plan.clearance);
+          onUpdate({ hingePinDiameter: pin, hingeLeafThickness: normalizeHingeLeafThickness(plan.leaf, shape.height, pin, plan.clearance) });
+        },
+      },
+      {
+        id: "hingeLeafThickness",
+        label: t("prop.hingeLeafThickness"),
+        value: plan.leaf,
+        min: 0.4,
+        max: Math.max(0.5, plan.radius - plan.boreRadius),
+        step: 0.1,
+        onChange: (value) => onUpdate({ hingeLeafThickness: normalizeHingeLeafThickness(value, shape.height, plan.pinRadius * 2, plan.clearance) }),
+      },
+      {
+        id: "hingeClearance",
+        label: t("prop.hingeClearance"),
+        value: plan.clearance,
+        min: MIN_HINGE_CLEARANCE,
+        max: MAX_HINGE_CLEARANCE,
+        step: 0.05,
+        onChange: (value) => {
+          const clearance = normalizeHingeClearance(value);
+          const pin = normalizeHingePinDiameter(plan.pinRadius * 2, shape.height, clearance);
+          onUpdate({ hingeClearance: clearance, hingePinDiameter: pin, hingeLeafThickness: normalizeHingeLeafThickness(plan.leaf, shape.height, pin, clearance) });
+        },
+      },
+      ...roundSideProperties(shape, shape.height, shape.height, onUpdate),
     ];
   }
 

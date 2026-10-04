@@ -134,7 +134,7 @@ const BENT_TUBE_PROFILE_OPTIONS: Array<{ value: BentTubeProfile; label: MessageK
   { value: "octagon", label: "bentTube.profileOctagon" },
 ];
 
-type ShapeSpecialNumberKey = "steps" | "sides" | "bevel" | "segments" | "topRadius" | "baseRadius" | "teeth" | "toothSize" | "toothWidth" | "centerHoleSize" | "helixAngle" | "helixQuality" | "threadDiameter" | "threadPitch" | "threadClearance" | "threadBoltClearance" | "threadQuality" | "threadChamfer" | "threadHeadChamfer" | "springTurns" | "springWire" | "springQuality" | "topWidth" | "topDepth" | "starPoints" | "starInnerSize" | "starOuterFillet" | "starInnerFillet" | "starQuality" | "heartTipFillet" | "heartQuality" | "crescentThickness" | "crescentTipFillet" | "crescentQuality" | "honeycombCellSize" | "honeycombWallThickness" | "honeycombFrameWidth" | "dovetailNeckWidth" | "dovetailClearance" | "screwHoleShaft" | "screwHoleHeadDepth" | "screwHoleAngle" | "cornerFillet" | "topBottomFillet" | "roundedBoxQuality" | "bentTubeSize" | "bentTubeWall" | "bentTubeQuality";
+type ShapeSpecialNumberKey = "steps" | "sides" | "bevel" | "segments" | "topRadius" | "baseRadius" | "teeth" | "toothSize" | "toothWidth" | "centerHoleSize" | "helixAngle" | "helixQuality" | "threadDiameter" | "threadPitch" | "threadClearance" | "threadBoltClearance" | "threadQuality" | "threadChamfer" | "threadHeadChamfer" | "springTurns" | "springWire" | "springQuality" | "topWidth" | "topDepth" | "starPoints" | "starInnerSize" | "starOuterFillet" | "starInnerFillet" | "starQuality" | "heartTipFillet" | "heartQuality" | "crescentThickness" | "crescentTipFillet" | "crescentQuality" | "honeycombCellSize" | "honeycombWallThickness" | "honeycombFrameWidth" | "dovetailNeckWidth" | "dovetailClearance" | "hingeKnuckles" | "hingePinDiameter" | "hingeLeafThickness" | "hingeClearance" | "screwHoleShaft" | "screwHoleHeadDepth" | "screwHoleAngle" | "cornerFillet" | "topBottomFillet" | "roundedBoxQuality" | "bentTubeSize" | "bentTubeWall" | "bentTubeQuality";
 type ShapeSpecialField =
   | { type: "number"; key: ShapeSpecialNumberKey; label: string; defaultValue: number; min: number; max: number; step?: number; unit?: string }
   | { type: "select"; key: "font" | "gearType" | "threadRole" | "threadHead" | "threadHand" | "threadProfile" | "springHand" | "bentTubeProfile" | "bentTubeInnerProfile"; label: string; defaultValue: string; options: Array<{ value: string; label: string }> }
@@ -283,6 +283,14 @@ function specialFieldsForShape(
   }
   if (kind === "teardrop") {
     return [{ type: "number", key: "sides", label: t("prop.sides"), defaultValue: defaults.sides ?? automaticSideCount(dimensions.width, dimensions.width), min: 3, max: MAX_HIGH_RESOLUTION_SIDES, step: 1 }];
+  }
+  if (kind === "hinge") {
+    return [
+      { type: "number", key: "hingeKnuckles", label: t("prop.hingeKnuckles"), defaultValue: defaults.hingeKnuckles ?? 5, min: 3, max: 15, step: 2 },
+      { type: "number", key: "hingePinDiameter", label: t("prop.hingePinDiameter"), defaultValue: defaults.hingePinDiameter ?? 3, min: 0.2, max: Math.max(0.4, dimensions.height - 1), step: 0.1, unit: "mm" },
+      { type: "number", key: "hingeLeafThickness", label: t("prop.hingeLeafThickness"), defaultValue: defaults.hingeLeafThickness ?? 2, min: 0.4, max: Math.max(0.5, dimensions.height / 2), step: 0.1, unit: "mm" },
+      { type: "number", key: "hingeClearance", label: t("prop.hingeClearance"), defaultValue: defaults.hingeClearance ?? 0.4, min: 0.1, max: 1, step: 0.05, unit: "mm" },
+    ];
   }
   if (kind === "dovetail") {
     return [

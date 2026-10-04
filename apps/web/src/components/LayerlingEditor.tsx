@@ -22,6 +22,8 @@ import { createHeartGeometry } from "@/lib/heartGeometry";
 import { createCrescentGeometry } from "@/lib/crescentGeometry";
 import { createSlotGeometry } from "@/lib/slotGeometry";
 import { createDovetailGeometry } from "@/lib/dovetailGeometry";
+import { createHingeGeometry } from "@/lib/hingeGeometry";
+import { hingeWorldParts } from "@/lib/hingeParts";
 import { createTeardropGeometry } from "@/lib/teardropGeometry";
 import { createScrewHoleGeometry } from "@/lib/screwHoleGeometry";
 import { decodeClipboardPayload, encodeClipboardPayload, LOCAL_CLIPBOARD_LIMIT, newestClipboard, type ClipboardPayload } from "@/lib/clipboardPayload";
@@ -2357,6 +2359,18 @@ function geometryMeshForShape(shape: WorkplaneShape): MeshData | null {
     case "teardrop":
       geometry = createTeardropGeometry({ width, depth, height, sides: roundSideCount(shape.sides, width, depth) });
       break;
+    case "hinge":
+      geometry = createHingeGeometry({
+        width,
+        depth,
+        height,
+        hingeKnuckles: shape.hingeKnuckles,
+        hingePinDiameter: shape.hingePinDiameter,
+        hingeLeafThickness: shape.hingeLeafThickness,
+        hingeClearance: shape.hingeClearance,
+        sides: shape.sides,
+      });
+      break;
     case "dovetail":
       geometry = createDovetailGeometry({
         width,
@@ -3664,6 +3678,8 @@ function textGlyphIndexByFace(shape: WorkplaneShape, faceCount: number) {
 }
 
 function cadModifierSourceParts(shape: WorkplaneShape) {
+  // The hinge reaches the kernel as the boxes, cylinders and tubes it is made of.
+  if (shape.kind === "hinge" && !shape.importedMesh && !shape.cadBrep && !shapeHasShapeDeform(shape)) return hingeWorldParts(shape);
   if (shape.kind !== "text" || shape.importedMesh || shape.cadBrep) return [shape];
   const mesh = meshForShape(shape);
   const components = meshFaceComponents(mesh).filter((component) => component.length > 0);

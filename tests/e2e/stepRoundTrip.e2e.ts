@@ -67,6 +67,22 @@ const PI = Math.PI;
 const near = (a: number, b: number, relTol = 0.01) => Math.abs(a - b) <= relTol * Math.abs(b) + 1e-6;
 
 describe("STEP export round-trip (real OCCT kernel)", () => {
+  it("exports a print-in-place hinge as its fused exact parts, with the display mesh's volume", async () => {
+    const { hingeTriangles } = await import("@/lib/hingeGeometry");
+    const meshVolume = hingeTriangles({ width: 40, depth: 40, height: 8, sides: 96 }).reduce(
+      (sum, [a, b, c]) => sum + (a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0])) / 6,
+      0,
+    );
+    for (const rotation of [0, 90]) {
+      const hinge = shape({ kind: "hinge", name: "Hinge", width: 40, depth: 40, height: 8, size: 40, rotation, x: 12, z: -7, elevation: 3 });
+      const { blob, exportedCount, skipped } = await exportShapesToStep([hinge]);
+      expect(skipped).toEqual([]);
+      expect(exportedCount).toBe(1);
+      // The display mesh is a 96-sided polygon, the exact body round: within a percent.
+      expect(near(await reimportVolume(blob), meshVolume, 0.01)).toBe(true);
+    }
+  });
+
   it("exports box + cylinder + sphere as exact B-Rep with conserved volume", async () => {
     const box = shape({ kind: "box", name: "Box", x: -30, width: 10, depth: 6, height: 4 });
     const cyl = shape({ kind: "cylinder", name: "Cyl", x: 0, width: 8, depth: 8, height: 12 });

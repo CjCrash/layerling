@@ -59,6 +59,12 @@ A {{ui:shape.bentTube}} consists of up to twelve sections: a straight piece foll
 
 The {{ui:shape.honeycomb}} is a plate with hexagonal holes: light, stiff and nice to look at. The {{ui:prop.honeycombCellSize}}, the {{ui:prop.honeycombWallThickness}} and the {{ui:prop.honeycombFrameWidth}} set the look.
 
+## Hinge
+
+The {{ui:shape.hinge}} prints in one piece and moves afterwards (print-in-place): two leaves lying open flat on the plate, with alternating knuckles on one axis between them. The pin belongs to the back leaf and runs with play through the knuckles of the front one. You set the {{ui:prop.hingeLength}}, the {{ui:prop.hingeOpenWidth}} and the {{ui:prop.hingeKnuckleDiameter}}, plus the number of {{ui:prop.hingeKnuckles}} (odd, so the pin is held at both ends), the {{ui:prop.hingePinDiameter}} and the {{ui:prop.hingeLeafThickness}}.
+
+{{ui:prop.hingeClearance}} is the gap between the moving parts: around the pin, between the knuckles and in front of the leaves. With 0.4 mm a well-tuned printer usually breaks free with a small twist; if the parts fuse, raise it, if it wobbles too much, lower it. Print the hinge lying down as it appears on the plate, without supports. You can add holes to the leaves or group them into a larger part, such as a lid.
+
 ## Dovetail
 
 The {{ui:shape.dovetail}} is the joint in which two parts lock into each other and can only be slid together sideways. You set the width at the wide end, the {{ui:prop.dovetailNeckWidth}} and the length of the tail. Copy the tail for the other side and make the copy a hole: {{ui:prop.dovetailClearance}} then gives a little play so the joint does not jam after printing.

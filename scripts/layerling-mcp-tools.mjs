@@ -20,7 +20,7 @@ export const editorTargetSchema = {
 export const creatableShapeKinds = [
   "box", "roundedBox", "cube", "cylinder", "slot", "ellipse", "polygon", "sphere", "cone", "pyramid", "wedge",
   "roundRoof", "halfSphere", "torus", "tube", "bentTube", "star", "heart", "crescent", "text", "thread", "spring", "gear",
-  "honeycomb", "dovetail", "counterbore", "countersink", "teardrop", "ruler", "sketch",
+  "honeycomb", "hinge", "dovetail", "counterbore", "countersink", "teardrop", "ruler", "sketch",
 ];
 
 /**
@@ -67,13 +67,13 @@ export const shapeSettingSchema = {
   baseRadius: { type: "number", description: "Cone only: radius at the base." },
   topWidth: { type: "number", description: "Pyramid only: width of the flat top. 0 runs to a point." },
   topDepth: { type: "number", description: "Pyramid only: depth of the flat top. 0 runs to a point." },
-  taperTopWidth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, teardrop, counterbore, countersink and pyramid: width of the top face. Setting one value of a face pins the other." },
-  taperTopDepth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, teardrop, counterbore, countersink and pyramid: depth of the top face." },
-  taperBottomWidth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, teardrop, counterbore, countersink and pyramid: width of the bottom face." },
-  taperBottomDepth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, teardrop, counterbore, countersink and pyramid: depth of the bottom face." },
-  extrudeTwist: { type: "number", description: "On every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, teardrop, counterbore, countersink, pyramid and ruler: rotates the top face relative to the base, in degrees, for a twisted extrusion." },
-  extrudeTopOffsetX: { type: "number", description: "On every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, teardrop, counterbore, countersink, pyramid and ruler: shifts the top face along the shape's own X axis, in mm, for a leaning extrusion." },
-  extrudeTopOffsetZ: { type: "number", description: "On every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, dovetail, teardrop, counterbore, countersink, pyramid and ruler: shifts the top face along the shape's own Z axis, in mm, for a leaning extrusion." },
+  taperTopWidth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, hinge, dovetail, teardrop, counterbore, countersink and pyramid: width of the top face. Setting one value of a face pins the other." },
+  taperTopDepth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, hinge, dovetail, teardrop, counterbore, countersink and pyramid: depth of the top face." },
+  taperBottomWidth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, hinge, dovetail, teardrop, counterbore, countersink and pyramid: width of the bottom face." },
+  taperBottomDepth: { type: "number", description: "Taper, on every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, hinge, dovetail, teardrop, counterbore, countersink and pyramid: depth of the bottom face." },
+  extrudeTwist: { type: "number", description: "On every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, hinge, dovetail, teardrop, counterbore, countersink, pyramid and ruler: rotates the top face relative to the base, in degrees, for a twisted extrusion." },
+  extrudeTopOffsetX: { type: "number", description: "On every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, hinge, dovetail, teardrop, counterbore, countersink, pyramid and ruler: shifts the top face along the shape's own X axis, in mm, for a leaning extrusion." },
+  extrudeTopOffsetZ: { type: "number", description: "On every shape except gear, thread, spring, star, heart, crescent, slot, honeycomb, hinge, dovetail, teardrop, counterbore, countersink, pyramid and ruler: shifts the top face along the shape's own Z axis, in mm, for a leaning extrusion." },
   teeth: { type: "number", description: "Gear only." },
   toothSize: { type: "number", description: "Gear only." },
   toothWidth: { type: "number", description: "Gear only." },
@@ -110,6 +110,10 @@ export const shapeSettingSchema = {
   honeycombCellSize: { type: "number", description: "Honeycomb only: cell diameter / distance across flats in mm (3 to 50)." },
   honeycombWallThickness: { type: "number", description: "Honeycomb only: wall thickness between cells in mm (0.4 to 10)." },
   honeycombFrameWidth: { type: "number", description: "Honeycomb only: solid frame border width around grid in mm (0 to 50)." },
+  hingeKnuckles: { type: "number", description: "Hinge only: how many knuckles share the axis, odd from 3 to 15 (default 5) so the part with the pin holds both ends. A hinge is a print-in-place hinge lying open flat: width is its length along the axis (x), depth both leaves together (z), height the knuckle diameter; it prints in one piece and turns afterwards." },
+  hingePinDiameter: { type: "number", description: "Hinge only: diameter of the pin in mm (default 3); the other part's bore is wider by the clearance." },
+  hingeLeafThickness: { type: "number", description: "Hinge only: thickness of the two leaves in mm (default 2), at most the knuckle radius less the bore radius so a leaf stays below the bore." },
+  hingeClearance: { type: "number", description: "Hinge only: gap in mm between the moving parts (0.1 to 1, default 0.4) - around the pin, between the knuckles and in front of the leaves. Go up for a printer that tends to fuse, down for a tighter hinge." },
   dovetailNeckWidth: { type: "number", description: "Dovetail only: width of the narrow neck in mm; the shape's width is the wide end, its depth the length of the tail. Must be narrower than the width." },
   screwHoleShaft: { type: "number", description: "Counterbore and countersink only: diameter of the shaft below the head in mm. The shape's width is the head diameter, its height the whole length; the head end is on top." },
   screwHoleHeadDepth: { type: "number", description: "Counterbore only: depth of the cylindrical head pocket in mm." },
@@ -195,7 +199,7 @@ export const tools = [
   },
   {
     name: "layerling_create_shape",
-    description: "Create any of Layerling's shapes: boxes, cylinders, slots, polygons, spheres, cones, pyramids, wedges, roofs, tori, tubes, stars, hearts, crescents, honeycomb grids, raised text, threads (rod, screw, nut, tapped hole), springs, gears, or a simple extruded sketch. Width, depth and height default to what the editor uses for that shape; everything a shape has beyond its size is optional and falls back to the same defaults as a shape placed by hand. With a workplane set on a face (layerling_set_workplane), the shape stands on that face and x and z count on it (0, 0 is where the workplane sits) - unless elevation or a rotation is given, which mean the base plate.",
+    description: "Create any of Layerling's shapes: boxes, cylinders, slots, polygons, spheres, cones, pyramids, wedges, roofs, tori, tubes, stars, hearts, crescents, honeycomb grids, print-in-place hinges, raised text, threads (rod, screw, nut, tapped hole), springs, gears, or a simple extruded sketch. Width, depth and height default to what the editor uses for that shape; everything a shape has beyond its size is optional and falls back to the same defaults as a shape placed by hand. With a workplane set on a face (layerling_set_workplane), the shape stands on that face and x and z count on it (0, 0 is where the workplane sits) - unless elevation or a rotation is given, which mean the base plate.",
     inputSchema: {
       ...editorTargetSchema,
       required: ["kind"],

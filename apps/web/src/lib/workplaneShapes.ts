@@ -118,7 +118,7 @@ export function shapeTaperDimensions(shape: WorkplaneShape) {
  * die MCP-Bruecke nicht je ihre eigene fuehren.
  */
 export function shapeSupportsTaper(kind: WorkplaneShape["kind"]) {
-  return kind !== "gear" && kind !== "thread" && kind !== "spring" && kind !== "pyramid" && kind !== "ruler" && kind !== "star" && kind !== "heart" && kind !== "crescent" && kind !== "slot" && kind !== "dovetail" && kind !== "counterbore" && kind !== "countersink" && kind !== "teardrop" && kind !== "honeycomb" && kind !== "roundedBox" && kind !== "bentTube";
+  return kind !== "gear" && kind !== "thread" && kind !== "spring" && kind !== "pyramid" && kind !== "ruler" && kind !== "star" && kind !== "heart" && kind !== "crescent" && kind !== "slot" && kind !== "dovetail" && kind !== "hinge" && kind !== "counterbore" && kind !== "countersink" && kind !== "teardrop" && kind !== "honeycomb" && kind !== "roundedBox" && kind !== "bentTube";
 }
 
 /**
@@ -494,6 +494,10 @@ export function workplaneShapesEqual(a: WorkplaneShape, b: WorkplaneShape) {
     a.honeycombCellSize === b.honeycombCellSize &&
     a.honeycombWallThickness === b.honeycombWallThickness &&
     a.honeycombFrameWidth === b.honeycombFrameWidth &&
+    a.hingeKnuckles === b.hingeKnuckles &&
+    a.hingePinDiameter === b.hingePinDiameter &&
+    a.hingeLeafThickness === b.hingeLeafThickness &&
+    a.hingeClearance === b.hingeClearance &&
     a.dovetailNeckWidth === b.dovetailNeckWidth &&
     a.dovetailClearance === b.dovetailClearance &&
     a.screwHoleShaft === b.screwHoleShaft &&

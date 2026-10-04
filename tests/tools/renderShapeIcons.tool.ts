@@ -11,6 +11,7 @@ import { createHeartGeometry } from "@/lib/heartGeometry";
 import { createCrescentGeometry } from "@/lib/crescentGeometry";
 import { createSlotGeometry } from "@/lib/slotGeometry";
 import { createDovetailGeometry } from "@/lib/dovetailGeometry";
+import { createHingeGeometry } from "@/lib/hingeGeometry";
 import { createTeardropGeometry, teardropHeightForTipAngle } from "@/lib/teardropGeometry";
 import { createScrewHoleGeometry } from "@/lib/screwHoleGeometry";
 import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
@@ -417,6 +418,15 @@ describe("palette icons", () => {
         honeycombWallThickness: 2,
         honeycombFrameWidth: 2.5,
       }),
+    });
+    render({
+      // Schraeg von vorn oben: beide Blaetter und die abwechselnden Knoechel.
+      name: "apps/web/public/assets/editor/shape-icons-gray/hinge.png",
+      height: 8,
+      lay: false,
+      azimuth: 30,
+      elevation: 34,
+      build: () => createHingeGeometry({ width: 36, depth: 30, height: 8, hingeKnuckles: 5 }),
     });
     render({
       name: "apps/web/public/assets/editor/shape-icons-gray/roundedBox.png",

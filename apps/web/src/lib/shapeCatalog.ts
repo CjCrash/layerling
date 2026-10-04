@@ -117,6 +117,19 @@ import {
   normalizeDovetailNeckWidth,
 } from "@/lib/dovetailGeometry";
 import {
+  DEFAULT_HINGE_CLEARANCE,
+  DEFAULT_HINGE_DEPTH,
+  DEFAULT_HINGE_HEIGHT,
+  DEFAULT_HINGE_KNUCKLES,
+  DEFAULT_HINGE_LEAF_THICKNESS,
+  DEFAULT_HINGE_PIN_DIAMETER,
+  DEFAULT_HINGE_WIDTH,
+  normalizeHingeClearance,
+  normalizeHingeKnuckles,
+  normalizeHingeLeafThickness,
+  normalizeHingePinDiameter,
+} from "@/lib/hingeGeometry";
+import {
   DEFAULT_HONEYCOMB_WIDTH,
   DEFAULT_HONEYCOMB_DEPTH,
   DEFAULT_HONEYCOMB_HEIGHT,
@@ -171,6 +184,7 @@ const SHAPE_LABEL_KEYS: Record<string, MessageKey> = {
   crescent: "shape.crescent",
   gear: "shape.gear",
   honeycomb: "shape.honeycomb",
+  hinge: "shape.hinge",
   dovetail: "shape.dovetail",
   teardrop: "shape.teardrop",
   counterbore: "shape.counterbore",
@@ -207,6 +221,7 @@ export const toolbarShapeAssets: ToolbarShapeAsset[] = [
   { id: "spring", name: "Spring", src: "assets/editor/shape-icons-gray/spring.png", menuIcon: "assets/editor/shape-icons-gray/spring.png", kind: "spring", color: "#18b99a" },
   { id: "gear", name: "Gear", src: "assets/editor/gear-types/spur.png", menuIcon: "assets/editor/gear-types/spur.png", kind: "gear", color: "#6f7f8d" },
   { id: "honeycomb", name: "Honeycomb", src: "assets/editor/shape-icons-gray/honeycomb.png", menuIcon: "assets/editor/shape-icons-gray/honeycomb.png", kind: "honeycomb", color: "#0ea5e9" },
+  { id: "hinge", name: "Hinge", src: "assets/editor/shape-icons-gray/hinge.png", menuIcon: "assets/editor/shape-icons-gray/hinge.png", kind: "hinge", color: "#3f8f6b" },
   { id: "dovetail", name: "Dovetail", src: "assets/editor/shape-icons-gray/dovetail.png", menuIcon: "assets/editor/shape-icons-gray/dovetail.png", kind: "dovetail", color: "#a0522d" },
   { id: "star", name: "Star", src: "assets/editor/shape-icons-gray/star.png", menuIcon: "assets/editor/shape-icons-gray/star.png", kind: "star", color: "#f5a623" },
   { id: "heart", name: "Heart", src: "assets/editor/shape-icons-gray/heart.png", menuIcon: "assets/editor/shape-icons-gray/heart.png", kind: "heart", color: "#e0245e" },
@@ -260,6 +275,9 @@ export function shapeAssetDefaultDimensions(kind: ShapeKind) {
   }
   if (kind === "dovetail") {
     return { width: DEFAULT_DOVETAIL_WIDTH, depth: DEFAULT_DOVETAIL_DEPTH, height: DEFAULT_DOVETAIL_HEIGHT };
+  }
+  if (kind === "hinge") {
+    return { width: DEFAULT_HINGE_WIDTH, depth: DEFAULT_HINGE_DEPTH, height: DEFAULT_HINGE_HEIGHT };
   }
   if (kind === "honeycomb") {
     return { width: DEFAULT_HONEYCOMB_WIDTH, depth: DEFAULT_HONEYCOMB_DEPTH, height: DEFAULT_HONEYCOMB_HEIGHT };
@@ -340,6 +358,14 @@ export function shapeAssetSpecialDefaults(kind: ShapeKind, dimensions = shapeAss
   }
   if (kind === "countersink") {
     return { screwHoleShaft: DEFAULT_SCREW_HOLE_SHAFT, screwHoleAngle: DEFAULT_SCREW_HOLE_ANGLE };
+  }
+  if (kind === "hinge") {
+    return {
+      hingeKnuckles: DEFAULT_HINGE_KNUCKLES,
+      hingePinDiameter: DEFAULT_HINGE_PIN_DIAMETER,
+      hingeLeafThickness: DEFAULT_HINGE_LEAF_THICKNESS,
+      hingeClearance: DEFAULT_HINGE_CLEARANCE,
+    };
   }
   if (kind === "dovetail") {
     return {
@@ -467,6 +493,10 @@ export function sceneShape(shape: Partial<WorkplaneShape> & Pick<WorkplaneShape,
     honeycombCellSize: shape.honeycombCellSize,
     honeycombWallThickness: shape.honeycombWallThickness,
     honeycombFrameWidth: shape.honeycombFrameWidth,
+    hingeKnuckles: shape.hingeKnuckles,
+    hingePinDiameter: shape.hingePinDiameter,
+    hingeLeafThickness: shape.hingeLeafThickness,
+    hingeClearance: shape.hingeClearance,
     dovetailNeckWidth: shape.dovetailNeckWidth,
     dovetailClearance: shape.dovetailClearance,
     screwHoleShaft: shape.screwHoleShaft,
@@ -623,6 +653,17 @@ export function makeShapeFromAsset(
     honeycombCellSize: asset.kind === "honeycomb" ? normalizeHoneycombCellSize(customization.honeycombCellSize ?? DEFAULT_HONEYCOMB_CELL_SIZE) : undefined,
     honeycombWallThickness: asset.kind === "honeycomb" ? normalizeHoneycombWallThickness(customization.honeycombWallThickness ?? DEFAULT_HONEYCOMB_WALL_THICKNESS) : undefined,
     honeycombFrameWidth: asset.kind === "honeycomb" ? normalizeHoneycombFrameWidth(customization.honeycombFrameWidth ?? DEFAULT_HONEYCOMB_FRAME_WIDTH) : undefined,
+    hingeClearance: asset.kind === "hinge" ? normalizeHingeClearance(customization.hingeClearance ?? DEFAULT_HINGE_CLEARANCE) : undefined,
+    hingeKnuckles: asset.kind === "hinge" ? normalizeHingeKnuckles(customization.hingeKnuckles ?? DEFAULT_HINGE_KNUCKLES, width, normalizeHingeClearance(customization.hingeClearance)) : undefined,
+    hingePinDiameter: asset.kind === "hinge" ? normalizeHingePinDiameter(customization.hingePinDiameter ?? DEFAULT_HINGE_PIN_DIAMETER, height, normalizeHingeClearance(customization.hingeClearance)) : undefined,
+    hingeLeafThickness: asset.kind === "hinge"
+      ? normalizeHingeLeafThickness(
+          customization.hingeLeafThickness ?? DEFAULT_HINGE_LEAF_THICKNESS,
+          height,
+          normalizeHingePinDiameter(customization.hingePinDiameter ?? DEFAULT_HINGE_PIN_DIAMETER, height, normalizeHingeClearance(customization.hingeClearance)),
+          normalizeHingeClearance(customization.hingeClearance),
+        )
+      : undefined,
     dovetailNeckWidth: asset.kind === "dovetail" ? normalizeDovetailNeckWidth(customization.dovetailNeckWidth, width) : undefined,
     dovetailClearance: asset.kind === "dovetail" ? normalizeDovetailClearance(customization.dovetailClearance ?? DEFAULT_DOVETAIL_CLEARANCE) : undefined,
     screwHoleShaft: asset.kind === "counterbore" || asset.kind === "countersink" ? normalizeScrewHoleShaft(customization.screwHoleShaft ?? DEFAULT_SCREW_HOLE_SHAFT, width) : undefined,

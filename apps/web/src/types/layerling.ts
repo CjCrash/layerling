@@ -21,6 +21,7 @@ export type ShapeKind =
   | "crescent"
   | "gear"
   | "honeycomb"
+  | "hinge"
   | "dovetail"
   | "counterbore"
   | "countersink"
@@ -129,6 +130,14 @@ export type ShapeCustomization = {
   honeycombCellSize?: number;
   honeycombWallThickness?: number;
   honeycombFrameWidth?: number;
+  /** Hinge: how many knuckles share the axis, odd so the pin's part holds both ends. */
+  hingeKnuckles?: number;
+  /** Hinge: diameter of the pin in mm; the other part's bore is wider by the clearance. */
+  hingePinDiameter?: number;
+  /** Hinge: thickness of the two leaves in mm. */
+  hingeLeafThickness?: number;
+  /** Hinge: gap in mm between the moving parts - around the pin, between knuckles and before the leaves. */
+  hingeClearance?: number;
   /** Dovetail: width of the narrow neck in mm (the wide end is the shape's width). */
   dovetailNeckWidth?: number;
   /** Dovetail: gap in mm added on every side when the dovetail is a cut-out (its socket). */
@@ -438,6 +447,14 @@ export type WorkplaneShape = {
   honeycombCellSize?: number;
   honeycombWallThickness?: number;
   honeycombFrameWidth?: number;
+  /** Hinge: how many knuckles share the axis, odd so the pin's part holds both ends. */
+  hingeKnuckles?: number;
+  /** Hinge: diameter of the pin in mm; the other part's bore is wider by the clearance. */
+  hingePinDiameter?: number;
+  /** Hinge: thickness of the two leaves in mm. */
+  hingeLeafThickness?: number;
+  /** Hinge: gap in mm between the moving parts - around the pin, between knuckles and before the leaves. */
+  hingeClearance?: number;
   /** Dovetail: width of the narrow neck in mm (the wide end is the shape's width). */
   dovetailNeckWidth?: number;
   /** Dovetail: gap in mm added on every side when the dovetail is a cut-out (its socket). */

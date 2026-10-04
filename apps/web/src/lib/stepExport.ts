@@ -9,6 +9,7 @@ import { springPartSolid } from "@/lib/springSolid";
 import { helicalGearPartSolid } from "@/lib/gearSolid";
 import { profileExtrusionSolid } from "@/lib/cadProfileSolid";
 import { cadTransformRequiresGeneralTransform } from "@/lib/cadModifierRuntime";
+import { hingeWorldParts } from "@/lib/hingeParts";
 
 export type SkippedShape = {
   name: string;
@@ -349,6 +350,19 @@ function buildHelicalGearBody(brep: Brep, shape: WorkplaneShape): BuildOutcome {
   return buildPlacedBody(brep, part, (kernel) => helicalGearPartSolid(kernel, part!));
 }
 
+/** The hinge as the boxes, cylinders and tubes it is made of, fused: two bodies that turn against each other. */
+function buildHingeBody(brep: Brep, shape: WorkplaneShape): BuildOutcome {
+  const solids: BrepSolid[] = [];
+  for (const part of hingeWorldParts(shape)) {
+    const source = stepSourceForShape(part);
+    const built = source === "primitive" ? buildExactSolid(brep, part) : source === "profile" ? buildProfileBody(brep, part) : { skip: `its ${part.kind} part has no exact body` };
+    if ("skip" in built) return built;
+    solids.push(built.solid);
+  }
+  const fused = brep.fuseAll(solids as Parameters<Brep["fuseAll"]>[0]);
+  return fused.ok ? { solid: fused.value as BrepSolid } : { skip: "the hinge's parts could not be joined" };
+}
+
 function describe(shape: WorkplaneShape, reason: string): SkippedShape {
   return { name: shape.name, kind: shape.kind, reason };
 }
@@ -416,7 +430,9 @@ export async function exportShapesToStep(shapes: WorkplaneShape[]): Promise<Step
   for (const shape of shapes.filter((s) => !s.hole)) {
     let built: BuildOutcome;
     const source = stepSourceForShape(shape);
-    if (source === "imported") {
+    if (shape.kind === "hinge" && !shape.cadBrep && !shapeHasShapeDeform(shape)) {
+      built = buildHingeBody(brep, shape);
+    } else if (source === "imported") {
       built = await buildImportedBody(brep, shape);
     } else if (source === "primitive") {
       built = buildExactSolid(brep, shape);

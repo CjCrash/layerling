@@ -59,6 +59,12 @@ Ein {{ui:shape.bentTube}} besteht aus bis zu zwölf Abschnitten: ein gerades St�
 
 Das {{ui:shape.honeycomb}} ist eine Platte mit sechseckigen Aussparungen: leicht, stabil und schön anzusehen. Die {{ui:prop.honeycombCellSize}}, die {{ui:prop.honeycombWallThickness}} und die {{ui:prop.honeycombFrameWidth}} legen das Aussehen fest.
 
+## Scharnier
+
+Das {{ui:shape.hinge}} wird in einem Stück gedruckt und bewegt sich danach (print-in-place): zwei Blätter, die aufgeklappt flach auf der Platte liegen, dazwischen abwechselnde Knöchel auf einer Achse. Der Stift gehört zum hinteren Blatt und läuft mit Spiel durch die Knöchel des vorderen. Du stellst die {{ui:prop.hingeLength}}, die {{ui:prop.hingeOpenWidth}} und den {{ui:prop.hingeKnuckleDiameter}} ein, dazu die Zahl der {{ui:prop.hingeKnuckles}} (ungerade, damit der Stift an beiden Enden hält), den {{ui:prop.hingePinDiameter}} und die {{ui:prop.hingeLeafThickness}}.
+
+{{ui:prop.hingeClearance}} ist der Abstand zwischen den beweglichen Teilen: um den Stift, zwischen den Knöcheln und vor den Blättern. Mit 0,4 mm löst sich ein gut eingestellter Drucker meist mit einer kleinen Drehung; verwachsen die Teile, nimm mehr, wackelt es zu sehr, weniger. Drucke das Scharnier liegend, so wie es auf der Platte erscheint, ohne Stützen. Die Blätter kannst du mit Bohrungen versehen oder in ein größeres Teil gruppieren, etwa einen Deckel.
+
 ## Schwalbenschwanz
 
 Der {{ui:shape.dovetail}} ist die Verbindung, bei der zwei Teile ineinander einrasten und sich nur seitlich zusammenschieben lassen. Du stellst die Breite am breiten Ende, die {{ui:prop.dovetailNeckWidth}} und die Länge des Zapfens ein. Kopiere den Zapfen für die Gegenseite und mache die Kopie zur Aussparung: {{ui:prop.dovetailClearance}} sorgt dann für ein wenig Spiel, damit die Verbindung nach dem Druck nicht klemmt.
