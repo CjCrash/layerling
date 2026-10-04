@@ -8268,10 +8268,14 @@ html[data-theme="dark"] .panel-grip:hover {
 
 .workspace-settings-nav {
   display: grid;
+  /* One column no wider than the bar: the buttons otherwise came out 2 px too
+     wide between 641 and 1100 px and the bar grew a horizontal scrollbar. */
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 6px;
   min-height: 0;
   padding: 16px 10px;
+  overflow-x: hidden;
   overflow-y: auto;
   background: #faf7f3;
   border-right: 1px solid #eae3d6;
