@@ -92,6 +92,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { combos: ["Ctrl+↑ / ↓"], label: "shortcuts.raise" },
       { combos: ["R"], label: "shortcuts.rotate" },
       { combos: ["Shift+R"], label: "shortcuts.rotateFine" },
+      { combos: ["Shift"], label: "shortcuts.axisLockDrag" },
       { combos: ["Alt"], label: "shortcuts.pauseObjectSnap" },
     ],
   },

@@ -458,6 +458,8 @@ type DragState = {
   primaryStartX: number;
   primaryStartZ: number;
   items: DragItem[];
+  /** Shift was held on a selected shape: if nothing moves, this was a click that takes it out of the selection. */
+  toggleOnClick?: boolean;
   /** World footprint of the dragged shapes at the start, when snapping to other shapes is on. */
   snapMoving?: SnapBox | null;
   snapTargets?: SnapBox[];
@@ -6949,7 +6951,11 @@ export function WorkplaneViewport({
 
       event.preventDefault();
       const alreadySelected = selectedIdsSnapshot.includes(id);
-      if (additive) {
+      // Shift on a shape is "add to or take from the selection". On a shape that
+      // is selected already it may also be the start of an axis-locked drag, so
+      // there the toggle waits until the pointer comes up without having moved.
+      const toggleOnClick = additive && alreadySelected && !shape.locked;
+      if (additive && !toggleOnClick) {
         onSelectShape(id, "toggle");
         return;
       }
@@ -7003,6 +7009,7 @@ export function WorkplaneViewport({
         primaryStartX: shape.x,
         primaryStartZ: shape.z,
         items,
+        toggleOnClick,
       };
       const usesWorldHorizontalAxes = Math.abs(activeWorkplane.normal.y - 1) < 1e-6
         && Math.abs(activeWorkplane.xAxis.x - 1) < 1e-6
@@ -7148,8 +7155,17 @@ export function WorkplaneViewport({
       }
 
       let deltaX = point.x - drag.startPoint.x;
-      const deltaY = point.y - drag.startPoint.y;
+      let deltaY = point.y - drag.startPoint.y;
       let deltaZ = point.z - drag.startPoint.z;
+      // Shift keeps the move on one axis of the workplane: the one the pointer
+      // has travelled further along since the drag began. It is decided anew
+      // with every move, so crossing the diagonal switches axis.
+      const axisLock = event.shiftKey ? dragAxisLock(drag.workplane, deltaX, deltaY, deltaZ) : null;
+      if (axisLock) {
+        deltaX = axisLock.delta.x;
+        deltaY = axisLock.delta.y;
+        deltaZ = axisLock.delta.z;
+      }
       const state = threeRef.current;
       if (drag.snapMoving && drag.snapTargets?.length && state) {
         let guides: ObjectSnapGuide[] = [];
@@ -7157,11 +7173,13 @@ export function WorkplaneViewport({
         if (raw) {
           // Measured from the unsnapped pointer: the grid must not keep an edge
           // a step away from the neighbour it is being pulled to.
-          const rawDeltaX = raw.x - drag.startPoint.x;
-          const rawDeltaZ = raw.z - drag.startPoint.z;
+          // Snapping only runs on the flat workplane, where the lock is to X or Z;
+          // the locked-out direction stays at zero and is not pulled anywhere.
+          const rawDeltaX = axisLock?.along === "z" ? 0 : raw.x - drag.startPoint.x;
+          const rawDeltaZ = axisLock?.along === "x" ? 0 : raw.z - drag.startPoint.z;
           const snap = objectSnapOffset(shiftSnapBox(drag.snapMoving, rawDeltaX, rawDeltaZ), drag.snapTargets, objectSnapThreshold(state, raw));
-          if (snap.dx !== null) deltaX = rawDeltaX + snap.dx;
-          if (snap.dz !== null) deltaZ = rawDeltaZ + snap.dz;
+          if (snap.dx !== null && axisLock?.along !== "z") deltaX = rawDeltaX + snap.dx;
+          if (snap.dz !== null && axisLock?.along !== "x") deltaZ = rawDeltaZ + snap.dz;
           if (snap.dx !== null || snap.dz !== null) {
             guides = objectSnapOffset(shiftSnapBox(drag.snapMoving, deltaX, deltaZ), drag.snapTargets, 1e-4).guides;
           }
@@ -7399,6 +7417,8 @@ export function WorkplaneViewport({
           onUpdateShape(item.id, { x: item.nextX, z: item.nextZ, elevation: item.nextElevation });
         }
       });
+
+      if (!movedShape && drag.toggleOnClick) onSelectShape(drag.primaryId, "toggle");
 
       const moveDimensionSession = moveDimensionSessionRef.current;
       if (movedShape && moveDimensionSession) {
@@ -10692,6 +10712,20 @@ function findSelectionHelper(state: ThreeState, id: string) {
 
 function findSelectedGroundFootprint(state: ThreeState, id: string) {
   return state.helperLayer.children.find((child) => child.name === "SelectedGroundFootprint" && child.userData.shapeId === id) ?? null;
+}
+
+/**
+ * A move held to one axis of the workplane: of the plane's two directions,
+ * the one the move has gone further along. On the flat workplane those are
+ * X and Z; on a tilted one they are the plane's own.
+ */
+function dragAxisLock(workplane: PlacementWorkplane, deltaX: number, deltaY: number, deltaZ: number) {
+  const alongX = deltaX * workplane.xAxis.x + deltaY * workplane.xAxis.y + deltaZ * workplane.xAxis.z;
+  const alongZ = deltaX * workplane.zAxis.x + deltaY * workplane.zAxis.y + deltaZ * workplane.zAxis.z;
+  const along: "x" | "z" = Math.abs(alongX) >= Math.abs(alongZ) ? "x" : "z";
+  const axis = along === "x" ? workplane.xAxis : workplane.zAxis;
+  const distance = along === "x" ? alongX : alongZ;
+  return { along, delta: { x: axis.x * distance, y: axis.y * distance, z: axis.z * distance } };
 }
 
 function applyDragItemPreview(state: ThreeState, item: DragItem) {

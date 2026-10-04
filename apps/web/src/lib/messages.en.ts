@@ -439,6 +439,7 @@ export const MESSAGES_EN = {
   "shortcuts.delete": "Delete the selection",
   "shortcuts.selectAll": "Select every visible shape",
   "shortcuts.addToSelection": "Add to the selection or take out of it",
+  "shortcuts.axisLockDrag": "Hold while dragging: move along X or Y only",
   "shortcuts.pauseObjectSnap": "Hold while dragging: pause snapping to other shapes",
   "shortcuts.copy": "Copy",
   "shortcuts.cut": "Cut",

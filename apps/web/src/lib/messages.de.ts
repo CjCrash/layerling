@@ -438,6 +438,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "shortcuts.delete": "Auswahl löschen",
   "shortcuts.selectAll": "Alle sichtbaren Körper auswählen",
   "shortcuts.addToSelection": "Zur Auswahl hinzufügen oder herausnehmen",
+  "shortcuts.axisLockDrag": "Beim Ziehen gedrückt halten: nur entlang X oder Y bewegen",
   "shortcuts.pauseObjectSnap": "Beim Ziehen gedrückt halten: Fangen an anderen Formen aussetzen",
   "shortcuts.copy": "Kopieren",
   "shortcuts.cut": "Ausschneiden",

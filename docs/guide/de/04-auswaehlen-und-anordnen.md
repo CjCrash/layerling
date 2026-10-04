@@ -36,7 +36,7 @@ Du kannst eine Form über den Rand der Platte hinausziehen und dort liegen lasse
 
 Ziehst du eine Form über die Arbeitsebene, rastet sie an anderen Formen ein: Ihre linke, rechte, vordere oder hintere Kante oder ihre Mitte legt sich genau auf eine Kante oder Mitte einer anderen Form. Eine rosa Hilfslinie zeigt, woran sie gerade hängt. So stellst du zwei Teile bündig nebeneinander oder mittig hintereinander, ohne Zahlen einzutippen. Das gilt auch, wenn das Raster ausgeschaltet ist.
 
-Hältst du beim Ziehen [[Alt]] gedrückt, setzt das Fangen aus und die Form folgt nur dem Raster. Ganz abschalten lässt es sich im Rastermenü unten rechts ({{ui:inspector.objectSnap}}) oder in den Einstellungen. Bisher fängt nur das Verschieben auf der normalen Arbeitsebene, nicht das Anheben und nicht die Größenänderung.
+Hältst du beim Ziehen [[Umschalt]] gedrückt, bleibt die Bewegung auf einer Achse: Die Form folgt der Richtung, X oder Y, in die du weiter gezogen hast, und lässt die andere unberührt. Drück [[Umschalt]] am besten erst, wenn du schon ziehst; auf einer Form, die noch nicht ausgewählt ist, nimmt ein Klick mit [[Umschalt]] sie nur zur Auswahl dazu. Hältst du beim Ziehen [[Alt]] gedrückt, setzt das Fangen aus und die Form folgt nur dem Raster. Ganz abschalten lässt es sich im Rastermenü unten rechts ({{ui:inspector.objectSnap}}) oder in den Einstellungen. Bisher fängt nur das Verschieben auf der normalen Arbeitsebene, nicht das Anheben und nicht die Größenänderung.
 
 ## Ausrichten
 
