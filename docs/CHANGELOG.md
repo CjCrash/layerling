@@ -4,7 +4,7 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
-## Unreleased
+## 1.32.3
 
 - **"Worker failed to start" after an update:** When a new version came out while layerling was open, especially as an installed app, finishing a sketch or using the edge tools could fail with "The OpenCascade sketch worker failed to start" until the computer or the app was restarted. The new version's offline copy took over and deleted the old one, and the server no longer had the old files either, so the open page could not load its CAD worker. The offline copy now keeps the last three versions, and an open page finds its own files in them. If the worker still cannot start, the message now says to reload the page. Reported by jcmarksafb and makinglayerschannel (#88).
 
