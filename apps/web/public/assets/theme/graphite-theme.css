@@ -1582,6 +1582,22 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   color: #6f6f6f;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .print-estimate-material {
+  color: #3f3f3f;
+  background: #f9f9f9;
+  border: 1px solid #e1e1e1;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .print-estimate-values dt,
+:where(html[data-theme="dark"][data-palette="graphite"]) .print-estimate-busy,
+:where(html[data-theme="dark"][data-palette="graphite"]) .print-estimate-note {
+  color: #737373;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .print-estimate-values dd {
+  color: #3a3a3a;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .export-section-heading > div > span {
   color: #737373;
 }
@@ -5118,6 +5134,22 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .export-file-input-wrap
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .export-file-input {
   color: #e3e3e3;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .print-estimate-material {
+  color: #e3e3e3;
+  background: #1f1f1f;
+  border-color: #4e4e4e;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .print-estimate-values dd {
+  color: #e4e4e4;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .print-estimate-values dt,
+html[data-theme="dark"]:where([data-palette="graphite"]) .print-estimate-busy,
+html[data-theme="dark"]:where([data-palette="graphite"]) .print-estimate-note {
+  color: #757575;
 }
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .export-file-input-wrap > span,

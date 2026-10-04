@@ -7949,7 +7949,8 @@ export function WorkplaneViewport({
                       <div className="section-popover-axis-row">
                         <span className="section-label">{t("camera.sectionAxis")}</span>
                         <div className="section-axis-buttons" role="radiogroup" aria-label={t("camera.sectionAxis")}>
-                          {(["x", "y", "z"] as const).map((ax) => (
+                          {/* Named like the position fields: the depth (z inside) is Y, the height (y inside) is Z. */}
+                          {(["x", "z", "y"] as const).map((ax) => (
                             <button
                               key={ax}
                               type="button"
@@ -7957,9 +7958,9 @@ export function WorkplaneViewport({
                               aria-checked={sectionSettings.axis === ax}
                               className={`section-axis-btn ${sectionSettings.axis === ax ? "active" : ""}`}
                               onClick={() => handleSelectSectionAxis(ax)}
-                              title={t(ax === "x" ? "camera.sectionAxisX" : ax === "y" ? "camera.sectionAxisY" : "camera.sectionAxisZ")}
+                              title={t(ax === "x" ? "camera.sectionAxisX" : ax === "z" ? "camera.sectionAxisY" : "camera.sectionAxisZ")}
                             >
-                              {ax.toUpperCase()}
+                              {ax === "x" ? "X" : ax === "z" ? "Y" : "Z"}
                             </button>
                           ))}
                         </div>

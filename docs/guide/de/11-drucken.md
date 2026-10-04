@@ -46,4 +46,4 @@ Ein paar Faustregeln für die Richtung:
 
 ## Wenn es losgehen soll
 
-Wähle {{ui:editor.export}} und dann **STL** oder **3MF**. STL ist das einfachste Format. 3MF behält Namen und Farben der einzelnen Körper und ist deshalb praktisch, wenn du mehrere Farben druckst. Mehr im Kapitel [Dateien und Speichern](chapter:dateien-und-speichern).
+Wähle {{ui:editor.export}} und dann **STL** oder **3MF**. STL ist das einfachste Format. 3MF behält Namen und Farben der einzelnen Körper und ist deshalb praktisch, wenn du mehrere Farben druckst. Im Exportfenster siehst du dabei auch, wie viel Gramm und Meter Filament das Teil massiv bräuchte. Mehr im Kapitel [Dateien und Speichern](chapter:dateien-und-speichern).

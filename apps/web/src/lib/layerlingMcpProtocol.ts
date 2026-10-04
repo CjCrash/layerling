@@ -104,6 +104,7 @@ export type LayerlingMcpCommandName =
   | "hollow_object"
   | "array_objects"
   | "inspect_errors"
+  | "estimate_print"
   | "set_section_view"
   | "export_section_svg"
   | "import_file"

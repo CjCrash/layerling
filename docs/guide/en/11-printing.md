@@ -46,4 +46,4 @@ A few rules of thumb for direction:
 
 ## When you are ready
 
-Choose {{ui:editor.export}} and then **STL** or **3MF**. STL is the simplest format. 3MF keeps names and colours of the individual bodies and is therefore handy when you print in several colours. More in [Files and saving](chapter:files-and-saving).
+Choose {{ui:editor.export}} and then **STL** or **3MF**. STL is the simplest format. 3MF keeps names and colours of the individual bodies and is therefore handy when you print in several colours. The export window also shows how many grams and metres of filament the part would take printed solid. More in [Files and saving](chapter:files-and-saving).

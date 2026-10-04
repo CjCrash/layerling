@@ -34,6 +34,10 @@ Oben steht der Dateiname, darunter wählst du das Format. Du entscheidest, ob nu
 
 Aussparungen lassen sich nicht einzeln exportieren. Gruppiere sie zuerst mit einem Körper, sonst weist dich layerling darauf hin.
 
+### Wie viel Filament braucht das?
+
+Bei STL, 3MF, OBJ und STEP zeigt das Feld {{ui:export.estimateTitle}} Volumen, Gewicht und Filamentlänge (1,75 mm) dessen, was exportiert wird. Gezählt wird wie in der Datei: nur sichtbare Körper, Gruppen mit abgezogenen Aussparungen, Überlappungen nur einmal. Rechts wählst du das Filament – PLA, PETG, ABS, ASA, TPU oder PA (Nylon) –, das Gewicht folgt seiner Dichte. Gerechnet ist massiv, also wie mit 100 % Füllung. Mit Wänden und Füllung zeigt der Slicer weniger; die Zahl ist die Obergrenze und taugt gut zum Vergleichen und dafür, ob die Rolle noch reicht.
+
 ## Importieren
 
 Über {{ui:editor.import}} oder [[Strg]]+[[I]] bringst du fremde Dateien in den Entwurf.

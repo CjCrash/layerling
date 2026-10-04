@@ -116,7 +116,8 @@ import {
 import { workplaneCenteringOffset } from "@/lib/workplaneCentering";
 import { bakeCadMetadataForShapeTransform, cadBrepTransformForShape, cadModifierPrimitiveForAnalyticBox, cadModifierPrimitiveForAnalyticShape, cadModifierPrimitiveForBakedShape, importedStepPartForShape } from "@/lib/cadBakeMetadata";
 import { hasOneToOneCadComponentMapping } from "@/lib/cadModifierGroups";
-import { cadModifierHelicalGearForShape, cadModifierProfileForShape, cadModifierSpringForShape, cadModifierThreadForShape, cadProfileExpectation, cadProfileSegmentCount, textGlyphProfiles, withinExactProfileLimit } from "@/lib/cadProfileExtrusion";
+import { cadModifierHelicalGearForShape, cadModifierProfileForShape, cadModifierSpringForShape, cadModifierThreadForShape, cadProfileExpectation, cadProfileSegmentCount, closedMeshVolume, textGlyphProfiles, withinExactProfileLimit } from "@/lib/cadProfileExtrusion";
+import { DEFAULT_PRINT_MATERIAL, PRINT_MATERIAL_DENSITY, PRINT_MATERIALS, FILAMENT_DIAMETER_MM, normalizePrintMaterial, printEstimate, type PrintMaterial } from "@/lib/printEstimate";
 import {
   CAD_MODIFIER_MAX_SHARP_ANGLE,
   CAD_MODIFIER_REQUEST_TIMEOUT_MS,
@@ -4848,6 +4849,28 @@ async function unionOverlappingExportMeshes(shapes: WorkplaneShape[], meshes: Me
     }
   }
   return { meshes: ergebnis, quellen, verschmolzen, gescheitert };
+}
+
+/**
+ * Das Volumen dessen, was eine STL enthielte: nur sichtbare Koerper, Gruppen
+ * mit ihren Aussparungen verrechnet, Durchdringungen nur einmal gezaehlt.
+ * Daraus schaetzt das Exportfenster Gewicht und Filament.
+ */
+async function exportSolidVolume(source: readonly WorkplaneShape[]) {
+  const visible = source.filter((shape) => !shape.hidden);
+  const solids = visible.filter((shape) => !shape.hole && !isNonSolidShapeKind(shape.kind));
+  if (solids.length === 0) return { volumeMm3: 0, solids: 0, bodies: 0, unionFailed: 0 };
+  const { meshes, gescheitert } = await unionOverlappingExportMeshes(solids, solids.map(meshForShape));
+  const volumeMm3 = meshes.reduce((sum, mesh) => sum + Math.abs(closedMeshVolume(mesh.vertices, mesh.faces)), 0);
+  return { volumeMm3, solids: solids.length, bodies: meshes.length, unionFailed: gescheitert };
+}
+
+type ExportSolidVolume = Awaited<ReturnType<typeof exportSolidVolume>>;
+
+const PRINT_MATERIAL_STORAGE_KEY = "layerling.printMaterial";
+
+function formatEstimateNumber(value: number, digits: number) {
+  return value.toLocaleString(getLanguage() === "de" ? "de-DE" : "en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
 /**
@@ -10475,6 +10498,35 @@ export function LayerlingEditor({
         return applyCadModifierForMcp(target, params);
       }
 
+      if (command.action === "estimate_print") {
+        // Dieselbe Rechnung wie das Feld "Material" im Exportfenster.
+        const requestedIds = mcpStringArray(params.ids ?? params.id);
+        const pickIds = requestedIds.length ? requestedIds : selectedIdsRef.current;
+        const source = pickIds.length ? currentShapes().filter((shape) => pickIds.includes(shape.id)) : currentShapes();
+        if (requestedIds.length && source.length === 0) throw new Error("No matching objects to estimate");
+        if (params.material !== undefined && !(PRINT_MATERIALS as readonly unknown[]).includes(params.material)) {
+          throw new Error(`material must be one of ${PRINT_MATERIALS.join(", ")}`);
+        }
+        const material = normalizePrintMaterial(params.material);
+        const volume = await exportSolidVolume(source);
+        if (volume.solids === 0) throw new Error("Nothing to estimate: no visible solid body");
+        const estimate = printEstimate(volume.volumeMm3, material);
+        return {
+          scope: requestedIds.length ? "ids" : pickIds.length ? "selection" : "design",
+          material,
+          densityGPerCm3: PRINT_MATERIAL_DENSITY[material],
+          filamentDiameterMm: FILAMENT_DIAMETER_MM,
+          volumeMm3: Number(estimate.volumeMm3.toFixed(1)),
+          volumeCm3: Number(estimate.volumeCm3.toFixed(3)),
+          grams: Number(estimate.grams.toFixed(2)),
+          filamentMeters: Number(estimate.filamentMeters.toFixed(3)),
+          solids: volume.solids,
+          bodies: volume.bodies,
+          unionFailed: volume.unionFailed,
+          note: "Solid, without infill: the slicer shows less with walls and infill.",
+        };
+      }
+
       if (command.action === "inspect_errors") {
         return {
           notice: noticeRef.current || t("status.ready"),
@@ -12188,6 +12240,8 @@ export function LayerlingEditor({
           scopeLabel={exportScopeLabel}
           onlyHoles={exportHolesOnly}
           hiddenCount={exportHiddenCount}
+          estimateShapes={exportTargetShapes}
+          onEstimatePrint={exportSolidVolume}
           onClose={() => setTopPanel(null)}
           onExport={exportDesign}
           onExportLyl={exportLylDesign}
@@ -13216,6 +13270,8 @@ function TopActionPanel({
   scopeLabel,
   onlyHoles,
   hiddenCount = 0,
+  estimateShapes,
+  onEstimatePrint,
   onClose,
   onExport,
   onExportLyl,
@@ -13237,6 +13293,9 @@ function TopActionPanel({
   onlyHoles?: boolean;
   /** Ausgeblendete Teile, die der Export auslaesst - gesagt, bevor er laeuft. */
   hiddenCount?: number;
+  /** Was exportiert wuerde - daraus Volumen, Gewicht und Filament. */
+  estimateShapes: readonly WorkplaneShape[];
+  onEstimatePrint: (shapes: readonly WorkplaneShape[]) => Promise<ExportSolidVolume>;
   onClose: () => void;
   onExport: (format: DirectExportFormat, exportName: string) => void;
   onExportLyl: (exportName: string, historyLimit: LylHistoryLimit, target?: LylExportTarget) => void;
@@ -13272,6 +13331,40 @@ function TopActionPanel({
     return ["unlimited", ...numbers];
   }, [workspaceHistoryLimit]);
   const lylHistoryLimitIndex = Math.max(0, lylHistoryLimits.indexOf(lylHistoryLimit));
+  const [printMaterial, setPrintMaterial] = useState<PrintMaterial>(() => {
+    try {
+      return normalizePrintMaterial(window.localStorage.getItem(PRINT_MATERIAL_STORAGE_KEY));
+    } catch {
+      return DEFAULT_PRINT_MATERIAL;
+    }
+  });
+  const [printVolume, setPrintVolume] = useState<ExportSolidVolume | null>(null);
+  const showPrintEstimate = panel === "export" && exportFormat !== "svg" && exportFormat !== "lyl" && shapeCount > 0;
+  useEffect(() => {
+    if (!showPrintEstimate) return;
+    let cancelled = false;
+    setPrintVolume(null);
+    // Kurz warten: beim Tippen oder Ziehen im Hintergrund nicht jedes Mal neu verschmelzen.
+    const timer = window.setTimeout(() => {
+      onEstimatePrint(estimateShapes)
+        .then((result) => { if (!cancelled) setPrintVolume(result); })
+        .catch(() => { if (!cancelled) setPrintVolume(null); });
+    }, 200);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [showPrintEstimate, estimateShapes, onEstimatePrint]);
+  const choosePrintMaterial = (value: string) => {
+    const material = normalizePrintMaterial(value);
+    setPrintMaterial(material);
+    try {
+      window.localStorage.setItem(PRINT_MATERIAL_STORAGE_KEY, material);
+    } catch {
+      // Ohne Speicher gilt die Wahl nur bis zum Schliessen.
+    }
+  };
+  const estimate = printVolume ? printEstimate(printVolume.volumeMm3, printMaterial) : null;
   const lylHistoryStop = (index: number) => ({ "--stop": index / (lylHistoryLimits.length - 1) }) as CSSProperties;
   useLanguage();
   const title = panel === "export" ? t("panel.export") : t("panel.import");
@@ -13427,6 +13520,49 @@ function TopActionPanel({
               <Info size={16} aria-hidden="true" />
               <span>{t("export.holesOnlyWarning")}</span>
             </div>
+          ) : null}
+
+          {showPrintEstimate ? (
+            <section className="export-setting-section print-estimate-section" aria-live="polite">
+              <div className="export-section-heading">
+                <div>
+                  <strong>{t("export.estimateTitle")}</strong>
+                  <span>{t("export.estimateHint")}</span>
+                </div>
+                <select
+                  id="export-print-material"
+                  className="print-estimate-material"
+                  value={printMaterial}
+                  aria-label={t("export.estimateMaterial")}
+                  onChange={(event) => choosePrintMaterial(event.currentTarget.value)}
+                >
+                  {PRINT_MATERIALS.map((material) => (
+                    <option key={material} value={material}>{t(`export.material.${material}` as MessageKey)}</option>
+                  ))}
+                </select>
+              </div>
+              {estimate ? (
+                <dl className="print-estimate-values">
+                  <div>
+                    <dt>{t("export.estimateVolume")}</dt>
+                    <dd>{formatEstimateNumber(estimate.volumeCm3, estimate.volumeCm3 < 10 ? 2 : 1)} cm³</dd>
+                  </div>
+                  <div>
+                    <dt>{t("export.estimateWeight")}</dt>
+                    <dd>{formatEstimateNumber(estimate.grams, estimate.grams < 10 ? 1 : 0)} g</dd>
+                  </div>
+                  <div>
+                    <dt>{t("export.estimateFilament")}</dt>
+                    <dd>{formatEstimateNumber(estimate.filamentMeters, estimate.filamentMeters < 10 ? 2 : 1)} m</dd>
+                  </div>
+                </dl>
+              ) : (
+                <span className="print-estimate-busy">{t("export.estimateBusy")}</span>
+              )}
+              {printVolume && printVolume.unionFailed > 0 ? (
+                <span className="print-estimate-note">{t("export.estimateOverlap")}</span>
+              ) : null}
+            </section>
           ) : null}
 
           {exportFormat === "lyl" ? (

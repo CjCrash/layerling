@@ -4012,6 +4012,47 @@ button {
   text-transform: lowercase;
 }
 
+.print-estimate-material {
+  flex: none;
+  height: 28px;
+  padding: 0 6px;
+  color: #523c26;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  background: #fcfaf6;
+  border: 1px solid #ebe4d7;
+  border-radius: 6px;
+}
+
+.print-estimate-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.print-estimate-values > div {
+  display: grid;
+  gap: 2px;
+}
+
+.print-estimate-values dt,
+.print-estimate-busy,
+.print-estimate-note {
+  color: #96836f;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.print-estimate-values dd {
+  margin: 0;
+  color: #4d3720;
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
 .export-section-heading {
   display: flex;
   align-items: flex-start;
@@ -10755,6 +10796,22 @@ html[data-theme="dark"] .export-file-input-wrap:focus-within {
 
 html[data-theme="dark"] .export-file-input {
   color: #efe7d8;
+}
+
+html[data-theme="dark"] .print-estimate-material {
+  color: #efe7d8;
+  background: #21180f;
+  border-color: #5d4d3c;
+}
+
+html[data-theme="dark"] .print-estimate-values dd {
+  color: #f0e7d9;
+}
+
+html[data-theme="dark"] .print-estimate-values dt,
+html[data-theme="dark"] .print-estimate-busy,
+html[data-theme="dark"] .print-estimate-note {
+  color: #9f866c;
 }
 
 html[data-theme="dark"] .export-file-input-wrap > span,
