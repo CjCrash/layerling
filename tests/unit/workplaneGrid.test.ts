@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { interiorWorkplaneGridCoordinates, workplaneGridPalette, workplaneThemePalette, WORKPLANE_LINE_ELEVATION, WORKPLANE_MAJOR_GRID_INTERVAL } from "@/lib/workplaneGrid";
+import { centeredWorkplaneGridCoordinates, workplaneGridLayout, workplaneGridLines, workplaneGridPalette, workplaneThemePalette, WORKPLANE_LINE_ELEVATION, WORKPLANE_MAJOR_GRID_INTERVAL } from "@/lib/workplaneGrid";
 
 describe("workplane grid geometry", () => {
   it("excludes both perimeter coordinates when spacing divides the workplane", () => {
-    const coordinates = interiorWorkplaneGridCoordinates(200, 5).map(({ coordinate }) => coordinate);
+    const coordinates = centeredWorkplaneGridCoordinates(200, 5).map(({ coordinate }) => coordinate);
 
     expect(coordinates).not.toContain(-100);
     expect(coordinates).not.toContain(100);
@@ -12,10 +12,22 @@ describe("workplane grid geometry", () => {
     expect(coordinates.at(-1)).toBe(95);
   });
 
-  it("keeps the final interior line for custom spacing", () => {
-    const coordinates = interiorWorkplaneGridCoordinates(200, 30).map(({ coordinate }) => coordinate);
+  it("counts custom spacing from the origin", () => {
+    const coordinates = centeredWorkplaneGridCoordinates(200, 30).map(({ coordinate }) => coordinate);
 
-    expect(coordinates).toEqual([-70, -40, -10, 20, 50, 80]);
+    expect(coordinates).toEqual([-90, -60, -30, 0, 30, 60, 90]);
+  });
+
+  it("meets the axes with the stronger lines when the plate is not a multiple of a major block", () => {
+    // 360 mm plate, 5 mm grid: from the corner the strong lines would fall 5 mm beside the axes.
+    const lines = workplaneGridLines(360, workplaneGridLayout({ gridBlockSize: 5, gridBlockPreset: "5 mm", units: "Metric (Default)" }));
+    const majors = lines.filter((line) => line.kind === "major").map((line) => line.coordinate);
+
+    expect(lines.find((line) => line.kind === "axis")?.coordinate).toBe(0);
+    expect(majors).toContain(25);
+    expect(majors).toContain(-25);
+    expect(majors).not.toContain(-5);
+    expect(majors).not.toContain(20);
   });
 
   it("uses one elevation for grid and border lines", () => {
