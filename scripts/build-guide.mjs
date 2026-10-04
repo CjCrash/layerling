@@ -25,6 +25,8 @@ export const GUIDE_LANGUAGES = {
     site: "layerling Anleitung",
     home: "Anleitung",
     openEditor: "Zum Editor",
+    backToEditor: "Zurück zum Editor",
+    editorElsewhere: "Der Editor ist schon in einem anderen Tab offen - wechsle einfach dorthin.",
     chapters: "Kapitel",
     onThisPage: "Auf dieser Seite",
     previous: "Vorheriges Kapitel",
@@ -43,6 +45,8 @@ export const GUIDE_LANGUAGES = {
     site: "layerling user guide",
     home: "User guide",
     openEditor: "Open the editor",
+    backToEditor: "Back to the editor",
+    editorElsewhere: "The editor is already open in another tab - just switch to it.",
     chapters: "Chapters",
     onThisPage: "On this page",
     previous: "Previous chapter",
@@ -351,6 +355,8 @@ a { color: var(--accent); }
 .brand b { font-size: 19px; letter-spacing: -0.03em; }
 .brand-text { display: flex; align-items: baseline; gap: 10px; }
 .brand-note { color: var(--muted); font-size: 13px; font-weight: 600; }
+.editor-elsewhere { max-width: 1100px; margin: 0 auto; padding: 0 16px 10px; color: var(--muted); font-size: 14px; text-align: right; }
+.editor-elsewhere[hidden] { display: none; }
 .bar a.button { padding: 7px 14px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 14px; text-decoration: none; }
 .bar a.lang { color: var(--muted); font-size: 14px; font-weight: 600; text-decoration: none; }
 .shell { max-width: 1100px; margin: 0 auto; padding: 24px 16px 72px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 40px; align-items: start; }
@@ -410,6 +416,17 @@ footer.note { max-width: 1100px; margin: 0 auto; padding: 0 16px 12px; color: va
 @media print { .bar, nav.chapters, .pager { display: none; } .shell { display: block; } }
 `;
 
+/**
+ * The guide opens in a tab of its own next to layerling. If layerling answers
+ * in another tab, "Open the editor" closes the guide instead of opening the
+ * editor a second time (#103); see tabPresence.ts for the channel. A browser
+ * that will not let the tab close gets a note, and a second click opens the
+ * editor here after all.
+ */
+function editorButtonScript(strings) {
+  return `(function(){var b=document.getElementById("open-editor");if(!b||typeof BroadcastChannel==="undefined")return;var elsewhere=false,c=new BroadcastChannel("layerling-tabs"),id="guide-"+Math.random().toString(36).slice(2);c.onmessage=function(e){var m=e.data;if(m&&m.kind==="here"&&m.tabId!==id&&!elsewhere){elsewhere=true;b.textContent=${JSON.stringify(strings.backToEditor)};}};c.postMessage({kind:"ask",tabId:id});b.addEventListener("click",function(e){if(!elsewhere)return;e.preventDefault();window.close();setTimeout(function(){elsewhere=false;b.textContent=${JSON.stringify(strings.openEditor)};var n=document.getElementById("editor-elsewhere");if(n)n.hidden=false;},400);});})();`;
+}
+
 const THEME_SCRIPT = `try{var t=localStorage.getItem("layerling.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else if(t==="graphite")document.documentElement.dataset.theme="dark"}catch(e){}`;
 
 function pageShell({ language, title, description, path, alternates, chapters, current, body, switchHref, footer }) {
@@ -440,8 +457,8 @@ function pageShell({ language, title, description, path, alternates, chapters, c
     <header class="bar"><div class="bar-inner">
       <a class="brand" href="/${strings.dir}/index.html"><img src="/assets/layerling/layerling-logo.svg" alt=""><span class="brand-text"><b>layerling</b><span class="brand-note">${escapeHtml(strings.home)}</span></span></a>
       <a class="lang" href="${switchHref}" hreflang="${language === "de" ? "en" : "de"}" title="${escapeHtml(strings.switchTitle)}">${strings.switchLanguage}</a>
-      <a class="button" href="/">${escapeHtml(strings.openEditor)}</a>
-    </div></header>
+      <a class="button" id="open-editor" href="/">${escapeHtml(strings.openEditor)}</a>
+    </div><p class="editor-elsewhere" id="editor-elsewhere" role="status" hidden>${escapeHtml(strings.editorElsewhere)}</p></header>
     <div class="shell">
       <nav class="chapters" aria-label="${escapeHtml(strings.chapters)}"><h2>${escapeHtml(strings.chapters)}</h2><ol>${nav}</ol></nav>
       <main>
@@ -450,6 +467,7 @@ ${body}
     </div>
     <footer class="note">${escapeHtml(strings.sourceNote)} <a href="${strings.forumUrl}" rel="noopener">${escapeHtml(strings.forum)}</a>.</footer>
     ${footer}
+    <script>${editorButtonScript(strings)}</script>
   </body>
 </html>
 `;

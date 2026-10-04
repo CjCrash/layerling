@@ -38,6 +38,8 @@ describe("tab presence", () => {
     expect(isTabPresenceMessage({ kind: "here", tabId: "x", version: "1.35.1", projectId: null, startedAt: 5 })).toBe(true);
     expect(isTabPresenceMessage({ kind: "here", tabId: "x", version: "1.35.1", projectId: null, startedAt: "5" })).toBe(false);
     expect(isTabPresenceMessage({ kind: "bye", tabId: "x" })).toBe(true);
+    expect(isTabPresenceMessage({ kind: "ask", tabId: "guide-x" })).toBe(true);
+    expect(isTabPresenceMessage({ kind: "ask" })).toBe(false);
     expect(isTabPresenceMessage({ kind: "hello", tabId: "x", version: 1, projectId: null })).toBe(false);
     expect(isTabPresenceMessage({ kind: "other", tabId: "x" })).toBe(false);
     expect(isTabPresenceMessage(null)).toBe(false);

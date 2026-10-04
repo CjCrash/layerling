@@ -20,7 +20,7 @@ Den Hinweis auf der Startseite kannst du mit {{ui:installHint.dismiss}} schließ
 
 Wenn es eine neuere Fassung gibt, zeigt layerling das auf der Startseite an. Über {{ui:dashboard.updateBannerLink}} liest du nach, was sich geändert hat. Die Versionsnummer steht unten rechts. Nach einem Neuladen der Seite hast du die neue Fassung.
 
-Ist layerling in mehreren Tabs offen, achten die Tabs aufeinander: Läuft in einem anderen Tab schon eine neuere Version, bittet ein Hinweis unten im alten Tab, ihn neu zu laden. Und ist derselbe Entwurf in zwei Tabs offen, warnen beide davor, denn sie speichern automatisch und würden sich gegenseitig überschreiben. Öffnest du layerling in einem weiteren Tab, obwohl schon einer offen ist, rät dir der neue Tab, im alten weiterzuarbeiten, und bietet an, sich selbst zu schließen. Willst du bewusst zwei Tabs, etwa für zwei Entwürfe nebeneinander, klickst du dort auf {{ui:tabs.keepHere}}.
+Ist layerling in mehreren Tabs offen, achten die Tabs aufeinander: Läuft in einem anderen Tab schon eine neuere Version, bittet ein Hinweis unten im alten Tab, ihn neu zu laden. Und ist derselbe Entwurf in zwei Tabs offen, warnen beide davor, denn sie speichern automatisch und würden sich gegenseitig überschreiben. Öffnest du layerling in einem weiteren Tab, obwohl schon einer offen ist, rät dir der neue Tab, im alten weiterzuarbeiten, und bietet an, sich selbst zu schließen. Willst du bewusst zwei Tabs, etwa für zwei Entwürfe nebeneinander, klickst du dort auf {{ui:tabs.keepHere}}. Auch diese Anleitung öffnet sich in einem eigenen Tab: Ist layerling daneben offen, heißt ihr Knopf oben rechts „Zurück zum Editor“ und schließt die Anleitung, statt den Editor ein zweites Mal zu öffnen.
 
 ## Sprache und Aussehen
 

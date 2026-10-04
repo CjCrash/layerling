@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.35.2
+
+- **The guide goes back instead of opening the editor again:** The guide opens in a tab of its own, and its "Open the editor" button opened layerling in yet another tab. While layerling is open in another tab, the button now reads "Back to the editor" and closes the guide. If the browser does not let the tab close, because you have moved between chapters in it, a note says to switch to the other tab, and a second click opens the editor in the guide's tab after all. Reported by @bernbout in #103.
+
 ## 1.35.1
 
 - **Starting layerling again does not start a second server:** The desktop shortcut "Start layerling", `scripts/start-layerling.sh` and the Windows quick start now look first whether layerling already answers on port 3000. If it does, they start no second server and do not update underneath the running one; they only open the page. A second server used to move to port 3001 and share the build folder with the first, which then failed with errors. If another program holds port 3000, they say so instead of moving to another port. Reported by @bernbout in #102.

@@ -11,7 +11,9 @@ export const TAB_PRESENCE_CHANNEL = "layerling-tabs";
 
 export type TabPresenceMessage =
   | { kind: "hello" | "here"; tabId: string; version: string; projectId: string | null; startedAt?: number }
-  | { kind: "bye"; tabId: string };
+  | { kind: "bye"; tabId: string }
+  /** A page that is not layerling itself, like the guide, asks whether layerling is open. */
+  | { kind: "ask"; tabId: string };
 
 /** `startedAt` is when that tab opened; tabs before 1.35.1 do not send it. */
 export type TabPeer = { version: string; projectId: string | null; startedAt?: number };
@@ -32,7 +34,7 @@ export function isTabPresenceMessage(value: unknown): value is TabPresenceMessag
   if (!value || typeof value !== "object") return false;
   const message = value as Record<string, unknown>;
   if (typeof message.tabId !== "string") return false;
-  if (message.kind === "bye") return true;
+  if (message.kind === "bye" || message.kind === "ask") return true;
   return (message.kind === "hello" || message.kind === "here")
     && typeof message.version === "string"
     && (message.projectId === null || typeof message.projectId === "string")

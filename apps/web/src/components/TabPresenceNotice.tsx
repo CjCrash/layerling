@@ -40,6 +40,11 @@ export function TabPresenceNotice({ version, projectId }: { version: string; pro
     channel.onmessage = (event: MessageEvent) => {
       const message: unknown = event.data;
       if (!isTabPresenceMessage(message) || message.tabId === tabIdRef.current) return;
+      // The guide only wants an answer; it is no layerling tab of its own.
+      if (message.kind === "ask") {
+        announce("here");
+        return;
+      }
       setPeers((current) => {
         const next = new Map(current);
         if (message.kind === "bye") next.delete(message.tabId);
