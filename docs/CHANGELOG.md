@@ -6,6 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
+- **The grid meets the axes:** On a plate whose half is not a whole number of grid steps - 256, 235 or 180 mm with a 5 mm grid, for example - the millimetre grid was drawn from the plate's corner, so its stronger lines ran beside the axes, and "Snap to grid" used those lines while moving snapped from the origin. The grid now runs through the origin, like the inch grid and the move snapping. "Align grid to origin" under Settings > Workplane switches back to the old layout. Contributed by @rmpel (#92).
 - **Section as SVG uses the panel's letters too:** Since 1.33.0 the section view calls the height Z and the depth Y, but "Section as SVG" still named its file, title and description with the old letters, so a Z cut was saved as "section Y". It now uses the same letters as the buttons. Screen readers also called the depth "Z movement" on the move dimensions; it is "Y" now. Contributed by @plazmabokor (#93).
 - **Bundle, as in Tinkercad:** Ctrl+B, or the new Bundle button next to Group, holds shapes together without merging them. A bundle moves, turns and scales as one, but every part keeps its colour and stays a solid or a hole, holes cut nothing, and an STL, 3MF or OBJ export writes each part as a body of its own - a white logo on a black plate stays two coloured parts. Ungroup takes it apart, E opens it for editing; chamfer, fillet and hollowing ask to group it first. `layerling_bundle_objects` does it through MCP. Suggested by @kwjaarsveld-star (#91).
 
