@@ -69,3 +69,27 @@ export function viewCubeAngles(offset: THREE.Vector3): { pitch: number; yaw: num
     yaw: THREE.MathUtils.radToDeg(Math.atan2(offset.x, offset.z)),
   };
 }
+
+export type ViewCubeFace = "top" | "bottom" | "front" | "back" | "right" | "left";
+
+/** Keys 1 to 6 jump to the straight views, in the order the shortcut list names them. */
+export const VIEW_FACE_SHORTCUTS: Readonly<Record<string, ViewCubeFace>> = {
+  "1": "front",
+  "2": "back",
+  "3": "left",
+  "4": "right",
+  "5": "top",
+  "6": "bottom",
+};
+
+/** The unit direction from the orbit target to the camera when looking at the given side. */
+export function viewFaceDirection(face: ViewCubeFace): THREE.Vector3 {
+  switch (face) {
+    case "top": return new THREE.Vector3(0, 1, 0);
+    case "bottom": return new THREE.Vector3(0, -1, 0);
+    case "front": return new THREE.Vector3(0, 0, 1);
+    case "back": return new THREE.Vector3(0, 0, -1);
+    case "right": return new THREE.Vector3(1, 0, 0);
+    case "left": return new THREE.Vector3(-1, 0, 0);
+  }
+}

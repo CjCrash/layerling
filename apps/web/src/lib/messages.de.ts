@@ -472,7 +472,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "status.sketchUpdated": "Skizze aktualisiert",
   "status.revolveCreated": "Rotationsskizze erstellt",
   "shortcuts.rotateFine": "Um 22,5° drehen",
-  "shortcuts.views": "Die sechs Standardansichten",
+  "shortcuts.views": "Die sechs Standardansichten, auf die Auswahl gezoomt, falls es eine gibt",
   "shortcuts.resetView": "Die ganze Szene ins Bild holen",
   "shortcuts.focusSelection": "Auf die Auswahl zoomen",
   "shortcuts.projection": "Orthografisch oder perspektivisch",

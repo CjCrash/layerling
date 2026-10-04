@@ -473,7 +473,7 @@ export const MESSAGES_EN = {
   "status.sketchUpdated": "Sketch updated",
   "status.revolveCreated": "Revolved sketch created",
   "shortcuts.rotateFine": "Rotate by 22.5°",
-  "shortcuts.views": "The six standard views",
+  "shortcuts.views": "The six standard views, zoomed to the selection if there is one",
   "shortcuts.resetView": "Fit the whole scene in the view",
   "shortcuts.focusSelection": "Zoom to the selection",
   "shortcuts.projection": "Orthographic or perspective",

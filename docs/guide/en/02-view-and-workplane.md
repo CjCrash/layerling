@@ -18,7 +18,7 @@ On a tablet or phone, two fingers zoom (spread and pinch) and move the view (sli
 
 ### The view cube
 
-The cube in the top left shows where you are looking. A click on one of its sides jumps to the straight view from top, bottom, front, back, left or right. The number keys [[1]] to [[6]] do the same.
+The cube in the top left shows where you are looking. A click on one of its sides jumps to the straight view from top, bottom, front, back, left or right. The number keys [[1]] to [[6]] do the same, and with something selected they also zoom to it, as [[Shift]]+[[F]] does.
 
 Drag the cube to turn the view around, just like dragging with the right mouse button. On a touch screen this works with one finger, without switching on {{ui:camera.touchRotate}}.
 

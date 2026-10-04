@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Number keys zoom to the selection:** Keys `1` to `6` still jump to the six straight views, and with something selected they now also zoom to it, as `Shift+F` does, so you see the selected part from that side right away. With nothing selected they keep the distance as before. A click on the view cube still only turns the view.
+
 ## 1.33.0
 
 - **Measure on the cut:** The section view has a new **Measure** button. The cut's outline shows in blue, and two clicks on it give the distance and its parts along the plane. Points snap to the outline and its corners, and a second click anywhere on the opposite wall snaps square to the first - so wall thickness, gaps and clearances read off without aiming. `layerling_measure_section` does the same through MCP.
