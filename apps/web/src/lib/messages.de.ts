@@ -1325,7 +1325,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "edge.errorNoSolidBody": "Die ausgewählte Gruppe enthält keinen festen Körper, der bearbeitet werden kann.",
   "edge.errorPrepareTimeout": "Die Vorbereitung der Kanten hat das Zeitlimit überschritten. Das Netz ist zu detailliert für interaktives Bearbeiten.",
   "edge.errorPreviewTimeout": "Die Vorschau-Berechnung hat das Zeitlimit überschritten. Bitte Werkzeug schließen und erneut versuchen.",
-  "edge.errorWorkerFailed": "Der CAD-Rechenkern konnte nicht gestartet werden. Bitte Browser aktualisieren und erneut versuchen.",
+  "edge.errorWorkerFailed": "Der CAD-Rechenkern konnte nicht starten. Meist wurde layerling gerade aktualisiert: Lade die Seite neu, dann geht es weiter. Hilft das nicht, aktualisiere den Browser.",
   "edge.errorFilletTogether": "Die gewählten Kanten können bei dieser Größe nicht zusammen verrundet werden. Bitte die Größe verringern oder weniger verbundene Kanten wählen.",
   "edge.errorChamferTogether": "Die gewählten Kanten können bei dieser Größe nicht zusammen angefast werden. Bitte die Größe verringern oder weniger verbundene Kanten wählen.",
   "edge.errorKernelFailed": "Der CAD-Rechenkern konnte diese Kantenbearbeitung nicht durchführen.",

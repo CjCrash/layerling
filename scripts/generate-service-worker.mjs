@@ -18,6 +18,11 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 //   working. Only offline, or after NAVIGATION_TIMEOUT_MS without an answer,
 //   the stored page is used; it belongs to the stored program files.
 // - PHP (server storage, contact form) and the dev API never touch the cache.
+// - The copies of the last KEEP_VERSIONS versions stay. A page that is still
+//   open when a new version arrives keeps running on its own files: it loads
+//   some of them only when needed (the CAD workers, for one), and by then the
+//   deploy has removed them from the server. Deleting the old copy at once
+//   made "finish sketch" fail with "worker failed to start" (discussion #88).
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const exportRoot = join(repositoryRoot, "apps", "web", ".next-export");
@@ -54,6 +59,9 @@ const CACHE = "layerling-" + VERSION;
 const PRECACHE = ${JSON.stringify(paths)};
 const PRECACHED = new Set(PRECACHE);
 const NAVIGATION_TIMEOUT_MS = 4000;
+const KEEP_VERSIONS = 3;
+const META_CACHE = "layerling-meta";
+const VERSIONS_KEY = "/__layerling-versions";
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
@@ -65,10 +73,28 @@ self.addEventListener("install", (event) => {
   })());
 });
 
+// The versions in the order they arrived, newest last; copies older than the
+// last KEEP_VERSIONS are removed.
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
+    const meta = await caches.open(META_CACHE);
+    const stored = await meta.match(VERSIONS_KEY);
+    let versions = null;
+    try {
+      versions = stored ? await stored.json() : null;
+    } catch {
+      versions = null;
+    }
+    // No list yet: the copies already here belong to the version before this
+    // one, written by a service worker that did not keep a list.
+    if (!Array.isArray(versions)) {
+      versions = (await caches.keys()).filter((name) => name.startsWith("layerling-") && name !== META_CACHE && name !== CACHE);
+    }
+    versions = [...versions.filter((name) => name !== CACHE), CACHE].slice(-KEEP_VERSIONS);
+    await meta.put(VERSIONS_KEY, new Response(JSON.stringify(versions), { headers: { "content-type": "application/json" } }));
+    const keep = new Set([...versions, META_CACHE]);
     const names = await caches.keys();
-    await Promise.all(names.filter((name) => name.startsWith("layerling-") && name !== CACHE).map((name) => caches.delete(name)));
+    await Promise.all(names.filter((name) => name.startsWith("layerling-") && !keep.has(name)).map((name) => caches.delete(name)));
     await self.clients.claim();
   })());
 });
@@ -99,8 +125,9 @@ function isImmutable(path) {
   return path.startsWith("/_next/static/") || /^\\/occt\\/[^/]+\\//.test(path);
 }
 
+// Looked up in every kept copy, so a page of an older version finds its files.
 async function storedFirst(request, path) {
-  const stored = await caches.match(path, { cacheName: CACHE });
+  const stored = await caches.match(path, { cacheName: CACHE }) || await caches.match(path);
   return stored || fetch(request);
 }
 
@@ -128,8 +155,10 @@ self.addEventListener("fetch", (event) => {
   }
   // Stored files are looked up without their query: the Graphite stylesheet
   // carries ?v=<version> only to get past the browser's normal cache.
-  if (PRECACHED.has(url.pathname)) {
-    event.respondWith(isImmutable(url.pathname) ? storedFirst(request, url.pathname) : networkFirst(request, url.pathname));
+  if (isImmutable(url.pathname)) {
+    event.respondWith(storedFirst(request, url.pathname));
+  } else if (PRECACHED.has(url.pathname)) {
+    event.respondWith(networkFirst(request, url.pathname));
   }
 });
 `;

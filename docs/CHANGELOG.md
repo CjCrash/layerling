@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **"Worker failed to start" after an update:** When a new version came out while layerling was open, especially as an installed app, finishing a sketch or using the edge tools could fail with "The OpenCascade sketch worker failed to start" until the computer or the app was restarted. The new version's offline copy took over and deleted the old one, and the server no longer had the old files either, so the open page could not load its CAD worker. The offline copy now keeps the last three versions, and an open page finds its own files in them. If the worker still cannot start, the message now says to reload the page. Reported by jcmarksafb and makinglayerschannel (#88).
+
 ## 1.32.2
 
 - **Autosave could stop without a word, and work was lost:** While a field in the shape settings is in use, saving waits until you are done with it. When that field disappeared while it still had the cursor, saving kept waiting, and every change after it lived only in memory until the next drag on the workplane - closing or updating the app then lost all of it. The easiest way in was a custom colour: picking one replaced the colour field under the cursor, and a second custom colour did not even arrive. Fields now always let go, a held save waits at most two seconds, waiting changes are saved the moment the window is hidden or closed, the browser asks before closing while a save is still being written, and a failed save now shows in the editor, not only on the dashboard. Reported by kwjaarsveld-star (#87).

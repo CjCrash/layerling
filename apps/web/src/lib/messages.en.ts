@@ -1326,7 +1326,7 @@ export const MESSAGES_EN = {
   "edge.errorNoSolidBody": "The selected group contains no solid body that can be modified.",
   "edge.errorPrepareTimeout": "Edge preparation timed out. This mesh is too detailed for interactive processing.",
   "edge.errorPreviewTimeout": "The edge preview timed out. Please cancel the tool and try again.",
-  "edge.errorWorkerFailed": "The CAD worker could not start. Please update your browser and try again.",
+  "edge.errorWorkerFailed": "The CAD engine could not start. Usually layerling was just updated: reload the page and carry on. If that does not help, update your browser.",
   "edge.errorFilletTogether": "The selected edges cannot be filleted together at this size. Reduce the size or select fewer connected edges.",
   "edge.errorChamferTogether": "The selected edges cannot be chamfered together at this size. Reduce the size or select fewer connected edges.",
   "edge.errorKernelFailed": "The CAD kernel could not complete this edge treatment.",

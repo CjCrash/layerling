@@ -656,7 +656,8 @@ function ensureSketchCadWorker() {
   worker.onerror = () => {
     sketchCadPending.forEach((pending) => {
       window.clearTimeout(pending.timer);
-      pending.reject(new Error("The OpenCascade sketch worker failed to start"));
+      // Most often the page outlived an update and its worker file is gone.
+      pending.reject(new Error(t("edge.errorWorkerFailed")));
     });
     sketchCadPending.clear();
     worker.terminate();
