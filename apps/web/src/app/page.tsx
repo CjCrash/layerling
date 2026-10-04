@@ -531,7 +531,8 @@ function saveProjectShapesWhenIdle(projectId: string, entry: ProjectShapeCacheEn
     const save = () => {
       void saveProjectShapes(projectId, entry, context).then(resolve, reject);
     };
-    if (typeof window === "undefined") {
+    // A hidden window may be frozen or closed before it is ever idle again.
+    if (typeof window === "undefined" || document.visibilityState === "hidden") {
       save();
       return;
     }
@@ -713,6 +714,7 @@ export default function Home() {
   const dashboardImportInputRef = useRef<HTMLInputElement | null>(null);
   const nextProjectRevisionRef = useRef(0);
   const projectShapeSaveQueuesRef = useRef<Record<string, Promise<void>>>({});
+  const [projectSaveFailure, setProjectSaveFailure] = useState<{ message: string; at: number } | null>(null);
   const editorLoadingStartedAtRef = useRef(0);
 
   // Warm the editor chunk once the dashboard is idle, so opening a project
@@ -900,6 +902,18 @@ export default function Home() {
       setProjects(storageProjects);
     }
   }, [mounted, projects]);
+
+  // Closing the window while a save is still being written would lose it; the
+  // browser asks first. A save takes well under a second, so this rarely shows.
+  useEffect(() => {
+    const warnWhileSaving = (event: BeforeUnloadEvent) => {
+      if (Object.keys(projectShapeSaveQueuesRef.current).length === 0) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnWhileSaving);
+    return () => window.removeEventListener("beforeunload", warnWhileSaving);
+  }, []);
 
   useEffect(() => {
     if (!mounted) return;
@@ -1125,6 +1139,7 @@ export default function Home() {
 
     void queuedSave
       .then(() => {
+        setProjectSaveFailure(null);
         setProjects((current) =>
           current.map((project) =>
             project.id === snapshot.projectId && (project.revision ?? 0) <= revision
@@ -1136,6 +1151,8 @@ export default function Home() {
       .catch((error) => {
         if (projectShapeSaveQueuesRef.current[snapshot.projectId] === queuedSave) {
           setDashboardNotice(error instanceof Error ? error.message : t("notice.projectShapesSaveFailed"));
+          // The dashboard is not on screen while someone works; the editor has to say it too.
+          setProjectSaveFailure({ message: t("notice.projectShapesSaveFailed"), at: Date.now() });
         }
       })
       .finally(() => {
@@ -1924,6 +1941,7 @@ export default function Home() {
             serverFileName={activeProject?.sharedProject?.fileName ?? null}
             onProjectShapesChange={updateProjectShapes}
             onProjectSnapshot={updateProjectSnapshot}
+            projectSaveFailure={projectSaveFailure}
             onProjectWorkspaceChange={updateProjectWorkspace}
             onProjectNameChange={(name) => {
               if (activeProjectId) renameProject(activeProjectId, name);

@@ -308,6 +308,11 @@ const CUTTER_RESIDUAL_INSET = CUTTER_PADDING * 0.4;
 const MIN_SHAPE_DIMENSION = 0.01;
 /** So lange darf das Vorschaubild den Weg zur Uebersicht aufhalten. */
 const LEAVE_SNAPSHOT_DEADLINE_MS = 600;
+/**
+ * Longest a held interaction may keep changes from being saved once nothing
+ * moves any more. A drag in progress keeps changing and so keeps waiting.
+ */
+const PROJECT_SYNC_HELD_MAX_MS = 2000;
 
 /**
  * So lange darf eine Notiz getippt oder gezogen werden, ohne dass daraus ein
@@ -6211,6 +6216,7 @@ export function LayerlingEditor({
   serverFileName = null,
   onProjectShapesChange,
   onProjectSnapshot,
+  projectSaveFailure,
   onProjectWorkspaceChange,
   onProjectNameChange,
   projectId,
@@ -6252,6 +6258,8 @@ export function LayerlingEditor({
     sketchPlacementWorkplane: PlacementWorkplane;
   }) => void;
   onProjectSnapshot?: (snapshot: { image: string; projectId: string; shapes: number }, signal?: AbortSignal) => Promise<void> | void;
+  /** The last failed autosave, so the editor can say so; `at` makes a repeat failure show again. */
+  projectSaveFailure?: { message: string; at: number } | null;
   onProjectNameChange?: (name: string) => void;
   onProjectWorkspaceChange?: (snapshot: {
     projectId: string;
@@ -6418,6 +6426,10 @@ export function LayerlingEditor({
   useEffect(() => () => {
     if (noticeTimerRef.current !== null) window.clearTimeout(noticeTimerRef.current);
   }, []);
+  // A failed autosave is said where the work happens, and stays a while.
+  useEffect(() => {
+    if (projectSaveFailure) setNotice(projectSaveFailure.message, true);
+  }, [projectSaveFailure, setNotice]);
 
   // Die Statuszeile traegt fertigen Text, keinen Schluessel. Nach einem
   // Sprachwechsel waere die stehende Meldung ohnehin veraltet, also faellt
@@ -6438,6 +6450,7 @@ export function LayerlingEditor({
   const projectInteractionActiveRef = useRef(false);
   const pendingProjectShapesRef = useRef<WorkplaneShape[] | null>(null);
   const projectSyncTimerRef = useRef<number | null>(null);
+  const heldProjectSyncTimerRef = useRef<number | null>(null);
   const lastProjectShapesSyncRef = useRef("");
   const lastProjectShapesEchoRef = useRef<string | null>(null);
   const lastProjectIdRef = useRef<string | null>(null);
@@ -7147,6 +7160,51 @@ export function LayerlingEditor({
     setNotice(t("status.pivotSet"));
   }, [selectionKey]);
 
+  /** Hands the shapes to the page above, which writes them to the browser's storage. */
+  const emitProjectShapes = useCallback(
+    (canonicalNext: WorkplaneShape[], serialized: string) => {
+      if (!projectId || !onProjectShapesChange) {
+        return;
+      }
+      lastProjectShapesSyncRef.current = serialized;
+      lastProjectShapesEchoRef.current = serialized;
+      onProjectShapesChange({
+        projectId,
+        shapes: canonicalNext,
+        history: historyRef.current,
+        historyIndex: historyIndexRef.current,
+        assets: projectAssetsRef.current,
+        projectName: projectInfoRef.current.projectName,
+        projectCreatedAt: projectInfoRef.current.projectCreatedAt,
+        workspace: workspaceSettingsRef.current,
+        snapGrid: snapGridRef.current,
+        placementElevation: placementElevationRef.current,
+        placementWorkplane: placementWorkplaneRef.current,
+        sketchPlacementWorkplane: placementWorkplaneRef.current,
+      });
+    },
+    [onProjectShapesChange, projectId],
+  );
+
+  /**
+   * Saves what waited for an interaction to end, right now. A held interaction
+   * may only delay saving, never stop it: when its end never arrives (a field
+   * that vanished while focused, a pointer released outside the window), the
+   * changes after it would otherwise live in memory only (discussion #87).
+   */
+  const flushHeldProjectShapes = useCallback(() => {
+    if (heldProjectSyncTimerRef.current !== null) {
+      window.clearTimeout(heldProjectSyncTimerRef.current);
+      heldProjectSyncTimerRef.current = null;
+    }
+    const pending = pendingProjectShapesRef.current;
+    if (!pending) return;
+    pendingProjectShapesRef.current = null;
+    const serialized = projectShapesFingerprint(pending);
+    if (lastProjectShapesSyncRef.current === serialized) return;
+    emitProjectShapes(pending, serialized);
+  }, [emitProjectShapes]);
+
   const syncProjectShapes = useCallback(
     (nextShapes: WorkplaneShape[], force = false) => {
       if (!projectId || !onProjectShapesChange) {
@@ -7158,6 +7216,10 @@ export function LayerlingEditor({
           window.clearTimeout(projectSyncTimerRef.current);
           projectSyncTimerRef.current = null;
         }
+        if (heldProjectSyncTimerRef.current !== null) {
+          window.clearTimeout(heldProjectSyncTimerRef.current);
+        }
+        heldProjectSyncTimerRef.current = window.setTimeout(flushHeldProjectShapes, PROJECT_SYNC_HELD_MAX_MS);
         return;
       }
       const canonicalNext = nextShapes.map(canonicalizeShape);
@@ -7169,27 +7231,37 @@ export function LayerlingEditor({
         window.clearTimeout(projectSyncTimerRef.current);
       }
       projectSyncTimerRef.current = window.setTimeout(() => {
-        lastProjectShapesSyncRef.current = serialized;
-        lastProjectShapesEchoRef.current = serialized;
-        onProjectShapesChange({
-          projectId,
-          shapes: canonicalNext,
-          history: historyRef.current,
-          historyIndex: historyIndexRef.current,
-          assets: projectAssetsRef.current,
-          projectName: projectInfoRef.current.projectName,
-          projectCreatedAt: projectInfoRef.current.projectCreatedAt,
-          workspace: workspaceSettingsRef.current,
-          snapGrid: snapGridRef.current,
-          placementElevation: placementElevationRef.current,
-          placementWorkplane: placementWorkplaneRef.current,
-          sketchPlacementWorkplane: placementWorkplaneRef.current,
-        });
         projectSyncTimerRef.current = null;
+        emitProjectShapes(canonicalNext, serialized);
       }, 120);
     },
-    [onProjectShapesChange, projectId],
+    [emitProjectShapes, flushHeldProjectShapes, onProjectShapesChange, projectId],
   );
+
+  /*
+   * Leaving the window - closing it, switching to another app, the Mac going
+   * to sleep - is the last moment a waiting save can still start. A hidden
+   * window may be frozen or closed without another chance.
+   */
+  useEffect(() => {
+    if (!projectId || !onProjectShapesChange) return;
+    const saveNow = () => {
+      if (document.visibilityState !== "hidden") return;
+      if (projectSyncTimerRef.current !== null) {
+        window.clearTimeout(projectSyncTimerRef.current);
+        projectSyncTimerRef.current = null;
+        const canonicalNext = shapesRef.current.map(canonicalizeShape);
+        emitProjectShapes(canonicalNext, projectShapesFingerprint(canonicalNext));
+      }
+      flushHeldProjectShapes();
+    };
+    document.addEventListener("visibilitychange", saveNow);
+    window.addEventListener("pagehide", saveNow);
+    return () => {
+      document.removeEventListener("visibilitychange", saveNow);
+      window.removeEventListener("pagehide", saveNow);
+    };
+  }, [emitProjectShapes, flushHeldProjectShapes, onProjectShapesChange, projectId]);
 
   useEffect(() => {
     const limitChanged = historyLimitRef.current !== workspaceSettings.historyLimit;
@@ -7256,6 +7328,10 @@ export function LayerlingEditor({
   useEffect(() => {
     if (projectInteractionActive || !pendingProjectShapesRef.current) {
       return;
+    }
+    if (heldProjectSyncTimerRef.current !== null) {
+      window.clearTimeout(heldProjectSyncTimerRef.current);
+      heldProjectSyncTimerRef.current = null;
     }
     pendingProjectShapesRef.current = null;
     const timer = window.setTimeout(() => syncProjectShapes(shapesRef.current), 180);
@@ -8214,6 +8290,9 @@ export function LayerlingEditor({
     return () => {
       if (projectSyncTimerRef.current !== null) {
         window.clearTimeout(projectSyncTimerRef.current);
+      }
+      if (heldProjectSyncTimerRef.current !== null) {
+        window.clearTimeout(heldProjectSyncTimerRef.current);
       }
       if (interactionHistoryTimerRef.current !== null) {
         window.clearTimeout(interactionHistoryTimerRef.current);

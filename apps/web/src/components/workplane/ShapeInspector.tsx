@@ -3,7 +3,7 @@
 import { GuideHelpLink } from "@/components/GuideHelpLink";
 import { guideChapterForShape } from "@/lib/guideLinks";
 import { ChevronDown, ChevronUp, Eye, EyeOff, Lock, Pencil, Split, Unlock } from "lucide-react";
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
   DEFAULT_GEAR_HELIX_ANGLE,
   DEFAULT_GEAR_HELIX_QUALITY,
@@ -1547,7 +1547,6 @@ export function ShapeInspector({
   const [gearHelixOpen, setGearHelixOpen] = useState(true);
   const [colorOpen, setColorOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
-  const customColorInputRef = useRef<HTMLInputElement>(null);
   // Renaming here works like the pencil in the object list.
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -1564,21 +1563,6 @@ export function ShapeInspector({
     onSnapGridAwayChange?.(snapGridAway);
     return () => onSnapGridAwayChange?.(false);
   }, [snapGridAway, onSnapGridAwayChange]);
-  useEffect(() => {
-    const input = customColorInputRef.current;
-    if (!colorOpen || !input) {
-      return;
-    }
-
-    // React's color-input onChange follows the native input event and fires for
-    // every movement in the picker. Commit only the native change event, which
-    // fires after the user finishes choosing, so dragging stays responsive.
-    const commitCustomColor = () => {
-      onUpdate({ color: input.value, hole: false });
-    };
-    input.addEventListener("change", commitCustomColor);
-    return () => input.removeEventListener("change", commitCustomColor);
-  }, [colorOpen, onUpdate]);
   useLayoutEffect(() => {
     inspectorRef.current?.scrollTo({ top: 0, left: 0 });
   }, [isSketchRevolve, shape.id]);
@@ -1708,14 +1692,11 @@ export function ShapeInspector({
               />
             ))}
             <label className={locked ? "custom-color disabled" : "custom-color"} title={t("inspector.customColor")}>
-              <input
-                key={`${shape.id}-${solidColor}`}
-                ref={customColorInputRef}
-                type="color"
-                defaultValue={solidColor}
+              <CustomColorInput
+                color={solidColor}
                 disabled={locked}
-                onFocus={() => onInteractionActiveChange?.(true)}
-                onBlur={() => onInteractionActiveChange?.(false)}
+                onCommit={(color) => onUpdate({ color, hole: false })}
+                onInteractionActiveChange={onInteractionActiveChange}
               />
               <span>{t("inspector.custom")}</span>
             </label>
@@ -2133,6 +2114,68 @@ export function SnapGridControl({
   );
 }
 
+/**
+ * Haelt das Speichern an, solange ein Feld bedient wird, und gibt es auch dann
+ * wieder frei, wenn das Feld verschwindet, waehrend es noch den Fokus hat.
+ * Chrome meldet dann kein `blur` - die Sperre blieb stehen, und jede weitere
+ * Aenderung wurde nur vorgemerkt, nie gespeichert (Diskussion #87).
+ */
+function useInteractionHold(onInteractionActiveChange?: (active: boolean) => void) {
+  const heldRef = useRef(false);
+  const callbackRef = useRef(onInteractionActiveChange);
+  callbackRef.current = onInteractionActiveChange;
+  useEffect(() => () => {
+    if (!heldRef.current) return;
+    heldRef.current = false;
+    callbackRef.current?.(false);
+  }, []);
+  return useCallback((active: boolean) => {
+    heldRef.current = active;
+    callbackRef.current?.(active);
+  }, []);
+}
+
+/**
+ * Das Feld fuer eine eigene Farbe. Es bleibt dasselbe Element, wenn sich die
+ * Farbe aendert - frueher wurde es dabei ausgetauscht, waehrend es noch den
+ * Fokus hatte, und eine zweite eigene Farbe kam gar nicht mehr an.
+ */
+function CustomColorInput({ color, disabled, onCommit, onInteractionActiveChange }: {
+  color: string;
+  disabled?: boolean;
+  onCommit: (color: string) => void;
+  onInteractionActiveChange?: (active: boolean) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const holdInteraction = useInteractionHold(onInteractionActiveChange);
+  const commitRef = useRef(onCommit);
+  commitRef.current = onCommit;
+  useEffect(() => {
+    const input = inputRef.current;
+    if (input && input.value.toLowerCase() !== color.toLowerCase()) input.value = color;
+  }, [color]);
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    // React's color-input onChange follows the native input event and fires for
+    // every movement in the picker. Commit only the native change event, which
+    // fires after the user finishes choosing, so dragging stays responsive.
+    const commit = () => commitRef.current(input.value);
+    input.addEventListener("change", commit);
+    return () => input.removeEventListener("change", commit);
+  }, []);
+  return (
+    <input
+      ref={inputRef}
+      type="color"
+      defaultValue={color}
+      disabled={disabled}
+      onFocus={() => holdInteraction(true)}
+      onBlur={() => holdInteraction(false)}
+    />
+  );
+}
+
 function RangeProperty({
   id,
   label,
@@ -2145,6 +2188,7 @@ function RangeProperty({
   onChange,
   onInteractionActiveChange,
 }: RangePropertyConfig & { workspace: WorkplaneWorkspaceSettings; disabled?: boolean; onInteractionActiveChange?: (active: boolean) => void }) {
+  const holdInteraction = useInteractionHold(onInteractionActiveChange);
   const allowsAboveSliderMax = ["length", "width", "height", "starOuterSize", "starInnerSize", "crescentThickness", "honeycombCellSize", "honeycombWallThickness", "honeycombFrameWidth", "bentTubeSize", "bentTubeBendRadius"].includes(id) || id.endsWith("Length") || id.endsWith("Width");
   const isLength = propertyUsesLengthUnit(id);
   const accuracy = workspace.accuracy;
@@ -2165,7 +2209,7 @@ function RangeProperty({
     // Leaving the field untouched keeps the exact value, not its rounded reading.
     if (draft === formatShown(controlValue)) {
       setEditing(false);
-      onInteractionActiveChange?.(false);
+      holdInteraction(false);
       return;
     }
     const next = RELATIVE_SIZE_PROPERTY_IDS.has(id)
@@ -2175,7 +2219,7 @@ function RangeProperty({
     const nextModelValue = toModelValue(finiteNext);
     onChange(allowsAboveSliderMax ? Math.max(min, nextModelValue) : clamp(nextModelValue, min, max));
     setEditing(false);
-    onInteractionActiveChange?.(false);
+    holdInteraction(false);
   };
   const handleSliderChange = (nextValue: number) => {
     const next = clamp(Number.isFinite(nextValue) ? nextValue : controlMin, controlMin, controlMax);
@@ -2193,7 +2237,7 @@ function RangeProperty({
             disabled={disabled}
             inputMode={unit === "in" ? "text" : "decimal"}
             onFocus={(event) => {
-              onInteractionActiveChange?.(true);
+              holdInteraction(true);
               setDraft(formatShown(controlValue));
               setEditing(true);
               selectWholeValue(event.currentTarget);
@@ -2220,11 +2264,11 @@ function RangeProperty({
           step={controlStep}
           value={sliderValue}
           disabled={disabled}
-          onFocus={() => onInteractionActiveChange?.(true)}
-          onBlur={() => onInteractionActiveChange?.(false)}
-          onPointerDown={() => onInteractionActiveChange?.(true)}
-          onPointerUp={() => onInteractionActiveChange?.(false)}
-          onPointerCancel={() => onInteractionActiveChange?.(false)}
+          onFocus={() => holdInteraction(true)}
+          onBlur={() => holdInteraction(false)}
+          onPointerDown={() => holdInteraction(true)}
+          onPointerUp={() => holdInteraction(false)}
+          onPointerCancel={() => holdInteraction(false)}
           onChange={(event) => handleSliderChange(Number(event.currentTarget.value))}
         />
       </div>
@@ -2233,6 +2277,7 @@ function RangeProperty({
 }
 
 function TextProperty({ label, value, disabled, onChange, onInteractionActiveChange }: Omit<TextPropertyConfig, "id"> & { id?: string } & { disabled?: boolean; onInteractionActiveChange?: (active: boolean) => void }) {
+  const holdInteraction = useInteractionHold(onInteractionActiveChange);
   return (
     <label className="text-property">
       <span>{label}</span>
@@ -2242,8 +2287,8 @@ function TextProperty({ label, value, disabled, onChange, onInteractionActiveCha
         disabled={disabled}
         maxLength={24}
         spellCheck={false}
-        onFocus={() => onInteractionActiveChange?.(true)}
-        onBlur={() => onInteractionActiveChange?.(false)}
+        onFocus={() => holdInteraction(true)}
+        onBlur={() => holdInteraction(false)}
         onChange={(event) => onChange(event.currentTarget.value)}
       />
     </label>
