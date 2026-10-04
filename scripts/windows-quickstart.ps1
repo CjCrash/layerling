@@ -94,11 +94,17 @@ if (Test-Path (Join-Path $InstallPath ".git")) {
     Write-Step "layerling is already at $InstallPath - checking for updates..."
     Push-Location $InstallPath
     try {
-        $dirty = git status --porcelain
+        # Only changed tracked files hold an update back. Files of your own in the folder
+        # do not, and neither does package-lock.json: npm rewrites it when its version
+        # differs from ours, so it is put back before updating.
+        $dirty = git status --porcelain --untracked-files=no | Where-Object { $_ -notmatch 'package-lock\.json$' }
         if ($dirty) {
-            Write-Host "There are local changes in $InstallPath, so the update was skipped." -ForegroundColor Yellow
-            Write-Host "Continuing with the version that is already there." -ForegroundColor Yellow
+            Write-Host "These files were changed in $InstallPath, so the update was skipped:" -ForegroundColor Yellow
+            git status --short --untracked-files=no
+            Write-Host "Continuing with the version that is already there. To drop those changes and" -ForegroundColor Yellow
+            Write-Host "update anyway, run 'git stash' in that folder and run this script again." -ForegroundColor Yellow
         } else {
+            git checkout -- package-lock.json 2>$null
             git fetch --quiet origin
             if ($LASTEXITCODE -ne 0) { throw "git fetch failed (exit code $LASTEXITCODE). Check your internet connection." }
             git pull --ff-only
@@ -118,7 +124,9 @@ if (Test-Path (Join-Path $InstallPath ".git")) {
 Push-Location $InstallPath
 try {
     Write-Step "Installing dependencies (npm install)..."
-    npm install
+    # --no-save: install exactly what package-lock.json lists without rewriting it, so
+    # a different npm version leaves no "local change" that would block the next update.
+    npm install --no-save
     if ($LASTEXITCODE -ne 0) { throw "npm install failed (exit code $LASTEXITCODE)." }
 
     Write-Step "Creating a desktop shortcut to start layerling next time..."

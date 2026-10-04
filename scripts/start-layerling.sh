@@ -9,15 +9,21 @@ PORT="${PORT:-3000}"
 URL="http://127.0.0.1:$PORT/"
 
 if [ -d .git ] && command -v git >/dev/null 2>&1; then
-  if [ -n "$(git status --porcelain)" ]; then
-    echo "There are local changes in this folder, so the update was skipped."
+  # Only changed tracked files hold an update back. Files of your own in this
+  # folder do not, and neither does package-lock.json: npm rewrites it when its
+  # version differs from ours, so it is put back before updating.
+  if [ -n "$(git status --porcelain --untracked-files=no | grep -v 'package-lock\.json$')" ]; then
+    echo "These files were changed in this folder, so the update was skipped:"
+    git status --short --untracked-files=no
+    echo "To drop those changes and update anyway, run \"git stash\" in this folder and start layerling again."
   else
+    git checkout -- package-lock.json 2>/dev/null
     echo "Checking for updates..."
     before=$(git rev-parse HEAD)
     if git pull --ff-only --quiet; then
       if [ "$before" != "$(git rev-parse HEAD)" ]; then
         echo "layerling was updated. Installing dependencies..."
-        npm install || exit 1
+        npm install --no-save || exit 1
       fi
     else
       echo "The update could not be fetched - continuing with the version that is already here."

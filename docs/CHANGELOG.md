@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **The start scripts no longer stop updating for no reason:** Starting layerling with the desktop shortcut, the quickstart script or `start-layerling.sh` skipped the update whenever anything in the folder looked changed, and from then on it skipped every time. Two things counted that the user never did: npm rewriting `package-lock.json` because its version differs from ours, and files of your own lying in the folder. Now only changed project files hold an update back, `package-lock.json` is put back before updating, and npm installs without rewriting it. When an update is still skipped, the script lists the changed files and says how to update anyway. Reported by bernbout (#90).
+
 ## 1.32.1
 
 - **Right-hand and left-hand threads were swapped:** Every thread wound the wrong way round. "Right-hand" made a left-hand thread and the other way round, on screen and in every export. A layerling screw still fitted a layerling nut, because both were wrong, but not a bought nut or bolt. Threads in saved projects now come out the right way when the project is opened; reprint parts that have to fit store-bought ones. A test now pins the direction itself, not only that the screen and the exact body agree. The icons for every thread type and head shape showed a left-hand thread as well and now show a right-hand one.

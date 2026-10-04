@@ -10,12 +10,18 @@ if not exist ".git" goto start
 where git >nul 2>nul
 if errorlevel 1 goto start
 
+rem Only changed tracked files hold an update back. Files of your own in this
+rem folder do not, and neither does package-lock.json: npm rewrites it when its
+rem version differs from ours, so it is put back before updating.
 set DIRTY=
-for /f "delims=" %%i in ('git status --porcelain') do set DIRTY=1
+for /f "delims=" %%i in ('git status --porcelain --untracked-files^=no ^| findstr /v /e /c:"package-lock.json"') do set DIRTY=1
 if defined DIRTY (
-  echo There are local changes in this folder, so the update was skipped.
+  echo These files were changed in this folder, so the update was skipped:
+  git status --short --untracked-files=no
+  echo To drop those changes and update anyway, run "git stash" in this folder and start layerling again.
   goto start
 )
+git checkout -- package-lock.json 2>nul
 
 echo Checking for updates...
 for /f %%i in ('git rev-parse HEAD') do set BEFORE=%%i
@@ -27,7 +33,7 @@ if errorlevel 1 (
 for /f %%i in ('git rev-parse HEAD') do set AFTER=%%i
 if not "%BEFORE%"=="%AFTER%" (
   echo layerling was updated. Installing dependencies...
-  call npm install
+  call npm install --no-save
 )
 
 :start
