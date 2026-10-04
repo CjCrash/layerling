@@ -2111,8 +2111,8 @@ button {
   padding: 4px 22px 24px 52px;
 }
 
+/* As wide as the lists in the panel, so the closing lines do not stop short of them. */
 .dashboard-welcome p {
-  max-width: 84ch;
   margin: 0;
   color: #7a6650;
   font-size: 14px;
