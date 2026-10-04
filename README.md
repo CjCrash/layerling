@@ -56,7 +56,7 @@ You will recognise everything: the plate, the shapes, solids and holes, group an
 
 - **A real build plate** – grid, snapping, handles for moving, resizing and rotating, and a panel with the exact numbers when you need them.
 - **Type a position** – the Position card puts a body at exact X, Y and Z, and parts can be parked beside the plate, as in Tinkercad.
-- **Snap to other shapes** – while moving, a shape locks its edges or centre onto the edges and centres of the shapes around it, with a guide line, so parts sit flush without typing numbers. Hold Alt to pause it.
+- **Snap to other shapes** – while moving, a shape locks its edges or centre onto the edges and centres of the shapes around it, with a guide line, so parts sit flush without typing numbers. Alt during the drag pauses it; Shift keeps the move on one axis, and Alt held from the start drags a copy, as in Tinkercad.
 - **Millimetres or inches** – with Imperial units every measure is shown in inches, as fractions like Tinkercad (1 5/8) or as decimals, the snap grid steps from 1/64 to 1 inch, and the plate's grid is drawn in inches.
 - **Your printer's plate** – pick one of 190 common printers and the plate takes its size. Its name and build volume show in the corner of the workplane, and a warning appears when a body reaches past the edge.
 - **Overhangs and filament** – "Show overhangs" hatches every face steeper than 45° (or your printer's own angle) that would need supports, and the export window shows volume, weight and metres of filament before you slice.
@@ -82,7 +82,8 @@ You will recognise everything: the plate, the shapes, solids and holes, group an
 ### Viewing
 
 - **Perspective or straight-on** – switch between the normal view and a flat, orthographic one with the cube button beside the zoom controls, or by pressing **O**. Your viewing direction and framing are kept.
-- **Turn the view at the cube** – dragging the view cube turns the view like the right mouse button, with one finger on a tablet; a click still jumps to that side.
+- **Turn the view at the cube** – dragging the view cube turns the view like the right mouse button, with one finger on a tablet; a click still jumps to that side. Keys **1**–**6** jump too, and **Shift+1**–**6** also zoom to the selection.
+- **Look from below** – the eye over a grid in the camera bar hides the plate, so the underside of a design can be seen without it in the way.
 - **Panels where you want them** – the object list, the settings, the section view, the tape measure and the tool panels for edges, hollowing and patterns move by their title bar and open there again; a double-click docks them.
 - **Section view** – cut the view open along a plane across X, Y or Z to look at walls, cavities and parts that fit into each other, with a coarse and a fine slider. Only the view is cut: the design and every export stay whole. "Section as SVG" saves the cut itself at 1:1, for a laser or a template, and "Measure" reads wall thickness and gaps right on the cut, snapping square to the wall.
 - **Workplane on any face** – press W and click a face to build on it; an eye hides the plane for a clear view while it keeps applying. An AI can set it on a face too.

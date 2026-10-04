@@ -57,7 +57,7 @@ Du wirst alles wiedererkennen: die Platte, die Formen, Körper und Aussparung (d
 
 - **Eine echte Bauplatte** – Raster, Einrasten, Griffe zum Verschieben, Skalieren und Drehen, und ein Feld mit den genauen Zahlen, wenn du sie brauchst.
 - **Position eintippen** – die Karte Position setzt einen Körper auf genaue X-, Y- und Z-Werte, und Teile lassen sich wie bei Tinkercad neben der Platte parken.
-- **Fangen an anderen Formen** – beim Verschieben rastet eine Form mit Kante oder Mitte an Kanten und Mitten der Formen ringsum ein, eine Hilfslinie zeigt woran. So sitzen Teile bündig, ohne Zahlen zu tippen. Alt hält das kurz an.
+- **Fangen an anderen Formen** – beim Verschieben rastet eine Form mit Kante oder Mitte an Kanten und Mitten der Formen ringsum ein, eine Hilfslinie zeigt woran. So sitzen Teile bündig, ohne Zahlen zu tippen. Alt während des Ziehens hält das kurz an; Umschalt hält die Bewegung auf einer Achse, und mit Alt zu Beginn ziehst du wie in Tinkercad eine Kopie.
 - **Millimeter oder Zoll** – mit Imperial erscheinen alle Maße in Zoll, als Bruch wie in Tinkercad (1 5/8) oder als Dezimalzahl, das Raster rastet von 1/64 bis 1 Zoll, und das Gitter der Platte ist in Zoll gezeichnet.
 - **Die Platte deines Druckers** – wähl einen von 190 gängigen Druckern, dann bekommt die Platte seine Größe. Name und Bauraum stehen in der Ecke der Arbeitsfläche, und eine Warnung erscheint, wenn ein Körper über den Rand ragt.
 - **Überhänge und Filament** – „Überhänge zeigen“ schraffiert jede Fläche, die steiler als 45° (oder der Winkel deines Druckers) überhängt und Stützen bräuchte, und das Exportfenster nennt Volumen, Gewicht und Meter Filament, bevor du slicst.
@@ -83,7 +83,8 @@ Du wirst alles wiedererkennen: die Platte, die Formen, Körper und Aussparung (d
 ### Ansicht
 
 - **Perspektivisch oder gerade von vorn** – zwischen normaler und orthografischer Ansicht wechseln, über den Würfelknopf neben den Zoomtasten oder mit **O**. Blickrichtung und Ausschnitt bleiben erhalten.
-- **Ansicht am Würfel drehen** – Ziehen am Ansichtswürfel dreht die Ansicht wie die rechte Maustaste, auf dem Tablet mit einem Finger; ein Klick springt weiter auf die gerade Seite.
+- **Ansicht am Würfel drehen** – Ziehen am Ansichtswürfel dreht die Ansicht wie die rechte Maustaste, auf dem Tablet mit einem Finger; ein Klick springt weiter auf die gerade Seite. Die Tasten **1**–**6** springen ebenfalls, **Umschalt+1**–**6** zoomen dabei auf die Auswahl.
+- **Von unten schauen** – das Auge über dem Gitter in der Kameraleiste blendet die Platte aus, damit die Unterseite eines Entwurfs frei zu sehen ist.
 - **Fenster nach Wunsch** – Objektliste, Einstellungen, Schnittansicht, Maßband und die Werkzeugfenster für Kanten, Aushöhlen und Muster lassen sich an ihrer Titelleiste frei verschieben und öffnen sich dort wieder; ein Doppelklick dockt sie an.
 - **Schnittansicht** – die Ansicht entlang einer Ebene quer zu X, Y oder Z aufschneiden, um Wände, Hohlräume und ineinandergreifende Teile zu sehen, mit grobem und feinem Regler. Geschnitten wird nur die Ansicht: Entwurf und jeder Export bleiben ganz. Den Schnitt selbst speichert „Schnitt als SVG“ im Maßstab 1:1, etwa für einen Laser oder eine Schablone, und „Messen“ liest Wandstärken und Spalte direkt auf dem Schnitt ab, im rechten Winkel zur Wand eingerastet.
 - **Arbeitsebene auf jeder Fläche** – W drücken und eine Fläche anklicken, um darauf zu bauen; ein Auge blendet die Ebene für freie Sicht aus, sie gilt trotzdem weiter. Auch eine KI kann sie auf eine Fläche legen.
