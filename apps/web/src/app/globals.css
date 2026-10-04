@@ -11393,6 +11393,7 @@ html[data-theme="dark"] .theme-check {
   }
 
   .camera-controls > .workplane-control-group,
+  .camera-controls > .workplane-display-control-group,
   .camera-controls > .tape-control-group,
   .camera-controls > .corner-ruler-control-group,
   .camera-controls > .section-control-group {

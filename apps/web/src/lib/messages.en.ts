@@ -1105,6 +1105,8 @@ export const MESSAGES_EN = {
   "camera.orthographic": "Orthographic view",
   "camera.perspective": "Back to perspective view",
   "camera.placeWorkplane": "Place workplane",
+  "camera.hideFaceWorkplane": "Hide face workplane",
+  "camera.showFaceWorkplane": "Show face workplane",
   "camera.hideWorkplane": "Hide workplane",
   "camera.showWorkplane": "Show workplane",
   "camera.tapeTools": "Tape measure",

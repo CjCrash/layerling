@@ -18,6 +18,7 @@ import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeome
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { textFont } from "@/lib/textFonts";
 import { FramingSquareIcon } from "@/components/FramingSquareIcon";
+import { GridEyeIcon } from "@/components/GridEyeIcon";
 import { AlignOverlay, MirrorOverlay, type AlignOverlayState, type MirrorOverlayState } from "@/components/workplane/ActionOverlays";
 import { MoveDimensionOverlay } from "@/components/workplane/MoveDimensionOverlay";
 import { OriginDimensionOverlay } from "@/components/workplane/OriginDimensionOverlay";
@@ -3947,6 +3948,11 @@ export function WorkplaneViewport({
   const [cameraControlsCollapsed, setCameraControlsCollapsed] = useState(false);
   const language = useLanguage();
   const [orthographicView, setOrthographicView] = useState(false);
+  // Hides the whole plate - grid, labels and any face workplane - for a clear
+  // look at the underside. Only the view changes: shapes still land on it.
+  const [workplaneLayerHidden, setWorkplaneLayerHidden] = useState(false);
+  const workplaneLayerHiddenRef = useRef(workplaneLayerHidden);
+  workplaneLayerHiddenRef.current = workplaneLayerHidden;
   const [tapeModel, setTapeModel] = useState<TapeModel>({ points: [], segments: [], startPointId: null, hover: null });
   const [tapeOverlay, setTapeOverlay] = useState<TapeOverlayState | null>(null);
   const [rulerDimensionOverlay, setRulerDimensionOverlay] = useState<RulerDimensionOverlayState | null>(null);
@@ -4733,6 +4739,13 @@ export function WorkplaneViewport({
   }, [language, placementWorkplane, projectName, resolvedTheme, themePreference, workplaneHidden, workspace]);
 
   useEffect(() => {
+    const state = threeRef.current;
+    if (!state) return;
+    state.workplaneLayer.visible = !workplaneLayerHidden;
+    state.needsRender = true;
+  }, [workplaneLayerHidden]);
+
+  useEffect(() => {
     setSelectionHelpersVisible(threeRef.current, !workplaneMode && activeTransformKind !== "rotate");
   }, [activeTransformKind, workplaneMode]);
 
@@ -4746,6 +4759,7 @@ export function WorkplaneViewport({
     state.palette = themePaletteRef.current;
     threeRef.current = state;
     rebuildWorkplane(state, workspaceRef.current, resolvedThemeRef.current, drawnWorkplane(), projectNameRef.current);
+    state.workplaneLayer.visible = !workplaneLayerHiddenRef.current;
     window.layerlingCaptureCanvas = () => {
       state.camera.updateMatrixWorld();
       state.renderer.render(state.scene, state.camera);
@@ -8063,6 +8077,17 @@ export function WorkplaneViewport({
             >
               <Cuboid size={24} strokeWidth={2.15} aria-hidden="true" />
             </button>
+            <div className="workplane-display-control-group">
+              <button
+                className={workplaneLayerHidden ? "active" : ""}
+                aria-label={workplaneLayerHidden ? t("camera.showWorkplane") : t("camera.hideWorkplane")}
+                title={workplaneLayerHidden ? t("camera.showWorkplane") : t("camera.hideWorkplane")}
+                aria-pressed={workplaneLayerHidden}
+                onClick={() => setWorkplaneLayerHidden((current) => !current)}
+              >
+                <GridEyeIcon size={25} strokeWidth={2.1} crossed={workplaneLayerHidden} aria-hidden="true" />
+              </button>
+            </div>
             <div className="workplane-control-group">
               <button
                 className={workplaneMode ? "active" : ""}
@@ -8076,8 +8101,8 @@ export function WorkplaneViewport({
               {!placementWorkplaneIsBase(placementWorkplane) && onToggleWorkplaneHidden ? (
                 <button
                   className={`workplane-visibility-toggle ${workplaneHidden ? "active" : ""}`}
-                  aria-label={workplaneHidden ? t("camera.showWorkplane") : t("camera.hideWorkplane")}
-                  title={workplaneHidden ? t("camera.showWorkplane") : t("camera.hideWorkplane")}
+                  aria-label={workplaneHidden ? t("camera.showFaceWorkplane") : t("camera.hideFaceWorkplane")}
+                  title={workplaneHidden ? t("camera.showFaceWorkplane") : t("camera.hideFaceWorkplane")}
                   aria-pressed={workplaneHidden}
                   onClick={onToggleWorkplaneHidden}
                 >

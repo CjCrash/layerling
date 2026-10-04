@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Hide the workplane:** A new button with an eye over a grid, in the camera bar below Orthographic view, hides the whole plate - grid, labels and a workplane set on a face - so the underside of a design can be looked at from below without the plate in the way. A second click shows it again. Only the view changes: new shapes still land on the workplane. The eye that hides only a face workplane is now called "Hide face workplane".
+
 ## 1.34.0
 
 - **Separated parts are named in your language:** "Separate Parts" named the pieces "Part 1", "Part 2" and so on in English even in the German interface. They are now named "Teil 1", "Teil 2" there.
