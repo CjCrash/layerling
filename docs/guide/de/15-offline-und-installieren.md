@@ -14,11 +14,13 @@ Auf der Startseite erscheint dafür ein Hinweis mit {{ui:installHint.install}}, 
 - **Safari auf dem iPhone und iPad:** Teilen-Symbol, dann „Zum Home-Bildschirm“.
 - **Firefox:** kann keine Apps installieren. layerling startet dort aber trotzdem offline im Tab.
 
-Den Hinweis auf der Startseite kannst du mit {{ui:installHint.dismiss}} schließen.
+Den Hinweis auf der Startseite kannst du mit {{ui:installHint.dismiss}} schließen. Startest du die installierte App in Chrome oder Edge ein zweites Mal, holt sie das offene Fenster nach vorn, statt ein weiteres zu öffnen.
 
 ## Aktualisierungen
 
 Wenn es eine neuere Fassung gibt, zeigt layerling das auf der Startseite an. Über {{ui:dashboard.updateBannerLink}} liest du nach, was sich geändert hat. Die Versionsnummer steht unten rechts. Nach einem Neuladen der Seite hast du die neue Fassung.
+
+Ist layerling in mehreren Tabs offen, achten die Tabs aufeinander: Läuft in einem anderen Tab schon eine neuere Version, bittet ein Hinweis unten im alten Tab, ihn neu zu laden. Und ist derselbe Entwurf in zwei Tabs offen, warnen beide davor, denn sie speichern automatisch und würden sich gegenseitig überschreiben.
 
 ## Sprache und Aussehen
 

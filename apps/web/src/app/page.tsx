@@ -16,6 +16,7 @@ import { hydrateEditorHistoryState, notesForHistoryIndex, type EditorHistoryEntr
 import { detectLanguage, setLanguage, t, translate, type Language } from "@/lib/i18n";
 import { WelcomeGuideBody } from "@/components/WelcomeGuide";
 import { InstallAppHint } from "@/components/InstallAppHint";
+import { TabPresenceNotice } from "@/components/TabPresenceNotice";
 import { duplicateName, type DuplicateNamePatterns } from "@/lib/duplicateName";
 import { migrateLegacyProjectShapes, migrateLegacyStorageKeys, PROJECT_SHAPES_DB_NAME } from "@/lib/storageMigration";
 import { useLanguage } from "@/lib/useLanguage";
@@ -1960,6 +1961,7 @@ export default function Home() {
         </div>
       ) : null}
       {view === "editor" && (editorLoading || !canRenderEditor) ? <EditorLoadingSkeleton /> : null}
+      <TabPresenceNotice version={LYL_CREATED_WITH_VERSION} projectId={view === "editor" ? activeProjectId : null} />
     </>
   );
 }

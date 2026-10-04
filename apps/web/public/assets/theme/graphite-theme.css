@@ -320,6 +320,28 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   color: #1e5927;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .tab-presence-notice {
+  border: 1px solid #e8c37a;
+  background: #f0f0f0;
+  color: #6b4a08;
+  box-shadow: 0 8px 24px rgba(36, 36, 36, 0.18);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .tab-presence-icon {
+  color: #b7791f;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .tab-presence-reload {
+  border: 1px solid #d6a24a;
+  background: #ffffff;
+  color: #6b4a08;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .tab-presence-reload:hover,
+:where(html[data-theme="dark"][data-palette="graphite"]) .tab-presence-reload:focus-visible {
+  background: #e1e1e1;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .dashboard-update-icon {
   color: #2a8334;
 }
@@ -4223,6 +4245,28 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .dashboard-legal a.dash
   border-color: #78d482;
   background: #1f4224;
   color: #93e69b;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .tab-presence-notice {
+  border-color: #7a5a1c;
+  background: #232323;
+  color: #f3d89a;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .tab-presence-icon {
+  color: #e6b450;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .tab-presence-reload {
+  border-color: #7a5a1c;
+  background: #2c2c2c;
+  color: #f3d89a;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .tab-presence-reload:hover,
+html[data-theme="dark"]:where([data-palette="graphite"]) .tab-presence-reload:focus-visible {
+  background: #353535;
 }
 
 html[data-theme="dark"]:where([data-palette="graphite"]) .dashboard-update-notice {

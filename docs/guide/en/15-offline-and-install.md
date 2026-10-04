@@ -14,11 +14,13 @@ On the start page a hint with {{ui:installHint.install}} appears if your browser
 - **Safari on iPhone and iPad:** Share icon, then "Add to Home Screen".
 - **Firefox:** cannot install apps. layerling still starts offline in a tab there.
 
-You can close the hint on the start page with {{ui:installHint.dismiss}}.
+You can close the hint on the start page with {{ui:installHint.dismiss}}. Starting the installed app a second time in Chrome or Edge brings the open window to the front instead of opening another one.
 
 ## Updates
 
 When a newer version exists, layerling shows it on the start page. Through {{ui:dashboard.updateBannerLink}} you read what has changed. The version number is at the bottom right. After reloading the page you have the new version.
+
+When layerling is open in several tabs, they look out for each other: if another tab already runs a newer version, a note at the bottom of the old tab asks you to reload it. And if the same design is open in two tabs, both warn you, because they save automatically and would overwrite each other.
 
 ## Language and appearance
 

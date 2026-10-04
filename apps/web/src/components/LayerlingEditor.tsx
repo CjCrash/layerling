@@ -11506,11 +11506,15 @@ export function LayerlingEditor({
    * schon weg war. Hier gibt es kein Abbruchsignal - der Upload gehoert der
    * Seite darueber und ueberlebt dieses Bauteil.
    */
-  const flushProjectSnapshot = useCallback(async () => {
+  const flushProjectSnapshot = useCallback(async ({ evenIfUnchanged = false } = {}) => {
     if (!projectId || !onProjectSnapshot || typeof window === "undefined") return;
     const currentShapes = shapesRef.current;
     const sceneKey = { projectId, fingerprint: projectShapesFingerprint(currentShapes) };
-    if (!projectThumbnailSceneChanged(lastProjectSnapshotRef.current, sceneKey)) return;
+    // Leaving takes the picture even when no shape changed: zooming or turning
+    // the view alone does not count as a change, and the start page kept the
+    // view from the last edit (#90). Not while the design is still loading.
+    const known = lastProjectSnapshotRef.current?.projectId === projectId && !projectHydratingRef.current;
+    if (!(evenIfUnchanged && known) && !projectThumbnailSceneChanged(lastProjectSnapshotRef.current, sceneKey)) return;
     const image = window.layerlingCaptureCanvasAsync
       ? await window.layerlingCaptureCanvasAsync()
       : window.layerlingCaptureCanvas?.() ?? "";
@@ -11547,7 +11551,7 @@ export function LayerlingEditor({
       serverSaveTimerRef.current = null;
     }
     void saveToServerRef.current();
-    void flushProjectSnapshot().finally(leave);
+    void flushProjectSnapshot({ evenIfUnchanged: true }).finally(leave);
   }, [flushProjectSnapshot, onHome]);
 
   const clearDesign = useCallback(() => {

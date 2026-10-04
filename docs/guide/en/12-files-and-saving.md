@@ -5,7 +5,7 @@ summary: Where your designs live, how to back them up, which formats layerling i
 
 ## Where your designs live
 
-layerling saves everything in the browser on your computer. There is no account and nothing is uploaded. Every change saves itself, including the preview picture on the start page. If you open layerling in the same browser days later, everything is there.
+layerling saves everything in the browser on your computer. There is no account and nothing is uploaded. Every change saves itself. The preview picture on the start page shows the view you last had in front of you when you went back with {{ui:editor.homeDashboard}}. If you open layerling in the same browser days later, everything is there.
 
 That has a downside: whoever clears the browser storage or switches to another computer loses the designs. **So back up important work into a file.**
 

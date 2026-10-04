@@ -1240,6 +1240,52 @@ button {
   font-weight: 700;
 }
 
+.tab-presence-notice {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  max-width: min(640px, calc(100vw - 32px));
+  padding: 10px 12px 10px 14px;
+  transform: translateX(-50%);
+  border: 1px solid #e8c37a;
+  border-radius: 10px;
+  background: #fff6e0;
+  color: #6b4a08;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  box-shadow: 0 8px 24px rgba(60, 40, 0, 0.18);
+}
+
+.tab-presence-icon {
+  flex: none;
+  color: #b7791f;
+}
+
+.tab-presence-reload {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid #d6a24a;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #6b4a08;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tab-presence-reload:hover,
+.tab-presence-reload:focus-visible {
+  background: #fdecc4;
+}
+
 .dashboard-update-notice-content {
   display: flex;
   align-items: center;
@@ -9920,6 +9966,28 @@ html[data-theme="dark"] .dashboard-legal a.dashboard-legal-update:hover {
   border-color: #78d482;
   background: #1f4224;
   color: #93e69b;
+}
+
+html[data-theme="dark"] .tab-presence-notice {
+  border-color: #7a5a1c;
+  background: #2b2210;
+  color: #f3d89a;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] .tab-presence-icon {
+  color: #e6b450;
+}
+
+html[data-theme="dark"] .tab-presence-reload {
+  border-color: #7a5a1c;
+  background: #3a2e14;
+  color: #f3d89a;
+}
+
+html[data-theme="dark"] .tab-presence-reload:hover,
+html[data-theme="dark"] .tab-presence-reload:focus-visible {
+  background: #4a3a18;
 }
 
 html[data-theme="dark"] .dashboard-update-notice {
