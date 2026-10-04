@@ -36,7 +36,7 @@ You can drag a shape past the edge of the plate and leave it there, about one pl
 
 When you drag a shape across the workplane, it snaps to other shapes: its left, right, front or back edge or its centre lands exactly on an edge or centre of another shape. A pink guide line shows what it is holding on to. That way two parts sit flush side by side or centred one behind the other without typing numbers. It works with the grid switched off, too.
 
-Hold [[Alt]] while dragging to pause snapping; the shape then follows the grid only. To switch it off for good, use the grid menu in the bottom right ({{ui:inspector.objectSnap}}) or the settings. For now only moving on the normal workplane snaps, not lifting and not resizing.
+Hold [[Shift]] while dragging to keep the move on one axis: the shape follows whichever direction, X or Y, you have dragged further in, and leaves the other alone. Hold [[Alt]] while dragging to pause snapping; the shape then follows the grid only. To switch it off for good, use the grid menu in the bottom right ({{ui:inspector.objectSnap}}) or the settings. For now only moving on the normal workplane snaps, not lifting and not resizing.
 
 ## Aligning
 
