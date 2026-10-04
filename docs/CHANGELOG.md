@@ -9,6 +9,7 @@ code still carries it - so a lower number further down is older, not newer.
 - **One grid, no switch:** "Align grid to origin" is gone from Settings > Workplane. The grid always runs through the origin now, so its stronger lines meet the axes and "Snap to grid" agrees with moving; designs that had the switch off get the new grid. Suggested by @gogades in #92.
 - **Shift and a number key zoom to the selection:** `Shift+1` to `Shift+6` jump to the six straight views like the number keys and also zoom to the selection, as `Shift+F` does, so you see the selected part from that side right away. The number keys alone still only turn the view, and with nothing selected Shift does not change anything. Contributed by @gogades (#95).
 - **Shift keeps a drag on one axis:** Holding Shift while dragging a shape keeps the move along X or Y, whichever way the pointer has gone further, as in Tinkercad; snapping to other shapes still works along that axis. On a tilted workplane it is the plane's own two directions. Shift-clicking a selected shape still takes it out of the selection when it does not move. Contributed by @rmpel (#96).
+- **Alt-drag drags a copy:** As in Tinkercad, holding Alt when a drag begins leaves the shapes where they are and drops copies where you let go, selected and undone in one step. Alt pressed only during the drag still pauses snapping to other shapes; if you used to press Alt before dragging for that, you now get a copy - press it once the drag has started instead. Contributed by @rmpel (#97).
 
 ## 1.34.0
 

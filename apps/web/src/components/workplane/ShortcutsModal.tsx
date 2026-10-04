@@ -93,6 +93,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { combos: ["R"], label: "shortcuts.rotate" },
       { combos: ["Shift+R"], label: "shortcuts.rotateFine" },
       { combos: ["Shift"], label: "shortcuts.axisLockDrag" },
+      { combos: ["Alt+Drag"], label: "shortcuts.duplicateDrag" },
       { combos: ["Alt"], label: "shortcuts.pauseObjectSnap" },
     ],
   },
@@ -157,7 +158,7 @@ function ShortcutKeys({ combos }: { combos: string[] }) {
             {comboKeys(combo).map((key, keyIndex) => (
               <Fragment key={key}>
                 {keyIndex > 0 ? <span className="shortcuts-plus" aria-hidden="true">+</span> : null}
-                <kbd>{key === "Click" ? t("shortcuts.click") : key}</kbd>
+                <kbd>{key === "Click" ? t("shortcuts.click") : key === "Drag" ? t("shortcuts.drag") : key}</kbd>
               </Fragment>
             ))}
           </span>

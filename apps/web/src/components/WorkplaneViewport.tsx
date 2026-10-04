@@ -291,6 +291,8 @@ type WorkplaneViewportProps = {
   onSeparateParts?: () => void;
   onUpdateShape: (id: string, patch: ShapeUpdatePatch) => void;
   onDuplicateShapeAt?: (id: string, position: { x: number; z: number }) => void;
+  /** A drag begun with Alt held: copies of these shapes land this far from them, the shapes themselves stay. */
+  onDuplicateShapesMoved?: (ids: string[], delta: { dx: number; dz: number; delevation: number }) => void;
   notes?: WorkplaneNote[];
   notesVisible?: boolean;
   /** Tint faces red that overhang more steeply than workspace.overhangAngle. */
@@ -460,6 +462,12 @@ type DragState = {
   items: DragItem[];
   /** Shift was held on a selected shape: if nothing moves, this was a click that takes it out of the selection. */
   toggleOnClick?: boolean;
+  /**
+   * Alt was held when the drag began: what moves is a copy. Until the drop
+   * creates it, the dragged shapes stand for the copy and these stand-ins
+   * hold the place the shapes never leave.
+   */
+  duplicate?: { standIns: THREE.Object3D[] };
   /** World footprint of the dragged shapes at the start, when snapping to other shapes is on. */
   snapMoving?: SnapBox | null;
   snapTargets?: SnapBox[];
@@ -3890,6 +3898,7 @@ export function WorkplaneViewport({
   onSeparateParts,
   onUpdateShape,
   onDuplicateShapeAt,
+  onDuplicateShapesMoved,
   notes = EMPTY_NOTES,
   notesVisible = true,
   showOverhangs = false,
@@ -7010,6 +7019,21 @@ export function WorkplaneViewport({
         primaryStartZ: shape.z,
         items,
         toggleOnClick,
+        duplicate: event.altKey && onDuplicateShapesMoved
+          ? {
+              standIns: items.flatMap((item) => {
+                if (!item.visual?.parent) return [];
+                // Shares geometry and materials with the shape; nothing here is the stand-in's to dispose.
+                const standIn = item.visual.clone();
+                standIn.traverse((child) => {
+                  child.userData = {};
+                });
+                standIn.name = "DuplicateDragStandIn";
+                item.visual.parent.add(standIn);
+                return [standIn];
+              }),
+            }
+          : undefined,
       };
       const usesWorldHorizontalAxes = Math.abs(activeWorkplane.normal.y - 1) < 1e-6
         && Math.abs(activeWorkplane.xAxis.x - 1) < 1e-6
@@ -7048,6 +7072,7 @@ export function WorkplaneViewport({
       clearMoveDimensions,
       modifierActive,
       onAlignAnchorChange,
+      onDuplicateShapesMoved,
       onInteractionActiveChange,
       onModifierEdgeToggle,
       onPivotPick,
@@ -7297,6 +7322,7 @@ export function WorkplaneViewport({
     }
     const drag = dragRef.current;
     if (drag) {
+      drag.duplicate?.standIns.forEach((standIn) => standIn.removeFromParent());
       drag.items.forEach((item) => {
         item.nextX = item.startX;
         item.nextZ = item.startZ;
@@ -7407,7 +7433,30 @@ export function WorkplaneViewport({
 
       if (state) syncObjectSnapGuides(state, [], 0);
       let movedShape = false;
-      drag.items.forEach((item) => {
+      if (drag.duplicate) {
+        drag.duplicate.standIns.forEach((standIn) => standIn.removeFromParent());
+        const first = drag.items[0];
+        const delta = {
+          dx: first.nextX - first.startX,
+          dz: first.nextZ - first.startZ,
+          delevation: first.nextElevation - first.startElevation,
+        };
+        // The shapes stood in for their copies; put them back where they belong.
+        drag.items.forEach((item) => {
+          if (item.visual && item.hadPreviewSimplified) {
+            setComplexEdgeVisibility(item.visual, true);
+          }
+          item.nextX = item.startX;
+          item.nextZ = item.startZ;
+          item.nextElevation = item.startElevation;
+          if (state) applyDragItemPreview(state, item);
+        });
+        if (delta.dx !== 0 || delta.dz !== 0 || delta.delevation !== 0) {
+          movedShape = true;
+          onDuplicateShapesMoved?.(drag.items.map((item) => item.id), delta);
+        }
+      }
+      else drag.items.forEach((item) => {
         if (item.visual && item.hadPreviewSimplified) {
           setComplexEdgeVisibility(item.visual, true);
         }
@@ -7421,7 +7470,8 @@ export function WorkplaneViewport({
       if (!movedShape && drag.toggleOnClick) onSelectShape(drag.primaryId, "toggle");
 
       const moveDimensionSession = moveDimensionSessionRef.current;
-      if (movedShape && moveDimensionSession) {
+      // The distance moved is shown at the shape that moved; after a copy there is none.
+      if (movedShape && moveDimensionSession && !drag.duplicate) {
         moveDimensionSession.active = false;
       } else {
         clearMoveDimensions();
@@ -7446,7 +7496,7 @@ export function WorkplaneViewport({
       }
       onInteractionActiveChange?.(false);
     },
-    [clearMoveDimensions, onInteractionActiveChange, onSelectShape, onUpdateShape, rememberResizeAnchor, setMarqueeFromState, shapesInMarquee, suppressCornerEditAfterDrag, suppressLiftEditAfterDrag],
+    [clearMoveDimensions, onDuplicateShapesMoved, onInteractionActiveChange, onSelectShape, onUpdateShape, rememberResizeAnchor, setMarqueeFromState, shapesInMarquee, suppressCornerEditAfterDrag, suppressLiftEditAfterDrag],
   );
 
   const handleDrop = useCallback(
