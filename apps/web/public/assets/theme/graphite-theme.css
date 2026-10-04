@@ -2455,6 +2455,18 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .panel-grip:hover {
   color: #252525;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .inspector-bundle-note {
+  color: #4f4f4f;
+  background: #f4f4f4;
+  border: 1px solid #e0e0e0;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .inspector-bundle-note {
+  color: #b7b7b7;
+  background: #262626;
+  border-color: #3d3d3d;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .section-measure-row {
   border-top: 1px solid #e3e3e3;
 }
@@ -5326,7 +5338,7 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .shortcuts-or {
   }
 }
 
-@media (max-width: 1351px) {
+@media (max-width: 1395px) {
   :root:where([data-theme="dark"][data-palette="graphite"]) {
     --toolbar-icon-size: 34px;
   }

@@ -37,6 +37,16 @@ A whole group can also be a solid or a hole. A simple rule applies:
 - If the group consists only of solids (or only of holes), you switch it as a whole and its parts go along.
 - If it contains both, say a cube with a bore, each part keeps its own state. The whole group then becomes a tool, but the bore stays a bore.
 
+## Bundling
+
+Sometimes parts should only stay together without becoming one - a white logo on a black plate for a multicolour print, say. That is what {{ui:editor.tool.bundle}} ([[Ctrl]]+[[B]]) is for, as in Tinkercad. A bundle moves, turns and resizes like a shape, but nothing is merged:
+
+- Every part keeps its colour and stays a solid or a hole.
+- Holes cut nothing.
+- In an STL, 3MF or OBJ export every part is a body of its own; in 3MF and OBJ with its colour.
+
+{{ui:editor.tool.ungroup}} ([[Ctrl]]+[[Shift]]+[[G]]) takes a bundle apart again, [[E]] opens it for editing like a group. Chamfer, fillet and hollowing do not work on a bundle, because it is not one body: group it for that, or work on its parts one by one. If a hole in the bundle should cut after all, group the bundle (Ctrl+G).
+
 ## Intersection
 
 {{ui:editor.tool.intersect}} keeps only what two or more bodies have in common. Lay two overlapping shapes on top of each other, select both and click it. That turns a cylinder and a box into a piece with one round and one straight side. A group counts the way it looks, holes included. If a hole is selected too, what remains is what all the solids share with all the holes.

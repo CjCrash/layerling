@@ -186,6 +186,19 @@ export function ToolbarGroupIcon(props: IconProps) {
   );
 }
 
+export function ToolbarBundleIcon(props: IconProps) {
+  return (
+    <ToolbarVectorIcon {...props}>
+      <circle cx="15" cy="27" r="8" {...SOLID} />
+      <circle cx="15" cy="27" r="8" />
+      <rect x="26" y="17" width="15" height="18" rx="2.5" {...SOLID} />
+      <rect x="26" y="17" width="15" height="18" rx="2.5" />
+      <path d="M5 13h38" />
+      <path d="M24 9v8" />
+    </ToolbarVectorIcon>
+  );
+}
+
 export function ToolbarUngroupIcon(props: IconProps) {
   return (
     <ToolbarVectorIcon {...props}>

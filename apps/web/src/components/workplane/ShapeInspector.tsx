@@ -1640,7 +1640,9 @@ export function ShapeInspector({
 
       {!minimized ? (
         <>
-      {!isNonSolidShapeKind(shape.kind) ? (
+      {shape.groupOperation === "bundle" ? (
+        <p className="inspector-bundle-note">{t("inspector.bundleNote")}</p>
+      ) : !isNonSolidShapeKind(shape.kind) ? (
       <div className="shape-state-card" role="group" aria-label={t("inspector.shapeMode")}>
         <button
           className={!shape.hole ? "active solid-choice" : "solid-choice"}
@@ -1721,7 +1723,7 @@ export function ShapeInspector({
 
       {onOpenGroup ? (
         <button className="inspector-action-button" type="button" disabled={locked} onClick={onOpenGroup}>
-          {t("group.edit")}
+          {t(shape.groupOperation === "bundle" ? "group.editBundle" : "group.edit")}
         </button>
       ) : null}
 

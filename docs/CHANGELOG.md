@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Bundle, as in Tinkercad:** Ctrl+B, or the new Bundle button next to Group, holds shapes together without merging them. A bundle moves, turns and scales as one, but every part keeps its colour and stays a solid or a hole, holes cut nothing, and an STL, 3MF or OBJ export writes each part as a body of its own - a white logo on a black plate stays two coloured parts. Ungroup takes it apart, E opens it for editing; chamfer, fillet and hollowing ask to group it first. `layerling_bundle_objects` does it through MCP. Suggested by @kwjaarsveld-star (#91).
+
 ## 1.33.0
 
 - **Measure on the cut:** The section view has a new **Measure** button. The cut's outline shows in blue, and two clicks on it give the distance and its parts along the plane. Points snap to the outline and its corners, and a second click anywhere on the opposite wall snaps square to the first - so wall thickness, gaps and clearances read off without aiming. `layerling_measure_section` does the same through MCP.

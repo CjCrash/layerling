@@ -243,6 +243,27 @@ describe("layerling .lyl project packages", () => {
     expect(restored.shapes[0].edgeTreatmentHistory?.[0].before.kind).toBe("box");
   });
 
+  it("keeps a bundle a bundle, with its hole as a part and no cut", async () => {
+    const plate = shape("box", "plate", { color: "#222222" });
+    const logo = shape("box", "logo", { color: "#ffffff", width: 10, depth: 10 });
+    const hole = shape("box", "bore", { hole: true, color: "#b8c2cc", x: 12, width: 6, depth: 6 });
+    const bundle = shape("mesh", "bundle", {
+      name: "Bundle",
+      groupOperation: "bundle",
+      groupedBaseWidth: 30,
+      groupedBaseDepth: 30,
+      groupedBaseHeight: 20,
+      groupedShapes: [plate, logo, hole],
+    });
+    const exported = await exportLylProject(input([bundle]));
+    // An index that says "subtraction" would promise a cut the bundle never makes.
+    expect(packageDocument(exported).document.groups[0].operation).toBe("group");
+    const restored = await importLylProject(exported);
+    expect(restored.shapes[0].groupOperation).toBe("bundle");
+    expect(restored.shapes[0].groupedShapes).toEqual([plate, logo, hole]);
+    expect(restored.shapes[0].importedMesh).toBeUndefined();
+  });
+
   it("repairs duplicate descendant IDs from legacy shallow-copied groups during export", async () => {
     const roof = shape("roundRoof", "round-roof-shared-child");
     const box = shape("box", "box-shared-child");

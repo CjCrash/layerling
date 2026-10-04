@@ -514,7 +514,12 @@ export type WorkplaneShape = {
   groupedBaseWidth?: number;
   groupedBaseDepth?: number;
   groupedBaseHeight?: number;
-  groupOperation?: "group" | "intersection";
+  /**
+   * How the parts are put together. "bundle" (Tinkercad's Ctrl+B) only holds
+   * them together: no cutting, every part keeps its colour and goes out as
+   * its own body.
+   */
+  groupOperation?: "group" | "intersection" | "bundle";
   locked?: boolean;
   hidden?: boolean;
   /** Drawn see-through in its own colour, like Tinkercad's "Transparent". Display only - a solid stays a solid. */

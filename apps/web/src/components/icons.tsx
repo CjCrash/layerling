@@ -103,6 +103,7 @@ export {
   ToolbarExportIcon,
   ToolbarFilletIcon,
   ToolbarHollowIcon,
+  ToolbarBundleIcon,
   ToolbarGroupIcon,
   ToolbarGuideIcon,
   ToolbarHomeIcon,

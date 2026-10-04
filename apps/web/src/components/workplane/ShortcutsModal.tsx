@@ -62,6 +62,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
     mode: "geometry",
     shortcuts: [
       { combos: ["Ctrl+G"], label: "shortcuts.group" },
+      { combos: ["Ctrl+B"], label: "shortcuts.bundle" },
       { combos: ["Ctrl+Shift+G"], label: "shortcuts.ungroup" },
       { combos: ["E"], label: "shortcuts.editGroup" },
       { combos: ["Ctrl+L"], label: "shortcuts.lock" },

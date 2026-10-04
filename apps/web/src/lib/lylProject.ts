@@ -688,6 +688,7 @@ async function serializeState(
 
 function nodeGroupOperation(node: LylShapeNodeV1, nodeById: Map<string, LylShapeNodeV1>) {
   if (node.definition.groupOperation === "intersection") return "boolean-intersection";
+  if (node.definition.groupOperation === "bundle") return "group";
   const children = (node.groupedShapeNodeIds ?? []).map((id) => nodeById.get(id)).filter(Boolean) as LylShapeNodeV1[];
   const hasHole = children.some((child) => child.definition.hole === true);
   const hasSolid = children.some((child) => child.definition.hole !== true);

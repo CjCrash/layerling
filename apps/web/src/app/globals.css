@@ -5977,6 +5977,23 @@ html[data-theme="dark"] .panel-grip:hover {
   color: #2b1f14;
 }
 
+.inspector-bundle-note {
+  margin: 0;
+  padding: 10px 12px;
+  color: #6d5a46;
+  font-size: 12px;
+  line-height: 1.45;
+  background: #faf6ef;
+  border: 1px solid #ece2d4;
+  border-radius: 8px;
+}
+
+html[data-theme="dark"] .inspector-bundle-note {
+  color: #c9b8a5;
+  background: #2b2016;
+  border-color: #4a3a2a;
+}
+
 .section-measure-row {
   display: flex;
   align-items: center;
@@ -11194,7 +11211,7 @@ html[data-theme="dark"] .shortcuts-or {
   }
 }
 
-@media (max-width: 1351px) {
+@media (max-width: 1395px) {
   :root {
     --toolbar-icon-size: 34px;
   }
@@ -11209,11 +11226,12 @@ html[data-theme="dark"] .shortcuts-or {
   }
 }
 
-/* Below the width even the smallest step needs (1239 px, measured) the groups
+/* Below the width even the smallest step needs (1277 px, measured with the
+   Bundle button in 1.34) the groups
    wrap onto a further row instead of scrolling sideways: a scrolling bar
    hides tools and cuts off every menu that hangs beneath it. The bar grows,
    and the editor passes its real height on (see --editor-toolbar-height). */
-@media (max-width: 1238px) {
+@media (max-width: 1280px) {
   .toolbar-mode-content,
   .sketch-toolbar-ribbon {
     flex-wrap: wrap;

@@ -19,6 +19,7 @@ const MORE = [
   ["welcome.moreSketchTitle", "welcome.moreSketchBody"],
   ["welcome.moreLibraryTitle", "welcome.moreLibraryBody"],
   ["welcome.morePatternTitle", "welcome.morePatternBody"],
+  ["welcome.moreBundleTitle", "welcome.moreBundleBody"],
   ["welcome.moreWorkplaneTitle", "welcome.moreWorkplaneBody"],
   ["welcome.morePlaceTitle", "welcome.morePlaceBody"],
   ["welcome.moreSnapTitle", "welcome.moreSnapBody"],

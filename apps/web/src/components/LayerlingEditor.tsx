@@ -49,6 +49,7 @@ import {
   ToolbarCopyIcon,
   ToolbarDuplicateIcon,
   ToolbarDropToWorkplaneIcon,
+  ToolbarBundleIcon,
   ToolbarGroupIcon,
   ToolbarGuideIcon,
   ToolbarHideSelectedIcon,
@@ -4859,7 +4860,7 @@ async function unionOverlappingExportMeshes(shapes: WorkplaneShape[], meshes: Me
  * Daraus schaetzt das Exportfenster Gewicht und Filament.
  */
 async function exportSolidVolume(source: readonly WorkplaneShape[]) {
-  const visible = source.filter((shape) => !shape.hidden);
+  const { visible } = visibleExportShapes(source);
   const solids = visible.filter((shape) => !shape.hole && !isNonSolidShapeKind(shape.kind));
   if (solids.length === 0) return { volumeMm3: 0, solids: 0, bodies: 0, unionFailed: 0 };
   const { meshes, gescheitert } = await unionOverlappingExportMeshes(solids, solids.map(meshForShape));
@@ -4895,9 +4896,19 @@ const SECTION_SEEN_FROM_KEYS = {
 } as const;
 
 /** Die sichtbaren Teile fuer einen Export, dazu der Satz, der die ausgeblendeten nennt. */
+/** A bundle goes out as its parts, each a body of its own with its own colour; its holes cut nothing. */
+function expandBundles(source: readonly WorkplaneShape[]): WorkplaneShape[] {
+  return source.flatMap((shape) => (
+    shape.groupOperation === "bundle" && shape.groupedShapes?.length
+      ? expandBundles(restoreGroupedChildren(shape)).filter((part) => !part.hidden)
+      : [shape]
+  ));
+}
+
 function visibleExportShapes(source: readonly WorkplaneShape[]) {
-  const visible = source.filter((shape) => !shape.hidden);
-  const hidden = source.length - visible.length;
+  const shown = source.filter((shape) => !shape.hidden);
+  const hidden = source.length - shown.length;
+  const visible = expandBundles(shown);
   const hiddenNote = hidden === 0 ? "" : hidden === 1 ? t("status.exportHiddenSkippedOne") : t("status.exportHiddenSkippedMany", { count: hidden });
   return { visible, hiddenNote };
 }
@@ -6948,7 +6959,7 @@ export function LayerlingEditor({
   const selectedReversibleEdgeFeatureCount = useMemo(() => selectedShape ? reversibleEdgeTreatmentCount(selectedShape) : 0, [selectedShape]);
   const selectedEdgeHistoryOptions = useMemo(() => selectedShape ? edgeTreatmentHistoryOptions(selectedShape) : [], [selectedShape]);
   const canSeparateSelectedParts = useMemo(
-    () => selectedShapes.length === 1 && Boolean(selectedShape && separablePartCount(selectedShape) > 1),
+    () => selectedShapes.length === 1 && Boolean(selectedShape && selectedShape.groupOperation !== "bundle" && separablePartCount(selectedShape) > 1),
     [selectedShape, selectedShapes.length],
   );
   const toggleModifierEdge = useCallback((id: number, singleEdge = false) => {
@@ -8827,6 +8838,10 @@ export function LayerlingEditor({
       setNotice(t("status.selectOneUnlocked", { kind }));
       return;
     }
+    if (selectedShape.groupOperation === "bundle") {
+      setNotice(t("status.bundleNotOneBody"));
+      return;
+    }
     invalidateCadModifierSession();
     const appliedEdgeTreatmentCount = edgeTreatmentFeatureCount(selectedShape);
     const hasAppliedEdgeTreatment = Boolean(selectedShape.importedMesh && selectedShape.edgeTreatments?.length);
@@ -8945,6 +8960,9 @@ export function LayerlingEditor({
   const prepareCadModifierForMcp = useCallback(async (shape: WorkplaneShape, sharpAngle: number) => {
     if (shape.locked || shape.hole) {
       throw new Error("Select one unlocked solid object for edge treatment");
+    }
+    if (shape.groupOperation === "bundle") {
+      throw new Error("A bundle is not one body; group it (layerling_group_objects) or treat its parts one by one");
     }
     const appliedEdgeTreatmentCount = edgeTreatmentFeatureCount(shape);
     const hasAppliedEdgeTreatment = Boolean(shape.importedMesh && shape.edgeTreatments?.length);
@@ -9198,6 +9216,10 @@ export function LayerlingEditor({
     }
     if (selectedShapes.length !== 1 || !selectedShape || selectedShape.locked || selectedShape.hole || isNonSolidShapeKind(selectedShape.kind)) {
       setNotice(t("status.selectOneUnlocked", { kind: t("editor.tool.hollow") }));
+      return;
+    }
+    if (selectedShape.groupOperation === "bundle") {
+      setNotice(t("status.bundleNotOneBody"));
       return;
     }
     if (edgeModifier) invalidateCadModifierSession();
@@ -9692,6 +9714,30 @@ export function LayerlingEditor({
     commitShapes([...shapesRef.current.filter((shape) => !selected.has(shape.id)), editableGroup], editableGroup.id, t("status.groupedMany", { count: selectedShapes.length }));
   }, [commitShapes, selectedIds, selectedShapes]);
 
+  /** Tinkercad's bundle (Ctrl+B): the parts move, turn and scale together and stay what they are. */
+  const bundleSelected = useCallback(() => {
+    if (selectedShapes.length < 2) {
+      setNotice(t("status.selectTwoToBundle"));
+      return;
+    }
+    if (selectedShapes.some((shape) => shape.locked)) {
+      setNotice(t("status.unlockBeforeGroup"));
+      return;
+    }
+    if (selectedShapes.some((shape) => isNonSolidShapeKind(shape.kind))) {
+      setNotice(t("status.rulerNotSolid"));
+      return;
+    }
+    const group = groupedShape(selectedShapes);
+    if (!group) {
+      setNotice(t("status.selectTwoToBundle"));
+      return;
+    }
+    const selected = new Set(selectedIds);
+    const bundle = canonicalizeShape({ ...group, name: "Bundle", groupOperation: "bundle" });
+    commitShapes([...shapesRef.current.filter((shape) => !selected.has(shape.id)), bundle], bundle.id, t("status.bundledMany", { count: selectedShapes.length }));
+  }, [commitShapes, selectedIds, selectedShapes]);
+
   const intersectSelected = useCallback(async () => {
     const groupable = selectedShapes.filter((shape) => !shape.locked && !isNonSolidShapeKind(shape.kind));
     if (!canIntersectShapes(groupable)) {
@@ -9818,8 +9864,12 @@ export function LayerlingEditor({
     openGroupBusyRef.current = true;
     setOpenGroupBusy(true);
     try {
-      const operation = original.groupOperation === "intersection" ? "intersection" : "group";
-      const result = operation === "intersection" ? await buildIntersectionShapeFromSelection(parts) : await buildGroupedShapeFromSelection(parts);
+      const operation = original.groupOperation === "intersection" ? "intersection" : original.groupOperation === "bundle" ? "bundle" : "group";
+      const result = operation === "intersection"
+        ? await buildIntersectionShapeFromSelection(parts)
+        : operation === "bundle"
+          ? { group: groupedShape(parts) }
+          : await buildGroupedShapeFromSelection(parts);
       if (
         projectInfoRef.current.projectId !== sourceProjectId ||
         projectShapesFingerprint(shapesRef.current) !== sourceFingerprint ||
@@ -9971,7 +10021,7 @@ export function LayerlingEditor({
 
   /** Die Umrisse des Schnitts fuer das Messen - dieselben Koerper wie beim SVG. */
   const sectionContours = useCallback(async (axis: SectionPlaneAxis, offset: number) => {
-    const visible = shapesRef.current.filter((shape) => !shape.hidden);
+    const { visible } = visibleExportShapes(shapesRef.current);
     const solids = visible.filter((shape) => !shape.hole && !isNonSolidShapeKind(shape.kind));
     if (solids.length === 0) return [];
     const { meshes } = await colorSeparatedExportMeshes(solids, solids.map(meshForShape));
@@ -10381,6 +10431,19 @@ export function LayerlingEditor({
         return { object: mcpShapeSummary(editableGroup) };
       }
 
+      if (command.action === "bundle_objects") {
+        const ids = new Set(mcpStringArray(params.ids));
+        const parts = currentShapes().filter((shape) => ids.has(shape.id));
+        if (parts.length < 2) throw new Error("Pass at least two objects to bundle");
+        if (parts.some((shape) => shape.locked)) throw new Error("Unlock every object before bundling");
+        if (parts.some((shape) => isNonSolidShapeKind(shape.kind))) throw new Error("A ruler isn't a solid and can't be bundled");
+        const group = groupedShape(parts);
+        if (!group) throw new Error("Could not bundle these objects");
+        const bundle = canonicalizeShape({ ...group, name: "Bundle", groupOperation: "bundle" });
+        commitShapes([...currentShapes().filter((shape) => !ids.has(shape.id)), bundle], bundle.id, t("status.mcpBundled", { count: parts.length }));
+        return { object: mcpShapeSummary(bundle) };
+      }
+
       if (command.action === "intersect_objects") {
         const ids = new Set(mcpStringArray(params.ids));
         const groupable = currentShapes().filter((shape) => ids.has(shape.id));
@@ -10473,6 +10536,7 @@ export function LayerlingEditor({
       if (command.action === "hollow_object") {
         const target = findShape(params.id);
         if (!target) throw new Error("Object not found");
+        if (target.groupOperation === "bundle") throw new Error("A bundle is not one body; group it (layerling_group_objects) or hollow its parts one by one");
         const thickness = Math.max(0.2, mcpNumber(params.thickness, 2));
         const openings: ShellOpenings = params.openings === "none" || params.openings === "bottom" || params.openings === "top-bottom" ? params.openings : "top";
         const edges: ShellEdges = params.edges === "sharp" ? "sharp" : "round";
@@ -10578,7 +10642,13 @@ export function LayerlingEditor({
         const solids = currentShapes().filter((shape) => !shape.hidden && !shape.hole && !isNonSolidShapeKind(shape.kind)
           && (requestedIds.length === 0 || requestedIds.includes(shape.id)));
         const objects = solids.map((shape) => {
-          const mesh = meshForShape(shape);
+          const parts = expandBundles([shape]).filter((part) => !part.hole && !part.hidden);
+          const mesh = parts.length === 1 ? meshForShape(parts[0]) : (() => {
+            const vertices: Vec3[] = [];
+            const faces: [number, number, number][] = [];
+            parts.forEach((part) => appendMeshData(vertices, faces, meshForShape(part)));
+            return { name: shape.name, vertices, faces };
+          })();
           const found = overhangArea(mesh.vertices, mesh.faces, angle);
           return {
             id: shape.id,
@@ -11834,6 +11904,12 @@ export function LayerlingEditor({
         return;
       }
 
+      if (shortcut && key === "b" && !event.shiftKey) {
+        event.preventDefault();
+        bundleSelected();
+        return;
+      }
+
       if (shortcut && key === "g") {
         event.preventDefault();
         if (event.shiftKey) {
@@ -11948,7 +12024,7 @@ export function LayerlingEditor({
     duplicateSketchSelection,
     dropSelectedToWorkplane,
     editSelectedGroup,
-    groupSelected,
+    bundleSelected, groupSelected,
     hasSelection,
     nudgeSelected,
     arrayTool,
@@ -12050,6 +12126,7 @@ export function LayerlingEditor({
         onLayFlat={toggleLayFlat}
         layFlatActive={layFlatPickMode}
         onGroup={groupSelected}
+        onBundle={bundleSelected}
         onIntersect={intersectSelected}
         onFillet={() => edgeModifier?.kind === "fillet" ? cancelEdgeModifier() : startEdgeModifier("fillet")}
         onHollow={startShellTool}
@@ -12521,6 +12598,7 @@ function SecondaryToolbar({
   onLayFlat,
   layFlatActive,
   onGroup,
+  onBundle,
   onIntersect,
   onFillet,
   onHollow,
@@ -12605,6 +12683,7 @@ function SecondaryToolbar({
   onLayFlat: () => void;
   layFlatActive: boolean;
   onGroup: () => void;
+  onBundle: () => void;
   onIntersect: () => void;
   onFillet: () => void;
   onHollow: () => void;
@@ -12827,6 +12906,7 @@ function SecondaryToolbar({
   ];
   const combineTools = [
     { id: "group", label: t("editor.tool.group"), icon: ToolbarGroupIcon, action: onGroup, enabled: canGroup },
+    { id: "bundle", label: t("editor.tool.bundle"), icon: ToolbarBundleIcon, action: onBundle, enabled: canGroup },
     { id: "ungroup", label: t("editor.tool.ungroup"), icon: ToolbarUngroupIcon, action: onUngroup, enabled: canUngroup },
     { id: "intersect", label: t("editor.tool.intersect"), icon: ToolbarIntersectionIcon, action: onIntersect, enabled: canIntersect },
   ];
