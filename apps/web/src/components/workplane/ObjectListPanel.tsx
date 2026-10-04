@@ -1,12 +1,13 @@
 "use client";
 
 import { GuideHelpLink } from "@/components/GuideHelpLink";
-import { useMemo, useState, useRef, useEffect, type KeyboardEvent, type MouseEvent } from "react";
+import { useMemo, useState, useRef, useEffect, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
 import { ChevronDown, ChevronRight, ChevronUp, Eye, EyeOff, FolderOpen, Layers, ListTree, Lock, Pencil, Search, Unlock, X } from "lucide-react";
 import { useLanguage } from "@/lib/useLanguage";
 import { useMovablePanel, type MovablePanelOptions } from "@/lib/useMovablePanel";
 import { t, type MessageKey } from "@/lib/i18n";
 import { displayShapeName } from "@/lib/shapeCatalog";
+import { hasMatchingPart as partMatchesSearch, normalizeObjectListQuery, shapeMatchesSearch, showInObjectList } from "@/lib/objectListSearch";
 import type { WorkplaneShape } from "@/types/layerling";
 
 export interface ObjectListPanelProps {
@@ -44,7 +45,10 @@ export function ObjectListPanel({
   const openParts = useMemo(() => new Set(openGroupPartIds ?? []), [openGroupPartIds]);
   useLanguage();
   const [filterText, setFilterText] = useState("");
+  const query = normalizeObjectListQuery(filterText);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  // Groups opened or closed by hand during a search; each new search starts from the groups its matches open.
+  const [searchExpandedGroups, setSearchExpandedGroups] = useState<Record<string, boolean>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState("");
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -79,11 +83,11 @@ export function ObjectListPanel({
     }
   }, [editingId]);
 
-  const toggleGroupExpand = (groupId: string, e: MouseEvent) => {
+  const toggleGroupExpand = (groupId: string, isExpanded: boolean, e: MouseEvent) => {
     e.stopPropagation();
-    setExpandedGroups((prev) => ({
+    (query ? setSearchExpandedGroups : setExpandedGroups)((prev) => ({
       ...prev,
-      [groupId]: !prev[groupId],
+      [groupId]: !isExpanded,
     }));
   };
 
@@ -138,16 +142,43 @@ export function ObjectListPanel({
     }
   };
 
+  useEffect(() => setSearchExpandedGroups({}), [query]);
+
+  const searchLabels = (shape: WorkplaneShape) => [getShapeDisplayName(shape), getShapeKindSubtitle(shape)];
+  const shapeMatches = (shape: WorkplaneShape) => shapeMatchesSearch(shape, query, searchLabels);
+  const hasMatchingPart = (shape: WorkplaneShape) => partMatchesSearch(shape, query, searchLabels);
+
   const filteredShapes = useMemo(() => {
-    const query = filterText.trim().toLowerCase();
     if (!query) return shapes;
-    return shapes.filter((shape) => {
-      const name = getShapeDisplayName(shape).toLowerCase();
-      const kind = shape.kind.toLowerCase();
-      const kindLabel = getShapeKindSubtitle(shape).toLowerCase();
-      return name.includes(query) || kind.includes(query) || kindLabel.includes(query);
+    return shapes.filter((shape) => showInObjectList(shape, query, searchLabels));
+  }, [shapes, query]);
+
+  /** A group's parts; while searching, only the matches and the groups that lead to them, nested as deep as needed. */
+  const renderGroupParts = (parts: WorkplaneShape[], depth: number): ReactElement[] =>
+    parts.flatMap((child, index) => {
+      const leadsToMatch = hasMatchingPart(child);
+      if (!shapeMatches(child) && !leadsToMatch) return [];
+      const childDisplayName = getShapeDisplayName(child);
+      const row = (
+        <li
+          key={child.id || `${depth}-${index}`}
+          className="outliner-child-item"
+          style={depth ? { paddingLeft: depth * 14 } : undefined}
+        >
+          <span
+            className={`outliner-swatch small ${child.hole ? "swatch-hole" : ""}`}
+            style={{ backgroundColor: child.hole ? undefined : child.color }}
+          />
+          <span className="outliner-child-name" title={childDisplayName}>
+            {childDisplayName}
+          </span>
+          <span className={`outliner-badge small ${child.hole ? "badge-hole" : "badge-solid"}`}>
+            {child.hole ? t("outliner.hole") : t("outliner.solid")}
+          </span>
+        </li>
+      );
+      return leadsToMatch && child.groupedShapes ? [row, ...renderGroupParts(child.groupedShapes, depth + 1)] : [row];
     });
-  }, [shapes, filterText]);
 
   return (
     <div
@@ -220,7 +251,10 @@ export function ObjectListPanel({
               {filteredShapes.map((shape) => {
                 const isSelected = selectedSet.has(shape.id);
                 const isGroup = Boolean(shape.groupedShapes && shape.groupedShapes.length > 0);
-                const isExpanded = Boolean(expandedGroups[shape.id]);
+                // A search that finds parts inside a group opens it to show them.
+                const isExpanded = query
+                  ? (searchExpandedGroups[shape.id] ?? hasMatchingPart(shape))
+                  : Boolean(expandedGroups[shape.id]);
                 const displayName = getShapeDisplayName(shape);
                 const subtitle = getShapeKindSubtitle(shape);
 
@@ -241,7 +275,7 @@ export function ObjectListPanel({
                         <button
                           type="button"
                           className="outliner-expand-toggle"
-                          onClick={(e) => toggleGroupExpand(shape.id, e)}
+                          onClick={(e) => toggleGroupExpand(shape.id, isExpanded, e)}
                           aria-label={isExpanded ? t("outliner.collapse") : t("outliner.expand")}
                         >
                           {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -338,23 +372,7 @@ export function ObjectListPanel({
 
                     {isGroup && isExpanded && shape.groupedShapes ? (
                       <ul className="outliner-children-list">
-                        {shape.groupedShapes.map((child, index) => {
-                          const childDisplayName = getShapeDisplayName(child);
-                          return (
-                            <li key={child.id || index} className="outliner-child-item">
-                              <span
-                                className={`outliner-swatch small ${child.hole ? "swatch-hole" : ""}`}
-                                style={{ backgroundColor: child.hole ? undefined : child.color }}
-                              />
-                              <span className="outliner-child-name" title={childDisplayName}>
-                                {childDisplayName}
-                              </span>
-                              <span className={`outliner-badge small ${child.hole ? "badge-hole" : "badge-solid"}`}>
-                                {child.hole ? t("outliner.hole") : t("outliner.solid")}
-                              </span>
-                            </li>
-                          );
-                        })}
+                        {renderGroupParts(shape.groupedShapes, 0)}
                       </ul>
                     ) : null}
                   </li>

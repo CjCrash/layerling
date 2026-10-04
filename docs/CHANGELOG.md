@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **The object list searches inside groups:** The search field of the object list only looked at the shapes at the top, so a part inside a group could not be found by its name or kind. It now looks inside groups at any depth: a group holding a match stays in the list and folds open to show the matching parts and the groups that lead to them. The arrows still fold groups shut during a search, and clearing the search brings back the groups you had open before.
+
 ## 1.35.0
 
 - **One grid, no switch:** "Align grid to origin" is gone from Settings > Workplane. The grid always runs through the origin now, so its stronger lines meet the axes and "Snap to grid" agrees with moving; designs that had the switch off get the new grid. Suggested by @gogades in #92.
