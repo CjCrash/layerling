@@ -38,6 +38,12 @@ A few rules of thumb for direction:
 - Lay long, loaded parts so the layers do not run perpendicular to the load. Layers are the weakest direction.
 - Avoid overhangs steeper than 45°, or give them supports in the slicer.
 
+## Finding overhangs
+
+In the menu next to the eye ({{ui:editor.group.visibility}}), **Show overhangs** switches the overhangs on. Every face that points down more steeply than 45° is then hatched red and white - that is where the printer would need supports. What rests on the plate stays clear. So you see while designing whether a sphere, an arch or a horizontal hole prints without supports; the [teardrop hole](chapter:threads-and-mechanics) is made for exactly that. Turn the part or lay it on another face with {{ui:editor.tool.layFlat}}, and the hatching follows at once.
+
+How steep your printer manages is set in the settings under {{ui:workspace.appearance}}: from 30° (careful) to 70° (for printers with good part cooling). A face resting on another body is still marked - layerling only looks at the face itself.
+
 ## Wall thickness, clearance and chamfers
 
 - Walls should be at least two extrusion lines wide, so 0.8 mm with a 0.4 mm nozzle. Sturdy parts need 1.2 to 2 mm.

@@ -475,6 +475,19 @@ export const tools = [
     inputSchema: editorTargetSchema,
   },
   {
+    name: "layerling_show_overhangs",
+    description: "Find overhangs that would need supports, like \"Show overhangs\" in the editor's visibility menu: faces that lean towards the plate more steeply than angle (degrees from vertical; a wall is 0, a flat ceiling 90). enabled switches the red tint in the view on or off; angle (30-70, default 45) is kept in the design's settings. Faces lying on the plate do not count. Returns enabled, angle and, for each visible solid (or the given ids), overhangAreaMm2 and lowestOverhangHeight - 0 means it prints without supports at that angle. A face resting on another body still counts. Use layerling_capture_image afterwards to see where the red is.",
+    inputSchema: {
+      ...editorTargetSchema,
+      properties: {
+        ...editorTargetSchema.properties,
+        enabled: { type: "boolean", description: "Switch the red tint on or off. Left out it stays as it is." },
+        angle: { type: "number", description: "Steepest overhang the printer manages without supports, degrees from vertical, 30-70." },
+        ids: { type: "array", items: { type: "string" }, description: "Only report these objects." },
+      },
+    },
+  },
+  {
     name: "layerling_estimate_print",
     description: "Estimate the material a print needs, like the Material box in the editor's export window: volume, weight and length of 1.75 mm filament, worked out as if printed solid (with walls and infill the slicer shows less, so this is the upper bound). Counts what an STL export would hold: visible solid bodies only, groups with their holes taken off, overlapping bodies counted once. Without ids it takes the selection, or the whole design when nothing is selected. Returns volumeMm3, volumeCm3, grams, filamentMeters, the material and its density, solids (bodies counted) and unionFailed (overlaps that could not be joined and so count twice).",
     inputSchema: {

@@ -12044,3 +12044,7 @@ html[data-theme="dark"] .guide-videos a {
 html[data-theme="dark"] .inspector-help-link {
   color: #ece2d1;
 }
+
+.overhang-menu-icon.active {
+  color: #e8322a;
+}

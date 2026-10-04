@@ -6,6 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
+- **See overhangs before you slice:** "Show overhangs" in the visibility menu hatches every face red and white that points down more steeply than 45° and would need supports; faces lying on the plate stay clear. The angle can be set from 30° to 70° in the settings under Appearance, for printers with better or worse cooling. `layerling_show_overhangs` switches it through MCP and reports the overhanging area of each body.
 - **How much filament?** The export window now shows volume, weight and length of 1.75 mm filament for what you export, with a choice of PLA, PETG, ABS, ASA, TPU or PA. It counts like the file - visible bodies, holes in groups taken off, overlaps once - and is worked out as solid, so the slicer shows less with infill. `layerling_estimate_print` gives the same numbers through MCP.
 - **Section view axes named like everywhere else:** The section view called the height Y and the depth Z, while the position fields and the pattern tool call the height Z. Its buttons now read X (width), Y (depth) and Z (height) too, and a Y cut in the SVG export is seen from the front, a Z cut from above. Through MCP the axes stay as they were. Reported by @plazmabokor (#85).
 - **More videos:** The video list on the start page, in the quick guide and in the guide now links the layerling playlist by Making Layers, so far an introduction for people coming from Tinkercad and a video on the sketch tools.

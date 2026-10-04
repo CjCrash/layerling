@@ -171,6 +171,8 @@ export type WorkplaneWorkspaceSettings = {
   gridColor: string;
   background: string;
   showShadows: boolean;
+  /** Overhangs steeper than this (degrees from vertical) show red when overhangs are shown. */
+  overhangAngle: number;
   showGrid: boolean;
   clickToPlaceShapes: boolean;
   selectBeforeMove: boolean;

@@ -1192,13 +1192,15 @@ export function withinExactProfileLimit<M extends { faces: { length: number } },
 }
 
 /**
- * Volume enclosed by a closed triangle mesh whatever way its triangles are
- * wound. The triangles are first turned to agree with their neighbours
- * (across shared edges, vertices welded by position), then each connected
- * piece counts with its own sign. Display meshes are not always consistent -
+ * Which way each triangle of a closed mesh has to run to face outwards. The
+ * triangles are first turned to agree with their neighbours (across shared
+ * edges, vertices welded by position), then each connected piece is turned so
+ * it encloses a positive volume. Display meshes are not always consistent -
  * the crescent's caps, for one, are wound the other way round from its walls.
+ * `flip[i]` is -1 where triangle i runs inwards as stored, and `pieceVolume`
+ * holds the volume of each connected piece.
  */
-export function closedMeshVolume(vertices: ReadonlyArray<readonly [number, number, number]>, faces: ReadonlyArray<readonly [number, number, number]>) {
+export function closedMeshFaceOrientation(vertices: ReadonlyArray<readonly [number, number, number]>, faces: ReadonlyArray<readonly [number, number, number]>) {
   let extent = 0;
   vertices.forEach(([x, y, z]) => {
     extent = Math.max(extent, Math.abs(x), Math.abs(y), Math.abs(z));
@@ -1242,10 +1244,13 @@ export function closedMeshVolume(vertices: ReadonlyArray<readonly [number, numbe
     return (ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx)) / 6;
   };
   const orientation = new Array<number>(faces.length).fill(0);
-  let total = 0;
+  const pieceOf = new Array<number>(faces.length).fill(-1);
+  const pieceVolume: number[] = [];
   for (let seed = 0; seed < faces.length; seed += 1) {
     if (orientation[seed] !== 0) continue;
+    const pieceIndex = pieceVolume.length;
     orientation[seed] = 1;
+    pieceOf[seed] = pieceIndex;
     const queue = [seed];
     let piece = 0;
     while (queue.length) {
@@ -1262,13 +1267,20 @@ export function closedMeshVolume(vertices: ReadonlyArray<readonly [number, numbe
           const direction = runs(neighbour, a, b);
           if (direction === 0) return;
           orientation[neighbour] = -direction * orientation[current];
+          pieceOf[neighbour] = pieceIndex;
           queue.push(neighbour);
         });
       }
     }
-    total += Math.abs(piece);
+    pieceVolume.push(piece);
   }
-  return total;
+  const flip = orientation.map((value, index) => (pieceVolume[pieceOf[index]] < 0 ? -value : value));
+  return { flip, pieceVolume: pieceVolume.map(Math.abs) };
+}
+
+/** Volume enclosed by a closed triangle mesh whatever way its triangles are wound. */
+export function closedMeshVolume(vertices: ReadonlyArray<readonly [number, number, number]>, faces: ReadonlyArray<readonly [number, number, number]>) {
+  return closedMeshFaceOrientation(vertices, faces).pieceVolume.reduce((sum, volume) => sum + volume, 0);
 }
 
 /** World bounds and volume of a closed display mesh, for the worker's plausibility check. */

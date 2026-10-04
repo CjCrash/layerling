@@ -73,6 +73,7 @@ Useful tools:
 - `layerling_separate_parts`: split disconnected parts in one object.
 - `layerling_hollow_object`: hollow a solid into walls of equal thickness, open on top, bottom, both, or closed.
 - `layerling_array_objects`: repeat objects n times in a row or around a circle (hole rows, bolt circles, teeth) as one undo step.
+- `layerling_show_overhangs`: overhangs that would need supports, like "Show overhangs" in the visibility menu. `enabled` switches the red-and-white hatching in the view, `angle` (30-70, default 45, degrees from vertical) is kept in the design's settings. Returns `overhangAreaMm2` and `lowestOverhangHeight` for each visible solid (or `ids`); 0 means it prints without supports at that angle. Faces on the plate do not count, a face resting on another body does. Call it again after `layerling_lay_flat` or a rotation to compare print orientations.
 - `layerling_estimate_print`: volume, weight and 1.75 mm filament length for `ids`, the selection or the whole design, worked out as solid like the export window's Material box (`material`: pla, petg, abs, asa, tpu or pa). It counts what an STL would hold: visible solids, holes in groups taken off, overlaps once. The slicer shows less with infill.
 - `layerling_inspect_errors`: read the editor notice, edge modifier error and last MCP error, plus `recentNotices` and `recentErrors` of the session - what the editor's bug report carries.
 

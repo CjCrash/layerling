@@ -38,6 +38,12 @@ Ein paar Faustregeln für die Richtung:
 - Lange Teile, die belastet werden, so legen, dass die Schichten nicht senkrecht zur Belastung verlaufen. Schichten sind die schwächste Richtung.
 - Überhänge über 45° vermeiden oder mit Stützen im Slicer versehen.
 
+## Überhänge finden
+
+Im Menü neben dem Auge ({{ui:editor.group.visibility}}) schaltet **Überhänge zeigen** die Überhänge ein. Jede Fläche, die steiler als 45° nach unten zeigt, erscheint dann rot-weiß schraffiert – dort bräuchte der Drucker Stützen. Was auf der Platte aufliegt, bleibt frei. So siehst du schon beim Konstruieren, ob eine Kugel, ein Bogen oder eine waagerechte Bohrung ohne Stützen geht; die [Tropfenbohrung](chapter:gewinde-und-mechanik) ist genau dafür da. Drehst du das Teil oder legst es mit {{ui:editor.tool.layFlat}} anders hin, wandert die Schraffur sofort mit.
+
+Wie steil dein Drucker schafft, stellst du in den Einstellungen unter {{ui:workspace.appearance}} ein: von 30° (vorsichtig) bis 70° (für Drucker mit guter Bauteilkühlung). Eine Fläche, die auf einem anderen Körper aufliegt, wird trotzdem markiert – layerling sieht nur die Fläche selbst.
+
 ## Wandstärke, Spiel und Fasen
 
 - Wände sollten mindestens zwei Druckbahnen breit sein, bei einer 0,4-mm-Düse also 0,8 mm. Robuste Teile brauchen 1,2 bis 2 mm.

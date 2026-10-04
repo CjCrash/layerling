@@ -1,6 +1,7 @@
 "use client";
 
 import { GuideHelpLink } from "@/components/GuideHelpLink";
+import { MAX_OVERHANG_ANGLE, MIN_OVERHANG_ANGLE } from "@/lib/overhangLimits";
 import { Box as BoxIcon, ChevronDown, Grid3X3, History, Palette, RotateCcw, Ruler, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -613,6 +614,21 @@ export function WorkspaceSettingsModal({
                     onChange={(objectSnap) => patchWorkspace({ objectSnap })}
                   />
                   <WorkspaceToggle label={t("workspace.showShadows")} checked={workspace.showShadows} onChange={(showShadows) => patchWorkspace({ showShadows })} />
+                  <label className="workspace-range">
+                    <span>{t("workspace.overhangAngle", { angle: workspace.overhangAngle })}</span>
+                    <input
+                      type="range"
+                      min={MIN_OVERHANG_ANGLE}
+                      max={MAX_OVERHANG_ANGLE}
+                      step={5}
+                      value={workspace.overhangAngle}
+                      onChange={(event) => patchWorkspace({ overhangAngle: Number(event.currentTarget.value) })}
+                    />
+                    <small>
+                      <span>{t("workspace.overhangStrict")}</span>
+                      <span>{t("workspace.overhangLoose")}</span>
+                    </small>
+                  </label>
                   <WorkspaceToggle
                     label={t("workspace.cruise")}
                     checked={workspace.clickToPlaceShapes}

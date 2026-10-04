@@ -111,6 +111,7 @@ import type { AlignAxis, AlignHandleStatus, AlignTarget, GridSize, MeasurementAc
 import { NOTE_TEXT_LIMIT } from "@/lib/workplaneNotes";
 import { planarFaceCentroid, type PivotPoint } from "@/lib/rotationPivot";
 import { outwardFaceNormal } from "@/lib/layFlat";
+import { OVERHANG_PLATE_TOLERANCE, overhangDownwardLimit } from "@/lib/overhangLimits";
 import { directionIsOwnShapeAxis, rotatedGeometryShapePatch } from "@/lib/geometryRotation";
 import type { CadModifierEdge } from "@/lib/cadModifierTypes";
 
@@ -192,6 +193,16 @@ const MAX_SHARED_SHAPE_MATERIALS = 128;
 const sharedShapeGeometryCache = new Map<string, { geometry: THREE.BufferGeometry; users: number }>();
 const sharedEdgesGeometryCache = new WeakMap<THREE.BufferGeometry, Map<number, THREE.EdgesGeometry>>();
 const sharedShapeMaterialCache = new Map<string, { material: THREE.MeshStandardMaterial; users: number }>();
+/**
+ * Shared by every solid's material: switching overhangs on or changing the
+ * angle only changes these values, no material is rebuilt.
+ */
+const overhangUniforms = {
+  uOverhangOn: { value: 0 },
+  uOverhangLimit: { value: overhangDownwardLimit(45) },
+  uOverhangPlateY: { value: OVERHANG_PLATE_TOLERANCE },
+  uOverhangColor: { value: new THREE.Color("#e8322a") },
+};
 const sharedLineMaterialCache = new Map<string, THREE.LineBasicMaterial>();
 const shapeResourceIds = new WeakMap<object, number>();
 let nextShapeResourceId = 1;
@@ -269,6 +280,8 @@ type WorkplaneViewportProps = {
   onDuplicateShapeAt?: (id: string, position: { x: number; z: number }) => void;
   notes?: WorkplaneNote[];
   notesVisible?: boolean;
+  /** Tint faces red that overhang more steeply than workspace.overhangAngle. */
+  showOverhangs?: boolean;
   noteMode?: boolean;
   /** A point the selection turns around instead of its own centre. */
   rotationPivot?: PivotPoint | null;
@@ -3769,6 +3782,7 @@ export function WorkplaneViewport({
   onDuplicateShapeAt,
   notes = EMPTY_NOTES,
   notesVisible = true,
+  showOverhangs = false,
   noteMode = false,
   rotationPivot = null,
   pivotPickMode = false,
@@ -4439,6 +4453,12 @@ export function WorkplaneViewport({
       threeRef.current.needsRender = true;
     }
   }, [tapeModel]);
+
+  useEffect(() => {
+    overhangUniforms.uOverhangOn.value = showOverhangs ? 1 : 0;
+    overhangUniforms.uOverhangLimit.value = overhangDownwardLimit(workspace.overhangAngle);
+    if (threeRef.current) threeRef.current.needsRender = true;
+  }, [showOverhangs, workspace.overhangAngle]);
 
   useEffect(() => {
     notesRef.current = notes;
@@ -10758,10 +10778,38 @@ function sharedShapeMaterial(shape: WorkplaneShape) {
     depthWrite: !seeThrough,
     side: THREE.DoubleSide,
   });
+  if (!shape.hole) addOverhangTint(material);
   material.userData.cached = true;
   material.userData.sharedShapeMaterialKey = key;
   sharedShapeMaterialCache.set(key, { material, users: 0 });
   return material;
+}
+
+/**
+ * Overhangs hatched red and white, so they show on a red body too - worked out per pixel from the face's own normal in world
+ * space - steeper than the limit towards the ground and not lying on the
+ * plate. Same rule as overhangArea() for MCP.
+ */
+function addOverhangTint(material: THREE.MeshStandardMaterial) {
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, overhangUniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying vec3 vOverhangNormal;\nvarying float vOverhangY;")
+      .replace(
+        "#include <project_vertex>",
+        "#include <project_vertex>\nvOverhangNormal = normalize( transpose( inverse( mat3( modelMatrix ) ) ) * objectNormal );\nvOverhangY = ( modelMatrix * vec4( transformed, 1.0 ) ).y;",
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        "#include <common>\nvarying vec3 vOverhangNormal;\nvarying float vOverhangY;\nuniform float uOverhangOn;\nuniform float uOverhangLimit;\nuniform float uOverhangPlateY;\nuniform vec3 uOverhangColor;",
+      )
+      .replace(
+        "#include <color_fragment>",
+        "#include <color_fragment>\nif ( uOverhangOn > 0.5 && vOverhangY > uOverhangPlateY && -normalize( vOverhangNormal ).y > uOverhangLimit ) diffuseColor.rgb = mod( gl_FragCoord.x + gl_FragCoord.y, 14.0 ) < 7.0 ? uOverhangColor : vec3( 1.0, 0.86, 0.82 );",
+      );
+  };
+  material.customProgramCacheKey = () => "layerling-overhang";
 }
 
 function trimSharedShapeMaterialCache() {

@@ -57,6 +57,7 @@ The AI works with the same functions as you, through the same path as your opera
 | `layerling_apply_edge_treatment` | chamfers or fillets chosen edges |
 | `layerling_hollow_object` | hollows a body with an even wall |
 | `layerling_array_objects` | multiplies in a row or on a circle |
+| `layerling_show_overhangs` | switches the overhang hatching on or off, sets the angle and reports for each body the area that would need supports |
 | `layerling_estimate_print` | estimates volume, weight and filament for the selection or the whole design, worked out as solid like the export window |
 | `layerling_inspect_errors` | shows the last message and the last error, plus the messages and errors of the session |
 | `layerling_set_section_view` | cuts the view open along a plane to look inside (only the view, nothing is cut apart) |

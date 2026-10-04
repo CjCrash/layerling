@@ -117,6 +117,7 @@ import { workplaneCenteringOffset } from "@/lib/workplaneCentering";
 import { bakeCadMetadataForShapeTransform, cadBrepTransformForShape, cadModifierPrimitiveForAnalyticBox, cadModifierPrimitiveForAnalyticShape, cadModifierPrimitiveForBakedShape, importedStepPartForShape } from "@/lib/cadBakeMetadata";
 import { hasOneToOneCadComponentMapping } from "@/lib/cadModifierGroups";
 import { cadModifierHelicalGearForShape, cadModifierProfileForShape, cadModifierSpringForShape, cadModifierThreadForShape, cadProfileExpectation, cadProfileSegmentCount, closedMeshVolume, textGlyphProfiles, withinExactProfileLimit } from "@/lib/cadProfileExtrusion";
+import { DEFAULT_OVERHANG_ANGLE, normalizeOverhangAngle, overhangArea } from "@/lib/overhang";
 import { DEFAULT_PRINT_MATERIAL, PRINT_MATERIAL_DENSITY, PRINT_MATERIALS, FILAMENT_DIAMETER_MM, normalizePrintMaterial, printEstimate, type PrintMaterial } from "@/lib/printEstimate";
 import {
   CAD_MODIFIER_MAX_SHARP_ANGLE,
@@ -6327,6 +6328,9 @@ export function LayerlingEditor({
   // Stand, auf den der Verlauf zeigt, ist der Stand, den der Editor zeigt.
   const [notes, setNotes] = useState<WorkplaneNote[]>(() => notesForHistoryIndex(initialHistory, initialHistoryIndex));
   const [notesVisible, setNotesVisible] = useState(true);
+  const [overhangsVisible, setOverhangsVisible] = useState(false);
+  const overhangsVisibleRef = useRef(overhangsVisible);
+  overhangsVisibleRef.current = overhangsVisible;
   const [noteMode, setNoteMode] = useState(false);
   const [projectAssets, setProjectAssets] = useState<ProjectAsset[]>(() => dedupeProjectAssets(initialAssets));
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -7571,6 +7575,14 @@ export function LayerlingEditor({
       return next;
     });
   }, [setNotice]);
+
+  const toggleOverhangsVisible = useCallback(() => {
+    setOverhangsVisible((current) => {
+      const next = !current;
+      setNotice(next ? t("status.overhangsShown", { angle: workspaceSettingsRef.current.overhangAngle }) : t("status.overhangsHidden"));
+      return next;
+    });
+  }, []);
 
   const toggleNotesVisible = useCallback(() => {
     setNotesVisible((current) => {
@@ -10498,6 +10510,38 @@ export function LayerlingEditor({
         return applyCadModifierForMcp(target, params);
       }
 
+      if (command.action === "show_overhangs") {
+        // Wie "Ueberhaenge zeigen" im Sichtbarkeitsmenue, dazu die Flaechen je Koerper.
+        if (params.angle !== undefined) {
+          const angle = normalizeOverhangAngle(mcpNumber(params.angle, DEFAULT_OVERHANG_ANGLE));
+          updateProjectWorkspaceSettings({ workspace: { ...workspaceSettingsRef.current, overhangAngle: angle }, snap: snapGridRef.current });
+        }
+        if (typeof params.enabled === "boolean" && params.enabled !== overhangsVisibleRef.current) {
+          setOverhangsVisible(params.enabled);
+          overhangsVisibleRef.current = params.enabled;
+        }
+        const angle = workspaceSettingsRef.current.overhangAngle;
+        const requestedIds = mcpStringArray(params.ids ?? params.id);
+        const solids = currentShapes().filter((shape) => !shape.hidden && !shape.hole && !isNonSolidShapeKind(shape.kind)
+          && (requestedIds.length === 0 || requestedIds.includes(shape.id)));
+        const objects = solids.map((shape) => {
+          const mesh = meshForShape(shape);
+          const found = overhangArea(mesh.vertices, mesh.faces, angle);
+          return {
+            id: shape.id,
+            name: shape.name,
+            overhangAreaMm2: Number(found.areaMm2.toFixed(2)),
+            lowestOverhangHeight: found.lowestY === null ? null : Number(found.lowestY.toFixed(3)),
+          };
+        });
+        return {
+          enabled: overhangsVisibleRef.current,
+          angle,
+          objects,
+          note: "Faces lying on the plate do not count. A face resting on another body still counts; holes inside groups are already taken off.",
+        };
+      }
+
       if (command.action === "estimate_print") {
         // Dieselbe Rechnung wie das Feld "Material" im Exportfenster.
         const requestedIds = mcpStringArray(params.ids ?? params.id);
@@ -10669,6 +10713,7 @@ export function LayerlingEditor({
     placementElevation,
     prepareCadModifierForMcp,
     setActivePlacementWorkplane,
+    updateProjectWorkspaceSettings,
   ]);
 
   useEffect(() => {
@@ -11974,6 +12019,9 @@ export function LayerlingEditor({
         noteCount={notes.length}
         onNoteTool={toggleNoteTool}
         onToggleNotes={toggleNotesVisible}
+        overhangsVisible={overhangsVisible}
+        overhangAngle={workspaceSettings.overhangAngle}
+        onToggleOverhangs={toggleOverhangsVisible}
         onTopPanel={(panel) => {
           setTopPanel((current) => (current === panel ? null : panel));
           setMenuOpen(false);
@@ -12105,6 +12153,7 @@ export function LayerlingEditor({
           onDuplicateShapeAt={duplicateShapeAt}
           notes={notes}
           notesVisible={notesVisible}
+          showOverhangs={overhangsVisible}
           noteMode={noteMode}
           rotationPivot={activeRotationPivot}
           pivotPickMode={pivotPickMode}
@@ -12442,6 +12491,9 @@ function SecondaryToolbar({
   noteCount,
   onNoteTool,
   onToggleNotes,
+  overhangsVisible,
+  overhangAngle,
+  onToggleOverhangs,
 }: {
   toolbarMode: ToolbarMode;
   projectName: string;
@@ -12523,6 +12575,9 @@ function SecondaryToolbar({
   noteCount: number;
   onNoteTool: () => void;
   onToggleNotes: () => void;
+  overhangsVisible: boolean;
+  overhangAngle: number;
+  onToggleOverhangs: () => void;
 }) {
   const [shapesOpen, setShapesOpen] = useState(false);
   const [sketchCreateOpen, setSketchCreateOpen] = useState(false);
@@ -12941,6 +12996,19 @@ function SecondaryToolbar({
               >
                 {notesVisible ? <Eye size={20} aria-hidden="true" /> : <EyeOff size={20} aria-hidden="true" />}
                 <strong>{t("visibility.notes")}{noteCount > 0 ? ` (${noteCount})` : ""}</strong>
+              </button>
+              <button
+                className="visibility-dropdown-action"
+                type="button"
+                role="menuitemcheckbox"
+                aria-checked={overhangsVisible}
+                onClick={() => {
+                  setVisibilityOpen(false);
+                  onToggleOverhangs();
+                }}
+              >
+                <AlertTriangle size={20} aria-hidden="true" className={overhangsVisible ? "overhang-menu-icon active" : "overhang-menu-icon"} />
+                <strong>{t("visibility.overhangs", { angle: overhangAngle })}</strong>
               </button>
               <div className="visibility-dropdown-help">
                 <span>{t("visibility.eyeAgain")}</span>

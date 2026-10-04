@@ -1,3 +1,4 @@
+import { DEFAULT_OVERHANG_ANGLE, normalizeOverhangAngle } from "@/lib/overhangLimits";
 import type { GridSize, HistoryRetentionLimit, MeasurementAccuracy, ShapeCustomization, ShapeCustomizationMap, ShapeKind, WorkplaneWorkspaceSettings } from "@/types/layerling";
 import { normalizeScaleForUnits } from "@/lib/measurementUnits";
 import { DEFAULT_IMPERIAL_GRID_BLOCK_PRESET, DEFAULT_METRIC_GRID_BLOCK_PRESET, DEFAULT_WORKPLANE_GRID_COLOR, inchGridPresetMm } from "@/lib/workplaneGrid";
@@ -24,6 +25,7 @@ export const DEFAULT_WORKPLANE_WORKSPACE: WorkplaneWorkspaceSettings = {
   gridColor: DEFAULT_WORKPLANE_GRID_COLOR,
   background: "#fbf8f0",
   showShadows: true,
+  overhangAngle: DEFAULT_OVERHANG_ANGLE,
   showGrid: true,
   clickToPlaceShapes: true,
   selectBeforeMove: false,
@@ -375,6 +377,7 @@ export function normalizeWorkspaceSettings(value: unknown, fallback: WorkplaneWo
     gridColor: migratedLegacyColor(colorOrDefault(candidate.gridColor, fallback.gridColor), LEGACY_GRID_COLOR, fallback.gridColor),
     background: migratedLegacyColor(stringOrDefault(candidate.background, fallback.background), LEGACY_BACKGROUND, fallback.background),
     showShadows: booleanOrDefault(candidate.showShadows, fallback.showShadows),
+    overhangAngle: normalizeOverhangAngle(candidate.overhangAngle, fallback.overhangAngle),
     showGrid: booleanOrDefault(candidate.showGrid, fallback.showGrid),
     // Earlier names are ignored on purpose: "cruiseShapes" (until 1.18.6) was on
     // but did nothing, and "placeShapesByClick" (1.18.7) was off by default -

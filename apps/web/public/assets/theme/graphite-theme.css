@@ -5761,6 +5761,10 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .inspector-help-link {
   color: #dfdfdf;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .overhang-menu-icon.active {
+  color: #e8322a;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section-tools,
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section .action-buttons {
   background: var(--toolbar-tile);
