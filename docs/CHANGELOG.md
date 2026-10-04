@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **One grid, no switch:** "Align grid to origin" is gone from Settings > Workplane. The grid always runs through the origin now, so its stronger lines meet the axes and "Snap to grid" agrees with moving; designs that had the switch off get the new grid. Suggested by @gogades in #92.
+
 ## 1.34.0
 
 - **Separated parts are named in your language:** "Separate Parts" named the pieces "Part 1", "Part 2" and so on in English even in the German interface. They are now named "Teil 1", "Teil 2" there.

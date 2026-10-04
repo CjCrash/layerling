@@ -783,12 +783,6 @@ export function WorkspaceSettingsModal({
                     checked={workspace.showGrid}
                     onChange={(showGrid) => patchWorkspace({ showGrid })}
                   />
-                  <WorkspaceToggle
-                    label={t("workspace.gridFromOrigin")}
-                    checked={workspace.gridFromOrigin || workspace.units === "Imperial"}
-                    disabled={!workspace.showGrid || workspace.units === "Imperial"}
-                    onChange={(gridFromOrigin) => patchWorkspace({ gridFromOrigin })}
-                  />
                   <WorkspaceSelect label={t("workspace.gridBlockSize")} value={workspace.gridBlockPreset} options={workspace.units === "Imperial" ? [...IMPERIAL_GRID_BLOCK_PRESETS, "Custom"] : GRID_BLOCK_PRESETS}
                     optionLabel={gridBlockPresetLabel} onChange={setGridBlockPreset} />
                   <GridColorControl color={gridColor} onChange={(nextGridColor) => patchWorkspace({ gridColor: nextGridColor })} />
