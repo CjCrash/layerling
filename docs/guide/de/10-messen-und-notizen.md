@@ -28,10 +28,13 @@ Manchmal misst du besser an einem rechten Winkel. Klicke in der Kameraleiste auf
 - **Am Griff ziehen** verschiebt es.
 - **Ein kurzer Klick auf den Griff** dreht es um 90°.
 - **Das ×** daneben entfernt es.
+- **Der kleine Knopf links am Griff** schaltet um, wovon aus gemessen wird: von der Außenkante eines Körpers (Eckpunkt, Symbol mit Linien) oder von seiner Mitte (Mittelpunkt, Fadenkreuz).
 
 Stehen Körper an einem der Arme, zeigt das Winkellineal automatisch deren Maße an.
 
 Markierst du einen Körper, zeigt das Winkellineal in Grün, wie weit er von der Ecke entfernt ist, entlang beider Arme und in der Höhe. Ein Klick auf eine grüne Zahl öffnet ein Eingabefeld: Tippe den gewünschten Abstand ein, und der Körper rückt genau dorthin. Sind mehrere Körper markiert, zählen sie zusammen wie einer. Gemessen wird ihr gemeinsamer Umriss, und ein eingetippter Wert verschiebt alle gemeinsam, ohne dass sich ihre Lage zueinander ändert.
+
+Mit dem Mittelpunkt zählen die grünen Zahlen bis zur Mitte des Körpers, auch in der Höhe. So setzt du etwa eine Kugel mit ihrer Mitte genau 15 mm neben eine Kante, ohne den Radius abzuziehen.
 
 ## Abstände zum Nullpunkt und beim Verschieben
 
