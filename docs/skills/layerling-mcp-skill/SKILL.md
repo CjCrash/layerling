@@ -111,6 +111,8 @@ To look inside a part - wall thickness after hollowing, a thread in its nut, a c
 
 To look at the underside - overhangs, a base, a cavity open at the bottom - hide the plate first with `layerling_show_workplane({ editorNumber, visible: false })`, then capture the bottom view; only the view changes and shapes still land on the workplane. Show it again with `visible: true` when done.
 
+To keep bodies for later designs, `layerling_save_my_shape({ editorNumber, ids, name })` stores them in the browser's "My shapes" library (centred, standing on the plate); `layerling_list_my_shapes` lists them, `layerling_insert_my_shape({ editorNumber, id or name, x, z })` puts one into the open design with the middle of its footprint at x/z and returns the new objects, and `layerling_delete_my_shape` removes one from the library. They live in the browser, not in the design file.
+
 To put a logo, an SVG or lettering onto a cup or tube, create it flat on the plate as seen from above, then `layerling_wrap_around_cylinder({ editorNumber, id, diameter })` with the cylinder's outside diameter, and centre it on the cylinder with `layerling_align_objects` on x and z (anchorId = the cylinder): the wrapped body's middle is the axis. For an engraving pass `inward: true`, make it a hole and group it with the cylinder. It refuses a body longer than the circumference and names the smallest diameter that fits.
 
 ## Workplane

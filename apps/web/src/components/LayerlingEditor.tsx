@@ -12,7 +12,7 @@ import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { textFont } from "@/lib/textFonts";
 import type { AppThemePreference, ResolvedAppTheme } from "@/lib/appTheme";
-import type { ComponentType, SVGProps } from "react";
+import type { ComponentType, ReactNode, SVGProps } from "react";
 import { getLanguage, t, type MessageKey } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
 import { sphereTessellation } from "@/lib/sphereTessellation";
@@ -155,6 +155,10 @@ import { PROJECT_THUMBNAIL_IDLE_MS, projectThumbnailSceneChanged, type ProjectTh
 import { importedShapeFromObj } from "@/lib/objImport";
 import { importFailureSummary, importModelFiles } from "@/lib/modelImport";
 import { dedupeProjectAssets } from "@/lib/projectAssets";
+import { deleteMyShape, listMyShapes, myShapeNameFromFile, myShapesBackupFileName, onMyShapesChanged, readMyShapePackage, renameMyShape, saveMyShape, shapesForLibrary, shapesFromLibrary, type MyShapeMeta } from "@/lib/myShapes";
+import { renderMyShapeThumbnail } from "@/lib/myShapeThumbnail";
+import { backupEntryNames, packBackup, unpackBackup } from "@/lib/projectBackup";
+import { MyShapesSection } from "@/components/workplane/MyShapesSection";
 import { findSketchOutlineIntersection } from "@/lib/sketchProfileValidation";
 import { addLineIntersectionPoints, splitSketchSegment } from "@/lib/sketchPointRefinement";
 import { copySketchSelection, freeSketchPasteOffset, pasteSketchClipboard, type SketchClipboard } from "@/lib/sketchClipboard";
@@ -10196,6 +10200,151 @@ export function LayerlingEditor({
   // Der Dateiimport steht weiter unten; die MCP-Aktion nimmt denselben Weg.
   const importFilesRef = useRef<((files: File[]) => Promise<{ importedIds: string[]; failures: Array<{ fileName: string; reason: string }> }>) | null>(null);
 
+  // "My shapes" (#109): kept in IndexedDB, shown on top of the shape library.
+  const [myShapes, setMyShapes] = useState<MyShapeMeta[]>([]);
+  const myShapesRef = useRef<MyShapeMeta[]>([]);
+  const myShapesFileInputRef = useRef<HTMLInputElement | null>(null);
+  const refreshMyShapes = useCallback(async () => {
+    try {
+      const list = await listMyShapes();
+      myShapesRef.current = list;
+      setMyShapes(list);
+      return list;
+    } catch {
+      return myShapesRef.current;
+    }
+  }, []);
+  useEffect(() => {
+    void refreshMyShapes();
+    return onMyShapesChanged(() => void refreshMyShapes());
+  }, [refreshMyShapes]);
+
+  /** Packs bodies as one of "my shapes": centred on the origin, standing on the plate, with a preview. */
+  const keepAsMyShape = useCallback(async (parts: WorkplaneShape[], name: string, assets: ProjectAsset[]) => {
+    const kept = shapesForLibrary(parts, boundsForShapes(parts));
+    const now = Date.now();
+    const bytes = await exportLylProject({
+      projectName: name,
+      createdAt: now,
+      modifiedAt: now,
+      shapes: kept,
+      notes: [],
+      history: [],
+      historyIndex: 0,
+      assets,
+      workspace: workspaceSettingsRef.current,
+      snapGrid: snapGridRef.current,
+      placementElevation: 0,
+    });
+    const thumbnail = renderMyShapeThumbnail(kept.map((shape) => {
+      const mesh = meshForShape(shape);
+      return { vertices: mesh.vertices, faces: mesh.faces, color: shape.color, hole: shape.hole };
+    }));
+    const meta: MyShapeMeta = {
+      id: createLocalId("my-shape"),
+      name,
+      createdAt: now,
+      thumbnail,
+      bodyCount: kept.length,
+      byteLength: bytes.byteLength,
+      fingerprint: projectShapesFingerprint(kept),
+    };
+    await saveMyShape(meta, bytes);
+    return meta;
+  }, []);
+
+  const saveSelectionAsMyShape = useCallback(async (name: string, ids?: string[]) => {
+    const wanted = new Set(ids ?? selectedIdsRef.current);
+    const parts = shapesRef.current.filter((shape) => wanted.has(shape.id));
+    if (parts.length === 0) throw new Error(t("myShapes.selectFirst"));
+    const meta = await keepAsMyShape(parts, name, projectAssetsRef.current);
+    await refreshMyShapes();
+    setNotice(t("status.myShapeSaved", { name }));
+    return meta;
+  }, [keepAsMyShape, refreshMyShapes]);
+
+  const insertMyShape = useCallback(async (id: string, point?: PlacementPoint) => {
+    const sourceProjectId = projectInfoRef.current.projectId;
+    const meta = myShapesRef.current.find((shape) => shape.id === id);
+    const restored = await importLylProject(await readMyShapePackage(id));
+    if (projectInfoRef.current.projectId !== sourceProjectId) throw new Error(t("status.pasteCancelled"));
+    if (restored.shapes.length === 0) throw new Error(t("status.insertDesignEmpty", { name: meta?.name ?? id }));
+    const target = point ?? placementWorkplaneRef.current.origin;
+    const inserted = shapesFromLibrary(restored.shapes, target)
+      .map((shape) => canonicalizeShape(cloneWorkplaneShapeTreeWithFreshIds(shape, "insert")));
+    if (restored.assets.length > 0) {
+      const nextAssets = dedupeProjectAssets([...projectAssetsRef.current, ...restored.assets]);
+      projectAssetsRef.current = nextAssets;
+      setProjectAssets(nextAssets);
+    }
+    commitShapes([...shapesRef.current, ...inserted], inserted.map((shape) => shape.id), t("status.myShapeInserted", { name: meta?.name ?? restored.projectName }));
+    return inserted;
+  }, [commitShapes]);
+
+  const renameMyShapeEntry = useCallback(async (id: string, name: string) => {
+    await renameMyShape(id, name);
+    await refreshMyShapes();
+  }, [refreshMyShapes]);
+
+  const deleteMyShapeEntry = useCallback(async (id: string) => {
+    const meta = myShapesRef.current.find((shape) => shape.id === id);
+    await deleteMyShape(id);
+    await refreshMyShapes();
+    setNotice(t("status.myShapeDeleted", { name: meta?.name ?? id }));
+  }, [refreshMyShapes]);
+
+  const backUpMyShapes = useCallback(async () => {
+    const list = myShapesRef.current;
+    if (list.length === 0) {
+      setNotice(t("status.myShapesNoneToBackUp"));
+      return;
+    }
+    const names = backupEntryNames(list.map((shape) => shape.name), "shape");
+    const entries = await Promise.all(list.map(async (shape, index) => ({ name: names[index], bytes: await readMyShapePackage(shape.id) })));
+    const zipped = packBackup(entries);
+    const buffer = zipped.buffer.slice(zipped.byteOffset, zipped.byteOffset + zipped.byteLength) as ArrayBuffer;
+    await downloadBlobFile(myShapesBackupFileName(new Date()), new Blob([buffer], { type: "application/zip" }));
+    setNotice(t("status.myShapesBackedUp", { count: list.length }));
+  }, []);
+
+  /** Adds shapes from a backup ZIP or from .lyl designs; one already kept under the same name is skipped. */
+  const loadMyShapeFiles = useCallback(async (files: File[]) => {
+    let added = 0;
+    let skipped = 0;
+    const failures: string[] = [];
+    for (const file of files) {
+      try {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const entries = /\.zip$/i.test(file.name) ? unpackBackup(bytes) : [{ name: file.name, bytes }];
+        if (entries.length === 0) failures.push(file.name);
+        for (const entry of entries) {
+          const restored = await importLylProject(entry.bytes);
+          if (restored.shapes.length === 0) {
+            failures.push(entry.name);
+            continue;
+          }
+          const name = myShapeNameFromFile(entry.name, t("myShapes.defaultName"));
+          const fingerprint = projectShapesFingerprint(shapesForLibrary(restored.shapes, boundsForShapes(restored.shapes)));
+          if (myShapesRef.current.some((shape) => shape.name === name && shape.fingerprint === fingerprint)) {
+            skipped += 1;
+            continue;
+          }
+          const meta = await keepAsMyShape(restored.shapes, name, restored.assets);
+          myShapesRef.current = [...myShapesRef.current, meta];
+          added += 1;
+        }
+      } catch {
+        failures.push(file.name);
+      }
+    }
+    await refreshMyShapes();
+    setNotice(failures.length
+      ? t("status.myShapesLoadFailed", { count: added, names: failures.join(", ") })
+      : skipped
+        ? t("status.myShapesLoadedSkipped", { count: added, skipped })
+        : t("status.myShapesLoaded", { count: added }));
+  }, [keepAsMyShape, refreshMyShapes]);
+
   const executeMcpCommand = useCallback(async (command: LayerlingMcpCommand): Promise<unknown> => {
     const params = command.params ?? {};
     const currentShapes = () => shapesRef.current;
@@ -10682,6 +10831,41 @@ export function LayerlingEditor({
         return { object: mcpShapeSummary(wrapped) };
       }
 
+      if (command.action === "save_my_shape") {
+        const requested = mcpStringArray(params.ids ?? params.id);
+        const ids = requested.length ? requested : selectedIdsRef.current;
+        const parts = currentShapes().filter((shape) => ids.includes(shape.id));
+        if (parts.length === 0) throw new Error("Pass the ids of the bodies to keep, or select them first");
+        const fallback = parts.length === 1 ? displayShapeName(parts[0]) : t("myShapes.defaultName");
+        const name = myShapeNameFromFile(typeof params.name === "string" ? params.name : "", fallback);
+        const meta = await saveSelectionAsMyShape(name, parts.map((shape) => shape.id));
+        return { myShape: { id: meta.id, name: meta.name, bodyCount: meta.bodyCount, byteLength: meta.byteLength } };
+      }
+
+      if (command.action === "list_my_shapes") {
+        const list = await refreshMyShapes();
+        return { myShapes: list.map((shape) => ({ id: shape.id, name: shape.name, bodyCount: shape.bodyCount, byteLength: shape.byteLength, createdAt: new Date(shape.createdAt).toISOString() })) };
+      }
+
+      if (command.action === "insert_my_shape" || command.action === "delete_my_shape") {
+        const list = await refreshMyShapes();
+        const wanted = typeof params.id === "string" ? params.id : typeof params.name === "string" ? params.name : "";
+        const matches = list.filter((shape) => shape.id === wanted);
+        const byName = matches.length ? matches : list.filter((shape) => shape.name.toLowerCase() === wanted.toLowerCase());
+        if (byName.length === 0) throw new Error(`No shape "${wanted}" in my shapes; layerling_list_my_shapes lists them`);
+        if (byName.length > 1) throw new Error(`Several of my shapes are called "${wanted}"; pass the id instead`);
+        const entry = byName[0];
+        if (command.action === "delete_my_shape") {
+          await deleteMyShapeEntry(entry.id);
+          return { deleted: entry.id };
+        }
+        const point = params.x !== undefined || params.z !== undefined
+          ? { x: mcpNumber(params.x, 0), y: placementWorkplaneRef.current.origin.y, z: mcpNumber(params.z, 0) }
+          : undefined;
+        const inserted = await insertMyShape(entry.id, point);
+        return { objects: inserted.map(mcpShapeSummary) };
+      }
+
       if (command.action === "separate_parts") {
         const target = findShape(params.id) ?? (selectedIdsRef.current.length === 1 ? findShape(selectedIdsRef.current[0]) : null);
         if (!target) throw new Error("Select one object to separate");
@@ -11013,6 +11197,10 @@ export function LayerlingEditor({
     setActivePlacementWorkplane,
     updateProjectWorkspaceSettings,
     sectionContours,
+    deleteMyShapeEntry,
+    insertMyShape,
+    refreshMyShapes,
+    saveSelectionAsMyShape,
   ]);
 
   useEffect(() => {
@@ -12341,6 +12529,31 @@ export function LayerlingEditor({
           setTopPanel((current) => (current === panel ? null : panel));
           setMenuOpen(false);
         }}
+        renderMyShapes={(close) => (
+          <MyShapesSection
+            shapes={myShapes}
+            canSave={selectedIds.length > 0}
+            defaultName={selectedShapes.length === 1 ? displayShapeName(selectedShapes[0]) : t("myShapes.defaultName")}
+            onInsert={(id) => {
+              close();
+              void insertMyShape(id).catch((error) => setNotice(error instanceof Error ? error.message : String(error)));
+            }}
+            onSave={async (name) => {
+              try {
+                await saveSelectionAsMyShape(name);
+                return true;
+              } catch (error) {
+                setNotice(error instanceof Error ? error.message : String(error));
+                return false;
+              }
+            }}
+            onRename={(id, name) => void renameMyShapeEntry(id, name).catch((error) => setNotice(error instanceof Error ? error.message : String(error)))}
+            onDelete={(id) => void deleteMyShapeEntry(id).catch((error) => setNotice(error instanceof Error ? error.message : String(error)))}
+            onBackup={() => void backUpMyShapes().catch((error) => setNotice(error instanceof Error ? error.message : String(error)))}
+            onLoad={() => myShapesFileInputRef.current?.click()}
+            onDragDone={close}
+          />
+        )}
         onAddShape={(shape) => {
           setTopPanel(null);
           setMenuOpen(false);
@@ -12449,6 +12662,7 @@ export function LayerlingEditor({
           workspaceSettingsKey={projectId ?? "local-workplane"}
           cruiseAsset={cruiseAsset}
           onAddShape={addShape}
+          onDropMyShape={(id, point) => void insertMyShape(id, point).catch((error) => setNotice(error instanceof Error ? error.message : String(error)))}
           onAlignAnchorChange={chooseAlignAnchor}
           onAlignPreview={previewAlignSelection}
           onAlignPreviewClear={clearAlignPreview}
@@ -12649,6 +12863,18 @@ export function LayerlingEditor({
         }}
       />
       <input
+        ref={myShapesFileInputRef}
+        className="hidden-file-input"
+        type="file"
+        multiple
+        accept=".zip,.lyl,.skf"
+        onChange={(event) => {
+          const files = Array.from(event.currentTarget.files ?? []);
+          event.currentTarget.value = "";
+          if (files.length) void loadMyShapeFiles(files);
+        }}
+      />
+      <input
         ref={insertProjectFileInputRef}
         className="hidden-file-input"
         type="file"
@@ -12815,6 +13041,7 @@ function SecondaryToolbar({
   overhangsVisible,
   overhangAngle,
   onToggleOverhangs,
+  renderMyShapes,
 }: {
   toolbarMode: ToolbarMode;
   projectName: string;
@@ -12900,6 +13127,8 @@ function SecondaryToolbar({
   overhangsVisible: boolean;
   overhangAngle: number;
   onToggleOverhangs: () => void;
+  /** "My shapes" above the library; gets the way to close the menu. */
+  renderMyShapes?: (close: () => void) => ReactNode;
 }) {
   const [shapesOpen, setShapesOpen] = useState(false);
   const [sketchCreateOpen, setSketchCreateOpen] = useState(false);
@@ -13184,6 +13413,13 @@ function SecondaryToolbar({
                 {t("shape.basicShapes")}
                 <GuideHelpLink chapter="shapes" />
               </div>
+              <div className="shape-menu-body">
+              {renderMyShapes ? (
+                <>
+                  {renderMyShapes(() => setShapesOpen(false))}
+                  <div className="shape-menu-subtitle">{t("myShapes.basicShapes")}</div>
+                </>
+              ) : null}
               <div className="shape-menu-list">
                 {toolbarShapeAssets.map((shape) => (
                   <button
@@ -13249,6 +13485,7 @@ function SecondaryToolbar({
                     <span className={shapeAssetMenuLabel(shape).split(/\s+/).some((word) => word.length > 13) ? "long-word" : undefined}>{shapeAssetMenuLabel(shape)}</span>
                   </button>
                 ))}
+              </div>
               </div>
             </div>
           ) : null}

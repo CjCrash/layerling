@@ -420,6 +420,49 @@ export const tools = [
     },
   },
   {
+    name: "layerling_save_my_shape",
+    description: "Keep bodies as one of \"my shapes\", as the shape library's \"Save selection\" does: they are stored in this browser (not in the design) and can be inserted into any design later. Several bodies become one shape and are inserted together. The shape is kept centred, standing on the plate. Returns the new shape's id and name.",
+    inputSchema: {
+      ...editorTargetSchema,
+      properties: {
+        ...editorTargetSchema.properties,
+        ids: { type: "array", items: { type: "string" }, description: "The bodies to keep; defaults to the selection." },
+        name: { type: "string", description: "Name shown in the library; defaults to the body's name." },
+      },
+    },
+  },
+  {
+    name: "layerling_list_my_shapes",
+    description: "List \"my shapes\", the bodies kept in this browser's shape library: id, name, number of bodies, size and when they were saved.",
+    inputSchema: editorTargetSchema,
+  },
+  {
+    name: "layerling_insert_my_shape",
+    description: "Insert one of \"my shapes\" into the open design, as a click on its tile does. Without x/z it lands at the workplane's origin; with them, the middle of its footprint goes there and it stands on the plate. Returns the inserted objects, which are selected.",
+    inputSchema: {
+      ...editorTargetSchema,
+      properties: {
+        ...editorTargetSchema.properties,
+        id: { type: "string", description: "Id from layerling_list_my_shapes, or the shape's name." },
+        name: { type: "string", description: "The shape's name, instead of the id." },
+        x: { type: "number", description: "Where the middle goes, in mm." },
+        z: { type: "number", description: "Where the middle goes, in mm." },
+      },
+    },
+  },
+  {
+    name: "layerling_delete_my_shape",
+    description: "Remove one of \"my shapes\" from this browser's library. Bodies already inserted into designs stay. Cannot be undone.",
+    inputSchema: {
+      ...editorTargetSchema,
+      properties: {
+        ...editorTargetSchema.properties,
+        id: { type: "string", description: "Id from layerling_list_my_shapes, or the shape's name." },
+        name: { type: "string", description: "The shape's name, instead of the id." },
+      },
+    },
+  },
+  {
     name: "layerling_list_edges",
     description: "List real CAD edge ids for one object so a later chamfer/fillet can target specific edges.",
     inputSchema: {

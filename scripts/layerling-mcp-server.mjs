@@ -109,6 +109,14 @@ async function callTool(name, args) {
       return bridgeCommand("separate_parts", args);
     case "layerling_wrap_around_cylinder":
       return bridgeCommand("wrap_around_cylinder", args);
+    case "layerling_save_my_shape":
+      return bridgeCommand("save_my_shape", args, 30000);
+    case "layerling_list_my_shapes":
+      return bridgeCommand("list_my_shapes", args);
+    case "layerling_insert_my_shape":
+      return bridgeCommand("insert_my_shape", args, 30000);
+    case "layerling_delete_my_shape":
+      return bridgeCommand("delete_my_shape", args);
     case "layerling_list_edges":
       return bridgeCommand("list_edges", args, 30000);
     case "layerling_hollow_object":

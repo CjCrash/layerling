@@ -88,6 +88,18 @@ Der Rasterschritt steht unten rechts im Editor und lässt sich jederzeit ändern
 
 > **Tipp:** Wenn eine Form nicht die gewünschte Größe annimmt, liegt das oft an den Grenzen für neue Formen. Unter {{ui:workspace.shapeDefaults}} in den Einstellungen legst du fest, wie jede Form beginnt und wie groß sie höchstens werden darf.
 
+## Meine Formen
+
+Ein Halter, ein Griff oder eine Grundplatte, die du immer wieder brauchst, kommt in {{ui:myShapes.title}}. Der Bereich steht in der Formenliste ganz oben, über den {{ui:myShapes.basicShapes}}, und lässt sich mit dem Pfeil zuklappen.
+
+1. Markiere einen oder mehrere Körper, auch Aussparungen, Gruppen oder ein importiertes Modell.
+2. Öffne die Formenliste und klicke auf {{ui:myShapes.saveSelection}}. Gib einen Namen ein und bestätige mit {{ui:common.save}}.
+3. In jedem Entwurf setzt ein Klick auf die Kachel die Form ein, wie jede andere Form. Du kannst die Kachel auch auf die Arbeitsfläche ziehen, dann landet sie dort, wo du loslässt.
+
+Mehrere Körper kommen zusammen wieder heraus, so wie sie zueinander standen, und bleiben einzeln auswählbar. Der Stift auf einer Kachel benennt sie um, der Papierkorb entfernt sie nach einer Rückfrage. Was schon in Entwürfen steckt, bleibt dabei erhalten.
+
+{{ui:myShapes.title}} liegen in diesem Browser, getrennt von den Entwürfen, und sind beim nächsten Start sofort wieder da. Für einen anderen Browser oder Rechner sicherst du sie mit {{ui:myShapes.backup}} (der Pfeil nach unten) als eine ZIP-Datei und holst sie dort mit {{ui:myShapes.load}} (der Pfeil nach oben) zurück. {{ui:myShapes.load}} nimmt auch einzelne `.lyl`-Entwürfe, jeder wird dann zu einer Form. Was schon da ist, wird nicht doppelt angelegt.
+
 ## Um einen Zylinder wickeln
 
 Ein Muster, ein Logo oder ein Schriftzug soll auf einen Becher, eine Dose oder ein Rohr? Lege es zuerst flach auf die Platte, etwa als importiertes SVG oder als Text, so wie es von oben gesehen aussehen soll. Dann wickelst du es in den Einstellungen der Form unter {{ui:inspector.wrapCylinder}} um einen Zylinder:

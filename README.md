@@ -70,6 +70,7 @@ You will recognise everything: the plate, the shapes, solids and holes, group an
 
 - **Chamfer and fillet** – break or round any edge of a solid, and remove the treatment again later.
 - **Hollowing** – turn a body into walls of one thickness, open at the top, the bottom, both or closed – for boxes, cups and cases.
+- **My shapes** – keep bodies you need again and again at the top of the shape library and insert them into any design with a click or by dragging; backed up and moved to another computer as one ZIP file.
 - **Wrap around a cylinder** – lay an SVG pattern, a logo or lettering onto the wall of a cup or tube, raised or engraved, and centre it on the cylinder.
 
 ### Files

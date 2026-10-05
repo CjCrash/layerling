@@ -87,6 +87,18 @@ The snap step is at the bottom right of the editor and can be changed at any tim
 
 > **Tip:** If a shape refuses to take the size you want, it is often the limits for new shapes. Under {{ui:workspace.shapeDefaults}} in the settings you decide how each shape starts and how large it may get.
 
+## My shapes
+
+A holder, a grip or a base plate you need again and again goes into {{ui:myShapes.title}}. It sits at the top of the shape library, above the {{ui:myShapes.basicShapes}}, and folds away with its arrow.
+
+1. Select one or more bodies, holes, groups or an imported model included.
+2. Open the shape library and click {{ui:myShapes.saveSelection}}. Enter a name and confirm with {{ui:common.save}}.
+3. In any design, a click on the tile inserts the shape, like any other shape. You can also drag the tile onto the workplane; it then lands where you let go.
+
+Several bodies come back together, placed as they stood to each other, and stay selectable one by one. The pencil on a tile renames it, the bin removes it after asking. Shapes already inserted into designs stay as they are.
+
+{{ui:myShapes.title}} live in this browser, apart from the designs, and are there again the next time you start. For another browser or computer, {{ui:myShapes.backup}} (the arrow pointing down) saves them all as one ZIP file, and {{ui:myShapes.load}} (the arrow pointing up) brings them back there. {{ui:myShapes.load}} also takes single `.lyl` designs; each one becomes a shape. Shapes already there are not added twice.
+
 ## Wrapping around a cylinder
 
 Should a pattern, a logo or lettering go onto a cup, a can or a tube? First lay it flat on the plate, as an imported SVG or as text for example, the way it should look from above. Then wrap it around a cylinder in the shape's settings under {{ui:inspector.wrapCylinder}}:

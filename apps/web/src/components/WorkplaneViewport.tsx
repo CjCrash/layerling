@@ -273,6 +273,8 @@ type WorkplaneViewportProps = {
   initialWorkspace?: WorkplaneWorkspaceSettings;
   workspaceSettingsKey?: string | null;
   onAddShape: (shape: ShapeAsset, point?: PlacementPoint) => void;
+  /** One of "my shapes" dropped on the workplane, by its id. */
+  onDropMyShape?: (id: string, point: PlacementPoint) => void;
   /** Shape following the cursor until a click drops it. Null places immediately. */
   cruiseAsset?: ShapeAsset | null;
   onAlignAnchorChange: (id: string) => void;
@@ -3924,6 +3926,7 @@ export function WorkplaneViewport({
   initialWorkspace,
   workspaceSettingsKey,
   onAddShape,
+  onDropMyShape,
   cruiseAsset = null,
   onAlignAnchorChange,
   onAlignPreview,
@@ -7659,6 +7662,12 @@ export function WorkplaneViewport({
     (event: DragEvent<HTMLDivElement>) => {
       event.preventDefault();
       if (tapeMoveModeRef.current) return;
+      const myShapeId = event.dataTransfer.getData("application/x-layerling-my-shape");
+      if (myShapeId) {
+        const point = toPlacementWorkplanePoint(event.clientX, event.clientY);
+        onDropMyShape?.(myShapeId, point ?? placementWorkplaneRef.current.origin);
+        return;
+      }
       const raw = event.dataTransfer.getData("application/x-layerling-shape");
       if (!raw) {
         return;
@@ -7671,7 +7680,7 @@ export function WorkplaneViewport({
       const point = toPlacementWorkplanePoint(event.clientX, event.clientY);
       onAddShape(asset, point ?? placementWorkplaneRef.current.origin);
     },
-    [onAddShape, toPlacementWorkplanePoint],
+    [onAddShape, onDropMyShape, toPlacementWorkplanePoint],
   );
 
   const focusSelection = useCallback(() => {

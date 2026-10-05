@@ -38,6 +38,7 @@ export const GUIDE_SECTIONS = {
   gridAndSnapping: { chapter: "view", de: "gitter-und-raster", en: "grid-and-snapping" },
   shapeSettings: { chapter: "shapes", de: "die-einstellungen-der-form", en: "the-shape-s-settings" },
   wrapCylinder: { chapter: "shapes", de: "um-einen-zylinder-wickeln", en: "wrapping-around-a-cylinder" },
+  myShapes: { chapter: "shapes", de: "meine-formen", en: "my-shapes" },
   objectList: { chapter: "select", de: "die-objektliste", en: "the-object-list" },
   pattern: { chapter: "select", de: "muster-reihe-und-kreis", en: "patterns-row-and-circle" },
   grouping: { chapter: "solids", de: "gruppieren", en: "grouping" },

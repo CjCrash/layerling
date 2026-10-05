@@ -3846,6 +3846,266 @@ button {
   font-size: 0.85em;
 }
 
+/* "My shapes" above the basic shapes (#109). Both scroll together in the
+   menu body, so the library list itself no longer scrolls on its own there. */
+.shape-menu-body {
+  max-height: min(608px, calc(100vh - 136px));
+  overflow-y: auto;
+}
+
+.shape-menu-body .shape-menu-list {
+  max-height: none;
+  overflow: visible;
+}
+
+.shape-menu-subtitle {
+  padding: 8px 15px 0;
+  color: #8a6d4c;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.my-shapes-section {
+  border-bottom: 1px solid #efe7d9;
+  background: #fffdf9;
+}
+
+.my-shapes-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px 8px 8px;
+}
+
+.my-shapes-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  color: #604529;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.my-shapes-toggle:hover {
+  background: #f6efe4;
+}
+
+.my-shapes-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.my-shapes-count {
+  min-width: 20px;
+  padding: 1px 6px;
+  color: #6b4f30;
+  background: #efe4d3;
+  border-radius: 999px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.my-shapes-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.my-shapes-save-button,
+.my-shapes-icon-button,
+.my-shapes-name-form button {
+  display: inline-flex;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 10px;
+  color: #5c442c;
+  background: #fbfaf8;
+  border: 1px solid #dccdbe;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.my-shapes-icon-button {
+  width: 30px;
+  padding: 0;
+}
+
+.my-shapes-save-button svg,
+.my-shapes-icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.my-shapes-save-button:hover:not(:disabled),
+.my-shapes-icon-button:hover:not(:disabled),
+.my-shapes-name-form button:hover:not(:disabled) {
+  background: #fff;
+  border-color: #c9b49c;
+}
+
+.my-shapes-save-button:disabled,
+.my-shapes-icon-button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.my-shapes-body {
+  padding: 0 8px 8px;
+}
+
+.my-shapes-body .my-shapes-list {
+  padding: 0;
+}
+
+.my-shapes-empty {
+  margin: 0;
+  padding: 2px 8px 6px;
+  color: #7b6249;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.my-shapes-name-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 0 0 8px;
+}
+
+.my-shapes-name-form label {
+  color: #6b4f30;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.my-shapes-name-form input,
+.my-shape-rename input {
+  flex: 1 1 160px;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  color: #3f2e1c;
+  background: #fff;
+  border: 1px solid #cdb9a2;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.my-shapes-name-form button[type="submit"] {
+  color: #fff;
+  background: #a8662a;
+  border-color: #a8662a;
+}
+
+.my-shapes-name-form button[type="submit"]:hover:not(:disabled) {
+  background: #94571f;
+  border-color: #94571f;
+}
+
+.my-shape-tile {
+  position: relative;
+  min-width: 0;
+}
+
+.my-shape-tile .shape-menu-item {
+  width: 100%;
+  padding-right: 62px;
+}
+
+.my-shape-tile .shape-menu-item img,
+.my-shape-no-preview,
+.my-shape-rename img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.my-shape-no-preview {
+  flex: 0 0 auto;
+  display: block;
+  background: #f1eadf;
+  border-radius: 6px;
+}
+
+.my-shape-tile-actions {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: flex;
+  gap: 2px;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.my-shape-tile:hover .my-shape-tile-actions,
+.my-shape-tile:focus-within .my-shape-tile-actions,
+.my-shape-tile-actions:has(.danger) {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .my-shape-tile-actions {
+    opacity: 1;
+  }
+}
+
+.my-shape-tile-action {
+  display: inline-flex;
+  min-width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  color: #6b4f30;
+  background: #fff;
+  border: 1px solid #e3d6c6;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.my-shape-tile-action svg {
+  width: 14px;
+  height: 14px;
+}
+
+.my-shape-tile-action:hover {
+  border-color: #c9b49c;
+}
+
+.my-shape-tile-action.danger {
+  color: #fff;
+  background: #b42318;
+  border-color: #b42318;
+}
+
+.my-shape-rename {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px 5px 7px;
+  background: #fff;
+  border: 1px solid #dccdbe;
+  border-radius: 4px;
+}
+
 .action-buttons button {
   box-sizing: border-box;
   display: inline-flex;
@@ -4626,6 +4886,15 @@ button {
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(68, 49, 28, 0.16);
   pointer-events: none;
+}
+
+/* Die 400 px Abstand gelten der Einstellungstafel rechts. Auf einem schmalen
+   Bildschirm blieben davon 20 px, und die Meldung lief Buchstabe fuer
+   Buchstabe senkrecht hinunter; dort nimmt sie die Breite bis zum Rand. */
+@media (max-width: 760px) {
+  .editor-status {
+    max-width: calc(100vw - 120px);
+  }
 }
 
 .editor-body {
@@ -9470,12 +9739,17 @@ html[data-theme="dark"] .inspector-bundle-note {
     flex-direction: column;
   }
 
-  .shape-menu-dropdown .shape-menu-list {
+  .shape-menu-dropdown .shape-menu-list,
+  .shape-menu-dropdown .shape-menu-body {
     flex: 1 1 auto;
     min-height: 0;
     max-height: none;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+  }
+
+  .shape-menu-dropdown .shape-menu-body .shape-menu-list {
+    flex: none;
   }
 
   /* Haengt am Fenster statt an seinem Ausloeser, direkt unter der Leiste -
@@ -12290,4 +12564,69 @@ html[data-theme="dark"] .inspector-help-link {
 
 .overhang-menu-icon.active {
   color: #e8322a;
+}
+
+html[data-theme="dark"] .my-shapes-section {
+  background: rgba(52, 40, 28, 0.6);
+  border-color: #594a3a;
+}
+
+html[data-theme="dark"] .my-shapes-toggle,
+html[data-theme="dark"] .my-shapes-name-form label {
+  color: #f0e7d9;
+}
+
+html[data-theme="dark"] .my-shapes-toggle:hover {
+  background: #463625;
+}
+
+html[data-theme="dark"] .my-shapes-count {
+  color: #f0e7d9;
+  background: #5b4733;
+}
+
+html[data-theme="dark"] .shape-menu-subtitle,
+html[data-theme="dark"] .my-shapes-empty {
+  color: #cdbca6;
+}
+
+html[data-theme="dark"] .my-shapes-save-button,
+html[data-theme="dark"] .my-shapes-icon-button,
+html[data-theme="dark"] .my-shapes-name-form button,
+html[data-theme="dark"] .my-shape-tile-action,
+html[data-theme="dark"] .my-shape-rename {
+  color: #ede4d4;
+  background: #3a2c1f;
+  border-color: #5b4b3a;
+}
+
+html[data-theme="dark"] .my-shapes-save-button:hover:not(:disabled),
+html[data-theme="dark"] .my-shapes-icon-button:hover:not(:disabled),
+html[data-theme="dark"] .my-shapes-name-form button:hover:not(:disabled),
+html[data-theme="dark"] .my-shape-tile-action:hover {
+  background: #463625;
+  border-color: #7a644c;
+}
+
+html[data-theme="dark"] .my-shapes-name-form button[type="submit"] {
+  color: #fff;
+  background: #a8662a;
+  border-color: #a8662a;
+}
+
+html[data-theme="dark"] .my-shapes-name-form input,
+html[data-theme="dark"] .my-shape-rename input {
+  color: #f0e7d9;
+  background: #2c2117;
+  border-color: #6b5741;
+}
+
+html[data-theme="dark"] .my-shape-no-preview {
+  background: #463625;
+}
+
+html[data-theme="dark"] .my-shape-tile-action.danger {
+  color: #fff;
+  background: #b42318;
+  border-color: #b42318;
 }

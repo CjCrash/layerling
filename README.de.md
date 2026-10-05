@@ -71,6 +71,7 @@ Du wirst alles wiedererkennen: die Platte, die Formen, Körper und Aussparung (d
 
 - **Kanten fasen und verrunden** – jede Kante eines Körpers brechen oder abrunden und später wieder zurücknehmen.
 - **Aushöhlen** – aus einem Körper Wände gleicher Stärke machen, oben, unten oder beidseitig offen oder ganz geschlossen – für Dosen, Becher und Gehäuse.
+- **Meine Formen** – Körper, die du immer wieder brauchst, oben in der Formenliste ablegen und per Klick oder Ziehen in jeden Entwurf setzen; als eine ZIP-Datei gesichert und auf einen anderen Rechner mitgenommen.
 - **Um einen Zylinder wickeln** – ein SVG-Muster, ein Logo oder einen Schriftzug auf die Wand eines Bechers oder Rohrs legen, erhaben oder als Gravur, und mittig am Zylinder ausrichten.
 
 ### Dateien

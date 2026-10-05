@@ -4,6 +4,12 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **My shapes:** Bodies you need again and again - a holder, a grip, a base plate - can now be kept at the top of the shape library: select them, click "Save selection" and give them a name. A click on the tile inserts them into any design, or drag the tile onto the workplane to put them where you let go. Several bodies come back together, as they stood to each other, and stay selectable one by one. Tiles show a small picture of the bodies and can be renamed and deleted; the section folds away. My shapes live in the browser apart from the designs (in IndexedDB, so even large imported models fit), and two buttons back them all up as one ZIP of `.lyl` files and load them again, in another browser or on another computer; loading also takes single `.lyl` designs and skips shapes already there. MCP: `layerling_save_my_shape`, `layerling_list_my_shapes`, `layerling_insert_my_shape`, `layerling_delete_my_shape`. Suggested by @kwjaarsveld-star in #109.
+- **Status messages on narrow screens:** On a phone the message beside the view cube had 20 pixels left and ran down letter by letter; it now takes the width up to the edge.
+- **Welcome panel:** "Place shapes" pointed to a panel on the right; the shapes are in the "Shapes" menu at the top left of the ribbon.
+
 ## 1.37.0
 
 - **Knurling:** A new shape for grips - a round body with grooves all around, for knobs, thumb wheels and tool handles. "Straight" runs the grooves along the axis and is an exact CAD body, so its edges can be broken and rounded; "Crossed" lays two slanted rows over each other into small diamonds and stays a mesh, as the exact body took the kernel 43 seconds with 30 grooves. Diameter, height, number and depth of the grooves, a 45-degree chamfer on both ends (0.5 mm to start with; straight knurling stays exact with it) and, for crossed knurling, the grooves' angle can be set - no closer than 0.8 mm apart around the grip, finer than any FDM printer shows; also through MCP (`knurlPattern`, `knurlCount`, `knurlDepth`, `knurlAngle`, `knurlChamfer`). It sits right after the gear in the shape library.

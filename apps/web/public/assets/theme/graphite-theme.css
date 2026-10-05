@@ -1496,6 +1496,96 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   border: 1px solid #dddddd;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-menu-subtitle {
+  color: #5e5e5e;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-section {
+  border-bottom: 1px solid #e4e4e4;
+  background: #fcfcfc;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-toggle {
+  color: #474747;
+  background: transparent;
+  border: 0;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-toggle:hover {
+  background: #ededed;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-count {
+  color: #4f4f4f;
+  background: #e1e1e1;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-save-button,
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-icon-button,
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-name-form button {
+  color: #464646;
+  background: #fafafa;
+  border: 1px solid #cdcdcd;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-save-button:hover:not(:disabled),
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-icon-button:hover:not(:disabled),
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-name-form button:hover:not(:disabled) {
+  background: #fff;
+  border-color: #b3b3b3;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-empty {
+  color: #565656;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-name-form label {
+  color: #4f4f4f;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-name-form input,
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shape-rename input {
+  color: #323232;
+  background: #fff;
+  border: 1px solid #b8b8b8;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-name-form button[type="submit"] {
+  color: #fff;
+  background: #a8662a;
+  border-color: #a8662a;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-name-form button[type="submit"]:hover:not(:disabled) {
+  background: #94571f;
+  border-color: #94571f;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shape-no-preview {
+  background: #e8e8e8;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shape-tile-action {
+  color: #4f4f4f;
+  background: #fff;
+  border: 1px solid #d4d4d4;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shape-tile-action:hover {
+  border-color: #b3b3b3;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shape-tile-action.danger {
+  color: #fff;
+  background: #b42318;
+  border-color: #b42318;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shape-rename {
+  background: #fff;
+  border: 1px solid #cdcdcd;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .action-buttons button {
   color: #404040;
   background: transparent;
@@ -5904,6 +5994,71 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .inspector-help-link {
 
 :where(html[data-theme="dark"][data-palette="graphite"]) .overhang-menu-icon.active {
   color: #e8322a;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-section {
+  background: rgba(45, 45, 45, 0.6);
+  border-color: #4b4b4b;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-toggle,
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-name-form label {
+  color: #e4e4e4;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-toggle:hover {
+  background: #393939;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-count {
+  color: #e4e4e4;
+  background: #494949;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-menu-subtitle,
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-empty {
+  color: #bababa;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-save-button,
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-icon-button,
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-name-form button,
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shape-tile-action,
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shape-rename {
+  color: #e1e1e1;
+  background: #313131;
+  border-color: #4c4c4c;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-save-button:hover:not(:disabled),
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-icon-button:hover:not(:disabled),
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-name-form button:hover:not(:disabled),
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shape-tile-action:hover {
+  background: #393939;
+  border-color: #575757;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-name-form button[type="submit"] {
+  color: #fff;
+  background: #a8662a;
+  border-color: #a8662a;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-name-form input,
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shape-rename input {
+  color: #e4e4e4;
+  background: #272727;
+  border-color: #565656;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shape-no-preview {
+  background: #393939;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shape-tile-action.danger {
+  color: #fff;
+  background: #b42318;
+  border-color: #b42318;
 }
 
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section-tools,
