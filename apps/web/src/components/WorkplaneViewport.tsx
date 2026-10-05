@@ -7725,13 +7725,14 @@ export function WorkplaneViewport({
           };
           const selected = shapesInMarquee(rect);
           if (marquee.additive) {
-            const merged = [...selectedIdsRef.current];
-            selected.forEach((id) => {
-              if (!merged.includes(id)) {
-                merged.push(id);
-              }
-            });
-            onSelectShape(merged);
+            // Shift turns each body in the box around, as a Shift click does
+            // for one: what was selected leaves the selection, the rest joins.
+            const boxed = new Set(selected);
+            const current = selectedIdsRef.current;
+            onSelectShape([
+              ...current.filter((id) => !boxed.has(id)),
+              ...selected.filter((id) => !current.includes(id)),
+            ]);
           } else {
             onSelectShape(selected);
           }
