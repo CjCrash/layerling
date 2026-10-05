@@ -150,6 +150,37 @@ const CORNER_RULER_DEFAULT_ARM_X = 100;
 const CORNER_RULER_DEFAULT_ARM_Z = 80;
 const DEFAULT_WORKSPACE = DEFAULT_WORKPLANE_WORKSPACE;
 const CAMERA_FOV = 38;
+/** How close the camera may come to what it looks at, and how far it may back off, in mm. */
+const CAMERA_MIN_DISTANCE = 3;
+const CAMERA_MAX_DISTANCE = 9000;
+
+/**
+ * The flat (orthographic) view's zoom range, so that it frames exactly what
+ * the normal view frames between its closest and farthest distance: its zoom
+ * divides the frame it was made with, the normal view's frame grows with the
+ * distance. Before, the flat view had a fixed 0.02 to 100 and went much closer.
+ */
+function orthographicZoomRange(camera: THREE.OrthographicCamera) {
+  const frameHalfHeight = Math.max(0.001, (camera.top - camera.bottom) / 2);
+  const tanHalf = Math.tan(THREE.MathUtils.degToRad(CAMERA_FOV / 2));
+  return { min: frameHalfHeight / (CAMERA_MAX_DISTANCE * tanHalf), max: frameHalfHeight / (CAMERA_MIN_DISTANCE * tanHalf) };
+}
+
+/**
+ * Near and far planes that follow the distance: up close a near plane of
+ * 0.1 mm would cut into a 3 mm view, far out a fixed one would leave the
+ * depth buffer too coarse and faces would flicker into each other.
+ */
+function fitCameraDepthRange(camera: THREE.Camera, target: THREE.Vector3) {
+  if (!(camera instanceof THREE.PerspectiveCamera)) return;
+  const distance = camera.position.distanceTo(target);
+  const near = clamp(distance / 2000, 0.01, 5);
+  const far = Math.max(6000, distance * 2 + 3000);
+  if (Math.abs(camera.near - near) <= camera.near * 0.05 && Math.abs(camera.far - far) <= camera.far * 0.05) return;
+  camera.near = near;
+  camera.far = far;
+  camera.updateProjectionMatrix();
+}
 const CAMERA_HOME = new THREE.Vector3(118, 96, 118);
 const CAMERA_TARGET = new THREE.Vector3(0, 0, 0);
 const MIN_SHAPE_SIZE = 0.01;
@@ -4780,6 +4811,7 @@ export function WorkplaneViewport({
         setCameraToViewFace(state, face);
       }
       syncViewCube(state, viewCubeRef.current);
+      fitCameraDepthRange(state.camera, state.controls.target);
       state.camera.updateMatrixWorld();
       state.renderer.render(state.scene, state.camera);
       return state.renderer.domElement.toDataURL("image/png");
@@ -4792,6 +4824,7 @@ export function WorkplaneViewport({
       state.animationId = window.requestAnimationFrame(animate);
       const now = performance.now();
       const controlsChanged = state.controls.update();
+      fitCameraDepthRange(state.camera, state.controls.target);
       const cameraSettled = state.wasCameraMoving && !controlsChanged;
       if (!controlsChanged && !state.needsRender && !cameraSettled) {
         return;
@@ -4848,6 +4881,7 @@ export function WorkplaneViewport({
         state.lastOverlaySync = now;
       }
       const renderStart = performance.now();
+      fitCameraDepthRange(state.camera, state.controls.target);
       state.renderer.render(state.scene, state.camera);
       const frameMs = performance.now() - renderStart;
       const perf = perfRef.current;
@@ -7583,10 +7617,11 @@ export function WorkplaneViewport({
     if (state.camera instanceof THREE.OrthographicCamera) {
       const halfHeight = Math.max(0.001, (state.camera.top - state.camera.bottom) / 2);
       const zoom = orthographicFramingZoom(radius, halfHeight, aspect);
-      if (zoom) state.camera.zoom = clamp(zoom, 0.02, 100);
-      state.camera.position.copy(center).add(direction.multiplyScalar(clamp(offset.length(), 22, 4200)));
+      const range = orthographicZoomRange(state.camera);
+      if (zoom) state.camera.zoom = clamp(zoom, range.min, range.max);
+      state.camera.position.copy(center).add(direction.multiplyScalar(clamp(offset.length(), CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE)));
     } else {
-      const distance = clamp(perspectiveFramingDistance(radius, CAMERA_FOV, aspect), 22, 4200);
+      const distance = clamp(perspectiveFramingDistance(radius, CAMERA_FOV, aspect), CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE);
       state.camera.position.copy(center).add(direction.multiplyScalar(distance));
     }
 
@@ -7682,10 +7717,11 @@ export function WorkplaneViewport({
 
     const scaled = zoomDistanceScale(scale, workspaceRef.current.zoomSpeed);
     if (state.camera instanceof THREE.OrthographicCamera) {
-      state.camera.zoom = clamp(state.camera.zoom / scaled, 0.02, 100);
+      const range = orthographicZoomRange(state.camera);
+      state.camera.zoom = clamp(state.camera.zoom / scaled, range.min, range.max);
     } else {
       const offset = state.camera.position.clone().sub(state.controls.target);
-      const distance = clamp(offset.length() * scaled, 22, 4200);
+      const distance = clamp(offset.length() * scaled, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE);
       offset.setLength(distance);
       state.camera.position.copy(state.controls.target).add(offset);
     }
@@ -8731,10 +8767,8 @@ function createThreeScene(host: HTMLDivElement): ThreeState {
     MIDDLE: THREE.MOUSE.PAN,
     RIGHT: THREE.MOUSE.ROTATE,
   };
-  controls.minDistance = 18;
-  controls.maxDistance = 4200;
-  controls.minZoom = 0.02;
-  controls.maxZoom = 100;
+  controls.minDistance = CAMERA_MIN_DISTANCE;
+  controls.maxDistance = CAMERA_MAX_DISTANCE;
   // Allow the documented OrbitControls pole limits so Top and Bottom views can
   // settle on the vertical axis instead of being held roughly 3.4 degrees off it.
   controls.minPolarAngle = 0;
@@ -8964,13 +8998,18 @@ function toggleCameraProjection(state: ThreeState) {
     const visibleHalfHeight = Math.max(0.001, (current.top - current.bottom) / (2 * current.zoom));
     const distance = clamp(
       visibleHalfHeight / Math.tan(THREE.MathUtils.degToRad(CAMERA_FOV / 2)),
-      22,
-      4200,
+      CAMERA_MIN_DISTANCE,
+      CAMERA_MAX_DISTANCE,
     );
     next = new THREE.PerspectiveCamera(CAMERA_FOV, aspect, current.near, current.far);
     next.position.copy(target).addScaledVector(direction, distance);
   }
 
+  if (next instanceof THREE.OrthographicCamera) {
+    const range = orthographicZoomRange(next);
+    state.controls.minZoom = range.min;
+    state.controls.maxZoom = range.max;
+  }
   next.up.copy(current.up);
   next.layers.mask = current.layers.mask;
   next.lookAt(target);
@@ -8984,7 +9023,7 @@ function toggleCameraProjection(state: ThreeState) {
 
 function setCameraToViewFace(state: ThreeState, face: ViewCubeFace) {
   const offset = state.camera.position.clone().sub(state.controls.target);
-  const distance = clamp(offset.length(), 22, 4200);
+  const distance = clamp(offset.length(), CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE);
   const direction = viewFaceDirection(face);
 
   state.camera.up.set(0, 1, 0);

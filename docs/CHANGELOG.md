@@ -6,6 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
+- **Zoom further, and the same in both views:** The normal view now comes as close as 3 mm to what it looks at (it stopped at 18 mm) and backs off to 9 metres (4.2 before), so small details such as fine knurling fill the screen. The flat, orthographic view had a fixed zoom range and went much closer than the normal one; its range now follows the same closest and farthest distance, so both views stop at the same picture. Near and far planes follow the distance, so nothing flickers up close or far out.
 - **Knurling:** A new shape for grips - a round body with grooves all around, for knobs, thumb wheels and tool handles. "Straight" runs the grooves along the axis and is an exact CAD body, so its edges can be broken and rounded; "Crossed" lays two slanted rows over each other into small diamonds and stays a mesh, as the exact body took the kernel 43 seconds with 30 grooves. Diameter, height, number and depth of the grooves, a 45-degree chamfer on both ends (0.5 mm to start with; straight knurling stays exact with it) and, for crossed knurling, the grooves' angle can be set - no closer than 0.8 mm apart around the grip, finer than any FDM printer shows; also through MCP (`knurlPattern`, `knurlCount`, `knurlDepth`, `knurlAngle`, `knurlChamfer`). It sits right after the gear in the shape library.
 
 ## 1.36.0
