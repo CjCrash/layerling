@@ -337,6 +337,8 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "shell.errorFailed": "Der Körper konnte nicht ausgehöhlt werden. Bitte eine andere Wandstärke oder Öffnung wählen.",
   "status.shelled": "Mit {size} mm Wandstärke ausgehöhlt",
   "status.shelledMcp": "MCP hat das Objekt mit {size} mm Wandstärke ausgehöhlt",
+  "status.shellRebuilt": "Wände neu berechnet, wieder {size} mm dick",
+  "status.shellRebuildFailed": "In dieser Größe ließ sich die Aushöhlung nicht neu berechnen. Die Wände sind mitskaliert.",
   "edge.revertShell": "Aushöhlung ({size} mm Wand)",
   "editor.tool.dropToWorkplane": "Auf die Arbeitsebene fallen lassen",
   "editor.tool.layFlat": "Auf Fläche legen",

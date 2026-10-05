@@ -57,4 +57,6 @@ The walls grow inward. The outside stays as it is.
 
 For an opening at the top or bottom, the body needs a flat face there. Spheres and free-form shapes therefore cannot be hollowed this way. If the wall is too thick for the body, layerling tells you and asks for a thinner one.
 
+If you resize a hollowed body later, layerling hollows it again at the new size right away. The wall stays as thick as you chose, round bodies included. A cylinder you pull further one way than the other becomes an ellipse.
+
 > **Tip:** With a 0.4 mm nozzle, 1.2 to 2 mm of wall is a good start: thin enough to save material, thick enough for a sturdy part.

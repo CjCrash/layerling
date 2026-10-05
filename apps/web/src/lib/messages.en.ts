@@ -338,6 +338,8 @@ export const MESSAGES_EN = {
   "shell.errorFailed": "The body could not be hollowed. Please choose a different wall thickness or opening.",
   "status.shelled": "Hollowed with {size} mm walls",
   "status.shelledMcp": "MCP hollowed the object with {size} mm walls",
+  "status.shellRebuilt": "Walls recalculated, {size} mm thick again",
+  "status.shellRebuildFailed": "The hollowing could not be recalculated at this size. The walls were scaled along with the body.",
   "edge.revertShell": "Hollowing ({size} mm walls)",
   "editor.tool.dropToWorkplane": "Drop to workplane",
   "editor.tool.layFlat": "Lay flat on face",

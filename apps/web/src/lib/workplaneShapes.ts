@@ -275,7 +275,38 @@ function edgeTreatmentPreserveZone(shape: WorkplaneShape): number {
   return Math.max(own, child);
 }
 
+/**
+ * The history entry of a hollowing that is the body's last step. Such a body is
+ * hollowed again after a resize instead of being stretched: keeping a band at
+ * each side of the box only keeps flat walls, a round wall came out with four
+ * bulges (forum, 05.10.2026).
+ */
+export function shellRebuildEntry(shape: WorkplaneShape) {
+  const features = shape.edgeTreatments ?? [];
+  const history = shape.edgeTreatmentHistory ?? [];
+  const last = history[history.length - 1];
+  if (!shape.importedMesh || shape.hole || shape.groupedShapes?.length) return null;
+  if (features[features.length - 1]?.kind !== "shell" || last?.feature.kind !== "shell" || !last.appliedFrame) return null;
+  // A star, knurl or thread is round by definition; stretched unevenly there is
+  // nothing to hollow again, so it keeps the bands as before.
+  const stretched = Math.abs(shapeWidth(shape) / Math.max(0.001, last.appliedFrame.width) - shapeDepth(shape) / Math.max(0.001, last.appliedFrame.depth)) > 1e-3;
+  if (stretched && (last.before.kind === "star" || last.before.kind === "knurl" || last.before.kind === "thread")) return null;
+  return last;
+}
+
+/** The hollowing to redo, when the body has been resized since it was hollowed. */
+export function shellNeedingRebuild(shape: WorkplaneShape) {
+  const entry = shellRebuildEntry(shape);
+  const applied = entry?.appliedFrame;
+  if (!entry || !applied) return null;
+  const changed = Math.abs(shapeWidth(shape) - applied.width) > 0.005
+    || Math.abs(shapeDepth(shape) - applied.depth) > 0.005
+    || Math.abs(shape.height - applied.height) > 0.005;
+  return changed ? entry : null;
+}
+
 export function preservesEdgeTreatmentSize(shape: WorkplaneShape) {
+  if (shellRebuildEntry(shape)) return false;
   return shape.edgeResizeMode === "preserve" && Boolean(shape.importedMesh && edgeTreatmentPreserveZone(shape) > 0);
 }
 

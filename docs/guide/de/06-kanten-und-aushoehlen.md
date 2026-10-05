@@ -57,4 +57,6 @@ Die Wände wachsen nach innen. Außen bleibt alles, wie es ist.
 
 Damit oben oder unten eine Öffnung entstehen kann, braucht der Körper dort eine ebene Fläche. Kugeln und freie Formen lassen sich deshalb so nicht aushöhlen. Wenn die Wand zu dick für den Körper ist, meldet layerling das und bittet um eine dünnere.
 
+Änderst du später die Größe des ausgehöhlten Körpers, höhlt layerling ihn in der neuen Größe gleich noch einmal aus. Die Wand bleibt so dick, wie du sie gewählt hast, auch bei runden Körpern. Ein Zylinder, den du dabei in eine Richtung mehr ziehst als in die andere, wird zur Ellipse.
+
 > **Tipp:** Bei einer 0,4-mm-Düse sind 1,2 bis 2 mm Wandstärke ein guter Anfang: dünn genug, um Material zu sparen, dick genug für ein stabiles Teil.

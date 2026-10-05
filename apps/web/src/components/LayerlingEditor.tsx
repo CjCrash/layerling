@@ -116,6 +116,7 @@ import {
   patchTouchesBodyParameters,
   withHoleMode,
   workplaneShapesEqual,
+  shellNeedingRebuild,
 } from "@/lib/workplaneShapes";
 import { workplaneCenteringOffset } from "@/lib/workplaneCentering";
 import { bakeCadMetadataForShapeTransform, cadBrepTransformForShape, cadModifierPrimitiveForAnalyticBox, cadModifierPrimitiveForAnalyticShape, cadModifierPrimitiveForBakedShape, importedStepPartForShape } from "@/lib/cadBakeMetadata";
@@ -9266,12 +9267,14 @@ export function LayerlingEditor({
    * "Groesse beibehalten" ist fest an: die Wandstaerke soll beim Skalieren
    * bleiben, was sie ist.
    */
-  const shellShape = useCallback(async (shape: WorkplaneShape, thickness: number, openings: ShellOpenings, edges: ShellEdges = "round") => {
+  // `watched` is the body in the scene the result replaces; it is the shape
+  // itself, except when a resized hollow body is hollowed again from its state before.
+  const shellShape = useCallback(async (shape: WorkplaneShape, thickness: number, openings: ShellOpenings, edges: ShellEdges = "round", watched: WorkplaneShape = shape) => {
     if (shape.locked || shape.hole || isNonSolidShapeKind(shape.kind)) {
       throw new Error("Select one unlocked solid object to hollow");
     }
     invalidateCadModifierSession();
-    const sourceFingerprint = projectShapesFingerprint([shape]);
+    const sourceFingerprint = projectShapesFingerprint([watched]);
     const sourceProjectId = projectInfoRef.current.projectId;
     const { response, sourceParts } = await prepareCadModifierForMcp(shape, 25);
     const previewResponse = await postCadModifierRequestAsync({
@@ -9317,7 +9320,7 @@ export function LayerlingEditor({
     const createdAt = Date.now();
     const modifiedShape = groupedShapeWithComponentEdgeTreatment(shape, preview, sourceParts, session, feature, createdAt)
       ?? shapeWithEdgeTreatmentRecord(bakedEdgeTreatmentPreview(preview, shape), shape, feature, true, createdAt);
-    const currentTarget = shapesRef.current.find((candidate) => candidate.id === shape.id);
+    const currentTarget = shapesRef.current.find((candidate) => candidate.id === watched.id);
     if (
       projectInfoRef.current.projectId !== sourceProjectId ||
       !currentTarget ||
@@ -9374,6 +9377,76 @@ export function LayerlingEditor({
   useEffect(() => {
     setShellTool((current) => current && !current.busy ? null : current);
   }, [selectedShape?.id]);
+
+  /*
+   * Ein ausgehoehlter Koerper wird nach dem Groesse-Aendern neu ausgehoehlt:
+   * aus seinem Zustand vor dem Aushoehlen, auf die neue Groesse gebracht. So
+   * bleibt die Wand auch an runden Koerpern genau so dick wie gewaehlt. Das
+   * Ergebnis ersetzt den Stand im Verlauf, statt einen eigenen Schritt
+   * anzulegen - Rueckgaengig nimmt die Groessenaenderung als Ganzes zurueck.
+   */
+  const shellRebuildBusyRef = useRef(false);
+  const shellRebuildFailedRef = useRef(new Set<string>());
+  const [shellRebuildRound, setShellRebuildRound] = useState(0);
+  useEffect(() => {
+    if (projectInteractionActive || edgeModifier || shellTool || shellRebuildBusyRef.current) return;
+    const stale = shapes.find((shape) => !shape.locked && shellNeedingRebuild(shape) && !shellRebuildFailedRef.current.has(projectShapesFingerprint([shape])));
+    if (!stale) return;
+    const timer = window.setTimeout(() => {
+      const entry = shellNeedingRebuild(stale);
+      if (!entry) return;
+      const fingerprint = projectShapesFingerprint([stale]);
+      const { amount, openings, shellEdges } = entry.feature;
+      const applied = entry.appliedFrame!;
+      const width = entry.before.width * shapeWidth(stale) / Math.max(0.001, applied.width);
+      const depth = entry.before.depth * shapeDepth(stale) / Math.max(0.001, applied.depth);
+      // A cylinder stays round; stretched unevenly it becomes the ellipse it now is.
+      const source = entry.before.kind === "cylinder" && Math.abs(width - depth) > 0.005
+        ? { ...entry, before: { ...entry.before, kind: "ellipse" as const } }
+        : entry;
+      const before = restoreShapeBeforeEdgeTreatment(stale, source);
+      if (Math.abs(shapeWidth(before) - width) > 0.05 || Math.abs(shapeDepth(before) - depth) > 0.05) {
+        shellRebuildFailedRef.current.add(fingerprint);
+        setNotice(t("status.shellRebuildFailed"), true);
+        setShellRebuildRound((round) => round + 1);
+        return;
+      }
+      shellRebuildBusyRef.current = true;
+      void shellShape(before, amount, openings ?? "none", shellEdges ?? "round", stale)
+        .then((rebuilt) => {
+          const current = shapesRef.current;
+          if (!current.some((shape) => shape.id === stale.id && projectShapesFingerprint([shape]) === fingerprint)) return;
+          const next = current.map((shape) => shape.id === stale.id ? canonicalizeShape(rebuilt) : shape);
+          const scene = editorHistoryEntry(current, selectedIdsRef.current, notesRef.current, placementWorkplaneRef.current);
+          const entryNow = editorHistoryEntry(next, selectedIdsRef.current, notesRef.current, placementWorkplaneRef.current);
+          const index = historyIndexRef.current;
+          shapesRef.current = next;
+          setShapes(next);
+          if (historyRef.current[index]?.fingerprint === scene.fingerprint) {
+            openGroupHistoryRef.current.set(entryNow.fingerprint, openGroupsRef.current);
+            const entries = historyRef.current.map((candidate, candidateIndex) => candidateIndex === index ? entryNow : candidate);
+            historyRef.current = entries;
+            setHistory(entries);
+          } else {
+            appendHistoryEntry(entryNow);
+          }
+          syncProjectShapes(next);
+          setNotice(t("status.shellRebuilt", { size: Number(amount.toFixed(2)) }));
+        })
+        .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error);
+          // Changed in the meantime: the next round picks up the newer state.
+          if (/changed while/.test(message)) return;
+          shellRebuildFailedRef.current.add(fingerprint);
+          setNotice(t("status.shellRebuildFailed"), true);
+        })
+        .finally(() => {
+          shellRebuildBusyRef.current = false;
+          setShellRebuildRound((round) => round + 1);
+        });
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [appendHistoryEntry, edgeModifier, projectInteractionActive, shapes, shellRebuildRound, shellShape, shellTool, syncProjectShapes]);
 
   useEffect(() => {
     const base = cadModifierBaseShapeRef.current;

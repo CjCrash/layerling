@@ -24,6 +24,8 @@ import {
   shapeOverallFootprintDimensions,
   shapeTransformShouldRemainEditable,
   shapeWithParametricSource,
+  shellNeedingRebuild,
+  shellRebuildEntry,
   patchTouchesBodyParameters,
   shapeTaperDimensions,
   shapeTaperScaleAt,
@@ -384,6 +386,33 @@ describe("workplane shape helpers", () => {
     ]);
     expect(resizedImportedMeshPositions({ ...modified, edgeResizeMode: "scale" })[3]).toBe(-18);
     expect(resizedImportedCoordinates(modified, [-9, 1, 0, 9, 19, 0])).toEqual([-19, 1, 0, 19, 39, 0]);
+  });
+
+  it("hollows a resized hollow body again instead of keeping bands at its sides", () => {
+    const frame = { x: 0, z: 0, elevation: 0, width: 60, depth: 60, height: 40, rotation: 0, rotationX: 0, rotationZ: 0, mirrorX: false, mirrorY: false, mirrorZ: false };
+    const feature = { kind: "shell" as const, amount: 2, edgeCount: 0, openings: "top" as const };
+    const hollow = (kind: WorkplaneShape["kind"], width: number, depth: number) => shape({
+      kind: "mesh",
+      width,
+      depth,
+      height: 40,
+      edgeResizeMode: "preserve",
+      edgeTreatments: [feature],
+      edgeTreatmentHistory: [{ id: "h", createdAt: 1, feature, before: shape({ kind, width: 60, depth: 60, height: 40 }), appliedFrame: frame }],
+      importedMesh: { positions: [-30, 0, 0, 30, 40, 0], baseWidth: 60, baseDepth: 60, baseHeight: 40, triangleCount: 1, sourceFormat: "json" },
+    });
+    // Just hollowed: nothing to redo; resized: the walls are rebuilt, not banded.
+    expect(shellNeedingRebuild(hollow("cylinder", 60, 60))).toBeNull();
+    expect(shellNeedingRebuild(hollow("cylinder", 45, 50))?.id).toBe("h");
+    expect(preservesEdgeTreatmentSize(hollow("cylinder", 45, 50))).toBe(false);
+    // A star stretched unevenly has no round body to hollow again; it keeps the bands.
+    expect(shellRebuildEntry(hollow("star", 45, 50))).toBeNull();
+    expect(shellNeedingRebuild(hollow("star", 45, 45))?.id).toBe("h");
+    // A fillet after the hollowing keeps the old way.
+    const filleted = hollow("cylinder", 45, 50);
+    filleted.edgeTreatments = [feature, { kind: "fillet", amount: 1, edgeCount: 1 }];
+    expect(shellRebuildEntry(filleted)).toBeNull();
+    expect(preservesEdgeTreatmentSize(filleted)).toBe(true);
   });
 
   it("uses child edge features when preserving the size of grouped treatments", () => {
