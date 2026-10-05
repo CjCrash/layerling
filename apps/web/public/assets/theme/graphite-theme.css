@@ -3714,6 +3714,59 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .inspector-bundle-note 
   border: 1px solid #cecece;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .workspace-custom-snap {
+  border-top: 1px solid #e8e8e8;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .workspace-custom-snap-heading span {
+  color: #595959;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .workspace-custom-snap-row input {
+  color: #4a4a4a;
+  background: #fff;
+  border: 1px solid #cecece;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .workspace-custom-snap-steps {
+  color: #595959;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .workspace-custom-snap-row button,
+:where(html[data-theme="dark"][data-palette="graphite"]) .workspace-custom-snap-add {
+  color: #4a4a4a;
+  background: #fff;
+  border: 1px solid #cecece;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .workspace-custom-snap-row button:hover,
+:where(html[data-theme="dark"][data-palette="graphite"]) .workspace-custom-snap-add:hover {
+  background: #f3f3f3;
+  border-color: #d1995e;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .workspace-custom-snap {
+  border-color: #3d3d3d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .workspace-custom-snap-heading span,
+html[data-theme="dark"]:where([data-palette="graphite"]) .workspace-custom-snap-steps {
+  color: #909090;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .workspace-custom-snap-row input,
+html[data-theme="dark"]:where([data-palette="graphite"]) .workspace-custom-snap-row button,
+html[data-theme="dark"]:where([data-palette="graphite"]) .workspace-custom-snap-add {
+  color: #cbcbcb;
+  background: #2d2d2d;
+  border-color: #4d4d4d;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .workspace-custom-snap-row button:hover,
+html[data-theme="dark"]:where([data-palette="graphite"]) .workspace-custom-snap-add:hover {
+  background: #353535;
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .workspace-global-note {
   color: #595959;
 }
