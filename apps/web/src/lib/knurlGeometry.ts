@@ -21,6 +21,7 @@ export const DEFAULT_KNURL_PATTERN: KnurlPattern = "straight";
 export const DEFAULT_KNURL_COUNT = 30;
 export const DEFAULT_KNURL_DEPTH = 0.6;
 export const DEFAULT_KNURL_ANGLE = 30;
+export const DEFAULT_KNURL_CHAMFER = 0.5;
 export const MIN_KNURL_COUNT = 6;
 export const MAX_KNURL_COUNT = 180;
 export const MIN_KNURL_DEPTH = 0.1;
@@ -61,6 +62,19 @@ export function normalizeKnurlAngle(value: unknown) {
   return Math.min(MAX_KNURL_ANGLE, Math.max(MIN_KNURL_ANGLE, angle));
 }
 
+/**
+ * The 45-degree chamfer on both ends, in mm: at most a quarter of the
+ * diameter and a little under half the height, so the two never meet.
+ */
+export function maxKnurlChamfer(diameter: number, height: number) {
+  return Math.max(0, Math.min(diameter / 4, height / 2 - 0.05));
+}
+
+export function normalizeKnurlChamfer(value: unknown, diameter: number, height: number) {
+  const chamfer = typeof value === "number" && Number.isFinite(value) ? value : 0;
+  return Math.min(maxKnurlChamfer(diameter, height), Math.max(0, chamfer));
+}
+
 export type KnurlCorner = { angle: number; radius: number };
 
 /** The outline's corners: ridges on the outer radius, groove bottoms between them. */
@@ -88,6 +102,7 @@ export type KnurlShapeFields = {
   knurlCount?: number;
   knurlDepth?: number;
   knurlAngle?: number;
+  knurlChamfer?: number;
 };
 
 export function knurlSettings(shape: KnurlShapeFields) {
@@ -99,6 +114,7 @@ export function knurlSettings(shape: KnurlShapeFields) {
     count: normalizeKnurlCount(shape.knurlCount, diameter),
     depth: normalizeKnurlDepth(shape.knurlDepth, diameter),
     angle: normalizeKnurlAngle(shape.knurlAngle),
+    chamfer: normalizeKnurlChamfer(shape.knurlChamfer, diameter, Math.max(0.1, shape.height)),
   };
 }
 
@@ -117,12 +133,12 @@ function outlineRadiusAt(phi: number, radius: number, depth: number, count: numb
 }
 
 export function createKnurlGeometry(shape: KnurlShapeFields): THREE.BufferGeometry {
-  const { diameter, height, pattern, count, depth, angle } = knurlSettings(shape);
+  const { diameter, height, pattern, count, depth, angle, chamfer } = knurlSettings(shape);
   const radius = diameter / 2;
   const positions: number[] = [];
   const indices: number[] = [];
 
-  if (pattern === "straight") {
+  if (pattern === "straight" && chamfer <= 0) {
     // Exactly the outline the kernel pushes up: one ring at the foot, one at the top.
     const corners = knurlCorners(diameter, count, depth);
     [0, height].forEach((y) => corners.forEach(({ angle: a, radius: r }) => positions.push(Math.cos(a) * r, y, Math.sin(a) * r)));
@@ -133,42 +149,53 @@ export function createKnurlGeometry(shape: KnurlShapeFields): THREE.BufferGeomet
     }
     addCaps(positions, indices, 0, n, n, height);
   } else {
-    // The grid is laid along the grooves: each row turns both rows of grooves
-    // by exactly one column, so every groove line runs through grid points -
-    // straight up a diagonal - and each cell is split along the diagonal of
-    // the groove row that forms its surface. No staircase along the creases.
-    // That fixes the turn to whole columns; the angle moves by a hair for it.
     // Six columns per flank, fewer when many grooves on a long, steep grip
     // would pass about 200 000 cells: one column per flank still puts every
     // ridge and groove on the grid, the surface just gets fewer facets.
-    const twistGuess = Math.abs(knurlTwist(diameter, height, angle));
+    const diamond = pattern === "diamond";
+    const twistGuess = diamond ? Math.abs(knurlTwist(diameter, height, angle)) : 0;
     const columnBudget = Math.sqrt((200000 * Math.PI * 2) / Math.max(twistGuess, 1e-6));
     const columnsPerHalfGroove = Math.max(1, Math.min(6, Math.floor(columnBudget / (count * 2))));
     const columns = count * columnsPerHalfGroove * 2;
     const columnStep = (Math.PI * 2) / columns;
-    const rows = Math.max(1, Math.min(2000, Math.round(knurlTwist(diameter, height, angle) / columnStep)));
+    // Crossed: the grid is laid along the grooves - each row turns both rows
+    // of grooves by exactly one column, so every groove line runs through grid
+    // points, straight up a diagonal, and each cell is split along the
+    // diagonal of the groove row that forms its surface. No staircase along
+    // the creases; the angle moves by a hair for it. Straight: rows only where
+    // the chamfer cuts, the grooves run straight between them.
+    const levels: Array<{ y: number; turn: number }> = [];
+    if (diamond) {
+      const rows = Math.max(1, Math.min(2000, Math.round(knurlTwist(diameter, height, angle) / columnStep)));
+      for (let row = 0; row <= rows; row += 1) levels.push({ y: (row / rows) * height, turn: row * columnStep });
+    } else {
+      const steps = 8;
+      for (let step = 0; step <= steps; step += 1) levels.push({ y: (step / steps) * chamfer, turn: 0 });
+      for (let step = 0; step <= steps; step += 1) levels.push({ y: height - chamfer + (step / steps) * chamfer, turn: 0 });
+    }
     const outline = (phi: number) => outlineRadiusAt(phi, radius, depth, count);
-    for (let row = 0; row <= rows; row += 1) {
-      const y = (row / rows) * height;
-      const turn = row * columnStep;
+    // The chamfer is a cone at 45 degrees: no point further out than the full
+    // radius less the chamfer, plus how far it is from the nearer end.
+    const cone = (y: number) => (chamfer > 0 ? radius - chamfer + Math.min(y, height - y) : Infinity);
+    levels.forEach(({ y, turn }) => {
       for (let column = 0; column < columns; column += 1) {
         const phi = column * columnStep;
-        const r = Math.min(outline(phi - turn), outline(phi + turn));
+        const r = Math.min(outline(phi - turn), outline(phi + turn), cone(y));
         positions.push(Math.cos(phi) * r, y, Math.sin(phi) * r);
       }
-    }
-    for (let row = 0; row < rows; row += 1) {
-      const turn = (row + 0.5) * columnStep;
+    });
+    for (let level = 0; level + 1 < levels.length; level += 1) {
+      const turn = (levels[level].turn + levels[level + 1].turn) / 2;
       for (let column = 0; column < columns; column += 1) {
-        const a = row * columns + column;
-        const b = row * columns + ((column + 1) % columns);
+        const a = level * columns + column;
+        const b = level * columns + ((column + 1) % columns);
         const phi = (column + 0.5) * columnStep;
         // The row turning with the height forms the surface here: its grooves run up and to the right.
         if (outline(phi - turn) <= outline(phi + turn)) indices.push(a, a + columns, b + columns, a, b + columns, b);
         else indices.push(a, a + columns, b, b, a + columns, b + columns);
       }
     }
-    addCaps(positions, indices, 0, columns, rows * columns, height);
+    addCaps(positions, indices, 0, columns, (levels.length - 1) * columns, height);
   }
 
   const geometry = new THREE.BufferGeometry();

@@ -436,7 +436,7 @@ describe("palette icons", () => {
       lay: false,
       azimuth: 30,
       elevation: 24,
-      build: () => createKnurlGeometry({ width: 24, height: 26, knurlPattern: "diamond", knurlCount: 18, knurlDepth: 1.2, knurlAngle: 30 }),
+      build: () => createKnurlGeometry({ width: 24, height: 26, knurlPattern: "diamond", knurlCount: 18, knurlDepth: 1.2, knurlAngle: 30, knurlChamfer: 1.5 }),
     });
     render({
       name: "apps/web/public/assets/editor/shape-icons-gray/roundedBox.png",

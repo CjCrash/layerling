@@ -49,6 +49,18 @@ describe("exact knurling bodies", () => {
     expect(Math.abs(cad.getVolume(solid))).toBeCloseTo(meshVolume(shape), 1);
   });
 
+  it("chamfers straight knurling exactly, close to the chamfered mesh", () => {
+    const shape = knurl({ knurlPattern: "straight", knurlChamfer: 1 });
+    const part = cadModifierProfileForShape(shape);
+    expect(part?.capChamfer).toEqual({ radius: 10, size: 1 });
+    const solid = profileExtrusionSolid(cad, part!);
+    expect(cad.isValid(solid)).toBe(true);
+    const exact = Math.abs(cad.getVolume(solid));
+    expect(Math.abs(exact - meshVolume(shape)) / exact).toBeLessThan(0.005);
+    const box = cad.getBoundingBox(solid);
+    expect(box.ymax - box.ymin).toBeCloseTo(12, 3);
+  });
+
   it("leaves crossed knurling a mesh: the kernel's common of the two turned rings is far too slow", () => {
     expect(cadModifierHelicalGearForShape(knurl({ knurlPattern: "diamond" }))).toBeNull();
     expect(cadModifierProfileForShape(knurl({ knurlPattern: "diamond" }))).toBeNull();

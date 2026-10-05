@@ -1050,6 +1050,11 @@ function tapeShapeTopologyKey(shape: WorkplaneShape): string {
     hingePinDiameter: shape.hingePinDiameter,
     hingeLeafThickness: shape.hingeLeafThickness,
     hingeClearance: shape.hingeClearance,
+    knurlPattern: shape.knurlPattern,
+    knurlCount: shape.knurlCount,
+    knurlDepth: shape.knurlDepth,
+    knurlAngle: shape.knurlAngle,
+    knurlChamfer: shape.knurlChamfer,
     dovetailNeckWidth: shape.dovetailNeckWidth,
     dovetailClearance: shape.dovetailClearance,
     screwHoleShaft: shape.screwHoleShaft,
@@ -1249,6 +1254,11 @@ function shapeGeometrySignature(shape: WorkplaneShape): string {
     hingePinDiameter: shape.hingePinDiameter,
     hingeLeafThickness: shape.hingeLeafThickness,
     hingeClearance: shape.hingeClearance,
+    knurlPattern: shape.knurlPattern,
+    knurlCount: shape.knurlCount,
+    knurlDepth: shape.knurlDepth,
+    knurlAngle: shape.knurlAngle,
+    knurlChamfer: shape.knurlChamfer,
     dovetailNeckWidth: shape.dovetailNeckWidth,
     dovetailClearance: shape.dovetailClearance,
     screwHoleShaft: shape.screwHoleShaft,
@@ -11355,7 +11365,7 @@ function createShapeObject(
       addMesh(group, sharedShapeGeometry(geometryCacheKey, () => createTeardropGeometry({ width, depth, height, sides: roundSideCount(shape.sides, width, depth) })), material, shape);
       break;
     case "knurl":
-      addMesh(group, sharedShapeGeometry(geometryCacheKey, () => createKnurlGeometry({ width, height, knurlPattern: shape.knurlPattern, knurlCount: shape.knurlCount, knurlDepth: shape.knurlDepth, knurlAngle: shape.knurlAngle })), material, shape);
+      addMesh(group, sharedShapeGeometry(geometryCacheKey, () => createKnurlGeometry({ width, height, knurlPattern: shape.knurlPattern, knurlCount: shape.knurlCount, knurlDepth: shape.knurlDepth, knurlAngle: shape.knurlAngle, knurlChamfer: shape.knurlChamfer })), material, shape);
       break;
     case "hinge":
       addMesh(group, sharedShapeGeometry(geometryCacheKey, () => createHingeGeometry({

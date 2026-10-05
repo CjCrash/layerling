@@ -122,6 +122,12 @@ export type CadModifierProfilePart = {
   topLoops?: CadModifierProfileLoop[];
   /** Extrusion only: round every edge of the two flat ends by this radius (a rounded box). */
   capFillet?: number;
+  /**
+   * Extrusion only: chamfer a round body at both ends at 45 degrees - keep
+   * what lies within `radius` less `size` plus the distance from the nearer
+   * end, measured from the axis through the outline's origin (knurling).
+   */
+  capChamfer?: { radius: number; size: number };
   /** The first loop is the outer boundary, any further loops are holes. */
   loops: CadModifierProfileLoop[];
   height: number;

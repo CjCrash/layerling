@@ -544,6 +544,23 @@ export function profileExtrusionSolid(cad: OcctKernel, profile: CadModifierProfi
     if (!cad.isSolid(rounded) || !isValid(rounded) || !(cad.getVolume(rounded) > 0)) throw new Error("The rounded ends of the profile solid are not valid");
     return rounded;
   }
+  if (profile.capChamfer && profile.capChamfer.size > 1e-4 && profile.kind === "extrusion") {
+    // A turned bound: the axis on y, a cone at 45 degrees at each end and
+    // room to spare in between; what the extrusion has in common with it.
+    const { radius, size } = profile.capChamfer;
+    const h = profile.height;
+    const spare = radius + 1;
+    const section = [
+      { x: 0, y: 0 }, { x: radius - size, y: 0 }, { x: spare, y: spare - radius + size },
+      { x: spare, y: h - (spare - radius + size) }, { x: radius - size, y: h }, { x: 0, y: h },
+    ].map((point) => ({ x: point.x, y: point.y, z: 0 }));
+    const wire = cad.makeWire(section.map((point, index) => cad.makeLineEdge(point, section[(index + 1) % section.length])));
+    const bound = cad.revolve(cad.makeFace(wire), { point: { x: 0, y: 0, z: 0 }, direction: { x: 0, y: 1, z: 0 } }, Math.PI * 2);
+    const common = cad.common(solid, bound);
+    const solids = cad.isSolid(common) ? [common] : cad.getSubShapes(common, "solid");
+    if (solids.length !== 1 || !isValid(solids[0]) || !(cad.getVolume(solids[0]) > 0)) throw new Error("The chamfered ends of the profile solid are not valid");
+    return solids[0];
+  }
   return solid;
 }
 

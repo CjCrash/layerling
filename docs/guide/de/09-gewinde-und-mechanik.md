@@ -67,7 +67,7 @@ Das {{ui:shape.hinge}} wird in einem Stück gedruckt und bewegt sich danach (pri
 
 ## Rändelung
 
-Die {{ui:shape.knurl}} ist ein runder Griff mit Rillen ringsum, für Drehknöpfe, Stellräder und Werkzeuggriffe. Unter {{ui:prop.knurlPattern}} wählst du {{ui:knurl.straight}}, also Rillen längs der Achse wie an einem Drehknopf, oder {{ui:knurl.diamond}}: Zwei schräge Rillenreihen kreuzen sich zu kleinen Rauten. Du stellst {{ui:prop.diameter}} und {{ui:prop.height}} ein, die Zahl der {{ui:prop.knurlCount}} und die {{ui:prop.knurlDepth}}; bei der gekreuzten Rändelung dazu den {{ui:prop.knurlAngle}} zur Achse.
+Die {{ui:shape.knurl}} ist ein runder Griff mit Rillen ringsum, für Drehknöpfe, Stellräder und Werkzeuggriffe. Unter {{ui:prop.knurlPattern}} wählst du {{ui:knurl.straight}}, also Rillen längs der Achse wie an einem Drehknopf, oder {{ui:knurl.diamond}}: Zwei schräge Rillenreihen kreuzen sich zu kleinen Rauten. Du stellst {{ui:prop.diameter}} und {{ui:prop.height}} ein, die Zahl der {{ui:prop.knurlCount}} und die {{ui:prop.knurlDepth}}; bei der gekreuzten Rändelung dazu den {{ui:prop.knurlAngle}} zur Achse. Die {{ui:prop.knurlChamfer}} bricht beide Enden unter 45°, wie bei einem gedrehten Knopf; 0 lässt sie scharf.
 
 Die gerade Rändelung ist ein exakter Körper, ihre Kanten lassen sich brechen und runden. Die gekreuzte bleibt ein Netz, denn als exakter Körper bräuchte sie bei 30 Rillen schon fast eine Minute zum Rechnen. Für einen Knopf auf einer Achse gruppierst du die Rändelung mit einer Bohrung, etwa einem {{ui:shape.thread}} als Gewindeloch. Rillen unter 0,4 mm Tiefe druckt kaum ein Drucker sauber, und enger als 0,8 mm am Umfang lässt layerling die Rillen gar nicht erst stehen: Ein dünner Griff bekommt entsprechend weniger.
 

@@ -520,6 +520,7 @@ export function workplaneShapesEqual(a: WorkplaneShape, b: WorkplaneShape) {
     a.knurlCount === b.knurlCount &&
     a.knurlDepth === b.knurlDepth &&
     a.knurlAngle === b.knurlAngle &&
+    a.knurlChamfer === b.knurlChamfer &&
     a.cylinderWrap?.inward === b.cylinderWrap?.inward &&
     a.textRadius === b.textRadius &&
     a.textSize === b.textSize &&

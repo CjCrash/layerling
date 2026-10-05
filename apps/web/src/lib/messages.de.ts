@@ -1023,6 +1023,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "prop.knurlCount": "Rillen",
   "prop.knurlDepth": "Rillentiefe",
   "prop.knurlAngle": "Winkel der Rillen",
+  "prop.knurlChamfer": "Fase an den Enden",
   "knurl.straight": "Gerade",
   "knurl.diamond": "Gekreuzt",
   "knurl.straightHint": "Rillen längs der Achse, wie an einem Drehknopf.",

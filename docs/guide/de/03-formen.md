@@ -19,8 +19,8 @@ Was die Bibliothek bietet:
 - **Rohre:** {{ui:shape.tube}} und {{ui:shape.bentTube}} aus bis zu zwölf geraden Stücken mit Biegungen dazwischen.
 - **Zierformen:** {{ui:shape.star}}, {{ui:shape.heart}} und {{ui:shape.crescent}}.
 - **Beschriftung:** {{ui:shape.text}}, auch auf einem Kreisbogen. Mehr im Kapitel [Text](chapter:text).
-- **Mechanik:** {{ui:shape.thread}} (Gewindestange, Schraube, Mutter und Gewindeloch), {{ui:shape.spring}} und {{ui:shape.gear}}. Mehr im Kapitel [Gewinde und Mechanik](chapter:gewinde-und-mechanik).
-- **Für Konstruktionen:** {{ui:shape.honeycomb}}, das druckbare {{ui:shape.hinge}}, die {{ui:shape.knurl}} für Griffe, {{ui:shape.dovetail}}, die {{ui:shape.teardrop}} für waagerechte Löcher, die {{ui:shape.counterbore}} und {{ui:shape.countersink}} für Schraubenköpfe und das {{ui:shape.ruler}}, das nur ein Messwerkzeug ist und in keinem Export auftaucht.
+- **Mechanik:** {{ui:shape.thread}} (Gewindestange, Schraube, Mutter und Gewindeloch), {{ui:shape.spring}}, {{ui:shape.gear}} und die {{ui:shape.knurl}} für Griffe. Mehr im Kapitel [Gewinde und Mechanik](chapter:gewinde-und-mechanik).
+- **Für Konstruktionen:** {{ui:shape.honeycomb}}, das druckbare {{ui:shape.hinge}}, {{ui:shape.dovetail}}, die {{ui:shape.teardrop}} für waagerechte Löcher, die {{ui:shape.counterbore}} und {{ui:shape.countersink}} für Schraubenköpfe und das {{ui:shape.ruler}}, das nur ein Messwerkzeug ist und in keinem Export auftaucht.
 
 ## Die Einstellungen der Form
 

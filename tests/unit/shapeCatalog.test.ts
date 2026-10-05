@@ -60,7 +60,7 @@ describe("shape catalog", () => {
     expect(kinds.indexOf("text")).toBe(kinds.indexOf("teardrop") + 1);
   });
 
-  it("exposes honeycomb, hinge, knurl and dovetail between gear and the decorative shapes in the toolbar catalog", () => {
+  it("exposes knurl, honeycomb, hinge and dovetail between gear and the decorative shapes in the toolbar catalog", () => {
     const kinds = toolbarShapeAssets.map((asset) => asset.kind);
 
     expect(kinds).toContain("honeycomb");
@@ -68,10 +68,10 @@ describe("shape catalog", () => {
     const gearIndex = kinds.indexOf("gear");
     const honeycombIndex = kinds.indexOf("honeycomb");
     const dovetailIndex = kinds.indexOf("dovetail");
-    expect(honeycombIndex).toBe(gearIndex + 1);
+    expect(kinds.indexOf("knurl")).toBe(gearIndex + 1);
+    expect(honeycombIndex).toBe(gearIndex + 2);
     expect(kinds.indexOf("hinge")).toBe(honeycombIndex + 1);
-    expect(kinds.indexOf("knurl")).toBe(honeycombIndex + 2);
-    expect(dovetailIndex).toBe(honeycombIndex + 3);
+    expect(dovetailIndex).toBe(honeycombIndex + 2);
     expect(kinds.indexOf("star")).toBe(dovetailIndex + 1);
   });
 

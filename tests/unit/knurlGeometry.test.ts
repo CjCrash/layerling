@@ -78,3 +78,25 @@ describe("knurling mesh size", () => {
     expect(signedVolume(soup(geometry))).toBeGreaterThan(0);
   });
 });
+
+describe("knurling chamfer", () => {
+  for (const pattern of ["straight", "diamond"] as const) {
+    it(`chamfers both ends of ${pattern} knurling at 45 degrees and stays closed`, () => {
+      const positions = soup(createKnurlGeometry({ width: 20, height: 12, knurlPattern: pattern, knurlCount: 24, knurlDepth: 0.8, knurlChamfer: 1.5 }));
+      expect(() => validateClosedSolidTriangleSoup(positions, pattern)).not.toThrow();
+      expect(signedVolume(positions)).toBeGreaterThan(0);
+      // On the end faces nothing reaches past the radius less the chamfer.
+      for (let i = 0; i < positions.length; i += 3) {
+        const y = positions[i + 1];
+        const r = Math.hypot(positions[i], positions[i + 2]);
+        expect(r).toBeLessThanOrEqual(10 - 1.5 + Math.min(y, 12 - y) + 1e-4);
+      }
+    });
+  }
+
+  it("keeps the chamfer short of the middle and inside a quarter of the diameter", () => {
+    expect(knurlSettings({ width: 20, height: 4, knurlChamfer: 9 }).chamfer).toBeCloseTo(1.95, 9);
+    expect(knurlSettings({ width: 8, height: 40, knurlChamfer: 9 }).chamfer).toBeCloseTo(2, 9);
+    expect(knurlSettings({ width: 20, height: 10 }).chamfer).toBe(0);
+  });
+});

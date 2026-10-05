@@ -147,6 +147,8 @@ export type ShapeCustomization = {
   knurlDepth?: number;
   /** Crossed knurling: angle of the grooves to the axis, in degrees. */
   knurlAngle?: number;
+  /** Knurling: 45-degree chamfer on both ends, in mm; 0 for none. */
+  knurlChamfer?: number;
   /** Dovetail: width of the narrow neck in mm (the wide end is the shape's width). */
   dovetailNeckWidth?: number;
   /** Dovetail: gap in mm added on every side when the dovetail is a cut-out (its socket). */
@@ -470,6 +472,8 @@ export type WorkplaneShape = {
   knurlDepth?: number;
   /** Crossed knurling: angle of the grooves to the axis, in degrees. */
   knurlAngle?: number;
+  /** Knurling: 45-degree chamfer on both ends, in mm; 0 for none. */
+  knurlChamfer?: number;
   /** Dovetail: width of the narrow neck in mm (the wide end is the shape's width). */
   dovetailNeckWidth?: number;
   /** Dovetail: gap in mm added on every side when the dovetail is a cut-out (its socket). */

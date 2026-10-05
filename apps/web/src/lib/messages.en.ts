@@ -1024,6 +1024,7 @@ export const MESSAGES_EN = {
   "prop.knurlCount": "Grooves",
   "prop.knurlDepth": "Groove depth",
   "prop.knurlAngle": "Groove angle",
+  "prop.knurlChamfer": "Chamfer at the ends",
   "knurl.straight": "Straight",
   "knurl.diamond": "Crossed",
   "knurl.straightHint": "Grooves along the axis, as on a control knob.",

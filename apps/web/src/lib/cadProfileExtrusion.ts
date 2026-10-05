@@ -734,7 +734,7 @@ function alongDepthFrame(depth: number): ProfileFrame {
   return { kind: "extrusion", height: depth, local: new THREE.Matrix4().set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, depth / 2, 0, 0, 0, 1) };
 }
 
-export function cadProfileForShapeKind(shape: WorkplaneShape, designedRound = false): { loops: CadModifierProfileLoop[]; frame?: ProfileFrame; capFillet?: number } | null {
+export function cadProfileForShapeKind(shape: WorkplaneShape, designedRound = false): { loops: CadModifierProfileLoop[]; frame?: ProfileFrame; capFillet?: number; capChamfer?: { radius: number; size: number } } | null {
   const width = shapeWidth(shape);
   const depth = shapeDepth(shape);
   switch (shape.kind) {
@@ -876,7 +876,10 @@ export function cadProfileForShapeKind(shape: WorkplaneShape, designedRound = fa
       // counter-turned rings of 30 grooves have in common, and fails at 60.
       const settings = knurlSettings({ ...shape, width });
       if (settings.pattern !== "straight") return null;
-      return { loops: [polygonLoop(knurlCorners(settings.diameter, settings.count, settings.depth).map(({ angle, radius }) => ({ x: Math.cos(angle) * radius, z: Math.sin(angle) * radius })))] };
+      return {
+        loops: [polygonLoop(knurlCorners(settings.diameter, settings.count, settings.depth).map(({ angle, radius }) => ({ x: Math.cos(angle) * radius, z: Math.sin(angle) * radius })))],
+        capChamfer: settings.chamfer > 0 ? { radius: settings.diameter / 2, size: settings.chamfer } : undefined,
+      };
     }
     case "text": {
       // A text is one body only when it is one glyph; otherwise the edge tool
@@ -962,7 +965,7 @@ function deformedLoftProfile(shape: WorkplaneShape, width: number, depth: number
     // A round cylinder has no outline of its own (it is an analytic
     // primitive); as an ellipse it gets the same circle, or its drawn polygon.
     const base = cadProfileForShapeKind(shape.kind === "cylinder" ? { ...shape, kind: "ellipse" } : shape);
-    if (!base || base.frame || base.capFillet) return null;
+    if (!base || base.frame || base.capFillet || base.capChamfer) return null;
     loops = base.loops;
   }
   const taper = shapeTaperDimensions(shape);
@@ -1005,6 +1008,7 @@ export function cadModifierProfileForShape(shape: WorkplaneShape, options: { des
     };
     if (profile.frame?.path) part.path = profile.frame.path;
     if (profile.capFillet) part.capFillet = profile.capFillet;
+    if (profile.capChamfer) part.capChamfer = profile.capChamfer;
     validateCadProfile(part);
     return part;
   } catch {
