@@ -7068,6 +7068,14 @@ export function LayerlingEditor({
   const exportHiddenCount = useMemo(() => exportTargetShapes.filter((shape) => shape.hidden).length, [exportTargetShapes]);
   const exportHolesOnly = useMemo(() => exportTargetShapes.length > 0 && exportTargetShapes.every((shape) => shape.hole), [exportTargetShapes]);
   const exportScopeLabel = hasSelection ? "selected" : "total";
+  // The note "only the selection is exported" needs to know how much is left
+  // out: the visible bodies the selection does not cover.
+  const exportVisibleCount = useMemo(() => shapes.filter((shape) => !shape.hidden).length, [shapes]);
+  const exportSelectedVisibleCount = useMemo(() => selectedShapes.filter((shape) => !shape.hidden).length, [selectedShapes]);
+  const selectAllVisible = useCallback(() => {
+    setSelectedIds(shapes.filter((shape) => !shape.hidden).map((shape) => shape.id));
+    setNotice(t("status.selectedAllVisible"));
+  }, [shapes]);
   const effectiveAlignAnchorId = useMemo(
     () => effectiveAlignmentAnchorId(selectedShapes, alignAnchorId),
     [alignAnchorId, selectedShapes],
@@ -12576,6 +12584,8 @@ export function LayerlingEditor({
           projectName={projectName}
           shapeCount={exportableShapeCount}
           scopeLabel={exportScopeLabel}
+          selectionLeavesOut={hasSelection && exportSelectedVisibleCount < exportVisibleCount ? { selected: selectedShapes.length, total: exportVisibleCount } : null}
+          onSelectAll={selectAllVisible}
           onlyHoles={exportHolesOnly}
           hiddenCount={exportHiddenCount}
           estimateShapes={exportTargetShapes}
@@ -13628,6 +13638,8 @@ function TopActionPanel({
   projectName,
   shapeCount,
   scopeLabel,
+  selectionLeavesOut,
+  onSelectAll,
   onlyHoles,
   hiddenCount = 0,
   estimateShapes,
@@ -13650,6 +13662,9 @@ function TopActionPanel({
   projectName: string;
   shapeCount: number;
   scopeLabel: "selected" | "total";
+  /** Set when a selection is exported that leaves out visible bodies: how many are selected, how many are visible. */
+  selectionLeavesOut?: { selected: number; total: number } | null;
+  onSelectAll?: () => void;
   onlyHoles?: boolean;
   /** Ausgeblendete Teile, die der Export auslaesst - gesagt, bevor er laeuft. */
   hiddenCount?: number;
@@ -13867,6 +13882,22 @@ function TopActionPanel({
               ))}
             </div>
           </section>
+
+          {exportFormat !== "lyl" && selectionLeavesOut ? (
+            <div className="export-holes-only-warning export-selection-note" role="status">
+              <Info size={16} aria-hidden="true" />
+              <span>
+                {selectionLeavesOut.selected === 1
+                  ? t("export.selectionOnlyOne", { total: selectionLeavesOut.total })
+                  : t("export.selectionOnlyMany", { count: selectionLeavesOut.selected, total: selectionLeavesOut.total })}
+              </span>
+              {onSelectAll ? (
+                <button type="button" className="export-select-all-button" onClick={onSelectAll}>
+                  {t("export.selectAll")}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
           {exportFormat !== "lyl" && hiddenCount > 0 ? (
             <div className="export-holes-only-warning export-hidden-note" role="status">

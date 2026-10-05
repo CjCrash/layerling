@@ -21,7 +21,7 @@ Click {{ui:editor.export}} or press [[Ctrl]]+[[E]].
 
 ![The export window with the formats STL, 3MF, OBJ, STEP, SVG and LYL.](shot:export-panel)
 
-At the top is the file name, below it you choose the format. You decide whether only the selection or the whole design is exported. Once the file is written, the window closes by itself; if the export fails, it stays open with the message.
+At the top is the file name, below it you choose the format. With something selected, only the selection is exported, otherwise the whole design. If the selection leaves out visible parts, a note in the window says so plainly, and {{ui:export.selectAll}} selects everything visible in one click. Once the file is written, the window closes by itself; if the export fails, it stays open with the message.
 
 | Format | For | What to know |
 | --- | --- | --- |

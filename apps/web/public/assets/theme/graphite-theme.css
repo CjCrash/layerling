@@ -5800,6 +5800,28 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .outliner-list-wrap::-w
   color: #d86a00;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .export-select-all-button {
+  color: #8a3b00;
+  background: #ffffff;
+  border: 1px solid #f0a45a;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .export-select-all-button:hover,
+:where(html[data-theme="dark"][data-palette="graphite"]) .export-select-all-button:focus-visible {
+  background: #e3e3e3;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .export-select-all-button {
+  color: #ffc480;
+  background: rgba(180, 85, 0, 0.22);
+  border-color: rgba(240, 164, 90, 0.5);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .export-select-all-button:hover,
+html[data-theme="dark"]:where([data-palette="graphite"]) .export-select-all-button:focus-visible {
+  background: rgba(180, 85, 0, 0.36);
+}
+
 html[data-theme="dark"]:where([data-palette="graphite"]) .export-holes-only-warning {
   color: #ffc480;
   background: rgba(180, 85, 0, 0.16);

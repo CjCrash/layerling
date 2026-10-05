@@ -12070,6 +12070,39 @@ html[data-theme="dark"] .outliner-list-wrap::-webkit-scrollbar-thumb {
   color: #d86a00;
 }
 
+/* The selection note carries its way out: a button that selects everything visible. */
+.export-selection-note span {
+  flex: 1;
+}
+
+.export-select-all-button {
+  flex: none;
+  padding: 5px 10px;
+  color: #8a3b00;
+  font: inherit;
+  font-weight: 700;
+  background: #ffffff;
+  border: 1px solid #f0a45a;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.export-select-all-button:hover,
+.export-select-all-button:focus-visible {
+  background: #ffe7c7;
+}
+
+html[data-theme="dark"] .export-select-all-button {
+  color: #ffc480;
+  background: rgba(180, 85, 0, 0.22);
+  border-color: rgba(240, 164, 90, 0.5);
+}
+
+html[data-theme="dark"] .export-select-all-button:hover,
+html[data-theme="dark"] .export-select-all-button:focus-visible {
+  background: rgba(180, 85, 0, 0.36);
+}
+
 html[data-theme="dark"] .export-holes-only-warning {
   color: #ffc480;
   background: rgba(180, 85, 0, 0.16);
