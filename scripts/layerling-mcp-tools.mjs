@@ -420,30 +420,31 @@ export const tools = [
     },
   },
   {
-    name: "layerling_save_my_shape",
-    description: "Keep bodies as one of \"my shapes\", as the shape library's \"Save selection\" does: they are stored in this browser (not in the design) and can be inserted into any design later. Several bodies become one shape and are inserted together. The shape is kept centred, standing on the plate. Returns the new shape's id and name.",
+    name: "layerling_save_custom_shape",
+    description: "Keep bodies as a custom shape, as the shape library's \"Save selection\" does, to insert them into any design later. Several bodies become one shape and come back together. The shape is kept centred, standing on the plate. Where the shared server store is on, it goes to the server's \"Custom shapes\" folder unless location says \"browser\"; otherwise it stays in this browser. Returns the new shape's id, name and location.",
     inputSchema: {
       ...editorTargetSchema,
       properties: {
         ...editorTargetSchema.properties,
         ids: { type: "array", items: { type: "string" }, description: "The bodies to keep; defaults to the selection." },
-        name: { type: "string", description: "Name shown in the library; defaults to the body's name." },
+        name: { type: "string", description: "Name shown in the library; defaults to the body's name. On the server it is also the file name, so it must not be taken yet." },
+        location: { type: "string", enum: ["server", "browser"], description: "Where to keep it. Default: the server when there is one, else the browser." },
       },
     },
   },
   {
-    name: "layerling_list_my_shapes",
-    description: "List \"my shapes\", the bodies kept in this browser's shape library: id, name, number of bodies, size and when they were saved.",
+    name: "layerling_list_custom_shapes",
+    description: "List the custom shapes: those on the server (ids start with \"server:\") and those in this browser, with name, location and size. serverAvailable says whether this installation has the shared store.",
     inputSchema: editorTargetSchema,
   },
   {
-    name: "layerling_insert_my_shape",
-    description: "Insert one of \"my shapes\" into the open design, as a click on its tile does. Without x/z it lands at the workplane's origin; with them, the middle of its footprint goes there and it stands on the plate. Returns the inserted objects, which are selected.",
+    name: "layerling_insert_custom_shape",
+    description: "Insert a custom shape into the open design, as a click on its tile does. Without x/z it lands at the workplane's origin; with them, the middle of its footprint goes there and it stands on the plate. Returns the inserted objects, which are selected.",
     inputSchema: {
       ...editorTargetSchema,
       properties: {
         ...editorTargetSchema.properties,
-        id: { type: "string", description: "Id from layerling_list_my_shapes, or the shape's name." },
+        id: { type: "string", description: "Id from layerling_list_custom_shapes, or the shape's name." },
         name: { type: "string", description: "The shape's name, instead of the id." },
         x: { type: "number", description: "Where the middle goes, in mm." },
         z: { type: "number", description: "Where the middle goes, in mm." },
@@ -451,13 +452,13 @@ export const tools = [
     },
   },
   {
-    name: "layerling_delete_my_shape",
-    description: "Remove one of \"my shapes\" from this browser's library. Bodies already inserted into designs stay. Cannot be undone.",
+    name: "layerling_delete_custom_shape",
+    description: "Remove a custom shape from the browser or the server. Bodies already inserted into designs stay. Cannot be undone.",
     inputSchema: {
       ...editorTargetSchema,
       properties: {
         ...editorTargetSchema.properties,
-        id: { type: "string", description: "Id from layerling_list_my_shapes, or the shape's name." },
+        id: { type: "string", description: "Id from layerling_list_custom_shapes, or the shape's name." },
         name: { type: "string", description: "The shape's name, instead of the id." },
       },
     },

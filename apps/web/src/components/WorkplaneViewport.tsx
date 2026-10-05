@@ -273,7 +273,7 @@ type WorkplaneViewportProps = {
   initialWorkspace?: WorkplaneWorkspaceSettings;
   workspaceSettingsKey?: string | null;
   onAddShape: (shape: ShapeAsset, point?: PlacementPoint) => void;
-  /** One of "my shapes" dropped on the workplane, by its id. */
+  /** A custom shape dropped on the workplane, by its id. */
   onDropMyShape?: (id: string, point: PlacementPoint) => void;
   /** Shape following the cursor until a click drops it. Null places immediately. */
   cruiseAsset?: ShapeAsset | null;

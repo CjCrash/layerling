@@ -3846,7 +3846,7 @@ button {
   font-size: 0.85em;
 }
 
-/* "My shapes" above the basic shapes (#109). Both scroll together in the
+/* Custom shapes above the basic shapes (#109). Both scroll together in the
    menu body, so the library list itself no longer scrolls on its own there. */
 .shape-menu-body {
   max-height: min(608px, calc(100vh - 136px));
@@ -3994,7 +3994,7 @@ button {
 
 .my-shapes-name-form input,
 .my-shape-rename input {
-  flex: 1 1 160px;
+  flex: 1 1 100px;
   min-width: 0;
   height: 30px;
   padding: 0 8px;
@@ -4023,7 +4023,6 @@ button {
 
 .my-shape-tile .shape-menu-item {
   width: 100%;
-  padding-right: 62px;
 }
 
 .my-shape-tile .shape-menu-item img,
@@ -4047,6 +4046,9 @@ button {
   right: 6px;
   display: flex;
   gap: 2px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 6px;
   transform: translateY(-50%);
   opacity: 0;
   transition: opacity 120ms ease;
@@ -4058,9 +4060,18 @@ button {
   opacity: 1;
 }
 
+/* Without a mouse the buttons are always there, so the name makes room. */
 @media (hover: none) {
   .my-shape-tile-actions {
     opacity: 1;
+  }
+
+  .my-shape-tile .shape-menu-item {
+    padding-right: 62px;
+  }
+
+  .my-shape-tile .shape-menu-item:has(+ .my-shape-tile-actions.three) {
+    padding-right: 90px;
   }
 }
 
@@ -4094,6 +4105,41 @@ button {
   background: #b42318;
   border-color: #b42318;
 }
+
+.my-shapes-location {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid #dccdbe;
+  border-radius: 4px;
+}
+
+.my-shapes-name-form .my-shapes-location button {
+  height: 28px;
+  border: 0;
+  border-radius: 0;
+  font-weight: 700;
+}
+
+.my-shapes-name-form .my-shapes-location button + button {
+  border-left: 1px solid #dccdbe;
+}
+
+.my-shapes-name-form .my-shapes-location button.active {
+  color: #fff;
+  background: #7d6245;
+}
+
+.my-shapes-group + .my-shapes-group {
+  margin-top: 8px;
+}
+
+.my-shapes-group-title {
+  padding: 0 4px 4px;
+  color: #8a6d4c;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 
 .my-shape-rename {
   display: flex;
@@ -12629,4 +12675,22 @@ html[data-theme="dark"] .my-shape-tile-action.danger {
   color: #fff;
   background: #b42318;
   border-color: #b42318;
+}
+
+html[data-theme="dark"] .my-shapes-location,
+html[data-theme="dark"] .my-shapes-name-form .my-shapes-location button + button {
+  border-color: #5b4b3a;
+}
+
+html[data-theme="dark"] .my-shapes-name-form .my-shapes-location button.active {
+  color: #fff;
+  background: #8a6a46;
+}
+
+html[data-theme="dark"] .my-shapes-group-title {
+  color: #cdbca6;
+}
+
+html[data-theme="dark"] .my-shape-tile-actions {
+  background: rgba(58, 44, 31, 0.94);
 }

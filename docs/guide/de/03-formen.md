@@ -88,9 +88,9 @@ Der Rasterschritt steht unten rechts im Editor und lässt sich jederzeit ändern
 
 > **Tipp:** Wenn eine Form nicht die gewünschte Größe annimmt, liegt das oft an den Grenzen für neue Formen. Unter {{ui:workspace.shapeDefaults}} in den Einstellungen legst du fest, wie jede Form beginnt und wie groß sie höchstens werden darf.
 
-## Meine Formen
+## Eigene Formen
 
-Ein Halter, ein Griff oder eine Grundplatte, die du immer wieder brauchst, kommt in {{ui:myShapes.title}}. Der Bereich steht in der Formenliste ganz oben, über den {{ui:myShapes.basicShapes}}, und lässt sich mit dem Pfeil zuklappen.
+Ein Halter, ein Griff oder eine Grundplatte, die du immer wieder brauchst, kommt zu den {{ui:myShapes.title}}. Sie stehen in der Formenliste ganz oben, über den {{ui:myShapes.basicShapes}}, und lassen sich mit dem Pfeil zuklappen.
 
 1. Markiere einen oder mehrere Körper, auch Aussparungen, Gruppen oder ein importiertes Modell.
 2. Öffne die Formenliste und klicke auf {{ui:myShapes.saveSelection}}. Gib einen Namen ein und bestätige mit {{ui:common.save}}.
@@ -98,7 +98,13 @@ Ein Halter, ein Griff oder eine Grundplatte, die du immer wieder brauchst, kommt
 
 Mehrere Körper kommen zusammen wieder heraus, so wie sie zueinander standen, und bleiben einzeln auswählbar. Der Stift auf einer Kachel benennt sie um, der Papierkorb entfernt sie nach einer Rückfrage. Was schon in Entwürfen steckt, bleibt dabei erhalten.
 
-{{ui:myShapes.title}} liegen in diesem Browser, getrennt von den Entwürfen, und sind beim nächsten Start sofort wieder da. Für einen anderen Browser oder Rechner sicherst du sie mit {{ui:myShapes.backup}} (der Pfeil nach unten) als eine ZIP-Datei und holst sie dort mit {{ui:myShapes.load}} (der Pfeil nach oben) zurück. {{ui:myShapes.load}} nimmt auch einzelne `.lyl`-Entwürfe, jeder wird dann zu einer Form. Was schon da ist, wird nicht doppelt angelegt.
+Die {{ui:myShapes.title}} liegen in diesem Browser, getrennt von den Entwürfen, und sind beim nächsten Start sofort wieder da. {{ui:dashboard.backupAll}} auf der Startseite sichert sie mit den Entwürfen, und beim Öffnen der Sicherung kommen beide zurück. Nur die Formen sicherst du mit {{ui:myShapes.backup}} (der Pfeil nach unten) als ZIP-Datei und holst sie mit {{ui:myShapes.load}} (der Pfeil nach oben) in einen anderen Browser. {{ui:myShapes.load}} nimmt auch einzelne `.lyl`-Entwürfe, jeder wird dann zu einer Form. Was schon da ist, wird nicht doppelt angelegt.
+
+### Eigene Formen auf dem Server
+
+Ist der [Serverspeicher](chapter:dateien-und-speichern) eingeschaltet, zeigt der Bereich zwei Gruppen: {{ui:myShapes.onServer}} und {{ui:myShapes.inBrowser}}. Beim Speichern wählst du, wohin die Form kommt; vorgewählt ist der Server. Dort liegt sie im Ordner `Custom shapes`, als eigene `.lyl`-Datei mit Vorschaubild, und steht damit auf jedem Gerät bereit, das den Server erreicht. Eine Form aus dem Browser legst du mit der Wolke auf ihrer Kachel auf den Server; im Browser ist sie danach nicht mehr doppelt.
+
+Der Ordner `Custom shapes` erscheint auch auf der Startseite. Dort öffnest du eine Form wie einen Entwurf, änderst sie, und sie wird wie jeder Serverentwurf automatisch gespeichert. Beim nächsten Einsetzen ist sie neu. Weil der Serverspeicher keine Anmeldung hat, sieht jeder, der den Server erreicht, dieselben Formen.
 
 ## Um einen Zylinder wickeln
 

@@ -1,7 +1,9 @@
+import { createLocalId } from "@/lib/localIds";
+import { backupEntryNames, CUSTOM_SHAPES_BACKUP_FOLDER, CUSTOM_SHAPES_MANIFEST, unpackCustomShapes, type BackupEntry } from "@/lib/projectBackup";
 import type { WorkplaneShape } from "@/types/layerling";
 
 /*
- * "My shapes": bodies someone saved to use again, shown on top of the shape
+ * Custom shapes: bodies someone saved to use again, shown on top of the shape
  * library (#109). Each one is a small .lyl package - the same format as a
  * design, so reading it back goes through the checks every design gets - and
  * lives in IndexedDB, not in local storage: an imported STL alone can be
@@ -45,7 +47,7 @@ export function myShapeNameFromFile(fileName: string, fallback: string) {
 
 export function myShapesBackupFileName(date: Date) {
   const pad = (value: number) => String(value).padStart(2, "0");
-  return `layerling-my-shapes-${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}.zip`;
+  return `layerling-custom-shapes-${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}.zip`;
 }
 
 /** Newest last, so a fresh save shows up at the end of the row, where the eye expects it. */
@@ -127,7 +129,7 @@ function announceChange() {
   }
 }
 
-/** Calls back when another tab saved, renamed or deleted one of my shapes. */
+/** Calls back when another tab saved, renamed or deleted one of the custom shapes. */
 export function onMyShapesChanged(listener: () => void) {
   if (typeof BroadcastChannel === "undefined") return () => undefined;
   const channel = new BroadcastChannel(CHANGE_CHANNEL);
@@ -180,4 +182,79 @@ export async function deleteMyShape(id: string) {
     packages.delete(id);
   });
   announceChange();
+}
+
+type ManifestEntry = { file: string; name: string; createdAt: number; thumbnail: string; bodyCount: number; fingerprint?: string };
+
+/**
+ * The custom shapes of this browser as entries for a backup ZIP: one .lyl
+ * each in the custom shapes folder, and a list with their names and
+ * pictures, so a restore needs no editor to draw them again.
+ */
+export async function customShapesBackupEntries(): Promise<BackupEntry[]> {
+  const list = await listMyShapes();
+  if (list.length === 0) return [];
+  const files = backupEntryNames(list.map((shape) => shape.name), "shape");
+  const entries: BackupEntry[] = [];
+  const manifest: ManifestEntry[] = [];
+  for (let index = 0; index < list.length; index += 1) {
+    const shape = list[index];
+    entries.push({ name: `${CUSTOM_SHAPES_BACKUP_FOLDER}/${files[index]}`, bytes: await readMyShapePackage(shape.id) });
+    manifest.push({ file: files[index], name: shape.name, createdAt: shape.createdAt, thumbnail: shape.thumbnail, bodyCount: shape.bodyCount, fingerprint: shape.fingerprint });
+  }
+  entries.push({ name: `${CUSTOM_SHAPES_BACKUP_FOLDER}/${CUSTOM_SHAPES_MANIFEST}`, bytes: new TextEncoder().encode(JSON.stringify({ format: "com.layerling.custom-shapes", version: 1, shapes: manifest })) });
+  return entries;
+}
+
+function manifestEntries(manifest: unknown): ManifestEntry[] {
+  const shapes = (manifest as { shapes?: unknown } | null)?.shapes;
+  if (!Array.isArray(shapes)) return [];
+  return shapes.filter((entry): entry is ManifestEntry => Boolean(entry)
+    && typeof entry.file === "string"
+    && typeof entry.name === "string"
+    && typeof entry.createdAt === "number"
+    && typeof entry.thumbnail === "string"
+    && (entry.thumbnail === "" || entry.thumbnail.startsWith("data:image/png;base64,"))
+    && typeof entry.bodyCount === "number");
+}
+
+/**
+ * Puts the custom shapes of a backup into this browser. A shape listed with
+ * its picture goes straight in; one with the same name and bodies is already
+ * there and is skipped. Packages without a list entry come back to the caller,
+ * which can draw a picture for them.
+ */
+export async function restoreCustomShapesFromBackup(bytes: Uint8Array): Promise<{ added: number; skipped: number; unlisted: BackupEntry[] }> {
+  const { entries, manifest } = unpackCustomShapes(bytes);
+  if (entries.length === 0) return { added: 0, skipped: 0, unlisted: [] };
+  const listed = new Map(manifestEntries(manifest).map((entry) => [entry.file, entry]));
+  const existing = await listMyShapes();
+  let added = 0;
+  let skipped = 0;
+  const unlisted: BackupEntry[] = [];
+  for (const entry of entries) {
+    const record = listed.get(entry.name);
+    if (!record) {
+      unlisted.push(entry);
+      continue;
+    }
+    const name = cleanMyShapeName(record.name, myShapeNameFromFile(entry.name, "Shape"));
+    if (existing.some((shape) => shape.name === name && (record.fingerprint ? shape.fingerprint === record.fingerprint : shape.byteLength === entry.bytes.byteLength))) {
+      skipped += 1;
+      continue;
+    }
+    const meta: MyShapeMeta = {
+      id: createLocalId("my-shape"),
+      name,
+      createdAt: record.createdAt,
+      thumbnail: record.thumbnail,
+      bodyCount: record.bodyCount,
+      byteLength: entry.bytes.byteLength,
+      fingerprint: record.fingerprint,
+    };
+    await saveMyShape(meta, entry.bytes);
+    existing.push(meta);
+    added += 1;
+  }
+  return { added, skipped, unlisted };
 }

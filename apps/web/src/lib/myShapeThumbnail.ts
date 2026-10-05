@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 /*
- * The preview tile of one of "my shapes": the saved bodies alone, drawn from
+ * The preview tile of a custom shape: the saved bodies alone, drawn from
  * the front right and a little above like the other library icons, in their
  * own colours on a clear ground. Holes show as a faint grey ghost, the way
  * the workplane shows them.

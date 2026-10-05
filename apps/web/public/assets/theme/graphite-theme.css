@@ -1565,6 +1565,10 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   background: #e8e8e8;
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shape-tile-actions {
+  background: rgba(255, 255, 255, 0.94);
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .my-shape-tile-action {
   color: #4f4f4f;
   background: #fff;
@@ -1579,6 +1583,27 @@ html:where([data-theme="dark"][data-palette="graphite"]),
   color: #fff;
   background: #b42318;
   border-color: #b42318;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-location {
+  border: 1px solid #cdcdcd;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-name-form .my-shapes-location button {
+  border: 0;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-name-form .my-shapes-location button + button {
+  border-left: 1px solid #cdcdcd;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-name-form .my-shapes-location button.active {
+  color: #fff;
+  background: #555555;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .my-shapes-group-title {
+  color: #5e5e5e;
 }
 
 :where(html[data-theme="dark"][data-palette="graphite"]) .my-shape-rename {
@@ -6059,6 +6084,24 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .my-shape-tile-action.d
   color: #fff;
   background: #b42318;
   border-color: #b42318;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-location,
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-name-form .my-shapes-location button + button {
+  border-color: #4c4c4c;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-name-form .my-shapes-location button.active {
+  color: #fff;
+  background: #5c5c5c;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shapes-group-title {
+  color: #bababa;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .my-shape-tile-actions {
+  background: rgba(49, 49, 49, 0.94);
 }
 
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section-tools,

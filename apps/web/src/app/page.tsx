@@ -31,6 +31,8 @@ import { dedupeProjectAssets } from "@/lib/projectAssets";
 import { hydrateProjectShapeState, reconcileLoadedProjectShapeCacheEntry, type ImportedMeshResource } from "@/lib/projectShapePersistence";
 import { exportLylProject, importLylProject, LYL_CREATED_WITH_VERSION, LYL_MEDIA_TYPE } from "@/lib/lylProject";
 import { backupEntryNames, backupFileName, isBackupFileName, packBackup, unpackBackup, zipHoldsDesigns } from "@/lib/projectBackup";
+import { customShapesBackupEntries, restoreCustomShapesFromBackup } from "@/lib/myShapes";
+import { SHARED_PROJECTS_ENDPOINT } from "@/lib/sharedProjectsEndpoint";
 import { DEFAULT_SNAP_GRID, DEFAULT_WORKPLANE_WORKSPACE, normalizeSnapGrid, normalizeWorkspaceSettings, readWorkspaceDefault, workplaneSettingsFingerprint } from "@/lib/workplaneSettings";
 import type { GridSize, ProjectAsset, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 
@@ -173,11 +175,6 @@ const PROJECT_SHAPES_STORE_NAME = "projectShapes";
 const PROJECT_SHAPE_RESOURCES_STORE_NAME = "projectShapeResources";
 const PROJECT_ACCENTS: DashboardProject["accent"][] = ["cyan", "green", "gold", "red"];
 const STATIC_EXPORT_BUILD = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
-// Two ways to the same shared folder. The Node build answers on its own route;
-// an installation served as plain files has no route, so it asks store.php,
-// which speaks the same JSON. The path stays relative because the app may be
-// served from a sub-directory.
-const SHARED_PROJECTS_ENDPOINT = STATIC_EXPORT_BUILD ? "store.php" : "/api/shared-projects";
 const EDITOR_SKELETON_MIN_DURATION_MS = 320;
 
 /**
@@ -1611,9 +1608,12 @@ export default function Home() {
     }
   }, [refreshSharedProjects]);
 
-  // Every design of this browser as its own .lyl, together in one ZIP.
+  // Every design of this browser as its own .lyl, together in one ZIP, and
+  // the custom shapes of this browser in a folder beside them.
   const backupAllProjects = useCallback(async () => {
-    if (projects.length === 0) {
+    const shapeEntries = await customShapesBackupEntries().catch(() => []);
+    const shapeCount = Math.max(0, shapeEntries.length - 1);
+    if (projects.length === 0 && shapeCount === 0) {
       setDashboardNotice(t("notice.backupEmpty"));
       return;
     }
@@ -1624,6 +1624,7 @@ export default function Home() {
         setDashboardNotice(t("notice.backingUp", { index: index + 1, total: projects.length }));
         entries.push({ name: names[index], bytes: await projectPackageBytes(projects[index]) });
       }
+      entries.push(...shapeEntries);
       const fileName = backupFileName(new Date());
       const url = URL.createObjectURL(new Blob([packBackup(entries) as BlobPart], { type: "application/zip" }));
       const link = document.createElement("a");
@@ -1631,7 +1632,9 @@ export default function Home() {
       link.download = fileName;
       link.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
-      setDashboardNotice(t("notice.backupDone", { count: entries.length, name: fileName }));
+      setDashboardNotice(shapeCount
+        ? t("notice.backupDoneWithShapes", { count: projects.length, shapes: shapeCount, name: fileName })
+        : t("notice.backupDone", { count: projects.length, name: fileName }));
     } catch (error) {
       setDashboardNotice(t("notice.backupFailed", { reason: error instanceof Error ? error.message : String(error) }));
     }
@@ -1642,10 +1645,19 @@ export default function Home() {
   const restoreBackup = useCallback(async (file: File) => {
     setDashboardNotice(t("notice.validatingFile", { name: file.name }));
     let entries;
+    let shapes = { added: 0, skipped: 0 };
     try {
-      entries = unpackBackup(new Uint8Array(await file.arrayBuffer()));
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      entries = unpackBackup(bytes);
+      const restoredShapes = await restoreCustomShapesFromBackup(bytes).catch(() => null);
+      if (restoredShapes) shapes = { added: restoredShapes.added, skipped: restoredShapes.skipped };
     } catch {
       setDashboardNotice(t("notice.backupNotReadable", { name: file.name }));
+      return;
+    }
+    const shapesNote = shapes.added + shapes.skipped > 0 ? ` ${t("notice.backupShapesRestored", { count: shapes.added, skipped: shapes.skipped })}` : "";
+    if (entries.length === 0 && shapesNote) {
+      setDashboardNotice(shapesNote.trim());
       return;
     }
     if (entries.length === 0) {
@@ -1681,9 +1693,9 @@ export default function Home() {
     }
     setProjectShapesById((current) => ({ ...current, ...restoredEntries }));
     setProjects((current) => [...restoredProjects, ...current]);
-    setDashboardNotice(failed
+    setDashboardNotice((failed
       ? t("notice.backupRestoredPartly", { count: restoredProjects.length, failed, name: file.name })
-      : t("notice.backupRestored", { count: restoredProjects.length, name: file.name }));
+      : t("notice.backupRestored", { count: restoredProjects.length, name: file.name })) + shapesNote);
   }, [projects.length]);
 
   const importFilesFromDashboard = useCallback(

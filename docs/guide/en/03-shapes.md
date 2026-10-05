@@ -87,9 +87,9 @@ The snap step is at the bottom right of the editor and can be changed at any tim
 
 > **Tip:** If a shape refuses to take the size you want, it is often the limits for new shapes. Under {{ui:workspace.shapeDefaults}} in the settings you decide how each shape starts and how large it may get.
 
-## My shapes
+## Custom shapes
 
-A holder, a grip or a base plate you need again and again goes into {{ui:myShapes.title}}. It sits at the top of the shape library, above the {{ui:myShapes.basicShapes}}, and folds away with its arrow.
+A holder, a grip or a base plate you need again and again goes into the {{ui:myShapes.title}}. They sit at the top of the shape library, above the {{ui:myShapes.basicShapes}}, and fold away with their arrow.
 
 1. Select one or more bodies, holes, groups or an imported model included.
 2. Open the shape library and click {{ui:myShapes.saveSelection}}. Enter a name and confirm with {{ui:common.save}}.
@@ -97,7 +97,13 @@ A holder, a grip or a base plate you need again and again goes into {{ui:myShape
 
 Several bodies come back together, placed as they stood to each other, and stay selectable one by one. The pencil on a tile renames it, the bin removes it after asking. Shapes already inserted into designs stay as they are.
 
-{{ui:myShapes.title}} live in this browser, apart from the designs, and are there again the next time you start. For another browser or computer, {{ui:myShapes.backup}} (the arrow pointing down) saves them all as one ZIP file, and {{ui:myShapes.load}} (the arrow pointing up) brings them back there. {{ui:myShapes.load}} also takes single `.lyl` designs; each one becomes a shape. Shapes already there are not added twice.
+The {{ui:myShapes.title}} live in this browser, apart from the designs, and are there again the next time you start. {{ui:dashboard.backupAll}} on the start page backs them up with the designs, and opening the backup brings both back. To take only the shapes to another browser, {{ui:myShapes.backup}} (the arrow pointing down) saves them as a ZIP file and {{ui:myShapes.load}} (the arrow pointing up) brings them back there. {{ui:myShapes.load}} also takes single `.lyl` designs; each one becomes a shape. Shapes already there are not added twice.
+
+### Custom shapes on the server
+
+With the [shared server store](chapter:files-and-saving) switched on, the section shows two groups: {{ui:myShapes.onServer}} and {{ui:myShapes.inBrowser}}. When saving you choose where the shape goes; the server is chosen to start with. There it lives in the folder `Custom shapes`, as a `.lyl` file of its own with a picture, ready on every device that reaches the server. The cloud on a browser tile puts that shape on the server; it is then no longer kept twice.
+
+The `Custom shapes` folder shows on the start page as well. Open a shape there like a design, change it, and it is saved automatically like any design on the server; the next insert takes the new version. As the server store has no login, everyone who reaches the server sees the same shapes.
 
 ## Wrapping around a cylinder
 
