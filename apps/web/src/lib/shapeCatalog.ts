@@ -130,6 +130,18 @@ import {
   normalizeHingePinDiameter,
 } from "@/lib/hingeGeometry";
 import {
+  DEFAULT_KNURL_ANGLE,
+  DEFAULT_KNURL_COUNT,
+  DEFAULT_KNURL_DEPTH,
+  DEFAULT_KNURL_DIAMETER,
+  DEFAULT_KNURL_HEIGHT,
+  DEFAULT_KNURL_PATTERN,
+  normalizeKnurlAngle,
+  normalizeKnurlCount,
+  normalizeKnurlDepth,
+  normalizeKnurlPattern,
+} from "@/lib/knurlGeometry";
+import {
   DEFAULT_HONEYCOMB_WIDTH,
   DEFAULT_HONEYCOMB_DEPTH,
   DEFAULT_HONEYCOMB_HEIGHT,
@@ -185,6 +197,7 @@ const SHAPE_LABEL_KEYS: Record<string, MessageKey> = {
   gear: "shape.gear",
   honeycomb: "shape.honeycomb",
   hinge: "shape.hinge",
+  knurl: "shape.knurl",
   dovetail: "shape.dovetail",
   teardrop: "shape.teardrop",
   counterbore: "shape.counterbore",
@@ -222,6 +235,7 @@ export const toolbarShapeAssets: ToolbarShapeAsset[] = [
   { id: "gear", name: "Gear", src: "assets/editor/gear-types/spur.png", menuIcon: "assets/editor/gear-types/spur.png", kind: "gear", color: "#6f7f8d" },
   { id: "honeycomb", name: "Honeycomb", src: "assets/editor/shape-icons-gray/honeycomb.png", menuIcon: "assets/editor/shape-icons-gray/honeycomb.png", kind: "honeycomb", color: "#0ea5e9" },
   { id: "hinge", name: "Hinge", src: "assets/editor/shape-icons-gray/hinge.png", menuIcon: "assets/editor/shape-icons-gray/hinge.png", kind: "hinge", color: "#3f8f6b" },
+  { id: "knurl", name: "Knurl", src: "assets/editor/shape-icons-gray/knurl.png", menuIcon: "assets/editor/shape-icons-gray/knurl.png", kind: "knurl", color: "#7a8a99" },
   { id: "dovetail", name: "Dovetail", src: "assets/editor/shape-icons-gray/dovetail.png", menuIcon: "assets/editor/shape-icons-gray/dovetail.png", kind: "dovetail", color: "#a0522d" },
   { id: "star", name: "Star", src: "assets/editor/shape-icons-gray/star.png", menuIcon: "assets/editor/shape-icons-gray/star.png", kind: "star", color: "#f5a623" },
   { id: "heart", name: "Heart", src: "assets/editor/shape-icons-gray/heart.png", menuIcon: "assets/editor/shape-icons-gray/heart.png", kind: "heart", color: "#e0245e" },
@@ -308,6 +322,9 @@ export function shapeAssetDefaultDimensions(kind: ShapeKind) {
   if (kind === "hinge") {
     return { width: DEFAULT_HINGE_WIDTH, depth: DEFAULT_HINGE_DEPTH, height: DEFAULT_HINGE_HEIGHT };
   }
+  if (kind === "knurl") {
+    return { width: DEFAULT_KNURL_DIAMETER, depth: DEFAULT_KNURL_DIAMETER, height: DEFAULT_KNURL_HEIGHT };
+  }
   if (kind === "honeycomb") {
     return { width: DEFAULT_HONEYCOMB_WIDTH, depth: DEFAULT_HONEYCOMB_DEPTH, height: DEFAULT_HONEYCOMB_HEIGHT };
   }
@@ -387,6 +404,9 @@ export function shapeAssetSpecialDefaults(kind: ShapeKind, dimensions = shapeAss
   }
   if (kind === "countersink") {
     return { screwHoleShaft: DEFAULT_SCREW_HOLE_SHAFT, screwHoleAngle: DEFAULT_SCREW_HOLE_ANGLE };
+  }
+  if (kind === "knurl") {
+    return { knurlPattern: DEFAULT_KNURL_PATTERN, knurlCount: DEFAULT_KNURL_COUNT, knurlDepth: DEFAULT_KNURL_DEPTH, knurlAngle: DEFAULT_KNURL_ANGLE };
   }
   if (kind === "hinge") {
     return {
@@ -526,6 +546,10 @@ export function sceneShape(shape: Partial<WorkplaneShape> & Pick<WorkplaneShape,
     hingePinDiameter: shape.hingePinDiameter,
     hingeLeafThickness: shape.hingeLeafThickness,
     hingeClearance: shape.hingeClearance,
+    knurlPattern: shape.knurlPattern,
+    knurlCount: shape.knurlCount,
+    knurlDepth: shape.knurlDepth,
+    knurlAngle: shape.knurlAngle,
     dovetailNeckWidth: shape.dovetailNeckWidth,
     dovetailClearance: shape.dovetailClearance,
     screwHoleShaft: shape.screwHoleShaft,
@@ -694,6 +718,10 @@ export function makeShapeFromAsset(
           normalizeHingeClearance(customization.hingeClearance),
         )
       : undefined,
+    knurlPattern: asset.kind === "knurl" ? normalizeKnurlPattern(customization.knurlPattern ?? DEFAULT_KNURL_PATTERN) : undefined,
+    knurlCount: asset.kind === "knurl" ? normalizeKnurlCount(customization.knurlCount ?? DEFAULT_KNURL_COUNT, width) : undefined,
+    knurlDepth: asset.kind === "knurl" ? normalizeKnurlDepth(customization.knurlDepth ?? DEFAULT_KNURL_DEPTH, width) : undefined,
+    knurlAngle: asset.kind === "knurl" ? normalizeKnurlAngle(customization.knurlAngle ?? DEFAULT_KNURL_ANGLE) : undefined,
     dovetailNeckWidth: asset.kind === "dovetail" ? normalizeDovetailNeckWidth(customization.dovetailNeckWidth, width) : undefined,
     dovetailClearance: asset.kind === "dovetail" ? normalizeDovetailClearance(customization.dovetailClearance ?? DEFAULT_DOVETAIL_CLEARANCE) : undefined,
     screwHoleShaft: asset.kind === "counterbore" || asset.kind === "countersink" ? normalizeScrewHoleShaft(customization.screwHoleShaft ?? DEFAULT_SCREW_HOLE_SHAFT, width) : undefined,

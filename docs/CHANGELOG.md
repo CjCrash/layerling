@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Knurling:** A new shape for grips - a round body with grooves all around, for knobs, thumb wheels and tool handles. "Straight" runs the grooves along the axis and is an exact CAD body, so its edges can be broken and rounded; "Crossed" lays two slanted rows over each other into small diamonds and stays a mesh, as the exact body took the kernel 43 seconds with 30 grooves. Diameter, height, number and depth of the grooves and, for crossed knurling, their angle can be set - no closer than 0.8 mm apart around the grip, finer than any FDM printer shows; also through MCP (`knurlPattern`, `knurlCount`, `knurlDepth`, `knurlAngle`).
+
 ## 1.36.0
 
 - **Wrap around a cylinder:** A body lying flat on the plate - an imported SVG, text or anything else - can now be wrapped around a cylinder: under "Wrap around a cylinder" in its settings, enter the diameter and click "Wrap". Seen from above, left to right runs around the cylinder, the back edge becomes the top and the thickness stands out of the wall, or into it with "Inward (engraving)", to cut with a hole. The middle of the result is the cylinder's axis, so centring it on the cylinder puts it right on the wall. The mesh is cut every 2 degrees before bending, so the surface stays round and the body stays closed. Undo lays it flat again; a body longer than the circumference is refused with the smallest diameter that fits. MCP: `layerling_wrap_around_cylinder`. Suggested by @iron-bro in #106.

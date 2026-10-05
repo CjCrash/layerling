@@ -12,6 +12,7 @@ import { createCrescentGeometry } from "@/lib/crescentGeometry";
 import { createSlotGeometry } from "@/lib/slotGeometry";
 import { createDovetailGeometry } from "@/lib/dovetailGeometry";
 import { createHingeGeometry } from "@/lib/hingeGeometry";
+import { createKnurlGeometry } from "@/lib/knurlGeometry";
 import { createTeardropGeometry, teardropHeightForTipAngle } from "@/lib/teardropGeometry";
 import { createScrewHoleGeometry } from "@/lib/screwHoleGeometry";
 import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
@@ -427,6 +428,15 @@ describe("palette icons", () => {
       azimuth: 30,
       elevation: 34,
       build: () => createHingeGeometry({ width: 36, depth: 30, height: 8, hingeKnuckles: 5 }),
+    });
+    render({
+      // Gekreuzt, weil man eine Raendelung an den Rauten erkennt; schraeg von oben.
+      name: "apps/web/public/assets/editor/shape-icons-gray/knurl.png",
+      height: 26,
+      lay: false,
+      azimuth: 30,
+      elevation: 24,
+      build: () => createKnurlGeometry({ width: 24, height: 26, knurlPattern: "diamond", knurlCount: 18, knurlDepth: 1.2, knurlAngle: 30 }),
     });
     render({
       name: "apps/web/public/assets/editor/shape-icons-gray/roundedBox.png",

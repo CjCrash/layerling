@@ -43,7 +43,7 @@ export const LYL_LIMITS = {
 
 const SHAPE_KINDS = new Set([
   "box", "roundedBox", "cylinder", "slot", "ellipse", "sphere", "sketch", "scribble", "cone", "pyramid", "roof", "text", "roundRoof",
-  "halfSphere", "torus", "tube", "bentTube", "star", "heart", "crescent", "gear", "honeycomb", "hinge", "dovetail", "counterbore", "countersink", "teardrop", "thread", "spring", "ring", "wedge", "polygon", "icosahedron", "ruler", "mesh",
+  "halfSphere", "torus", "tube", "bentTube", "star", "heart", "crescent", "gear", "honeycomb", "hinge", "knurl", "dovetail", "counterbore", "countersink", "teardrop", "thread", "spring", "ring", "wedge", "polygon", "icosahedron", "ruler", "mesh",
 ]);
 
 const FEATURE_TYPES = new Set([
@@ -1248,6 +1248,17 @@ function validateShapeDefinition(definition: Record<string, unknown>, label: str
       if (definition[key] === undefined) continue;
       const value = finiteNumber(definition[key], `${label}.${key}`);
       if (value < 0 || value > 1e6) throw new Error(`${label}.${key} is outside the supported range`);
+    }
+  }
+  if (kind === "knurl") {
+    // Lenient on purpose: the geometry clamps the values itself; only nonsense is refused.
+    for (const key of ["knurlCount", "knurlDepth", "knurlAngle"] as const) {
+      if (definition[key] === undefined) continue;
+      const value = finiteNumber(definition[key], `${label}.${key}`);
+      if (value < 0 || value > 1e6) throw new Error(`${label}.${key} is outside the supported range`);
+    }
+    if (definition.knurlPattern !== undefined && definition.knurlPattern !== "straight" && definition.knurlPattern !== "diamond") {
+      throw new Error(`${label}.knurlPattern must be straight or diamond`);
     }
   }
   if (kind === "hinge") {

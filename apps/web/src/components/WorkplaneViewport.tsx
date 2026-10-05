@@ -46,6 +46,7 @@ import { createCrescentGeometry } from "@/lib/crescentGeometry";
 import { createSlotGeometry } from "@/lib/slotGeometry";
 import { createDovetailGeometry } from "@/lib/dovetailGeometry";
 import { createHingeGeometry } from "@/lib/hingeGeometry";
+import { createKnurlGeometry } from "@/lib/knurlGeometry";
 import { createTeardropGeometry } from "@/lib/teardropGeometry";
 import { createScrewHoleGeometry } from "@/lib/screwHoleGeometry";
 import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
@@ -1130,7 +1131,7 @@ function polygonSidesForShape(shape: WorkplaneShape) {
 }
 
 function shapeGeometrySignature(shape: WorkplaneShape): string {
-  const taper = shape.kind === "gear" || shape.kind === "thread" || shape.kind === "spring" || shape.kind === "star" || shape.kind === "heart" || shape.kind === "crescent" || shape.kind === "slot" || shape.kind === "dovetail" || shape.kind === "hinge" || shape.kind === "teardrop" || shape.kind === "counterbore" || shape.kind === "countersink" || shape.kind === "honeycomb" || shape.kind === "roundedBox" || shape.kind === "bentTube" || !shapeHasTaper(shape)
+  const taper = shape.kind === "gear" || shape.kind === "thread" || shape.kind === "spring" || shape.kind === "star" || shape.kind === "heart" || shape.kind === "crescent" || shape.kind === "slot" || shape.kind === "dovetail" || shape.kind === "hinge" || shape.kind === "knurl" || shape.kind === "teardrop" || shape.kind === "counterbore" || shape.kind === "countersink" || shape.kind === "honeycomb" || shape.kind === "roundedBox" || shape.kind === "bentTube" || !shapeHasTaper(shape)
     ? null
     : { ...shapeTaperDimensions(shape), baseWidth: shapeWidth(shape), baseDepth: shapeDepth(shape) };
   // Twist/lean reshape the mesh the same way taper does, so a change to
@@ -11353,6 +11354,9 @@ function createShapeObject(
     case "teardrop":
       addMesh(group, sharedShapeGeometry(geometryCacheKey, () => createTeardropGeometry({ width, depth, height, sides: roundSideCount(shape.sides, width, depth) })), material, shape);
       break;
+    case "knurl":
+      addMesh(group, sharedShapeGeometry(geometryCacheKey, () => createKnurlGeometry({ width, height, knurlPattern: shape.knurlPattern, knurlCount: shape.knurlCount, knurlDepth: shape.knurlDepth, knurlAngle: shape.knurlAngle })), material, shape);
+      break;
     case "hinge":
       addMesh(group, sharedShapeGeometry(geometryCacheKey, () => createHingeGeometry({
         width,
@@ -11790,7 +11794,7 @@ function addShapeEdgeDecorations(group: THREE.Group, mesh: THREE.Mesh, prepared:
   const complexEdges =
     shape.kind === "mesh" ||
     Boolean(shape.importedMesh) ||
-    ["cone", "pyramid", "roof", "roundRoof", "halfSphere", "torus", "tube", "ring", "star", "gear", "wedge", "polygon", "heart", "crescent", "slot", "dovetail", "hinge", "teardrop", "counterbore", "countersink", "honeycomb"].includes(shape.kind);
+    ["cone", "pyramid", "roof", "roundRoof", "halfSphere", "torus", "tube", "ring", "star", "gear", "wedge", "polygon", "heart", "crescent", "slot", "dovetail", "hinge", "knurl", "teardrop", "counterbore", "countersink", "honeycomb"].includes(shape.kind);
   const importedTriangleCount = shape.importedMesh?.triangleCount ?? 0;
   const skipHeavyImportedEdges = Boolean(shape.importedMesh) && importedTriangleCount > IMPORTED_SELECTED_EDGE_TRIANGLE_LIMIT;
   if ((group.userData.showEdges || complexEdges) && !skipHeavyImportedEdges) {

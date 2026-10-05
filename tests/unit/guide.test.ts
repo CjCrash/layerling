@@ -203,10 +203,11 @@ describe("guide content", () => {
     expect(guideHref("en", undefined, "sectionView")).toBe("/guide/view-and-workplane.html#looking-inside-the-section-view");
     // A shape's question mark lands on its own heading, in the chapter it belongs to.
     expect(guideHref("de", guideChapterForShape({ kind: "hinge" }), guideSectionForShape({ kind: "hinge" }))).toBe("/anleitung/gewinde-und-mechanik.html#scharnier");
+    expect(guideHref("de", guideChapterForShape({ kind: "knurl" }), guideSectionForShape({ kind: "knurl" }))).toBe("/anleitung/gewinde-und-mechanik.html#raendelung");
     expect(guideHref("en", guideChapterForShape({ kind: "box" }), guideSectionForShape({ kind: "box" }))).toBe("/guide/shapes.html#the-shape-s-settings");
     expect(guideSectionForShape({ kind: "mesh", groupedShapes: [{}], groupOperation: "bundle" })).toBe("bundling");
     expect(guideSectionForShape({ kind: "text" })).toBeUndefined();
-    for (const kind of ["thread", "gear", "spring", "bentTube", "honeycomb", "hinge", "dovetail", "teardrop", "counterbore", "countersink", "ruler"] as const) {
+    for (const kind of ["thread", "gear", "spring", "bentTube", "honeycomb", "hinge", "knurl", "dovetail", "teardrop", "counterbore", "countersink", "ruler"] as const) {
       const section = guideSectionForShape({ kind });
       expect(section && GUIDE_SECTIONS[section].chapter, kind).toBe(guideChapterForShape({ kind }));
     }

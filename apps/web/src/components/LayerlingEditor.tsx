@@ -23,6 +23,7 @@ import { createCrescentGeometry } from "@/lib/crescentGeometry";
 import { createSlotGeometry } from "@/lib/slotGeometry";
 import { createDovetailGeometry } from "@/lib/dovetailGeometry";
 import { createHingeGeometry } from "@/lib/hingeGeometry";
+import { createKnurlGeometry } from "@/lib/knurlGeometry";
 import { hingeWorldParts } from "@/lib/hingeParts";
 import { createTeardropGeometry } from "@/lib/teardropGeometry";
 import { createScrewHoleGeometry } from "@/lib/screwHoleGeometry";
@@ -2361,6 +2362,9 @@ function geometryMeshForShape(shape: WorkplaneShape): MeshData | null {
       break;
     case "teardrop":
       geometry = createTeardropGeometry({ width, depth, height, sides: roundSideCount(shape.sides, width, depth) });
+      break;
+    case "knurl":
+      geometry = createKnurlGeometry({ width, height, knurlPattern: shape.knurlPattern, knurlCount: shape.knurlCount, knurlDepth: shape.knurlDepth, knurlAngle: shape.knurlAngle });
       break;
     case "hinge":
       geometry = createHingeGeometry({

@@ -51,6 +51,7 @@ export const GUIDE_SECTIONS = {
   bentTubes: { chapter: "threads", de: "gebogene-rohre", en: "bent-tubes" },
   honeycomb: { chapter: "threads", de: "wabengitter", en: "honeycomb" },
   hinge: { chapter: "threads", de: "scharnier", en: "hinge" },
+  knurl: { chapter: "threads", de: "raendelung", en: "knurling" },
   dovetail: { chapter: "threads", de: "schwalbenschwanz", en: "dovetail" },
   teardrop: { chapter: "threads", de: "tropfenbohrung", en: "teardrop-hole" },
   screwHoles: { chapter: "threads", de: "stufen-und-senkbohrung", en: "counterbore-and-countersink" },
@@ -103,6 +104,8 @@ export function guideSectionForShape(shape: { kind: ShapeKind; groupedShapes?: r
       return "honeycomb";
     case "hinge":
       return "hinge";
+    case "knurl":
+      return "knurl";
     case "dovetail":
       return "dovetail";
     case "teardrop":
@@ -129,6 +132,7 @@ export function guideChapterForShape(shape: { kind: ShapeKind; groupedShapes?: r
     case "bentTube":
     case "honeycomb":
     case "hinge":
+    case "knurl":
     case "dovetail":
     case "teardrop":
     case "counterbore":

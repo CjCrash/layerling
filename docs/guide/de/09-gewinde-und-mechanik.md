@@ -65,6 +65,12 @@ Das {{ui:shape.hinge}} wird in einem Stück gedruckt und bewegt sich danach (pri
 
 {{ui:prop.hingeClearance}} ist der Abstand zwischen den beweglichen Teilen: um den Stift, zwischen den Knöcheln und vor den Blättern. Mit 0,4 mm löst sich ein gut eingestellter Drucker meist mit einer kleinen Drehung; verwachsen die Teile, nimm mehr, wackelt es zu sehr, weniger. Drucke das Scharnier liegend, so wie es auf der Platte erscheint, ohne Stützen. Die Blätter kannst du mit Bohrungen versehen oder in ein größeres Teil gruppieren, etwa einen Deckel.
 
+## Rändelung
+
+Die {{ui:shape.knurl}} ist ein runder Griff mit Rillen ringsum, für Drehknöpfe, Stellräder und Werkzeuggriffe. Unter {{ui:prop.knurlPattern}} wählst du {{ui:knurl.straight}}, also Rillen längs der Achse wie an einem Drehknopf, oder {{ui:knurl.diamond}}: Zwei schräge Rillenreihen kreuzen sich zu kleinen Rauten. Du stellst {{ui:prop.diameter}} und {{ui:prop.height}} ein, die Zahl der {{ui:prop.knurlCount}} und die {{ui:prop.knurlDepth}}; bei der gekreuzten Rändelung dazu den {{ui:prop.knurlAngle}} zur Achse.
+
+Die gerade Rändelung ist ein exakter Körper, ihre Kanten lassen sich brechen und runden. Die gekreuzte bleibt ein Netz, denn als exakter Körper bräuchte sie bei 30 Rillen schon fast eine Minute zum Rechnen. Für einen Knopf auf einer Achse gruppierst du die Rändelung mit einer Bohrung, etwa einem {{ui:shape.thread}} als Gewindeloch. Rillen unter 0,4 mm Tiefe druckt kaum ein Drucker sauber, und enger als 0,8 mm am Umfang lässt layerling die Rillen gar nicht erst stehen: Ein dünner Griff bekommt entsprechend weniger.
+
 ## Schwalbenschwanz
 
 Der {{ui:shape.dovetail}} ist die Verbindung, bei der zwei Teile ineinander einrasten und sich nur seitlich zusammenschieben lassen. Du stellst die Breite am breiten Ende, die {{ui:prop.dovetailNeckWidth}} und die Länge des Zapfens ein. Kopiere den Zapfen für die Gegenseite und mache die Kopie zur Aussparung: {{ui:prop.dovetailClearance}} sorgt dann für ein wenig Spiel, damit die Verbindung nach dem Druck nicht klemmt.

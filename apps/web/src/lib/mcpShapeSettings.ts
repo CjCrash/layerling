@@ -36,6 +36,7 @@ export const MCP_SHAPE_SETTING_KEYS = [
   "crescentThickness", "crescentTipFillet", "crescentQuality",
   "honeycombCellSize", "honeycombWallThickness", "honeycombFrameWidth",
   "hingeKnuckles", "hingePinDiameter", "hingeLeafThickness", "hingeClearance",
+  "knurlPattern", "knurlCount", "knurlDepth", "knurlAngle",
   "dovetailNeckWidth", "dovetailClearance",
   "screwHoleShaft", "screwHoleHeadDepth", "screwHoleAngle",
   "cornerFillet", "topBottomFillet", "roundedBoxQuality",

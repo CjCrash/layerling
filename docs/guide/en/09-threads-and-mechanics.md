@@ -65,6 +65,12 @@ The {{ui:shape.hinge}} prints in one piece and moves afterwards (print-in-place)
 
 {{ui:prop.hingeClearance}} is the gap between the moving parts: around the pin, between the knuckles and in front of the leaves. With 0.4 mm a well-tuned printer usually breaks free with a small twist; if the parts fuse, raise it, if it wobbles too much, lower it. Print the hinge lying down as it appears on the plate, without supports. You can add holes to the leaves or group them into a larger part, such as a lid.
 
+## Knurling
+
+The {{ui:shape.knurl}} is a round grip with grooves all around, for knobs, thumb wheels and tool handles. Under {{ui:prop.knurlPattern}} you pick {{ui:knurl.straight}}, grooves along the axis as on a control knob, or {{ui:knurl.diamond}}: two slanted rows of grooves cross into small diamonds. You set the {{ui:prop.diameter}} and the {{ui:prop.height}}, the number of {{ui:prop.knurlCount}} and the {{ui:prop.knurlDepth}}; for crossed knurling also the {{ui:prop.knurlAngle}} to the axis.
+
+Straight knurling is an exact body, so its edges can be broken and rounded. Crossed knurling stays a mesh, because as an exact body it would take almost a minute to compute with 30 grooves. For a knob on a shaft, group the knurl with a hole, such as a {{ui:shape.thread}} set as a tapped hole. Grooves shallower than 0.4 mm hardly any printer prints cleanly, and layerling does not set them closer than 0.8 mm around the grip: a thin grip gets fewer of them.
+
 ## Dovetail
 
 The {{ui:shape.dovetail}} is the joint in which two parts lock into each other and can only be slid together sideways. You set the width at the wide end, the {{ui:prop.dovetailNeckWidth}} and the length of the tail. Copy the tail for the other side and make the copy a hole: {{ui:prop.dovetailClearance}} then gives a little play so the joint does not jam after printing.

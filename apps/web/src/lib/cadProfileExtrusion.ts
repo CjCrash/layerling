@@ -22,6 +22,7 @@ import { textFont } from "@/lib/textFonts";
 import { buildCurvedText, curvedTextFitScale, curvedTextLayout } from "@/lib/textGeometry";
 import { threadBuildPlan, WHITWORTH_PROFILE_CONSTANTS } from "@/lib/threadGeometry";
 import { springBuildPlan, springRingSectionShare } from "@/lib/springGeometry";
+import { knurlCorners, knurlSettings } from "@/lib/knurlGeometry";
 import { BEVEL_GEAR_TOP_SCALE, gearOutlineCorners, normalizeGearCenterHoleSize, normalizeGearHelixAngle, normalizeGearToothSize, normalizeGearType } from "@/lib/gearGeometry";
 
 /*
@@ -36,7 +37,7 @@ type Point = { x: number; z: number };
 type Arc = { cx: number; cz: number; rx: number; rz: number; start: number; end: number };
 type Corner = { start: Point; end: Point; arc?: Arc };
 
-export const CAD_PROFILE_SHAPE_KINDS = new Set<WorkplaneShape["kind"]>(["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear", "dovetail", "teardrop", "counterbore", "countersink", "ellipse", "cylinder", "tube", "ring", "halfSphere", "sphere", "cone", "roundRoof", "roundedBox", "text", "bentTube"]);
+export const CAD_PROFILE_SHAPE_KINDS = new Set<WorkplaneShape["kind"]>(["polygon", "star", "heart", "crescent", "slot", "honeycomb", "gear", "knurl", "dovetail", "teardrop", "counterbore", "countersink", "ellipse", "cylinder", "tube", "ring", "halfSphere", "sphere", "cone", "roundRoof", "roundedBox", "text", "bentTube"]);
 
 function shortestAngleDelta(from: number, to: number) {
   let delta = to - from;
@@ -870,6 +871,13 @@ export function cadProfileForShapeKind(shape: WorkplaneShape, designedRound = fa
     }
     case "gear":
       return normalizeGearType(shape.gearType) === "spur" ? { loops: gearProfileLoops(width, depth, shape) } : null;
+    case "knurl": {
+      // Crossed knurling stays a mesh: the kernel needs 40 s for what two
+      // counter-turned rings of 30 grooves have in common, and fails at 60.
+      const settings = knurlSettings({ ...shape, width });
+      if (settings.pattern !== "straight") return null;
+      return { loops: [polygonLoop(knurlCorners(settings.diameter, settings.count, settings.depth).map(({ angle, radius }) => ({ x: Math.cos(angle) * radius, z: Math.sin(angle) * radius })))] };
+    }
     case "text": {
       // A text is one body only when it is one glyph; otherwise the edge tool
       // cuts it into glyph pieces and each piece brings its own outline.

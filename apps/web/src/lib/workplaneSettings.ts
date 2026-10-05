@@ -100,7 +100,7 @@ export function snapGridForUnits(units: string, snap: GridSize): GridSize {
 }
 const customizableShapeKinds: ShapeKind[] = [
   "box", "roundedBox", "cylinder", "slot", "ellipse", "sphere", "sketch", "scribble", "cone", "pyramid", "roof", "text", "roundRoof",
-  "halfSphere", "torus", "tube", "bentTube", "star", "heart", "crescent", "gear", "honeycomb", "hinge", "dovetail", "counterbore", "countersink", "teardrop", "thread", "spring", "ring", "wedge", "polygon", "icosahedron", "ruler", "mesh",
+  "halfSphere", "torus", "tube", "bentTube", "star", "heart", "crescent", "gear", "honeycomb", "hinge", "knurl", "dovetail", "counterbore", "countersink", "teardrop", "thread", "spring", "ring", "wedge", "polygon", "icosahedron", "ruler", "mesh",
 ];
 
 function numberOrDefault(value: unknown, fallback: number) {
@@ -213,6 +213,12 @@ export function normalizeShapeCustomizations(value: unknown, fallback: ShapeCust
       entry.hingePinDiameter = optionalShapeNumber(source.hingePinDiameter, fallbackEntry?.hingePinDiameter, 0.2, MAX_CUSTOM_SHAPE_DIMENSION);
       entry.hingeLeafThickness = optionalShapeNumber(source.hingeLeafThickness, fallbackEntry?.hingeLeafThickness, 0.1, MAX_CUSTOM_SHAPE_DIMENSION);
       entry.hingeClearance = optionalShapeNumber(source.hingeClearance, fallbackEntry?.hingeClearance, 0.1, 1);
+    }
+    if (kind === "knurl") {
+      entry.knurlPattern = source.knurlPattern === "straight" || source.knurlPattern === "diamond" ? source.knurlPattern : fallbackEntry?.knurlPattern;
+      entry.knurlCount = optionalShapeNumber(source.knurlCount, fallbackEntry?.knurlCount, 6, 180, true);
+      entry.knurlDepth = optionalShapeNumber(source.knurlDepth, fallbackEntry?.knurlDepth, 0.1, MAX_CUSTOM_SHAPE_DIMENSION);
+      entry.knurlAngle = optionalShapeNumber(source.knurlAngle, fallbackEntry?.knurlAngle, 10, 60);
     }
     if (kind === "dovetail") {
       entry.dovetailNeckWidth = optionalShapeNumber(source.dovetailNeckWidth, fallbackEntry?.dovetailNeckWidth, 0.1, MAX_CUSTOM_SHAPE_DIMENSION);

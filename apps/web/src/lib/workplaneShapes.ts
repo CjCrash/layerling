@@ -118,7 +118,7 @@ export function shapeTaperDimensions(shape: WorkplaneShape) {
  * die MCP-Bruecke nicht je ihre eigene fuehren.
  */
 export function shapeSupportsTaper(kind: WorkplaneShape["kind"]) {
-  return kind !== "gear" && kind !== "thread" && kind !== "spring" && kind !== "pyramid" && kind !== "ruler" && kind !== "star" && kind !== "heart" && kind !== "crescent" && kind !== "slot" && kind !== "dovetail" && kind !== "hinge" && kind !== "counterbore" && kind !== "countersink" && kind !== "teardrop" && kind !== "honeycomb" && kind !== "roundedBox" && kind !== "bentTube";
+  return kind !== "gear" && kind !== "thread" && kind !== "spring" && kind !== "pyramid" && kind !== "ruler" && kind !== "star" && kind !== "heart" && kind !== "crescent" && kind !== "slot" && kind !== "dovetail" && kind !== "hinge" && kind !== "knurl" && kind !== "counterbore" && kind !== "countersink" && kind !== "teardrop" && kind !== "honeycomb" && kind !== "roundedBox" && kind !== "bentTube";
 }
 
 /**
@@ -390,7 +390,7 @@ export function canonicalizeShape(shape: WorkplaneShape): WorkplaneShape {
   // A cylinder's cross-section must always stay circular - width is
   // authoritative, depth follows. This is the single enforcement point: every
   // creation, edit and project load runs through canonicalizeShape.
-  if ((shape.kind === "cylinder" || shape.kind === "star") && next.width !== next.depth) {
+  if ((shape.kind === "cylinder" || shape.kind === "star" || shape.kind === "knurl") && next.width !== next.depth) {
     next.depth = next.width;
     next.size = next.width;
   }
@@ -516,6 +516,10 @@ export function workplaneShapesEqual(a: WorkplaneShape, b: WorkplaneShape) {
     a.font === b.font &&
     a.textCurved === b.textCurved &&
     a.cylinderWrap?.diameter === b.cylinderWrap?.diameter &&
+    a.knurlPattern === b.knurlPattern &&
+    a.knurlCount === b.knurlCount &&
+    a.knurlDepth === b.knurlDepth &&
+    a.knurlAngle === b.knurlAngle &&
     a.cylinderWrap?.inward === b.cylinderWrap?.inward &&
     a.textRadius === b.textRadius &&
     a.textSize === b.textSize &&

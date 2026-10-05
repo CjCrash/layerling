@@ -22,6 +22,7 @@ export type ShapeKind =
   | "gear"
   | "honeycomb"
   | "hinge"
+  | "knurl"
   | "dovetail"
   | "counterbore"
   | "countersink"
@@ -138,6 +139,14 @@ export type ShapeCustomization = {
   hingeLeafThickness?: number;
   /** Hinge: gap in mm between the moving parts - around the pin, between knuckles and before the leaves. */
   hingeClearance?: number;
+  /** Knurling: grooves straight along the axis, or crossed into diamonds. */
+  knurlPattern?: "straight" | "diamond";
+  /** Knurling: number of grooves around the grip. */
+  knurlCount?: number;
+  /** Knurling: how deep a groove goes, in mm. */
+  knurlDepth?: number;
+  /** Crossed knurling: angle of the grooves to the axis, in degrees. */
+  knurlAngle?: number;
   /** Dovetail: width of the narrow neck in mm (the wide end is the shape's width). */
   dovetailNeckWidth?: number;
   /** Dovetail: gap in mm added on every side when the dovetail is a cut-out (its socket). */
@@ -453,6 +462,14 @@ export type WorkplaneShape = {
   hingeLeafThickness?: number;
   /** Hinge: gap in mm between the moving parts - around the pin, between knuckles and before the leaves. */
   hingeClearance?: number;
+  /** Knurling: grooves straight along the axis, or crossed into diamonds. */
+  knurlPattern?: "straight" | "diamond";
+  /** Knurling: number of grooves around the grip. */
+  knurlCount?: number;
+  /** Knurling: how deep a groove goes, in mm. */
+  knurlDepth?: number;
+  /** Crossed knurling: angle of the grooves to the axis, in degrees. */
+  knurlAngle?: number;
   /** Dovetail: width of the narrow neck in mm (the wide end is the shape's width). */
   dovetailNeckWidth?: number;
   /** Dovetail: gap in mm added on every side when the dovetail is a cut-out (its socket). */

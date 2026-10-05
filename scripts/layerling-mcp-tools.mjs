@@ -20,7 +20,7 @@ export const editorTargetSchema = {
 export const creatableShapeKinds = [
   "box", "roundedBox", "cube", "cylinder", "slot", "ellipse", "polygon", "sphere", "cone", "pyramid", "wedge",
   "roundRoof", "halfSphere", "torus", "tube", "bentTube", "star", "heart", "crescent", "text", "thread", "spring", "gear",
-  "honeycomb", "hinge", "dovetail", "counterbore", "countersink", "teardrop", "ruler", "sketch",
+  "honeycomb", "hinge", "knurl", "dovetail", "counterbore", "countersink", "teardrop", "ruler", "sketch",
 ];
 
 /**
@@ -110,6 +110,10 @@ export const shapeSettingSchema = {
   honeycombCellSize: { type: "number", description: "Honeycomb only: cell diameter / distance across flats in mm (3 to 50)." },
   honeycombWallThickness: { type: "number", description: "Honeycomb only: wall thickness between cells in mm (0.4 to 10)." },
   honeycombFrameWidth: { type: "number", description: "Honeycomb only: solid frame border width around grid in mm (0 to 50)." },
+  knurlPattern: { type: "string", enum: ["straight", "diamond"], description: "Knurl only: \"straight\" grooves along the axis (default; an exact CAD body, so the edge tool works on it) or \"diamond\", two slanted rows crossing into small diamonds (a mesh). A knurl is a round grip: width is the diameter (depth follows), height the length." },
+  knurlCount: { type: "number", description: "Knurl only: number of grooves around the grip, 6 up to what fits at a 0.8 mm pitch around the diameter, at most 180 (default 30)." },
+  knurlDepth: { type: "number", description: "Knurl only: depth of a groove in mm, 0.1 up to a third of the radius (default 0.6)." },
+  knurlAngle: { type: "number", description: "Diamond knurl only: angle of the grooves to the axis in degrees, 10 to 60 (default 30)." },
   hingeKnuckles: { type: "number", description: "Hinge only: how many knuckles share the axis, odd from 3 to 15 (default 5) so the part with the pin holds both ends. A hinge is a print-in-place hinge lying open flat: width is its length along the axis (x), depth both leaves together (z), height the knuckle diameter; it prints in one piece and turns afterwards." },
   hingePinDiameter: { type: "number", description: "Hinge only: diameter of the pin in mm (default 3); the other part's bore is wider by the clearance." },
   hingeLeafThickness: { type: "number", description: "Hinge only: thickness of the two leaves in mm (default 2), at most the knuckle radius less the bore radius so a leaf stays below the bore." },
@@ -199,7 +203,7 @@ export const tools = [
   },
   {
     name: "layerling_create_shape",
-    description: "Create any of Layerling's shapes: boxes, cylinders, slots, polygons, spheres, cones, pyramids, wedges, roofs, tori, tubes, stars, hearts, crescents, honeycomb grids, print-in-place hinges, raised text, threads (rod, screw, nut, tapped hole), springs, gears, or a simple extruded sketch. Width, depth and height default to what the editor uses for that shape; everything a shape has beyond its size is optional and falls back to the same defaults as a shape placed by hand. With a workplane set on a face (layerling_set_workplane), the shape stands on that face and x and z count on it (0, 0 is where the workplane sits) - unless elevation or a rotation is given, which mean the base plate.",
+    description: "Create any of Layerling's shapes: boxes, cylinders, slots, polygons, spheres, cones, pyramids, wedges, roofs, tori, tubes, stars, hearts, crescents, honeycomb grids, print-in-place hinges, knurled grips, raised text, threads (rod, screw, nut, tapped hole), springs, gears, or a simple extruded sketch. Width, depth and height default to what the editor uses for that shape; everything a shape has beyond its size is optional and falls back to the same defaults as a shape placed by hand. With a workplane set on a face (layerling_set_workplane), the shape stands on that face and x and z count on it (0, 0 is where the workplane sits) - unless elevation or a rotation is given, which mean the base plate.",
     inputSchema: {
       ...editorTargetSchema,
       required: ["kind"],
