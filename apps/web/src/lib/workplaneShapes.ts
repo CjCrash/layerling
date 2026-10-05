@@ -515,6 +515,8 @@ export function workplaneShapesEqual(a: WorkplaneShape, b: WorkplaneShape) {
     a.text === b.text &&
     a.font === b.font &&
     a.textCurved === b.textCurved &&
+    a.cylinderWrap?.diameter === b.cylinderWrap?.diameter &&
+    a.cylinderWrap?.inward === b.cylinderWrap?.inward &&
     a.textRadius === b.textRadius &&
     a.textSize === b.textSize &&
     a.textInward === b.textInward &&

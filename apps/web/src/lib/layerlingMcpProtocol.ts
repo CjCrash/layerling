@@ -99,6 +99,7 @@ export type LayerlingMcpCommandName =
   | "intersect_objects"
   | "boolean_cut"
   | "separate_parts"
+  | "wrap_around_cylinder"
   | "list_edges"
   | "apply_edge_treatment"
   | "hollow_object"

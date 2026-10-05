@@ -36,7 +36,7 @@ function guideSections(sharedStore: boolean): GuideSection[] {
     {
       title: "guide.group.shapes",
       chapter: "shapes",
-      lines: ["guide.shapes.add", "guide.shapes.inspector", "guide.shapes.handles"],
+      lines: ["guide.shapes.add", "guide.shapes.inspector", "guide.shapes.handles", "guide.shapes.wrap"],
     },
     {
       title: "guide.group.select",

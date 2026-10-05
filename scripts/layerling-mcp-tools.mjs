@@ -401,6 +401,20 @@ export const tools = [
     },
   },
   {
+    name: "layerling_wrap_around_cylinder",
+    description: "Wrap one body that lies flat on the plate around a cylinder about the vertical, as the editor's \"Wrap around a cylinder\" does - an imported SVG, text or any other body. Seen from above, left to right runs around the cylinder, the back edge becomes the top, and the thickness stands out of the wall (inward: true puts it into the wall, for an engraving with a hole). The result is one mesh body whose middle is the cylinder's axis: centre it on the cylinder with layerling_align_objects (x and z centre) and it sits on that wall. One undo step brings the flat body back; to try another diameter, undo first. Fails when the body is longer than the circumference. Returns the new object.",
+    inputSchema: {
+      ...editorTargetSchema,
+      required: ["diameter"],
+      properties: {
+        ...editorTargetSchema.properties,
+        id: { type: "string", description: "The body to wrap; defaults to the one selected body." },
+        diameter: { type: "number", description: "Diameter of the cylinder wall in mm, for example the outside of a cup." },
+        inward: { type: "boolean", description: "Put the thickness into the wall instead of out of it. Default false." },
+      },
+    },
+  },
+  {
     name: "layerling_list_edges",
     description: "List real CAD edge ids for one object so a later chamfer/fillet can target specific edges.",
     inputSchema: {

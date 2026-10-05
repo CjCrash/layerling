@@ -229,6 +229,8 @@ type WorkplaneViewportProps = {
   onOpenGroup?: (id: string) => void;
   canSeparateParts?: boolean;
   onSeparateParts?: () => void;
+  /** Wraps the selected body around a cylinder of this diameter (#106). */
+  onWrapAroundCylinder?: (diameter: number, inward: boolean) => void;
   onUpdateShape: (id: string, patch: ShapeUpdatePatch) => void;
   onDuplicateShapeAt?: (id: string, position: { x: number; z: number }) => void;
   /** A drag begun with Alt held: copies of these shapes land this far from them, the shapes themselves stay. */
@@ -3863,6 +3865,7 @@ export function WorkplaneViewport({
   onOpenGroup,
   canSeparateParts = false,
   onSeparateParts,
+  onWrapAroundCylinder,
   onUpdateShape,
   onDuplicateShapeAt,
   onDuplicateShapesMoved,
@@ -8644,6 +8647,7 @@ export function WorkplaneViewport({
           onOpenGroup={selectedShape.groupedShapes?.length && onOpenGroup ? () => onOpenGroup(selectedShape.id) : undefined}
           canSeparateParts={canSeparateParts}
           onSeparateParts={onSeparateParts}
+          onWrapAroundCylinder={onWrapAroundCylinder}
           onInteractionActiveChange={onInteractionActiveChange}
           onSnapGridAwayChange={setInspectorSnapGridAway}
         />

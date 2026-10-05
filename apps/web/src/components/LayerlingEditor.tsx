@@ -188,7 +188,8 @@ import {
 } from "@/lib/placementWorkplane";
 import { placeSketchExtrusion, placeSketchShape } from "@/lib/sketchPlacement";
 import { BUG_REPORT_FILE, bugReportText, rememberBugReportEvent, type BugReportEvent } from "@/lib/bugReport";
-import { lengthDisplayUnit } from "@/lib/measurementUnits";
+import { formatLengthMm, lengthDisplayUnit } from "@/lib/measurementUnits";
+import { wrapMeshAroundCylinder, type CylinderWrapError } from "@/lib/cylinderWrap";
 import {
   LAYERLING_MCP_HEARTBEAT_MS,
   LAYERLING_MCP_POLL_RETRY_MS,
@@ -3164,6 +3165,9 @@ function dropPatchForShape(shape: WorkplaneShape, targetY: number): Partial<Work
 }
 
 function meshAabb(shape: WorkplaneShape): Cuboid {
+  // A wrapped body covers only an arc; its box around the cylinder's axis is what
+  // makes "centre on the cylinder" put it on that cylinder's wall (#106).
+  if (shape.cylinderWrap && shape.importedMesh) return shapeAabb(shape);
   const mesh = meshForShape(shape);
   if (mesh.vertices.length === 0) {
     return shapeAabb(shape);
@@ -3640,6 +3644,55 @@ function meshComponentShape(source: WorkplaneShape, mesh: MeshData, faceIndices:
     locked: false,
     hidden: source.hidden,
   });
+}
+
+/**
+ * The body a shape becomes when it is wrapped around a cylinder (#106), or
+ * why it cannot be. What lies flat on the plate stands up on the wall; the
+ * cylinder's axis is the middle of the new shape, so centring it on a
+ * cylinder puts it right on that cylinder's wall, like curved text.
+ * The wall sits where the body lay, so nothing jumps across the plate.
+ */
+function cylinderWrappedShape(shape: WorkplaneShape, diameter: number, inward: boolean): WorkplaneShape | CylinderWrapError {
+  const mesh = meshForShape(shape);
+  const result = wrapMeshAroundCylinder({ vertices: mesh.vertices, faces: mesh.faces }, { diameter, inward });
+  if ("error" in result) return result.error;
+  const rawSize = result.outerRadius * 2;
+  const rawHeight = Math.max(MIN_SHAPE_DIMENSION, result.height);
+  const size = cleanModelDimension(rawSize);
+  const middleRadius = diameter / 2 + (inward ? -result.thickness / 2 : result.thickness / 2);
+  return canonicalizeShape({
+    id: shape.id,
+    name: shape.name,
+    kind: "mesh",
+    color: shape.color,
+    hole: shape.hole || undefined,
+    x: cleanNearZero(result.flatCenter.x, 0.0005),
+    z: cleanNearZero(result.flatCenter.z - middleRadius, 0.0005),
+    elevation: cleanNearZero(result.flatBottom, 0.0005),
+    size,
+    width: size,
+    depth: size,
+    height: cleanModelDimension(rawHeight),
+    rotation: 0,
+    rotationX: 0,
+    rotationZ: 0,
+    importedMesh: {
+      positions: result.positions,
+      baseWidth: rawSize,
+      baseDepth: rawSize,
+      baseHeight: rawHeight,
+      triangleCount: Math.floor(result.positions.length / 9),
+      sourceFormat: "json",
+    },
+    cylinderWrap: { diameter, ...(inward ? { inward: true } : {}) },
+    locked: false,
+    hidden: shape.hidden,
+  });
+}
+
+function canWrapAroundCylinder(shape: WorkplaneShape | null | undefined) {
+  return Boolean(shape && !shape.locked && shape.groupOperation !== "bundle" && !isNonSolidShapeKind(shape.kind));
 }
 
 function separateMeshParts(shape: WorkplaneShape) {
@@ -9981,6 +10034,42 @@ export function LayerlingEditor({
     commitShapes([...shapes.filter((shape) => !groupIds.has(shape.id)), ...restored], restored.map((shape) => shape.id), groups.length === 1 ? t("status.ungroupedOne") : t("status.ungroupedMany", { count: groups.length }));
   }, [commitShapes, selectedShapes, shapes]);
 
+  /** Why a wrap failed, in the units the editor shows. */
+  const cylinderWrapErrorText = useCallback((error: CylinderWrapError, shape: WorkplaneShape, diameter: number) => {
+    const workspace = workspaceSettingsRef.current;
+    const length = (value: number) => `${formatLengthMm(value, workspace.accuracy)} ${lengthDisplayUnit(workspace).label}`;
+    if (error === "tooWide") {
+      const flat = boundsForShapes([shape]);
+      const width = flat ? flat.maxX - flat.minX : shapeWidth(shape);
+      return t("status.wrapTooWide", { length: length(width), circumference: length(Math.PI * diameter), diameter: length(width / Math.PI) });
+    }
+    if (error === "tooThick") return t("status.wrapTooThick");
+    if (error === "invalidDiameter") return t("status.wrapNeedsDiameter");
+    return t("status.wrapNothing");
+  }, []);
+
+  const wrapSelectionAroundCylinder = useCallback((diameter: number, inward: boolean) => {
+    if (selectedShapes.length !== 1 || !selectedShape) {
+      setNotice(t("status.selectOneToWrap"));
+      return;
+    }
+    if (!canWrapAroundCylinder(selectedShape)) {
+      setNotice(t(selectedShape.locked ? "status.unlockBeforeWrap" : "status.selectOneToWrap"));
+      return;
+    }
+    const wrapped = cylinderWrappedShape(selectedShape, diameter, inward);
+    if (typeof wrapped === "string") {
+      setNotice(cylinderWrapErrorText(wrapped, selectedShape, diameter));
+      return;
+    }
+    const workspace = workspaceSettingsRef.current;
+    commitShapes(
+      shapes.map((shape) => (shape.id === selectedShape.id ? wrapped : shape)),
+      [wrapped.id],
+      t(inward ? "status.wrappedInward" : "status.wrappedAround", { diameter: `${formatLengthMm(diameter, workspace.accuracy)} ${lengthDisplayUnit(workspace).label}` }),
+    );
+  }, [commitShapes, cylinderWrapErrorText, selectedShape, selectedShapes.length, shapes]);
+
   const separateSelectedParts = useCallback(() => {
     if (selectedShapes.length !== 1 || !selectedShape) {
       setNotice(t("status.selectOneToSeparate"));
@@ -10544,6 +10633,25 @@ export function LayerlingEditor({
         const editableGroup = canonicalizeShape({ ...result.group, groupOperation: "group" });
         commitShapes([...remainingShapes, editableGroup], editableGroup.id, t("status.mcpBooleanCut"));
         return { object: mcpShapeSummary(editableGroup) };
+      }
+
+      if (command.action === "wrap_around_cylinder") {
+        const target = findShape(params.id) ?? (selectedIdsRef.current.length === 1 ? findShape(selectedIdsRef.current[0]) : null);
+        if (!target) throw new Error("Select one object to wrap");
+        if (target.locked) throw new Error("Unlock the object before wrapping it");
+        if (!canWrapAroundCylinder(target)) throw new Error("This object cannot be wrapped; a bundle or a measuring tool has no body of its own");
+        const diameter = mcpNumber(params.diameter, Number.NaN);
+        if (!Number.isFinite(diameter) || diameter <= 0) throw new Error("diameter must be a positive number of millimetres");
+        if (params.inward !== undefined && typeof params.inward !== "boolean") throw new Error("inward must be true or false");
+        const inward = params.inward === true;
+        const wrapped = cylinderWrappedShape(target, diameter, inward);
+        if (typeof wrapped === "string") throw new Error(cylinderWrapErrorText(wrapped, target, diameter));
+        commitShapes(
+          currentShapes().map((shape) => (shape.id === target.id ? wrapped : shape)),
+          [wrapped.id],
+          t("status.mcpWrapped"),
+        );
+        return { object: mcpShapeSummary(wrapped) };
       }
 
       if (command.action === "separate_parts") {
@@ -12323,6 +12431,7 @@ export function LayerlingEditor({
           onOpenGroup={selectedShapes.length === 1 && canEditGroup(selectedShape) ? openGroupForEditing : undefined}
           canSeparateParts={canSeparateSelectedParts}
           onSeparateParts={separateSelectedParts}
+          onWrapAroundCylinder={selectedShapes.length === 1 && canWrapAroundCylinder(selectedShape) ? wrapSelectionAroundCylinder : undefined}
           onUpdateShape={updateShape}
           onDuplicateShapeAt={duplicateShapeAt}
           onDuplicateShapesMoved={duplicateShapesMoved}

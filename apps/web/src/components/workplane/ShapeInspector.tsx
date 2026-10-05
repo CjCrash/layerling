@@ -2,7 +2,7 @@
 
 import { GuideHelpLink } from "@/components/GuideHelpLink";
 import { guideChapterForShape, guideSectionForShape } from "@/lib/guideLinks";
-import { ChevronDown, ChevronUp, Eye, EyeOff, Lock, Pencil, Split, Unlock } from "lucide-react";
+import { ChevronDown, ChevronUp, Cylinder, Eye, EyeOff, Lock, Pencil, Split, Unlock } from "lucide-react";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
   DEFAULT_GEAR_HELIX_ANGLE,
@@ -1465,6 +1465,7 @@ export function ShapeInspector({
   onOpenGroup,
   canSeparateParts = false,
   onSeparateParts,
+  onWrapAroundCylinder,
   onInteractionActiveChange,
   onSnapGridAwayChange,
 }: {
@@ -1481,6 +1482,8 @@ export function ShapeInspector({
   onOpenGroup?: () => void;
   canSeparateParts?: boolean;
   onSeparateParts?: () => void;
+  /** Wraps this body around a cylinder of the given diameter (#106). */
+  onWrapAroundCylinder?: (diameter: number, inward: boolean) => void;
   onInteractionActiveChange?: (active: boolean) => void;
   /** The snap control lives in the expanded panel; collapsed, the workplane shows its own. */
   /** Called with true while the inspector does not carry the snap grid control (collapsed, or floating), so the workplane shows it. */
@@ -1788,6 +1791,17 @@ export function ShapeInspector({
         </button>
       ) : null}
 
+      {onWrapAroundCylinder ? (
+        <CylinderWrapCard
+          key={shape.id}
+          shape={shape}
+          workspace={workspace}
+          disabled={locked}
+          onWrap={onWrapAroundCylinder}
+          onInteractionActiveChange={onInteractionActiveChange}
+        />
+      ) : null}
+
       <div className={`property-card ${propertiesOpen ? "" : "collapsed"}`}>
         <button
           className="property-card-header"
@@ -1977,6 +1991,70 @@ export function ShapeInspector({
  * sliders are the same range rows as everywhere else, so a drag shows a live
  * preview and ends in a single undo step.
  */
+/**
+ * Wrapping a flat body around a cylinder (#106): the diameter of the wall,
+ * outward or into the wall, and the button. Folded away until asked for, as
+ * it is a step one takes once rather than a setting one tunes.
+ */
+function CylinderWrapCard({
+  shape,
+  workspace,
+  disabled,
+  onWrap,
+  onInteractionActiveChange,
+}: {
+  shape: WorkplaneShape;
+  workspace: WorkplaneWorkspaceSettings;
+  disabled: boolean;
+  onWrap: (diameter: number, inward: boolean) => void;
+  onInteractionActiveChange?: (active: boolean) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  // A diameter the body just goes once around reads as the natural start; most
+  // people then type the diameter of their cup or tube.
+  const [diameter, setDiameter] = useState(() => Math.max(10, Math.round(shapeWidth(shape) / Math.PI * 1.25)));
+  const [inward, setInward] = useState(false);
+  return (
+    <div className={`property-card ${open ? "" : "collapsed"}`}>
+      <button
+        className="property-card-header"
+        type="button"
+        aria-expanded={open}
+        aria-controls={`cylinder-wrap-${shape.id}`}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>{t("inspector.wrapCylinder")}</span>
+        <ChevronUp className={open ? "" : "collapsed"} size={25} strokeWidth={2.8} />
+      </button>
+      {open ? (
+        <div className="property-list cylinder-wrap-body" id={`cylinder-wrap-${shape.id}`}>
+          <RangeProperty
+            id="diameter"
+            label={t("inspector.wrapDiameter")}
+            value={diameter}
+            min={1}
+            max={400}
+            step={1}
+            workspace={workspace}
+            disabled={disabled}
+            onChange={setDiameter}
+            onInteractionActiveChange={onInteractionActiveChange}
+          />
+          <ToggleProperty label={t("inspector.wrapInward")} value={inward} disabled={disabled} onChange={setInward} />
+          <p className="cylinder-wrap-hint">
+            {t(inward ? "inspector.wrapInwardHint" : "inspector.wrapHint")}
+            <GuideHelpLink section="wrapCylinder" className="inspector-help-link" />
+          </p>
+          <button className="inspector-action-button" type="button" disabled={disabled} onClick={() => onWrap(diameter, inward)}>
+            <Cylinder size={17} strokeWidth={2.5} />
+            <span>{t("inspector.wrapApply")}</span>
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function BentTubeSegmentsCard({
   shape,
   workspace,

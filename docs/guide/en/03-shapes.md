@@ -86,3 +86,16 @@ The snap step is at the bottom right of the editor and can be changed at any tim
 {{ui:editor.tool.copy}}, {{ui:editor.tool.paste}} and {{ui:editor.tool.duplicate}} are in the ribbon ({{ui:editor.group.clipboard}}). [[Ctrl]]+[[D]] duplicates a selection. layerling remembers how you last moved or rotated the copy and applies the same again on the next duplicate. That produces a row of holes or steps in a few key presses. For regular arrangements there is also the pattern, described in [Selecting and arranging](chapter:select-and-arrange).
 
 > **Tip:** If a shape refuses to take the size you want, it is often the limits for new shapes. Under {{ui:workspace.shapeDefaults}} in the settings you decide how each shape starts and how large it may get.
+
+## Wrapping around a cylinder
+
+Should a pattern, a logo or lettering go onto a cup, a can or a tube? First lay it flat on the plate, as an imported SVG or as text for example, the way it should look from above. Then wrap it around a cylinder in the shape's settings under {{ui:inspector.wrapCylinder}}:
+
+1. Open {{ui:inspector.wrapCylinder}} and enter the {{ui:inspector.wrapDiameter}} of the cylinder wall, such as the outside diameter of your cup.
+2. Click {{ui:inspector.wrapApply}}. What ran from left to right now runs around the cylinder, the back edge becomes the top, and the thickness stands out of the wall.
+3. Select the wrapped shape and the cylinder and centre both, left to right and front to back. The middle of the wrapped shape is the cylinder's axis, so it then sits right on its wall.
+
+For an engraving, switch on {{ui:inspector.wrapInward}}: the thickness then goes into the wall. Make the shape a hole, centre it and group it with the cylinder.
+
+The result is a mesh like an imported model. Undo lays the shape flat again; for another diameter, undo first and wrap again. It cannot go further than once around the cylinder; then layerling names the smallest diameter that fits.
+

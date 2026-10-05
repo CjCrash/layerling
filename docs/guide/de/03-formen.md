@@ -87,3 +87,16 @@ Der Rasterschritt steht unten rechts im Editor und lässt sich jederzeit ändern
 {{ui:editor.tool.copy}}, {{ui:editor.tool.paste}} und {{ui:editor.tool.duplicate}} liegen im Menüband ({{ui:editor.group.clipboard}}). Mit [[Strg]]+[[D]] duplizierst du eine Auswahl. layerling merkt sich dabei, wie du die Kopie zuletzt verschoben oder gedreht hast, und wendet dasselbe beim nächsten Duplizieren wieder an. So entsteht eine Reihe von Löchern oder Stufen mit ein paar Tastendrücken. Für regelmäßige Anordnungen gibt es außerdem das Muster, das im Kapitel [Auswählen und Anordnen](chapter:auswaehlen-und-anordnen) beschrieben ist.
 
 > **Tipp:** Wenn eine Form nicht die gewünschte Größe annimmt, liegt das oft an den Grenzen für neue Formen. Unter {{ui:workspace.shapeDefaults}} in den Einstellungen legst du fest, wie jede Form beginnt und wie groß sie höchstens werden darf.
+
+## Um einen Zylinder wickeln
+
+Ein Muster, ein Logo oder ein Schriftzug soll auf einen Becher, eine Dose oder ein Rohr? Lege es zuerst flach auf die Platte, etwa als importiertes SVG oder als Text, so wie es von oben gesehen aussehen soll. Dann wickelst du es in den Einstellungen der Form unter {{ui:inspector.wrapCylinder}} um einen Zylinder:
+
+1. Klappe {{ui:inspector.wrapCylinder}} auf und gib den {{ui:inspector.wrapDiameter}} der Zylinderwand ein, etwa den Außendurchmesser deines Bechers.
+2. Klicke auf {{ui:inspector.wrapApply}}. Was von links nach rechts lag, läuft jetzt um den Zylinder herum, der hintere Rand wird oben, und die Dicke steht nach außen ab.
+3. Markiere die gewickelte Form und den Zylinder und richte sie beide mittig aus, links-rechts und vorne-hinten. Die Mitte der gewickelten Form ist die Achse des Zylinders, also sitzt sie dann genau auf seiner Wand.
+
+Für eine Gravur schaltest du {{ui:inspector.wrapInward}} ein: Dann geht die Dicke in die Wand hinein. Setze die Form als Aussparung, richte sie mittig aus und gruppiere sie mit dem Zylinder.
+
+Das Ergebnis ist ein Netz wie ein importiertes Modell. Mit Rückgängig liegt die Form wieder flach da; für einen anderen Durchmesser erst zurück und dann neu wickeln. Länger als einmal um den Zylinder geht nicht, dann nennt layerling den kleinsten Durchmesser, der passt.
+

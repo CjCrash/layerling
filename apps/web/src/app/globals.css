@@ -8000,6 +8000,17 @@ html[data-theme="dark"] .inspector-bundle-note {
 }
 
 /* Eine Zeile unter dem Feld, die die Wahl erklaert (beim Gewinde die Reihe mit Alltagsbeispielen). */
+.cylinder-wrap-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: -6px 0 0;
+  color: #8d7b68;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
 .select-property-hint {
   grid-column: 2;
   margin-top: -5px;
@@ -10470,6 +10481,7 @@ html[data-theme="dark"] .color-value {
   color: #b9a188;
 }
 
+html[data-theme="dark"] .cylinder-wrap-hint,
 html[data-theme="dark"] .select-property-hint {
   color: #a08a72;
 }

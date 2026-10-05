@@ -62,6 +62,7 @@ The AI works with the same functions as you, through the same path as your opera
 | `layerling_show_overhangs` | switches the overhang hatching on or off, sets the angle and reports for each body the area that would need supports |
 | `layerling_estimate_print` | estimates volume, weight and filament for the selection or the whole design, worked out as solid like the export window |
 | `layerling_inspect_errors` | shows the last message and the last error, plus the messages and errors of the session |
+| `layerling_wrap_around_cylinder` | wraps a body lying flat, an SVG or text for example, around a cylinder, outward or inward as an engraving |
 | `layerling_show_workplane` | hides and shows the plate with its grid, for a picture of the underside for example (only the view) |
 | `layerling_set_section_view` | cuts the view open along a plane to look inside (only the view, nothing is cut apart) |
 | `layerling_export_section_svg` | returns the outlines on a cutting plane as an SVG at 1:1, from the same bodies as the export |

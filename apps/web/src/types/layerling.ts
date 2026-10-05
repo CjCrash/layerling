@@ -484,6 +484,12 @@ export type WorkplaneShape = {
   textInward?: boolean;
   /** Curved text: same place on the circle, letters turned upside down (read from the other side). */
   textFlipped?: boolean;
+  /**
+   * Set on a body made by wrapping around a cylinder (#106): its box is
+   * centred on the cylinder's axis, and aligning, snapping and centring use
+   * that box rather than the arc the mesh actually covers.
+   */
+  cylinderWrap?: { diameter: number; inward?: boolean };
   importedMesh?: {
     positions: number[];
     normals?: number[];
