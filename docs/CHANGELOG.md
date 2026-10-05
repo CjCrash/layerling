@@ -7,6 +7,7 @@ code still carries it - so a lower number further down is older, not newer.
 ## 1.38.2
 
 - **Updating no longer trips the start script:** When an update changed the start script itself, the desktop shortcut sometimes stopped with "'atch' is not recognized" and "Port 3000 is taken by another program" although nothing ran on port 3000; starting it a second time worked. cmd reads a batch file piece by piece while it runs it, and `git pull` had just replaced that file under it, so it went on in the middle of some other line. Everything from the update on is now one block that cmd reads in full first, and the script then starts itself afresh; `start-layerling.sh` does the same, as sh reads the same way. The update that brings this fix can still trip once, as the old script is the one running then. Reported by @bernbout in #110.
+- **No update notice on hosted copies:** layerling.com and other copies served as a static export no longer ask GitHub for the newest release. They are updated when layerling is published there, and the service worker already says when a new version is in; a release that does not touch the website - such as a fix to the start scripts - would otherwise have left a notice there that never went away. Copies started with the desktop shortcut, the start script or Docker still show it.
 
 ## 1.38.1
 
