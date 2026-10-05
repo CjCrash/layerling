@@ -3,6 +3,7 @@
 # it is a git copy without local changes), starts the server, waits until it
 # answers, and only then opens the browser. Ctrl+C stops the server again.
 # The Windows counterpart is start-layerling.cmd.
+self="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
 cd "$(dirname "$0")/.." || exit 1
 # Another port: PORT=3100 scripts/start-layerling.sh
 PORT="${PORT:-3000}"
@@ -46,7 +47,10 @@ case $? in
     ;;
 esac
 
-if [ -d .git ] && command -v git >/dev/null 2>&1; then
+# The update can replace this very file while sh is still reading it, and sh
+# would then go on at the same place in the new file (#110). So after an update
+# the script starts afresh, from inside this if, which sh has read in full.
+if [ -z "$LAYERLING_UPDATED" ] && [ -d .git ] && command -v git >/dev/null 2>&1; then
   # Only changed tracked files hold an update back. Files of your own in this
   # folder do not, and neither does package-lock.json: npm rewrites it when its
   # version differs from ours, so it is put back before updating.
@@ -62,6 +66,7 @@ if [ -d .git ] && command -v git >/dev/null 2>&1; then
       if [ "$before" != "$(git rev-parse HEAD)" ]; then
         echo "layerling was updated. Installing dependencies..."
         npm install --no-save || exit 1
+        LAYERLING_UPDATED=1 exec sh "$self"
       fi
     else
       echo "The update could not be fetched - continuing with the version that is already here."

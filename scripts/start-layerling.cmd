@@ -5,6 +5,8 @@ rem and only then opens the browser. Works from any folder - it finds the checko
 setlocal
 cd /d "%~dp0.."
 title layerling
+rem Started afresh after an update (see below): the checks and the update are done.
+if /i "%~1"=="--updated" goto start
 
 rem Is layerling already running? A second server would share the build folder with
 rem the first and break it, and so would updating under a running server (#102).
@@ -42,15 +44,23 @@ git checkout -- package-lock.json 2>nul
 
 echo Checking for updates...
 for /f %%i in ('git rev-parse HEAD') do set BEFORE=%%i
-git pull --ff-only --quiet
-if errorlevel 1 (
-  echo The update could not be fetched - continuing with the version that is already here.
-  goto start
-)
-for /f %%i in ('git rev-parse HEAD') do set AFTER=%%i
-if not "%BEFORE%"=="%AFTER%" (
-  echo layerling was updated. Installing dependencies...
-  call npm install --no-save
+rem The update can replace this very file while cmd is still reading it, and cmd
+rem would then go on at the same place in the new file - in the middle of some
+rem other line ("'atch' is not recognized", #110). So everything from the update on
+rem is one block, which cmd reads in full before it runs it, and the block ends by
+rem starting this script afresh: no line is read from the file after the update.
+(
+  git pull --ff-only --quiet
+  if errorlevel 1 (
+    echo The update could not be fetched - continuing with the version that is already here.
+  ) else (
+    git diff --quiet %BEFORE% HEAD || (
+      echo layerling was updated. Installing dependencies...
+      call npm install --no-save
+    )
+  )
+  call "%~f0" --updated
+  exit /b
 )
 
 :start

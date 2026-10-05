@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Updating no longer trips the start script:** When an update changed the start script itself, the desktop shortcut sometimes stopped with "'atch' is not recognized" and "Port 3000 is taken by another program" although nothing ran on port 3000; starting it a second time worked. cmd reads a batch file piece by piece while it runs it, and `git pull` had just replaced that file under it, so it went on in the middle of some other line. Everything from the update on is now one block that cmd reads in full first, and the script then starts itself afresh; `start-layerling.sh` does the same, as sh reads the same way. The update that brings this fix can still trip once, as the old script is the one running then. Reported by @bernbout in #110.
+
 ## 1.38.1
 
 - **Hollow bodies keep their walls when resized:** A hollowed body that was resized kept a band as thick as the wall at each side of its box and stretched only what lay between. That is right for flat walls, but a round one came out with four bulges - a 60 mm cylinder hollowed to 2 mm and made smaller with the mouse showed them plainly. Now a hollowed body is hollowed again from its state before, at the new size, a moment after the resize; the result takes the place of the resize in the undo history. Walls keep their thickness on any body, and a cylinder stretched unevenly comes back as an ellipse. A star, knurl or thread stretched unevenly, a body filleted after hollowing and a hollowed group keep the old way. Reported by darkwingbreydin in the forum.
