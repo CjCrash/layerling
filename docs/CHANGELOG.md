@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **A store folder that cannot be made says why:** When the folder set in `LAYERLING_SHARED_PROJECTS_DIR` could not be created, the start page showed only the bare system error, such as "EACCES: permission denied, mkdir '/data'", which left open where that path came from. It now names the folder and the setting, says to mount a writable folder there or point the setting at the mounted one, and that a changed setting in Docker needs `docker compose up -d`, as `restart` keeps the old one. The README says the same in the Docker section. Reported by @mikromcz in #114.
+
 ## 1.39.0
 
 - **Taper and twist on more shapes:** The capsule, rounded box, star, heart, crescent, honeycomb and dovetail can now be tapered, twisted and leaned like a box or a cylinder. A tapered or leaning one stays an exact CAD body, so chamfers, fillets and the STEP export work on it as before; a rounded box does so while its top and bottom edges are not rounded. Twisted, they are a mesh, as every twisted shape is. Gear, thread, spring, knurl, hinge, pyramid, bent tube, teardrop, the screw-head cutters and the ruler still leave them out: their measures are fixed or, like the pyramid's, they have a top of their own. Taper and twist now also narrow towards the middle of a shape's outline rather than its origin, which only makes a difference on shapes not centred on it, like the star. Suggested by @boiing in #111.

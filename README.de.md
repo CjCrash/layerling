@@ -187,7 +187,10 @@ Befehle im Alltag:
 
 Das Image führt `next start` im Produktionsmodus aus, die MCP-Brücke steht dort also nicht zur Verfügung. Für einen
 gemeinsamen Projektordner ein beschreibbares Verzeichnis einbinden und in `compose.yml` `LAYERLING_SHARED_PROJECTS_DIR`
-setzen (siehe [Gemeinsame Entwürfe im Netz](#gemeinsame-entwürfe-im-netz)).
+auf den Pfad im Container setzen, an dem es eingebunden ist, etwa `./shared-projects:/shared-projects` mit
+`LAYERLING_SHARED_PROJECTS_DIR: "/shared-projects"` (siehe [Gemeinsame Entwürfe im Netz](#gemeinsame-entwürfe-im-netz)).
+Nach einer Änderung `docker compose up -d` ausführen: `docker compose restart` behält die alte Einstellung.
+`docker exec <Container> printenv LAYERLING_SHARED_PROJECTS_DIR` zeigt die tatsächlich verwendete.
 
 ### Gemeinsame Entwürfe im Netz
 
