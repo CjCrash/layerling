@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Crosshair, Cuboid, Download, Eye, EyeOff, FlipHorizontal, GripVertical, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, RotateCcw, Rows3, Ruler, RulerDimensionLine, Slice, X } from "lucide-react";
+import { ArrowDownToLine, ChevronLeft, ChevronRight, Crosshair, Cuboid, Download, Eye, EyeOff, FlipHorizontal, GripVertical, Home, Minus, MousePointer2, PanelsTopLeft, Plus, Rotate3d, RotateCcw, Rows3, Ruler, RulerDimensionLine, Slice, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type DragEvent, type MouseEvent as ReactMouseEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type ReactNode, type SetStateAction, type WheelEvent as ReactWheelEvent } from "react";
 import { objectSnapOffset, shiftSnapBox, type ObjectSnapGuide, type SnapBox } from "@/lib/objectSnap";
 import { useMovablePanel, type MovablePanelOptions } from "@/lib/useMovablePanel";
@@ -8033,6 +8033,8 @@ export function WorkplaneViewport({
         : undefined;
       if (event.key === "Escape" && workplaneModeRef.current) {
         event.preventDefault();
+        // Wie ein Klick ins Leere: zurueck auf die Grundplatte, so steht es in der Anleitung (#108).
+        onSetPlacementWorkplane(horizontalPlacementWorkplane(), "base");
         onWorkplaneModeChange(false);
       } else if (event.key === "Escape" && (tapeToolsOpen || tapeModeRef.current || tapeDeleteModeRef.current || tapeMoveModeRef.current)) {
         event.preventDefault();
@@ -8085,7 +8087,7 @@ export function WorkplaneViewport({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [focusSelection, onWorkplaneModeChange, resetView, tapeToolsOpen, sectionViewOpen, setPlacementWorkplaneAtSelection, setTapeActive, setViewCubeFace, togglePlacementWorkplane, toggleProjection, zoomCamera]);
+  }, [focusSelection, onSetPlacementWorkplane, onWorkplaneModeChange, resetView, tapeToolsOpen, sectionViewOpen, setPlacementWorkplaneAtSelection, setTapeActive, setViewCubeFace, togglePlacementWorkplane, toggleProjection, zoomCamera]);
 
   return (
     <main className="workplane-stage">
@@ -8193,6 +8195,20 @@ export function WorkplaneViewport({
                   onClick={onToggleWorkplaneHidden}
                 >
                   {workplaneHidden ? <EyeOff size={22} strokeWidth={2.1} aria-hidden="true" /> : <Eye size={22} strokeWidth={2.1} aria-hidden="true" />}
+                </button>
+              ) : null}
+              {/* Wer die Ebene loswerden will, sucht neben dem Auge - das blendet nur aus (#108). */}
+              {!placementWorkplaneIsBase(placementWorkplane) ? (
+                <button
+                  className="workplane-reset-button"
+                  aria-label={t("camera.resetWorkplane")}
+                  title={t("camera.resetWorkplane")}
+                  onClick={() => {
+                    onSetPlacementWorkplane(horizontalPlacementWorkplane(), "base");
+                    if (workplaneModeRef.current) onWorkplaneModeChange(false);
+                  }}
+                >
+                  <ArrowDownToLine size={22} strokeWidth={2.1} aria-hidden="true" />
                 </button>
               ) : null}
             </div>
