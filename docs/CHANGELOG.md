@@ -4,7 +4,7 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
-## Unreleased
+## 1.38.2
 
 - **Updating no longer trips the start script:** When an update changed the start script itself, the desktop shortcut sometimes stopped with "'atch' is not recognized" and "Port 3000 is taken by another program" although nothing ran on port 3000; starting it a second time worked. cmd reads a batch file piece by piece while it runs it, and `git pull` had just replaced that file under it, so it went on in the middle of some other line. Everything from the update on is now one block that cmd reads in full first, and the script then starts itself afresh; `start-layerling.sh` does the same, as sh reads the same way. The update that brings this fix can still trip once, as the old script is the one running then. Reported by @bernbout in #110.
 
