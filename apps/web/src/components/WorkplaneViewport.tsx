@@ -8905,6 +8905,31 @@ function createThreeScene(host: HTMLDivElement): ThreeState {
     if (event.cancelable) event.preventDefault();
   };
   const SAFARI_GESTURES = ["gesturestart", "gesturechange", "gestureend"] as const;
+  /**
+   * The normal view zooms towards its pivot and stops at the closest distance
+   * to that pivot - so with the pivot in the middle of the plate it could not
+   * come close to a part at the edge, while the flat view, which only enlarges,
+   * went anywhere. Before the controls take a zoom-in, the pivot moves along
+   * the line of sight to the depth of the body under the pointer: the picture
+   * stays put, and the zoom can go on right up to that body.
+   */
+  const pullPivotToSurface = (event: WheelEvent) => {
+    if (!(state.camera instanceof THREE.PerspectiveCamera) || event.deltaY >= 0) return;
+    const rect = renderer.domElement.getBoundingClientRect();
+    state.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    state.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    state.raycaster.setFromCamera(state.pointer, state.camera);
+    state.raycaster.layers.set(RENDER_LAYER_SHAPES);
+    const hit = state.raycaster.intersectObjects(state.shapeLayer.children, true).find((entry) => (
+      entry.object instanceof THREE.Mesh && entry.object.visible && !(state.sectionPlane && state.sectionPlane.distanceToPoint(entry.point) < -0.001)
+    ));
+    if (!hit) return;
+    const forward = state.camera.getWorldDirection(new THREE.Vector3());
+    const pivotDepth = state.controls.target.clone().sub(state.camera.position).dot(forward);
+    const hitDepth = hit.point.clone().sub(state.camera.position).dot(forward);
+    if (!(hitDepth > 0) || hitDepth >= pivotDepth) return;
+    state.controls.target.copy(state.camera.position).addScaledVector(forward, hitDepth);
+  };
   controls.addEventListener("change", requestRender);
   SAFARI_GESTURES.forEach((name) => renderer.domElement.addEventListener(name, preventSafariGesture));
   renderer.domElement.addEventListener("pointerdown", configureLayerlingMouseButtons, { capture: true });
@@ -8912,8 +8937,10 @@ function createThreeScene(host: HTMLDivElement): ThreeState {
   renderer.domElement.addEventListener("pointercancel", resetLayerlingMouseButtons);
   renderer.domElement.addEventListener("contextmenu", preventContextMenu);
   renderer.domElement.addEventListener("wheel", requestRender, { passive: true });
+  renderer.domElement.addEventListener("wheel", pullPivotToSurface, { passive: true, capture: true });
   renderer.domElement.addEventListener("pointerdown", requestRender);
   state.disposeInteractionListeners = () => {
+    renderer.domElement.removeEventListener("wheel", pullPivotToSurface, { capture: true });
     controls.removeEventListener("change", requestRender);
     renderer.domElement.removeEventListener("pointerdown", configureLayerlingMouseButtons, { capture: true });
     renderer.domElement.removeEventListener("pointerup", resetLayerlingMouseButtons);
