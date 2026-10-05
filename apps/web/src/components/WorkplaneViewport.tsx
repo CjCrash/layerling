@@ -10,6 +10,7 @@ import { sectionMeasurement, sectionPointToWorld, snapSectionPoint, type Section
 import * as THREE from "three";
 import { Brush, Evaluator, HOLLOW_INTERSECTION } from "three-bvh-csg";
 import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
+import { triangleTouchesRect, type ScreenRect } from "@/lib/screenRectHit";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
@@ -223,6 +224,9 @@ const CAMERA_MAX_TARGET_Y = 120;
 const ROTATION_PROTRACTOR_OUTER_RADIUS = 94;
 const RENDER_LAYER_WORKPLANE = 0;
 const RENDER_LAYER_SHAPES = 1;
+/** How far beside a body a press may land and still mean it, in screen pixels. */
+const PICK_TOLERANCE_PIXELS = 6;
+const PICK_TOLERANCE_RAYS = 8;
 const RENDER_LAYER_HELPERS = 2;
 const RENDER_LAYER_MODIFIERS = 3;
 const RENDER_LAYER_PREVIEWS = 4;
@@ -3308,6 +3312,61 @@ function boundsIntersectRect(bounds: NonNullable<ReturnType<typeof shapeScreenBo
   return bounds.maxX >= rect.left && bounds.minX <= rect.right && bounds.maxY >= rect.top && bounds.minY <= rect.bottom;
 }
 
+/**
+ * Whether any triangle of the body, as drawn, touches the rectangle (canvas
+ * pixels). Null when the body has no surface to test - a measuring tool made
+ * of lines - so the caller can fall back on its frame.
+ */
+function shapeGeometryTouchesScreenRect(state: ThreeState, shapeId: string, rect: ScreenRect): boolean | null {
+  const object = state.shapeRecords.get(shapeId)?.object ?? findShapeObject(state, shapeId);
+  if (!object) return null;
+  const canvas = state.renderer.domElement.getBoundingClientRect();
+  state.camera.updateMatrixWorld();
+  const viewProjection = new THREE.Matrix4().multiplyMatrices(state.camera.projectionMatrix, state.camera.matrixWorldInverse);
+  const matrix = new THREE.Matrix4();
+  let tested = false;
+  let touches = false;
+  object.updateWorldMatrix(true, true);
+  object.traverse((child) => {
+    if (touches || !(child instanceof THREE.Mesh) || !child.visible || child.userData.cutPreview || typeof child.userData.shapeId !== "string") return;
+    const geometry = child.geometry as THREE.BufferGeometry;
+    const position = geometry.getAttribute("position");
+    if (!position || position.count < 3) return;
+    tested = true;
+    const e = matrix.multiplyMatrices(viewProjection, child.matrixWorld).elements;
+    // Every vertex once: screen x and y, and whether it is in front of the camera.
+    const screen = new Float32Array(position.count * 2);
+    const behind = new Uint8Array(position.count);
+    for (let index = 0; index < position.count; index += 1) {
+      const x = position.getX(index);
+      const y = position.getY(index);
+      const z = position.getZ(index);
+      const w = e[3] * x + e[7] * y + e[11] * z + e[15];
+      if (w <= 1e-9) {
+        behind[index] = 1;
+        continue;
+      }
+      screen[index * 2] = ((e[0] * x + e[4] * y + e[8] * z + e[12]) / w + 1) / 2 * canvas.width;
+      screen[index * 2 + 1] = (1 - (e[1] * x + e[5] * y + e[9] * z + e[13]) / w) / 2 * canvas.height;
+    }
+    const index = geometry.index;
+    const total = index ? index.count : position.count;
+    const start = Math.max(0, Math.floor(geometry.drawRange.start || 0));
+    const end = Math.min(total, Number.isFinite(geometry.drawRange.count) ? start + Math.floor(geometry.drawRange.count) : total);
+    for (let corner = start; corner + 2 < end; corner += 3) {
+      const a = index ? index.getX(corner) : corner;
+      const b = index ? index.getX(corner + 1) : corner + 1;
+      const c = index ? index.getX(corner + 2) : corner + 2;
+      if (behind[a] || behind[b] || behind[c]) continue;
+      if (triangleTouchesRect(screen[a * 2], screen[a * 2 + 1], screen[b * 2], screen[b * 2 + 1], screen[c * 2], screen[c * 2 + 1], rect)) {
+        touches = true;
+        return;
+      }
+    }
+  });
+  return tested ? touches : null;
+}
+
 function rotationAxisVectorForFrame(handleKey: string, frame: SelectionFrame) {
   const axis = rotationAxisForHandle(handleKey);
   if (axis === "x") {
@@ -5605,7 +5664,10 @@ export function WorkplaneViewport({
       .filter((shape) => !shape.imagePlate)
       .filter((shape) => {
         const bounds = shapeScreenBounds(state, shape);
-        return bounds ? boundsIntersectRect(bounds, rect) : false;
+        if (!bounds || !boundsIntersectRect(bounds, rect)) return false;
+        // The frame only says where the body could be. A spool's bore or the
+        // gap between the parts of a group is inside it and still empty.
+        return shapeGeometryTouchesScreenRect(state, shape.id, rect) ?? true;
       })
       .map((shape) => shape.id);
   }, []);
@@ -6503,32 +6565,35 @@ export function WorkplaneViewport({
     state.raycaster.setFromCamera(state.pointer, state.camera);
     state.raycaster.layers.set(RENDER_LAYER_SHAPES);
 
-    const intersections = state.raycaster.intersectObjects(state.shapeLayer.children, true);
-    const hit = intersections.find((entry) => {
+    const pickable = (entry: THREE.Intersection) => {
       if (state.sectionPlane && state.sectionPlane.distanceToPoint(entry.point) < -0.001) return false;
       const shapeId = entry.object.userData.shapeId;
       if (typeof shapeId !== "string") return false;
       const shape = shapesRef.current.find((candidate) => candidate.id === shapeId);
       return shape ? !shape.imagePlate : false;
-    });
+    };
+    const hit = state.raycaster.intersectObjects(state.shapeLayer.children, true).find(pickable);
     if (hit) {
       return hit.object.userData.shapeId as string;
     }
 
+    // A press that just misses still means the body next to it: a thin wall or
+    // a small part is hard to hit exactly. So the same test runs once more on
+    // a small ring around the pointer - but no further. The middle of a bore
+    // or the gap between two parts of a group is empty space and stays so.
     let nearestId: string | null = null;
     let nearestDistance = Number.POSITIVE_INFINITY;
-    shapesRef.current.forEach((shape) => {
-      if (shape.imagePlate) return;
-      const center = new THREE.Vector3(shape.x, (shape.elevation ?? 0) + shape.height / 2, shape.z).project(state.camera);
-      const screenX = rect.left + ((center.x + 1) / 2) * rect.width;
-      const screenY = rect.top + ((1 - center.y) / 2) * rect.height;
-      const distance = Math.hypot(clientX - screenX, clientY - screenY);
-      const hitRadius = clamp(Math.max(shapeWidth(shape), shapeDepth(shape)) * 2.6, 48, 112);
-      if (distance <= hitRadius && distance < nearestDistance) {
-        nearestId = shape.id;
-        nearestDistance = distance;
+    for (let step = 0; step < PICK_TOLERANCE_RAYS; step += 1) {
+      const angle = (step / PICK_TOLERANCE_RAYS) * Math.PI * 2;
+      state.pointer.x = ((clientX + Math.cos(angle) * PICK_TOLERANCE_PIXELS - rect.left) / rect.width) * 2 - 1;
+      state.pointer.y = -((clientY + Math.sin(angle) * PICK_TOLERANCE_PIXELS - rect.top) / rect.height) * 2 + 1;
+      state.raycaster.setFromCamera(state.pointer, state.camera);
+      const near = state.raycaster.intersectObjects(state.shapeLayer.children, true).find(pickable);
+      if (near && near.distance < nearestDistance) {
+        nearestId = near.object.userData.shapeId as string;
+        nearestDistance = near.distance;
       }
-    });
+    }
 
     return nearestId;
   }, []);
@@ -7660,13 +7725,14 @@ export function WorkplaneViewport({
           };
           const selected = shapesInMarquee(rect);
           if (marquee.additive) {
-            const merged = [...selectedIdsRef.current];
-            selected.forEach((id) => {
-              if (!merged.includes(id)) {
-                merged.push(id);
-              }
-            });
-            onSelectShape(merged);
+            // Shift turns each body in the box around, as a Shift click does
+            // for one: what was selected leaves the selection, the rest joins.
+            const boxed = new Set(selected);
+            const current = selectedIdsRef.current;
+            onSelectShape([
+              ...current.filter((id) => !boxed.has(id)),
+              ...selected.filter((id) => !current.includes(id)),
+            ]);
           } else {
             onSelectShape(selected);
           }
