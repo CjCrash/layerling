@@ -4,6 +4,11 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **3MF objects come in apart:** A 3MF with several objects in one colour - a Bambu Studio project with one tray per plate, say - came in as one body, because the import only split by colour. Now each object of the build comes in as its own body, in its place and named after the object, and is split by colour within it as before.
+- **Slicer modifiers no longer turn solid:** Modifier parts of a Bambu Studio, OrcaSlicer or PrusaSlicer project - the boxes that only change walls or infill somewhere - came in as solid geometry, as did negative volumes and support blockers. They are now left out.
+
 ## 1.39.1
 
 - **A store folder that cannot be made says why:** When the folder set in `LAYERLING_SHARED_PROJECTS_DIR` could not be created, the start page showed only the bare system error, such as "EACCES: permission denied, mkdir '/data'", which left open where that path came from. It now names the folder and the setting, says to mount a writable folder there or point the setting at the mounted one, and that a changed setting in Docker needs `docker compose up -d`, as `restart` keeps the old one. The README says the same in the Docker section. Reported by @mikromcz in #114.
