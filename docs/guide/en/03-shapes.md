@@ -36,7 +36,9 @@ The settings sit docked at the right edge. If they cover something you want to s
 - **{{ui:inspector.taper}}:** Different sizes at the top and bottom, for example for a slope or a funnel.
 - **{{ui:inspector.twist}}:** Twists the top against the bottom or shifts it sideways. That gives twisted columns and leaning towers.
 
-A tapered or leaning box, cylinder, ellipse, polygon, tube or ring keeps its exact shape: chamfers and fillets work on it as on the plain shape, and the STEP export writes it. A twisted shape is still a triangle mesh for both.
+Taper and twist work on almost every shape. Only the gear, thread, spring, knurl, hinge, pyramid, bent tube, teardrop, the screw-head cutters and the ruler leave them out: they have fixed measures of their own or, like the pyramid, a top of their own already.
+
+A tapered or leaning box, cylinder, ellipse, polygon, tube or ring keeps its exact shape, and so do the capsule, star, heart, crescent, honeycomb, dovetail and a rounded box without rounded top and bottom edges: chamfers and fillets work on it as on the plain shape, and the STEP export writes it. A twisted shape is still a triangle mesh for both.
 
 Typing is more exact than dragging. All number fields take millimetres, but also percentages: type "50 %" into a width of 40 mm and you get 20 mm.
 

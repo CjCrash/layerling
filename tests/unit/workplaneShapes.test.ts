@@ -21,6 +21,7 @@ import {
   shapeHasExtrudeDeform,
   shapeHasShapeDeform,
   shapeHasTaper,
+  shapeSupportsTaper,
   shapeOverallFootprintDimensions,
   shapeTransformShouldRemainEditable,
   shapeWithParametricSource,
@@ -119,9 +120,9 @@ describe("workplane shape helpers", () => {
     expect(shapeTaperScaleAt(gear, 0.5, "width")).toBe(1);
     expect(shapeTaperScaleAt(gear, 0.5, "depth")).toBe(1);
 
-    const star = shape({ kind: "star", taperBottomWidth: 10, taperTopWidth: 30 });
-    expect(shapeHasTaper(star)).toBe(false);
-    expect(shapeTaperScaleAt(star, 0.5, "width")).toBe(1);
+    const knurl = shape({ kind: "knurl", taperBottomWidth: 10, taperTopWidth: 30 });
+    expect(shapeHasTaper(knurl)).toBe(false);
+    expect(shapeTaperScaleAt(knurl, 0.5, "width")).toBe(1);
 
     const pyramid = shape({ kind: "pyramid", taperBottomWidth: 10, taperTopWidth: 30 });
     expect(shapeHasTaper(pyramid)).toBe(false);
@@ -386,6 +387,11 @@ describe("workplane shape helpers", () => {
     ]);
     expect(resizedImportedMeshPositions({ ...modified, edgeResizeMode: "scale" })[3]).toBe(-18);
     expect(resizedImportedCoordinates(modified, [-9, 1, 0, 9, 19, 0])).toEqual([-19, 1, 0, 19, 39, 0]);
+  });
+
+  it("tapers and twists every shape but those with fixed measures or a top of their own (#111)", () => {
+    for (const kind of ["box", "slot", "roundedBox", "star", "heart", "crescent", "honeycomb", "dovetail"] as const) expect(shapeSupportsTaper(kind)).toBe(true);
+    for (const kind of ["gear", "thread", "spring", "knurl", "hinge", "pyramid", "bentTube", "teardrop", "counterbore", "countersink", "ruler"] as const) expect(shapeSupportsTaper(kind)).toBe(false);
   });
 
   it("hollows a resized hollow body again instead of keeping bands at its sides", () => {

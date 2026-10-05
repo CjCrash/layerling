@@ -112,13 +112,19 @@ export function shapeTaperDimensions(shape: WorkplaneShape) {
 }
 
 /**
- * Arten, die eine Verjuengung ueberhaupt annehmen. Zahnrad, Gewinde und Feder
- * kennen sie gar nicht, und die Pyramide hat mit Laenge und Breite oben ihre
- * eigene, die wirklich greift. Die Liste steht hier, damit das Merkmalsfeld und
- * die MCP-Bruecke nicht je ihre eigene fuehren.
+ * Arten, die eine Verjuengung ueberhaupt annehmen. Zahnrad, Gewinde, Feder und
+ * Raendel kennen sie gar nicht, die Pyramide hat mit Laenge und Breite oben ihre
+ * eigene, die wirklich greift, und Scharnier, Senkungen, gebogenes Rohr und
+ * Lineal haben feste Masse, die eine Verjuengung nur verdurbe. Der Tropfen ist
+ * der Querschnitt eines waagerechten Lochs; oben und unten gibt es fuer ihn
+ * nicht. Seit #111 nehmen Kapsel, abgerundeter Quader, Stern, Herz, Halbmond,
+ * Wabe und Schwalbenschwanz sie an. Die Liste steht hier, damit das Merkmalsfeld, die
+ * Vorschau und die MCP-Bruecke nicht je ihre eigene fuehren.
  */
+const SHAPES_WITHOUT_TAPER = new Set<WorkplaneShape["kind"]>(["gear", "thread", "spring", "pyramid", "ruler", "hinge", "knurl", "counterbore", "countersink", "teardrop", "bentTube"]);
+
 export function shapeSupportsTaper(kind: WorkplaneShape["kind"]) {
-  return kind !== "gear" && kind !== "thread" && kind !== "spring" && kind !== "pyramid" && kind !== "ruler" && kind !== "star" && kind !== "heart" && kind !== "crescent" && kind !== "slot" && kind !== "dovetail" && kind !== "hinge" && kind !== "knurl" && kind !== "counterbore" && kind !== "countersink" && kind !== "teardrop" && kind !== "honeycomb" && kind !== "roundedBox" && kind !== "bentTube";
+  return !SHAPES_WITHOUT_TAPER.has(kind);
 }
 
 /**

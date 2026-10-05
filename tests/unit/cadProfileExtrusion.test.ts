@@ -377,8 +377,9 @@ describe("which shapes get an exact profile", () => {
       expect(profile?.transform?.[11]).toBeCloseTo(-3, 9);
     });
     expect(cadModifierProfileForShape(shape("star"))?.transform).toBeUndefined();
-    // The star, like the display mesh, has no taper or twist to honour.
-    expect(cadModifierProfileForShape(shape("star", { extrudeTwist: 45 }))).not.toBeNull();
+    // Since #111 a star twists like the display mesh does, which no loft follows.
+    expect(cadModifierProfileForShape(shape("star", { extrudeTwist: 45 }))).toBeNull();
+    expect(cadModifierProfileForShape(shape("star", { taperTopWidth: 10 }))?.kind).toBe("loft");
   });
 
   it("lofts a bevel gear from its foot outline to the same outline shrunk at the top, round its straight bore", () => {

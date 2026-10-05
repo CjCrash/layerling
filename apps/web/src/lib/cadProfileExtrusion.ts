@@ -945,7 +945,7 @@ export function asDesignedRound(shape: WorkplaneShape): WorkplaneShape {
  * top point stays straight: the body is the ruled loft between the two ends,
  * exactly. Text is left out - it reaches the edge tool glyph by glyph.
  */
-const LOFTABLE_KINDS = new Set<WorkplaneShape["kind"]>(["box", "cylinder", "ellipse", "polygon", "tube", "ring"]);
+const LOFTABLE_KINDS = new Set<WorkplaneShape["kind"]>(["box", "cylinder", "ellipse", "polygon", "tube", "ring", "slot", "star", "heart", "crescent", "honeycomb", "dovetail", "roundedBox"]);
 
 /**
  * The tapered or leaning shape as a ruled loft between its bottom and top
@@ -971,10 +971,17 @@ function deformedLoftProfile(shape: WorkplaneShape, width: number, depth: number
   const taper = shapeTaperDimensions(shape);
   const offsetX = shape.extrudeTopOffsetX ?? 0;
   const offsetZ = shape.extrudeTopOffsetZ ?? 0;
+  // The display mesh narrows towards the middle of its outline's extent, not
+  // towards the origin; a star or a heart is not centred on it.
+  const bounds = loops.map(profileLoopBounds);
+  const centerX = (Math.min(...bounds.map((b) => b[0])) + Math.max(...bounds.map((b) => b[2]))) / 2;
+  const centerZ = (Math.min(...bounds.map((b) => b[1])) + Math.max(...bounds.map((b) => b[3]))) / 2;
+  const section = (loop: CadModifierProfileLoop, sx: number, sz: number, shiftX: number, shiftZ: number) =>
+    mapLoop(loop, sx, centerX * (1 - sx) + shiftX, sz, centerZ * (1 - sz) + shiftZ);
   const part: CadModifierProfilePart = {
     kind: "loft",
-    loops: loops.map((loop) => mapLoop(loop, taper.bottomWidth / width, 0, taper.bottomDepth / depth, 0)),
-    topLoops: loops.map((loop) => mapLoop(loop, taper.topWidth / width, offsetX, taper.topDepth / depth, offsetZ)),
+    loops: loops.map((loop) => section(loop, taper.bottomWidth / width, taper.bottomDepth / depth, 0, 0)),
+    topLoops: loops.map((loop) => section(loop, taper.topWidth / width, taper.topDepth / depth, offsetX, offsetZ)),
     height: shape.height,
     transform: profileTransformForShape(shape),
   };

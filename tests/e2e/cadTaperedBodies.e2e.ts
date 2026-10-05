@@ -11,6 +11,13 @@ import { cadTransformRequiresGeneralTransform } from "@/lib/cadModifierRuntime";
 import { createPrismGeometry } from "@/lib/prismGeometry";
 import { createBooleanHollowCylinderGeometry } from "@/lib/roundBodyGeometry";
 import { roundSideCount } from "@/lib/roundSideCount";
+import { createSlotGeometry } from "@/lib/slotGeometry";
+import { createStarGeometry } from "@/lib/starGeometry";
+import { createHeartGeometry } from "@/lib/heartGeometry";
+import { createCrescentGeometry } from "@/lib/crescentGeometry";
+import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
+import { createDovetailGeometry } from "@/lib/dovetailGeometry";
+import { createRoundedBoxGeometry } from "@/lib/roundedBoxGeometry";
 import { meshYawDegrees, mirrorSign, shapeExtrudeDeformAt, shapeHasExtrudeDeform, shapeHasTaper, shapeTaperDimensions, shapeTaperScaleAt } from "@/lib/workplaneShapes";
 
 /*
@@ -35,6 +42,13 @@ function localGeometry(source: WorkplaneShape) {
     case "polygon": return createPrismGeometry(width, height, depth, source.sides ?? 6);
     case "tube":
     case "ring": return createBooleanHollowCylinderGeometry(width, height, depth, source.bevel ?? 4, roundSideCount(source.sides, width, depth));
+    case "slot": return createSlotGeometry({ width, depth, height, sides: source.sides });
+    case "star": return createStarGeometry({ width, depth, height });
+    case "heart": return createHeartGeometry({ width, depth, height });
+    case "crescent": return createCrescentGeometry({ width, depth, height });
+    case "honeycomb": return createHoneycombGeometry({ width, depth, height });
+    case "dovetail": return createDovetailGeometry({ width, depth, height });
+    case "roundedBox": return createRoundedBoxGeometry({ width, depth, height, topBottomFillet: source.topBottomFillet });
     default: throw new Error(`no mesh for ${source.kind}`);
   }
 }
@@ -53,19 +67,24 @@ function worldMesh(source: WorkplaneShape) {
   const minY = Math.min(...raw.map((v) => v[1]));
   const maxY = Math.max(...raw.map((v) => v[1]));
   const span = Math.max(1e-6, maxY - minY);
+  // Taper and twist work towards the middle of the mesh's extent (a star is not centred on its origin).
+  const cx = (Math.min(...raw.map((v) => v[0])) + Math.max(...raw.map((v) => v[0]))) / 2;
+  const cz = (Math.min(...raw.map((v) => v[2])) + Math.max(...raw.map((v) => v[2]))) / 2;
   const centerY = source.height / 2;
   const matrix = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(
     THREE.MathUtils.degToRad(source.rotationX ?? 0), THREE.MathUtils.degToRad(meshYawDegrees(source)), THREE.MathUtils.degToRad(source.rotationZ ?? 0), "XYZ"));
   const vertices = raw.map(([x, y, z]) => {
     const t = (y - minY) / span;
-    let lx = x * (tapered ? shapeTaperScaleAt(source, t, "width") : 1);
-    let lz = z * (tapered ? shapeTaperScaleAt(source, t, "depth") : 1);
+    let lx = (x - cx) * (tapered ? shapeTaperScaleAt(source, t, "width") : 1);
+    let lz = (z - cz) * (tapered ? shapeTaperScaleAt(source, t, "depth") : 1);
     if (deformed) {
       const d = shapeExtrudeDeformAt(source, t);
       const c = Math.cos(d.twistRadians);
       const s = Math.sin(d.twistRadians);
       [lx, lz] = [lx * c - lz * s + d.offsetX, lx * s + lz * c + d.offsetZ];
     }
+    lx += cx;
+    lz += cz;
     const v = new THREE.Vector3(lx * mirrorSign(source.mirrorX), (y - centerY) * mirrorSign(source.mirrorY), lz * mirrorSign(source.mirrorZ)).applyMatrix4(matrix);
     return [v.x + source.x, v.y + (source.elevation ?? 0) + centerY, v.z + source.z] as Vec3;
   });
@@ -129,6 +148,29 @@ describe("tapered and leaning shapes: exact lofts", () => {
     ["a hexagon tapered in width only, leaning", shape("polygon", { width: 20, depth: 20, height: 10, sides: 6, taperTopWidth: 8, taperTopDepth: 20, extrudeTopOffsetZ: 3 }), NaN],
     ["a square tube drawn with 12 sides, tapered in depth only", shape("tube", { width: 30, depth: 30, height: 15, bevel: 4, sides: 12, taperTopWidth: 30, taperTopDepth: 15 }), NaN],
   ];
+
+  // Since #111 the outlines of more shapes loft. Their arcs are drawn as chords,
+  // so place and volume agree to the chord's sag rather than exactly; the check
+  // the editor itself makes (cadProfileSolidMismatch) holds as for the others.
+  const outlineCases: Array<[string, WorkplaneShape]> = [
+    // A star is not centred on its origin.
+    ["a tapered star", shape("star", { width: 40, depth: 38, height: 12, taperTopWidth: 16, taperTopDepth: 15 })],
+    ["a tapered, leaning heart", shape("heart", { width: 30, depth: 26, height: 10, taperTopWidth: 15, taperTopDepth: 13, extrudeTopOffsetZ: 3 })],
+    ["a leaning capsule", shape("slot", { width: 40, depth: 16, height: 20, taperTopWidth: 30, taperTopDepth: 12, extrudeTopOffsetX: 6 })],
+    ["a tapered crescent", shape("crescent", { width: 30, depth: 30, height: 8, taperTopWidth: 20, taperTopDepth: 20 })],
+    ["a tapered honeycomb plate", shape("honeycomb", { width: 50, depth: 40, height: 6, taperTopWidth: 44, taperTopDepth: 34 })],
+    ["a tapered dovetail", shape("dovetail", { width: 30, depth: 20, height: 10, taperTopWidth: 24, taperTopDepth: 18 })],
+    ["a rounded box with round corners only, tapered", shape("roundedBox", { width: 40, depth: 30, height: 20, topBottomFillet: 0, taperTopWidth: 28, taperTopDepth: 20 })],
+  ];
+
+  it.each(outlineCases)("builds %s where the display mesh stands, turned and mirrored too", (_name, source) => {
+    for (const placed of [source, { ...source, x: 12.5, z: -7, elevation: 4, rotation: 33, rotationX: 90, rotationZ: 15, mirrorX: true }]) {
+      const { solid, expected } = body(placed);
+      expect(cadProfileSolidMismatch(cad, solid, expected)).toBeNull();
+      trueBounds(solid).forEach((value, index) => expect(Math.abs(value - expected.bounds[index])).toBeLessThan(0.15));
+      expect(Math.abs(cad.getVolume(solid) / expected.volume - 1)).toBeLessThan(0.015);
+    }
+  });
 
   it.each(cases)("builds %s: the display mesh's place and volume, exactly the taper's volume", (_name, source, area) => {
     const { solid, expected } = body(source);

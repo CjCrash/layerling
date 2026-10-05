@@ -37,7 +37,9 @@ Die Einstellungen sind am rechten Rand angedockt. Verdecken sie etwas, ziehst du
 - **{{ui:inspector.taper}}:** Oben und unten unterschiedlich groß, zum Beispiel für eine Schräge oder einen Trichter.
 - **{{ui:inspector.twist}}:** Verdreht die Oberseite gegen die Unterseite oder schiebt sie zur Seite. So entstehen gedrehte Säulen und geneigte Türme.
 
-Ein verjüngter oder geneigter Quader, Zylinder, eine Ellipse, ein Vieleck, Rohr oder Ring behält seine exakte Form: Fasen und Rundungen gehen daran wie an der unveränderten Form, und der STEP-Export schreibt sie. Eine verdrehte Form ist für beides noch ein Dreiecksnetz.
+Verjüngen und Verdrehen gibt es bei fast allen Formen. Nur Zahnrad, Gewinde, Feder, Rändel, Scharnier, Pyramide, gebogenes Rohr, Tropfen, Senkungen und Lineal haben sie nicht: Diese Formen haben ihre eigenen festen Maße oder, wie die Pyramide, schon eine eigene Oberseite.
+
+Ein verjüngter oder geneigter Quader, Zylinder, eine Ellipse, ein Vieleck, Rohr oder Ring behält seine exakte Form, ebenso Kapsel, Stern, Herz, Halbmond, Wabe, Schwalbenschwanz und ein abgerundeter Quader ohne gerundete Ober- und Unterkante: Fasen und Rundungen gehen daran wie an der unveränderten Form, und der STEP-Export schreibt sie. Eine verdrehte Form ist für beides noch ein Dreiecksnetz.
 
 Tippen ist genauer als Ziehen. Alle Zahlenfelder nehmen Millimeter, aber auch Prozent: Wer bei einer Breite von 40 mm „50 %“ eintippt, bekommt 20 mm.
 

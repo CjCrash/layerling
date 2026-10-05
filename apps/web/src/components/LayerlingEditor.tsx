@@ -2055,13 +2055,27 @@ function transformMesh(mesh: MeshData, shape: WorkplaneShape): MeshData {
   const deformed = shapeHasExtrudeDeform(shape);
   let minLocalY = 0;
   let maxLocalY = 1;
+  // Taper and twist work towards the middle of the mesh's extent, as the
+  // viewport does; a star or a heart is not centred on its origin.
+  let deformCenterX = 0;
+  let deformCenterZ = 0;
   if ((tapered || deformed) && mesh.vertices.length) {
     minLocalY = Number.POSITIVE_INFINITY;
     maxLocalY = Number.NEGATIVE_INFINITY;
+    let minX = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let minZ = Number.POSITIVE_INFINITY;
+    let maxZ = Number.NEGATIVE_INFINITY;
     mesh.vertices.forEach((vertex) => {
       minLocalY = Math.min(minLocalY, vertex[1]);
       maxLocalY = Math.max(maxLocalY, vertex[1]);
+      minX = Math.min(minX, vertex[0]);
+      maxX = Math.max(maxX, vertex[0]);
+      minZ = Math.min(minZ, vertex[2]);
+      maxZ = Math.max(maxZ, vertex[2]);
     });
+    deformCenterX = (minX + maxX) / 2;
+    deformCenterZ = (minZ + maxZ) / 2;
   }
   const taperHeight = Math.max(1e-6, maxLocalY - minLocalY);
   const matrix = new THREE.Matrix4().makeRotationFromEuler(
@@ -2082,8 +2096,8 @@ function transformMesh(mesh: MeshData, shape: WorkplaneShape): MeshData {
       const normalizedHeight = (y - minLocalY) / taperHeight;
       const widthScale = tapered ? shapeTaperScaleAt(shape, normalizedHeight, "width") : 1;
       const depthScale = tapered ? shapeTaperScaleAt(shape, normalizedHeight, "depth") : 1;
-      let localX = x * widthScale;
-      let localZ = z * depthScale;
+      let localX = (x - deformCenterX) * widthScale;
+      let localZ = (z - deformCenterZ) * depthScale;
       if (deformed) {
         const deform = shapeExtrudeDeformAt(shape, normalizedHeight);
         const cos = Math.cos(deform.twistRadians);
@@ -2093,6 +2107,8 @@ function transformMesh(mesh: MeshData, shape: WorkplaneShape): MeshData {
         localX = twistedX + deform.offsetX;
         localZ = twistedZ + deform.offsetZ;
       }
+      localX += deformCenterX;
+      localZ += deformCenterZ;
       const vertex = new THREE.Vector3(localX * mirrorX, (y - centerY) * mirrorY, localZ * mirrorZ).applyMatrix4(matrix);
       return [vertex.x + shape.x, vertex.y + (shape.elevation ?? 0) + centerY, vertex.z + shape.z] as Vec3;
     }),
