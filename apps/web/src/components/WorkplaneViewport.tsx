@@ -47,6 +47,7 @@ import { createSlotGeometry } from "@/lib/slotGeometry";
 import { createDovetailGeometry } from "@/lib/dovetailGeometry";
 import { createHingeGeometry } from "@/lib/hingeGeometry";
 import { createKnurlGeometry } from "@/lib/knurlGeometry";
+import { visibleWorkArea } from "@/lib/visibleWorkArea";
 import { createTeardropGeometry } from "@/lib/teardropGeometry";
 import { createScrewHoleGeometry } from "@/lib/screwHoleGeometry";
 import { createHoneycombGeometry } from "@/lib/honeycombGeometry";
@@ -450,6 +451,10 @@ declare global {
     layerlingSectionView?: (patch: Partial<SectionPlaneSettings> & { center?: boolean }) => { settings: SectionPlaneSettings; bounds: { min: number; max: number; center: number } };
     /** "Hide workplane" in the camera bar for MCP: sets it when given, returns whether the plate is shown. */
     layerlingWorkplaneDisplay?: (visible?: boolean) => { visible: boolean };
+    /** Which way the screen points in the world: right, and away from the viewer (up on a view from above). */
+    layerlingScreenDirections?: () => { right: { x: number; y: number; z: number }; away: { x: number; y: number; z: number } };
+    /** Moves the view along when bodies moved by keyboard would leave it. */
+    layerlingFollowMove?: (ids: string[], translation: { x: number; y: number; z: number }) => void;
   }
 }
 
@@ -4807,6 +4812,54 @@ export function WorkplaneViewport({
     };
   }, []);
 
+  // The arrow keys move along what the screen shows, and the view follows
+  // what they push past its edge (both in LayerlingEditor's nudge).
+  useEffect(() => {
+    window.layerlingScreenDirections = () => {
+      const camera = threeRef.current?.camera;
+      if (!camera) return { right: { x: 1, y: 0, z: 0 }, away: { x: 0, y: 0, z: -1 } };
+      camera.updateMatrixWorld();
+      const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
+      const up = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
+      const forward = camera.getWorldDirection(new THREE.Vector3());
+      // Seen from above "away" is up on the screen, seen from the side it is
+      // into the screen; the sum points the right way for both and between.
+      const away = forward.add(up);
+      return { right: { x: right.x, y: right.y, z: right.z }, away: { x: away.x, y: away.y, z: away.z } };
+    };
+    window.layerlingFollowMove = (ids, translation) => {
+      const state = threeRef.current;
+      if (!state || !ids.length) return;
+      const bounds = new THREE.Box3();
+      ids.forEach((id) => {
+        const object = findShapeObject(state, id);
+        if (object) bounds.expandByObject(object);
+      });
+      if (bounds.isEmpty()) return;
+      const moved = bounds.getCenter(new THREE.Vector3()).add(new THREE.Vector3(translation.x, translation.y, translation.z));
+      const projected = moved.clone().project(state.camera);
+      // Past the part of the picture really seen - not under the camera bar or
+      // the settings - less a margin, the view takes the same step, so the
+      // bodies stay where they are on screen.
+      const canvas = state.renderer.domElement;
+      const area = visibleWorkArea(canvas, canvas.clientWidth, canvas.clientHeight);
+      const px = (projected.x + 1) / 2 * canvas.clientWidth;
+      const py = (1 - projected.y) / 2 * canvas.clientHeight;
+      const margin = 60;
+      const inside = projected.z < 1 && px >= area.left + margin && px <= area.right - margin && py >= area.top + margin && py <= area.bottom - margin;
+      if (inside) return;
+      const step = new THREE.Vector3(translation.x, translation.y, translation.z);
+      state.camera.position.add(step);
+      state.controls.target.add(step);
+      state.controls.update();
+      state.needsRender = true;
+    };
+    return () => {
+      delete window.layerlingScreenDirections;
+      delete window.layerlingFollowMove;
+    };
+  }, []);
+
   useEffect(() => {
     setSelectionHelpersVisible(threeRef.current, !workplaneMode && activeTransformKind !== "rotate");
   }, [activeTransformKind, workplaneMode]);
@@ -8907,12 +8960,51 @@ function createThreeScene(host: HTMLDivElement): ThreeState {
   const requestRender = () => {
     state.needsRender = true;
   };
+  /*
+   * Pointers that steer the camera right now. A mouse button let go outside
+   * the window never sends its pointerup on a Mac, and the controls went on
+   * panning or turning with the next move, the plate "hanging" on the mouse
+   * until another middle click (forum). So a move without that button held,
+   * or the window losing focus, ends the drag as the missing pointerup would.
+   */
+  const cameraPointers = new Map<number, PointerEvent>();
+  const endCameraDrag = (pointerId: number) => {
+    const started = cameraPointers.get(pointerId);
+    cameraPointers.delete(pointerId);
+    const PointerEventConstructor = renderer.domElement.ownerDocument.defaultView?.PointerEvent;
+    if (!started || !PointerEventConstructor) return;
+    renderer.domElement.dispatchEvent(new PointerEventConstructor("pointerup", {
+      bubbles: true,
+      cancelable: true,
+      pointerId,
+      pointerType: started.pointerType,
+      isPrimary: started.isPrimary,
+      button: started.button,
+      buttons: 0,
+      clientX: started.clientX,
+      clientY: started.clientY,
+    }));
+  };
+  const releaseLostCameraDrags = (event: PointerEvent) => {
+    cameraPointers.forEach((started, pointerId) => {
+      // `buttons` bit for the button that started it: left 1, right 2, middle 4.
+      const bit = started.button === 1 ? 4 : started.button === 2 ? 2 : 1;
+      if (event.pointerId === pointerId && (event.buttons & bit) === 0) endCameraDrag(pointerId);
+    });
+  };
+  const releaseAllCameraDrags = () => {
+    [...cameraPointers.keys()].forEach(endCameraDrag);
+  };
   const configureLayerlingMouseButtons = (event: PointerEvent) => {
+    if (event.pointerType === "mouse" && (event.button === 1 || event.button === 2 || (event.button === 0 && (event.ctrlKey || event.metaKey)))) {
+      cameraPointers.set(event.pointerId, event);
+    }
     controls.mouseButtons.LEFT = event.button === 0 && (event.ctrlKey || event.metaKey) ? THREE.MOUSE.PAN : null;
     controls.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
     controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
   };
-  const resetLayerlingMouseButtons = () => {
+  const resetLayerlingMouseButtons = (event?: PointerEvent) => {
+    if (event) cameraPointers.delete(event.pointerId);
     controls.mouseButtons.LEFT = null;
     controls.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
     controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
@@ -8948,7 +9040,12 @@ function createThreeScene(host: HTMLDivElement): ThreeState {
   renderer.domElement.addEventListener("wheel", requestRender, { passive: true });
   renderer.domElement.addEventListener("wheel", pullPivotToSurface, { passive: true, capture: true });
   renderer.domElement.addEventListener("pointerdown", requestRender);
+  const ownWindow = renderer.domElement.ownerDocument.defaultView;
+  ownWindow?.addEventListener("pointermove", releaseLostCameraDrags, { capture: true });
+  ownWindow?.addEventListener("blur", releaseAllCameraDrags);
   state.disposeInteractionListeners = () => {
+    ownWindow?.removeEventListener("pointermove", releaseLostCameraDrags, { capture: true });
+    ownWindow?.removeEventListener("blur", releaseAllCameraDrags);
     renderer.domElement.removeEventListener("wheel", pullPivotToSurface, { capture: true });
     controls.removeEventListener("change", requestRender);
     renderer.domElement.removeEventListener("pointerdown", configureLayerlingMouseButtons, { capture: true });

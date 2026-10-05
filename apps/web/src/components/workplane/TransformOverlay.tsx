@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useRef, type CSSProperties } from "react";
 import { t } from "@/lib/i18n";
 import * as THREE from "three";
 import {
@@ -36,6 +36,18 @@ export {
   type TransformOverlayState,
 } from "@/components/workplane/transformOverlayTypes";
 import { selectWholeValue } from "@/lib/numberField";
+import { visibleWorkArea, type VisibleWorkArea } from "@/lib/visibleWorkArea";
+
+/** A figure's place, pulled in so the whole box of it stays inside the visible area. */
+function overlayPoint(area: VisibleWorkArea, x: number, y: number): CSSProperties {
+  const halfWidth = 40;
+  const halfHeight = 16;
+  const clampInto = (value: number, low: number, high: number) => (high < low ? (low + high) / 2 : Math.min(high, Math.max(low, value)));
+  return {
+    "--overlay-x": `${clampInto(x, area.left + halfWidth, area.right - halfWidth)}px`,
+    "--overlay-y": `${clampInto(y, area.top + halfHeight, area.bottom - halfHeight)}px`,
+  } as CSSProperties;
+}
 
 export function TransformOverlay({
   box,
@@ -73,6 +85,8 @@ export function TransformOverlay({
   // With no handle hovered or pinned, a lone selection shows the marks listed
   // in alwaysVisibleDimensionKeys. That list is filled when "Dimensions always
   // visible" is on, so the marks appear as soon as the shape is selected.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const keepVisible = visibleWorkArea(rootRef.current, box.width, box.height);
   const marks = measureKey
     ? (box.dimensions[measureKey] ?? [])
     : box.alwaysVisibleDimensionKeys.flatMap((key) => box.dimensions[key] ?? []);
@@ -106,6 +120,7 @@ export function TransformOverlay({
   const wheel = pinnedWheel?.wheel ?? box.rotationWheels[rotationWheelAxis] ?? box.rotationWheel;
   return (
     <div
+      ref={rootRef}
       className={`transform-overlay ${hideSelectionChrome ? "hide-selection-chrome" : ""}`}
       onPointerDownCapture={(event) => {
         if (event.button === 1 || event.button === 2) {
@@ -178,7 +193,7 @@ export function TransformOverlay({
           key={`${mark.key}-label`}
           className="dimension-label"
           type="button"
-          style={{ "--overlay-x": `${mark.labelX}px`, "--overlay-y": `${mark.labelY}px` } as CSSProperties}
+          style={overlayPoint(keepVisible, mark.labelX, mark.labelY)}
           onPointerDown={(event) => event.stopPropagation()}
           onClick={() => onBeginDimensionEdit(mark)}
         >
@@ -188,7 +203,7 @@ export function TransformOverlay({
       {editingDimension ? (
         <input
           className="dimension-input"
-          style={{ "--overlay-x": `${editingDimension.x}px`, "--overlay-y": `${editingDimension.y}px` } as CSSProperties}
+          style={overlayPoint(keepVisible, editingDimension.x, editingDimension.y)}
           value={editingDimension.value}
           autoFocus
           inputMode="decimal"
@@ -211,7 +226,7 @@ export function TransformOverlay({
           key={entry.key}
           className="dimension-input"
           data-corner-input="true"
-          style={{ "--overlay-x": `${entry.x}px`, "--overlay-y": `${entry.y}px` } as CSSProperties}
+          style={overlayPoint(keepVisible, entry.x, entry.y)}
           value={entry.value}
           autoFocus={index === 0}
           inputMode="text"

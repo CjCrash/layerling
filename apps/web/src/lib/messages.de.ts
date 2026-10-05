@@ -472,7 +472,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "shortcuts.align": "Ausrichtungsmodus",
   "shortcuts.note": "Notiz setzen",
   "shortcuts.dropToWorkplane": "Auswahl auf die Arbeitsebene absetzen",
-  "shortcuts.nudge": "Um einen Rasterschritt bewegen",
+  "shortcuts.nudge": "Um einen Rasterschritt bewegen, so wie die Ansicht steht",
   "shortcuts.nudgeCoarse": "Um fünf Rasterschritte bewegen",
   "shortcuts.raise": "Auswahl anheben oder absenken",
   "shortcuts.rotate": "Um 45° drehen",

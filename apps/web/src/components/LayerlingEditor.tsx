@@ -191,6 +191,7 @@ import { placeSketchExtrusion, placeSketchShape } from "@/lib/sketchPlacement";
 import { BUG_REPORT_FILE, bugReportText, rememberBugReportEvent, type BugReportEvent } from "@/lib/bugReport";
 import { formatLengthMm, lengthDisplayUnit } from "@/lib/measurementUnits";
 import { wrapMeshAroundCylinder, type CylinderWrapError } from "@/lib/cylinderWrap";
+import { screenAlignedNudge } from "@/lib/keyboardNudge";
 import {
   LAYERLING_MCP_HEARTBEAT_MS,
   LAYERLING_MCP_POLL_RETRY_MS,
@@ -309,6 +310,10 @@ declare global {
     layerlingSectionView?: (patch: Partial<SectionPlaneSettings> & { center?: boolean }) => { settings: SectionPlaneSettings; bounds: { min: number; max: number; center: number } };
     /** "Hide workplane" in the camera bar for MCP: sets it when given, returns whether the plate is shown. */
     layerlingWorkplaneDisplay?: (visible?: boolean) => { visible: boolean };
+    /** Which way the screen points in the world: right, and away from the viewer (up on a view from above). */
+    layerlingScreenDirections?: () => { right: { x: number; y: number; z: number }; away: { x: number; y: number; z: number } };
+    /** Moves the view along when bodies moved by keyboard would leave it. */
+    layerlingFollowMove?: (ids: string[], translation: { x: number; y: number; z: number }) => void;
   }
 }
 
@@ -3697,6 +3702,17 @@ function cylinderWrappedShape(shape: WorkplaneShape, diameter: number, inward: b
 
 function canWrapAroundCylinder(shape: WorkplaneShape | null | undefined) {
   return Boolean(shape && !shape.locked && shape.groupOperation !== "bundle" && !isNonSolidShapeKind(shape.kind));
+}
+
+/**
+ * The settings panel offers wrapping only where it is what people want: an
+ * imported outline or model (an SVG above all), text and a sketch body. On a
+ * box, a cylinder or a gear the card was only in the way; through MCP any
+ * body can still be wrapped.
+ */
+function offersCylinderWrap(shape: WorkplaneShape | null | undefined) {
+  if (!canWrapAroundCylinder(shape) || !shape) return false;
+  return Boolean(shape.importedMesh && !shape.groupedShapes?.length) || shape.kind === "text" || Boolean(shape.sketchProfile);
 }
 
 function separateMeshParts(shape: WorkplaneShape) {
@@ -11861,11 +11877,16 @@ export function LayerlingEditor({
         return;
       }
       const selected = new Set(selectedIds);
+      // Right and up on the keys mean right and away on the screen: each picks
+      // the workplane axis that points that way most, so after turning the
+      // view the keys still go where the arrows point (as in Tinkercad).
+      const { xStep, zStep } = screenAlignedNudge(placementWorkplane, deltaX, deltaZ, window.layerlingScreenDirections?.());
       const translation = {
-        x: placementWorkplane.xAxis.x * deltaX + placementWorkplane.zAxis.x * deltaZ,
-        y: placementWorkplane.xAxis.y * deltaX + placementWorkplane.zAxis.y * deltaZ,
-        z: placementWorkplane.xAxis.z * deltaX + placementWorkplane.zAxis.z * deltaZ,
+        x: placementWorkplane.xAxis.x * xStep + placementWorkplane.zAxis.x * zStep,
+        y: placementWorkplane.xAxis.y * xStep + placementWorkplane.zAxis.y * zStep,
+        z: placementWorkplane.xAxis.z * xStep + placementWorkplane.zAxis.z * zStep,
       };
+      window.layerlingFollowMove?.(selectedShapes.filter((shape) => !shape.locked).map((shape) => shape.id), translation);
       commitShapes(
         shapes.map((shape) =>
           selected.has(shape.id) && !shape.locked
@@ -11881,7 +11902,7 @@ export function LayerlingEditor({
         selectedShapes.length === 1 ? t("status.movedOne") : t("status.movedMany", { count: selectedShapes.length }),
       );
     },
-    [commitShapes, hasSelection, placementWorkplane, selectedIds, selectedShapes.length, shapes],
+    [commitShapes, hasSelection, placementWorkplane, selectedIds, selectedShapes, shapes],
   );
 
   const rotateSelectedBy = useCallback((angleDegrees: number) => {
@@ -12443,7 +12464,7 @@ export function LayerlingEditor({
           onOpenGroup={selectedShapes.length === 1 && canEditGroup(selectedShape) ? openGroupForEditing : undefined}
           canSeparateParts={canSeparateSelectedParts}
           onSeparateParts={separateSelectedParts}
-          onWrapAroundCylinder={selectedShapes.length === 1 && canWrapAroundCylinder(selectedShape) ? wrapSelectionAroundCylinder : undefined}
+          onWrapAroundCylinder={selectedShapes.length === 1 && offersCylinderWrap(selectedShape) ? wrapSelectionAroundCylinder : undefined}
           onUpdateShape={updateShape}
           onDuplicateShapeAt={duplicateShapeAt}
           onDuplicateShapesMoved={duplicateShapesMoved}

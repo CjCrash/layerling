@@ -473,7 +473,7 @@ export const MESSAGES_EN = {
   "shortcuts.align": "Align mode",
   "shortcuts.note": "Place a note",
   "shortcuts.dropToWorkplane": "Drop the selection onto the workplane",
-  "shortcuts.nudge": "Move by one grid step",
+  "shortcuts.nudge": "Move by one grid step, as the view is turned",
   "shortcuts.nudgeCoarse": "Move by five grid steps",
   "shortcuts.raise": "Raise or lower the selection",
   "shortcuts.rotate": "Rotate by 45°",

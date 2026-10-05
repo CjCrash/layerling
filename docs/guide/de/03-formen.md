@@ -15,7 +15,7 @@ Wähle eine Form aus. Sie hängt jetzt am Mauszeiger und landet dort, wo du klic
 
 Was die Bibliothek bietet:
 
-- **Grundformen:** {{ui:shape.box}}, {{ui:shape.roundedBox}}, {{ui:shape.cylinder}}, {{ui:shape.slot}}, {{ui:shape.ellipse}}, {{ui:shape.polygon}} (drei bis vierundzwanzig Seiten), {{ui:shape.sphere}}, {{ui:shape.cone}}, {{ui:shape.pyramid}}, {{ui:shape.wedge}}, {{ui:shape.roundRoof}}, {{ui:shape.halfSphere}} und {{ui:shape.torus}}.
+- **Grundformen:** {{ui:shape.box}}, {{ui:shape.roundedBox}}, {{ui:shape.cylinder}}, {{ui:shape.slot}}, {{ui:shape.ellipse}}, {{ui:shape.polygon}} (drei bis vierundzwanzig Seiten), {{ui:shape.sphere}}, {{ui:shape.cone}}, {{ui:shape.pyramid}} (mit drei bis vierundzwanzig Seiten, also auch dreiseitig), {{ui:shape.wedge}}, {{ui:shape.roundRoof}}, {{ui:shape.halfSphere}} und {{ui:shape.torus}}.
 - **Rohre:** {{ui:shape.tube}} und {{ui:shape.bentTube}} aus bis zu zwölf geraden Stücken mit Biegungen dazwischen.
 - **Zierformen:** {{ui:shape.star}}, {{ui:shape.heart}} und {{ui:shape.crescent}}.
 - **Beschriftung:** {{ui:shape.text}}, auch auf einem Kreisbogen. Mehr im Kapitel [Text](chapter:text).
@@ -78,7 +78,7 @@ Neben den Einstellungen gibt es Griffe an der Form selbst:
 - An den **Zahlen** neben der Form siehst du die Maße. Ein Klick darauf öffnet ein Feld, in das du die gewünschte Zahl tippst.
 - Ein **Klick auf eine Ecke** (ohne zu ziehen) öffnet Breite und Tiefe gemeinsam. Gib die erste Zahl ein, wechsle mit [[Tab]] zur zweiten und übernimm beide mit [[Enter]]. [[Esc]] bricht ab.
 
-Ohne Maus geht es mit der Tastatur: Die Pfeiltasten schieben die Auswahl um einen Rasterschritt, mit [[Umschalt]] um fünf. [[Strg]]+[[↑]] und [[Strg]]+[[↓]] heben und senken sie. [[R]] dreht um 45°, [[Umschalt]]+[[R]] um 22,5°. [[D]] setzt die Auswahl auf die Arbeitsebene ab.
+Ohne Maus geht es mit der Tastatur: Die Pfeiltasten schieben die Auswahl um einen Rasterschritt, mit [[Umschalt]] um fünf. Sie richten sich nach der Ansicht: [[→]] schiebt dahin, wo auf dem Bildschirm rechts ist, [[↑]] vom Betrachter weg, auch wenn du die Platte gedreht hast. Schiebst du eine Form aus dem Bild, rückt die Ansicht mit. [[Strg]]+[[↑]] und [[Strg]]+[[↓]] heben und senken sie. [[R]] dreht um 45°, [[Umschalt]]+[[R]] um 22,5°. [[D]] setzt die Auswahl auf die Arbeitsebene ab.
 
 Der Rasterschritt steht unten rechts im Editor und lässt sich jederzeit ändern.
 

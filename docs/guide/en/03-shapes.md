@@ -15,7 +15,7 @@ Pick a shape. It now hangs on the mouse pointer and lands where you click. [[Esc
 
 What the library offers:
 
-- **Basic shapes:** {{ui:shape.box}}, {{ui:shape.roundedBox}}, {{ui:shape.cylinder}}, {{ui:shape.slot}}, {{ui:shape.ellipse}}, {{ui:shape.polygon}} (three to twenty-four sides), {{ui:shape.sphere}}, {{ui:shape.cone}}, {{ui:shape.pyramid}}, {{ui:shape.wedge}}, {{ui:shape.roundRoof}}, {{ui:shape.halfSphere}} and {{ui:shape.torus}}.
+- **Basic shapes:** {{ui:shape.box}}, {{ui:shape.roundedBox}}, {{ui:shape.cylinder}}, {{ui:shape.slot}}, {{ui:shape.ellipse}}, {{ui:shape.polygon}} (three to twenty-four sides), {{ui:shape.sphere}}, {{ui:shape.cone}}, {{ui:shape.pyramid}} (with three to twenty-four sides, so three-sided too), {{ui:shape.wedge}}, {{ui:shape.roundRoof}}, {{ui:shape.halfSphere}} and {{ui:shape.torus}}.
 - **Tubes:** {{ui:shape.tube}} and {{ui:shape.bentTube}}, made of up to twelve straight pieces with bends in between.
 - **Decorative shapes:** {{ui:shape.star}}, {{ui:shape.heart}} and {{ui:shape.crescent}}.
 - **Lettering:** {{ui:shape.text}}, also along a circular arc. More in [Text](chapter:text).
@@ -77,7 +77,7 @@ Besides the settings there are handles on the shape itself:
 - The **numbers** beside the shape show the dimensions. A click on one opens a field in which you type the number you want.
 - A **click on a corner** (without dragging) opens width and depth together. Type the first, press [[Tab]] for the second and [[Enter]] to apply both. [[Esc]] cancels.
 
-Without the mouse, use the keyboard: the arrow keys move the selection by one snap step, with [[Shift]] by five. [[Ctrl]]+[[↑]] and [[Ctrl]]+[[↓]] raise and lower it. [[R]] rotates by 45°, [[Shift]]+[[R]] by 22.5°. [[D]] drops the selection onto the workplane.
+Without the mouse, use the keyboard: the arrow keys move the selection by one snap step, with [[Shift]] by five. They follow the view: [[→]] moves to where the screen's right is, [[↑]] away from you, even after turning the plate. Push a shape out of the picture and the view moves along. [[Ctrl]]+[[↑]] and [[Ctrl]]+[[↓]] raise and lower it. [[R]] rotates by 45°, [[Shift]]+[[R]] by 22.5°. [[D]] drops the selection onto the workplane.
 
 The snap step is at the bottom right of the editor and can be changed at any time.
 
