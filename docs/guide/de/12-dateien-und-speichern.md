@@ -56,7 +56,7 @@ Macht layerling etwas Unerwartetes, speichere einen {{ui:editor.bugReport}}: Der
 
 ## Gemeinsame Entwürfe auf einem Server
 
-Wenn layerling auf einem eigenen Rechner oder Webserver läuft, kann es einen gemeinsamen Ordner anbieten, in dem alle Nutzer Entwürfe ablegen. Auf der Startseite erscheint er dann als {{ui:dashboard.sharedProjects}}. Du legst dort Ordner an, verschiebst Entwürfe per Ziehen und suchst über den ganzen Ordner. Ein Entwurf, der dort liegt, sichert sich von selbst dorthin zurück.
+Wenn layerling auf einem eigenen Rechner oder Webserver läuft, kann es einen gemeinsamen Ordner anbieten, in dem alle Nutzer Entwürfe ablegen. Auf der Startseite erscheint er dann als {{ui:dashboard.sharedProjects}}. Du legst dort Ordner an, verschiebst Entwürfe per Ziehen und suchst über den ganzen Ordner. Ein Entwurf, der dort liegt, sichert sich von selbst dorthin zurück. Eigene Formen auf dem Server liegen dort im Ordner `Custom shapes`, siehe [Formen](chapter:formen).
 
 Das ist kein gleichzeitiges Bearbeiten: Wer eine Datei öffnet, arbeitet an einer eigenen Kopie. Hat inzwischen jemand anderes die Datei geändert, verweigert layerling das Überschreiben.
 

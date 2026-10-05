@@ -423,7 +423,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "guide.files.import": "STL, OBJ, 3MF, STEP und SVG lassen sich importieren und darum herum weiterbauen. Eine farbige OBJ oder 3MF kommt als ein Körper je Farbe; bei einer OBJ die .mtl oder das ZIP aus Tinkercad gleich mit auswählen.",
   "guide.files.bugReport": "„Fehlerbericht“ unten in der Fußzeile speichert den Entwurf als .lyl samt Version, Browser und den letzten Meldungen, zum Anhängen im Forum oder bei GitHub.",
   "guide.files.storeOff": "Auf dem eigenen Server legst du neben der index.html einen Ordner „store\" an - dann lassen sich Entwürfe zusätzlich zum Browser auch auf dem Server ablegen. Dafür muss der Server PHP können.",
-  "guide.files.storeOn": "Diese Installation legt Entwürfe auch auf dem Server ab. Die Startseite zeigt den Ordner neben deinen Browser-Entwürfen: zieh Entwürfe hinein, leg dort Unterordner an oder starte neue gleich darin - gesichert wird von selbst.",
+  "guide.files.storeOn": "Diese Installation legt Entwürfe auch auf dem Server ab. Die Startseite zeigt den Ordner neben deinen Browser-Entwürfen: zieh Entwürfe hinein, leg dort Unterordner an oder starte neue gleich darin - gesichert wird von selbst. Auch eigene Formen können dort liegen, im Ordner „Custom shapes“.",
   "guide.group.settings": "Einstellungen",
   "guide.settings.workspace": "Das Zahnrad öffnet Maßeinheiten, Raster, Plattengröße, Farben und die Länge des Verlaufs.",
   "guide.settings.language": "Die Sprache stellst du in den Einstellungen auf der Startseite um.",

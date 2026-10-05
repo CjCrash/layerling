@@ -211,6 +211,10 @@ and it belongs to nobody on the server.
 A design that lives on the server saves itself back there, five seconds after the last change and when you leave the
 editor. Thumbnails land beside the files in `.thumbnails`. Designs that are only in your browser stay there, untouched.
 
+Custom shapes saved to the server go into a folder named `Custom shapes` at the top of the store, one `.lyl` with its
+picture each. layerling creates it with the first such shape; it is an ordinary folder, so it shows on the start page and
+a shape in it opens and saves like any design. Neither the Node route nor `store.php` needs anything extra for it.
+
 Opening a design from the server gives you a private local working copy. Saving back checks the revision on the server
 first; if someone else changed the file in the meantime, layerling refuses to overwrite it and asks you to reload or save
 under a different name. This is shared file storage, not simultaneous editing.

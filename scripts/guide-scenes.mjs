@@ -54,7 +54,10 @@ export const scenes = {
 
   async "shape-menu"(ctx) {
     await freshEditor(ctx);
-    await sampleParts(ctx);
+    const { box, cylinder } = await sampleParts(ctx);
+    // Two custom shapes, so the picture shows that section filled.
+    await ctx.mcp("save_custom_shape", { ids: [box, cylinder], name: ctx.language === "de" ? "Halter" : "Bracket", location: "browser" });
+    await ctx.mcp("save_custom_shape", { ids: [cylinder], name: ctx.language === "de" ? "Abstandshülse" : "Spacer", location: "browser" });
     await select(ctx, []);
     await ctx.clickSelector(".shape-menu-trigger");
     await ctx.wait(800);

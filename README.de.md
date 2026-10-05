@@ -218,6 +218,11 @@ Ein Entwurf, der auf dem Server liegt, sichert sich von selbst dorthin zurück �
 und beim Verlassen des Editors. Vorschaubilder landen daneben in `.thumbnails`. Was nur im Browser liegt, bleibt dort
 unberührt.
 
+Eigene Formen, die auf dem Server abgelegt werden, kommen in einen Ordner `Custom shapes` oben im Speicher, je eine
+`.lyl` mit Vorschaubild. layerling legt ihn mit der ersten solchen Form an. Er ist ein ganz normaler Ordner, erscheint also
+auf der Startseite, und eine Form darin lässt sich wie ein Entwurf öffnen und speichern. Weder die Node-Route noch
+`store.php` brauchen dafür etwas Zusätzliches.
+
 Wer eine gemeinsame Datei öffnet, erhält eine private lokale Arbeitskopie. Beim Zurückspeichern wird zuerst der Stand auf
 dem Server geprüft; hat jemand anderes die Datei inzwischen geändert, verweigert layerling das Überschreiben und bittet
 darum, neu zu laden oder unter anderem Namen zu speichern. Das ist gemeinsame Dateiablage, kein gleichzeitiges Bearbeiten.

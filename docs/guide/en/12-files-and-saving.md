@@ -56,7 +56,7 @@ If layerling does something unexpected, save a {{ui:editor.bugReport}}: the link
 
 ## Shared designs on a server
 
-When layerling runs on your own computer or web server, it can offer a shared folder in which all users keep designs. On the start page it then appears as {{ui:dashboard.sharedProjects}}. You create folders there, move designs by dragging and search across the whole folder. A design that lives there saves itself back to it.
+When layerling runs on your own computer or web server, it can offer a shared folder in which all users keep designs. On the start page it then appears as {{ui:dashboard.sharedProjects}}. You create folders there, move designs by dragging and search across the whole folder. A design that lives there saves itself back to it. Custom shapes kept on the server sit in its folder `Custom shapes`, see [Shapes](chapter:shapes).
 
 That is not simultaneous editing: whoever opens a file works on a copy of their own. If somebody else has changed the file in the meantime, layerling refuses to overwrite it.
 

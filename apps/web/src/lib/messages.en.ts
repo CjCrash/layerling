@@ -424,7 +424,7 @@ export const MESSAGES_EN = {
   "guide.files.import": "STL, OBJ, 3MF, STEP and SVG can be imported and built around. A coloured OBJ or 3MF comes in as one body per colour; for an OBJ, select its .mtl or Tinkercad's ZIP along with it.",
   "guide.files.bugReport": "\"Bug report\" in the footer at the bottom saves the design as .lyl with its version, browser and the last messages, to attach in the forum or on GitHub.",
   "guide.files.storeOff": "On your own server, create a folder called \"store\" next to index.html to store designs on the server in addition to the browser. That needs PHP.",
-  "guide.files.storeOn": "This installation keeps designs on the server as well. The start page shows that folder beside your browser designs: drag designs into it, make subfolders, or start a new design right there - it saves itself.",
+  "guide.files.storeOn": "This installation keeps designs on the server as well. The start page shows that folder beside your browser designs: drag designs into it, make subfolders, or start a new design right there - it saves itself. Custom shapes can go there too, into the folder \"Custom shapes\".",
   "guide.group.settings": "Settings",
   "guide.settings.workspace": "The gear opens units, grid, plate size, colours and how much history is kept.",
   "guide.settings.language": "The language is switched in Settings on the start page.",
