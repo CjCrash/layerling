@@ -4445,7 +4445,7 @@ button {
 .export-format-slider {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   height: 38px;
   padding: 3px;
   overflow: hidden;
@@ -4459,7 +4459,7 @@ button {
   top: 3px;
   bottom: 3px;
   left: 3px;
-  width: calc((100% - 6px) / 6);
+  width: calc((100% - 6px) / 7);
   content: "";
   background: #fff;
   border: 1px solid #ddab78;
@@ -4484,8 +4484,12 @@ button {
   transform: translateX(400%);
 }
 
-.export-format-slider[data-format="lyl"]::before {
+.export-format-slider[data-format="png"]::before {
   transform: translateX(500%);
+}
+
+.export-format-slider[data-format="lyl"]::before {
+  transform: translateX(600%);
 }
 
 .export-format-slider button {
@@ -12693,4 +12697,151 @@ html[data-theme="dark"] .my-shapes-group-title {
 
 html[data-theme="dark"] .my-shape-tile-actions {
   background: rgba(58, 44, 31, 0.94);
+}
+
+/* Bild der Ansicht im Export-Fenster: zwei Schalter. */
+.export-image-section {
+  gap: 8px;
+}
+
+.export-image-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.export-image-option input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #d3710c;
+}
+
+/* Zuletzt benutzte eigene Farben unter der Palette. */
+.color-recent {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(68, 50, 31, 0.14);
+}
+
+.color-recent-label {
+  color: #84715d;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Rechtsklick-Menue auf Koerpern. */
+.shape-context-menu {
+  position: fixed;
+  z-index: 90;
+  display: grid;
+  min-width: 220px;
+  max-width: calc(100vw - 16px);
+  padding: 5px;
+  color: #563e26;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #dcccbc;
+  border-radius: 10px;
+  box-shadow: 0 14px 34px rgba(66, 48, 29, 0.22);
+  backdrop-filter: blur(12px);
+}
+
+.shape-context-menu button {
+  display: flex;
+  min-height: 32px;
+  padding: 6px 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.shape-context-menu button.separated {
+  position: relative;
+  margin-top: 9px;
+}
+
+.shape-context-menu button.separated::before {
+  position: absolute;
+  top: -5px;
+  right: 6px;
+  left: 6px;
+  height: 1px;
+  content: "";
+  background: #e9ddd0;
+}
+
+.shape-context-menu button:hover,
+.shape-context-menu button:focus-visible {
+  color: #5a3712;
+  background: #f5ebdf;
+  outline: none;
+}
+
+.shape-context-menu button.danger {
+  color: #b42318;
+}
+
+.shape-context-menu button.danger:hover,
+.shape-context-menu button.danger:focus-visible {
+  color: #8f1a12;
+  background: #fde8e6;
+}
+
+.shape-context-menu kbd {
+  color: #84715d;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+html[data-theme="dark"] .shape-context-menu {
+  color: #ede4d4;
+  background: rgba(40, 30, 20, 0.97);
+  border-color: #5b4b3a;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.34);
+}
+
+html[data-theme="dark"] .shape-context-menu button:hover,
+html[data-theme="dark"] .shape-context-menu button:focus-visible {
+  color: #f9f7f2;
+  background: #533e29;
+}
+
+html[data-theme="dark"] .shape-context-menu button.separated::before {
+  background: #5b4b3a;
+}
+
+html[data-theme="dark"] .shape-context-menu button.danger {
+  color: #ff8a80;
+}
+
+html[data-theme="dark"] .shape-context-menu button.danger:hover,
+html[data-theme="dark"] .shape-context-menu button.danger:focus-visible {
+  color: #ffd2cc;
+  background: #5a2a22;
+}
+
+html[data-theme="dark"] .shape-context-menu kbd,
+html[data-theme="dark"] .color-recent-label {
+  color: #a79079;
+}
+
+html[data-theme="dark"] .color-recent {
+  border-top-color: rgba(237, 228, 212, 0.14);
 }

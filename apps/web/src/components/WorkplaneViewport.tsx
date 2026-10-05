@@ -285,6 +285,8 @@ type WorkplaneViewportProps = {
   onMirrorPreviewClear: () => void;
   onMirrorSelection: (axis: AlignAxis) => void;
   onSelectShape: (id: string | string[] | null, mode?: "replace" | "toggle") => void;
+  /** A right click that did not turn the view: on a body (now selected) or on empty space. */
+  onShapeContextMenu?: (request: { shapeId: string | null; clientX: number; clientY: number }) => void;
   onSetPlacementWorkplane: (workplane: PlacementWorkplane, source: "shape" | "base") => void;
   onToggleWorkplaneTool: () => void;
   onInteractionActiveChange?: (active: boolean) => void;
@@ -449,6 +451,7 @@ declare global {
     layerlingCaptureCanvas?: () => string;
     layerlingCaptureCanvasAsync?: () => Promise<string>;
     layerlingCaptureView?: (face?: LayerlingMcpViewFace) => Promise<string> | string;
+    layerlingCaptureImage?: (options?: { plate?: boolean; transparent?: boolean; scale?: number }) => string;
     /** The section view for MCP: applies what is given, returns the settings it ends on and the plane's range. */
     layerlingSectionView?: (patch: Partial<SectionPlaneSettings> & { center?: boolean }) => { settings: SectionPlaneSettings; bounds: { min: number; max: number; center: number } };
     /** "Hide workplane" in the camera bar for MCP: sets it when given, returns whether the plate is shown. */
@@ -3936,6 +3939,7 @@ export function WorkplaneViewport({
   onMirrorPreviewClear,
   onMirrorSelection,
   onSelectShape,
+  onShapeContextMenu,
   onSetPlacementWorkplane,
   onToggleWorkplaneTool,
   onInteractionActiveChange,
@@ -4060,6 +4064,7 @@ export function WorkplaneViewport({
    * gemeinsam schieben verschieben.
    */
   const touchPointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const rightPressRef = useRef<{ x: number; y: number } | null>(null);
   /** Solange wahr, gehoert jeder Finger der Kamera und nichts wird ausgewaehlt. */
   const cameraTouchRef = useRef(false);
   const touchRotateRef = useRef(false);
@@ -4900,6 +4905,82 @@ export function WorkplaneViewport({
       state.renderer.render(state.scene, state.camera);
       return state.renderer.domElement.toDataURL("image/png");
     };
+    /*
+     * Ein sauberes Bild der Ansicht, wie man es in einen Forenbeitrag stellt:
+     * nur die Koerper, wahlweise mit Druckplatte, ohne Griffe, Auswahlrahmen und
+     * Hilfslinien, auf Wunsch ohne Hintergrund. Gezeichnet wird in ein eigenes
+     * Bild mit doppelter Aufloesung; der Bildschirm bleibt, wie er ist.
+     */
+    window.layerlingCaptureImage = ({ plate = true, transparent = false, scale = 2 } = {}) => {
+      const canvas = state.renderer.domElement;
+      const cssWidth = Math.max(1, canvas.clientWidth);
+      const cssHeight = Math.max(1, canvas.clientHeight);
+      const factor = Math.max(0.25, Math.min(scale, 4096 / Math.max(cssWidth, cssHeight)));
+      const width = Math.round(cssWidth * factor);
+      const height = Math.round(cssHeight * factor);
+      const target = new THREE.WebGLRenderTarget(width, height, { samples: 4 });
+      target.texture.colorSpace = THREE.SRGBColorSpace;
+      const helpers: Array<THREE.Object3D | null> = [
+        state.workplanePreviewLayer,
+        state.helperLayer,
+        state.transformGuideLayer,
+        state.moveDimensionLayer,
+        state.originDimensionLayer,
+        state.modifierLayer,
+        state.sectionPlaneHelper,
+        plate ? null : state.workplaneLayer,
+      ];
+      const hidden = helpers.filter((object): object is THREE.Object3D => Boolean(object?.visible));
+      hidden.forEach((object) => { object.visible = false; });
+      const background = state.scene.background;
+      const clearColor = state.renderer.getClearColor(new THREE.Color());
+      const clearAlpha = state.renderer.getClearAlpha();
+      if (transparent) {
+        state.scene.background = null;
+        state.renderer.setClearColor(0x000000, 0);
+      }
+      try {
+        fitCameraDepthRange(state.camera, state.controls.target);
+        state.camera.updateMatrixWorld();
+        state.renderer.setRenderTarget(target);
+        state.renderer.render(state.scene, state.camera);
+        const pixels = new Uint8Array(width * height * 4);
+        state.renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+        const out = document.createElement("canvas");
+        out.width = width;
+        out.height = height;
+        const context = out.getContext("2d");
+        if (!context) return "";
+        const image = context.createImageData(width, height);
+        // WebGL counts rows from the bottom.
+        const row = width * 4;
+        for (let y = 0; y < height; y += 1) {
+          image.data.set(pixels.subarray((height - 1 - y) * row, (height - y) * row), y * row);
+        }
+        // Blended over nothing, a see-through pixel (the plate, a smoothed
+        // edge) comes back with its colour already multiplied by its alpha -
+        // darker. A PNG wants the colour itself.
+        if (transparent) {
+          const data = image.data;
+          for (let index = 0; index < data.length; index += 4) {
+            const alpha = data[index + 3];
+            if (alpha === 0 || alpha === 255) continue;
+            data[index] = Math.min(255, Math.round(data[index] * 255 / alpha));
+            data[index + 1] = Math.min(255, Math.round(data[index + 1] * 255 / alpha));
+            data[index + 2] = Math.min(255, Math.round(data[index + 2] * 255 / alpha));
+          }
+        }
+        context.putImageData(image, 0, 0);
+        return out.toDataURL("image/png");
+      } finally {
+        state.renderer.setRenderTarget(null);
+        target.dispose();
+        state.scene.background = background;
+        state.renderer.setClearColor(clearColor, clearAlpha);
+        hidden.forEach((object) => { object.visible = true; });
+        state.needsRender = true;
+      }
+    };
     perfRef.current.lastSample = performance.now();
     resetCamera(state);
     rebuildShapes(state, shapesRef.current, renderSelectionIds(), true, false, placementWorkplaneRef.current);
@@ -5010,6 +5091,9 @@ export function WorkplaneViewport({
       host.replaceChildren();
       if (window.layerlingCaptureCanvas) {
         delete window.layerlingCaptureCanvas;
+      }
+      if (window.layerlingCaptureImage) {
+        delete window.layerlingCaptureImage;
       }
       if (window.layerlingCaptureCanvasAsync) {
         delete window.layerlingCaptureCanvasAsync;
@@ -6849,6 +6933,11 @@ export function WorkplaneViewport({
           return;
         }
       }
+      // The right button turns the view; only a press that is let go where it
+      // started opens the menu (finishDrag).
+      if (event.pointerType === "mouse" && event.button === 2) {
+        rightPressRef.current = { x: event.clientX, y: event.clientY };
+      }
       if (event.button !== 0 || event.ctrlKey || event.metaKey) {
         return;
       }
@@ -7509,6 +7598,16 @@ export function WorkplaneViewport({
 
   const finishDrag = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
+      const rightPress = rightPressRef.current;
+      if (event.button === 2 && rightPress) {
+        rightPressRef.current = null;
+        if (onShapeContextMenu && Math.hypot(event.clientX - rightPress.x, event.clientY - rightPress.y) < 5) {
+          const shapeId = pickShape(event.clientX, event.clientY);
+          if (shapeId && !selectedIdsRef.current.includes(shapeId)) onSelectShape(shapeId);
+          onShapeContextMenu({ shapeId, clientX: event.clientX, clientY: event.clientY });
+        }
+        return;
+      }
       if (event.pointerType === "touch") {
         touchPointersRef.current.delete(event.pointerId);
         if (touchPointersRef.current.size === 0) cameraTouchRef.current = false;
@@ -7655,7 +7754,7 @@ export function WorkplaneViewport({
       }
       onInteractionActiveChange?.(false);
     },
-    [clearMoveDimensions, onDuplicateShapesMoved, onInteractionActiveChange, onSelectShape, onUpdateShape, rememberResizeAnchor, setMarqueeFromState, shapesInMarquee, suppressCornerEditAfterDrag, suppressLiftEditAfterDrag],
+    [clearMoveDimensions, onDuplicateShapesMoved, onInteractionActiveChange, onSelectShape, onUpdateShape, rememberResizeAnchor, setMarqueeFromState, shapesInMarquee, suppressCornerEditAfterDrag, suppressLiftEditAfterDrag, onShapeContextMenu, pickShape],
   );
 
   const handleDrop = useCallback(

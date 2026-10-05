@@ -19,7 +19,7 @@ You back up a single design in the editor: {{ui:editor.export}}, choose the form
 
 Click {{ui:editor.export}} or press [[Ctrl]]+[[E]].
 
-![The export window with the formats STL, 3MF, OBJ, STEP, SVG and LYL.](shot:export-panel)
+![The export window with the formats STL, 3MF, OBJ, STEP, SVG, PNG and LYL.](shot:export-panel)
 
 At the top is the file name, below it you choose the format. With something selected, only the selection is exported, otherwise the whole design. If the selection leaves out visible parts, a note in the window says so plainly, and {{ui:export.selectAll}} selects everything visible in one click. Once the file is written, the window closes by itself; if the export fails, it stays open with the message.
 
@@ -30,6 +30,7 @@ At the top is the file name, below it you choose the format. With something sele
 | **OBJ** | modelling and exchange | A widely supported mesh format. Colours are stored as vertex colours in the same file, with no extra `.mtl`. Bambu Studio and OrcaSlicer read them and ask, as with 3MF, how to map them onto your filaments; other programs see only the shape. As with 3MF, overlapping bodies are only joined when they share a colour. |
 | **STEP** | a full CAD program | Keeps boxes, cylinders, spheres and cones as exact geometry, and so shapes made from an outline (star, heart, ellipse, tube, half sphere, round roof, rounded box, dovetail, the bores and more), the bent tube, threads, springs and gears, plus fillets and chamfers. The first STEP export in a session loads the CAD kernel (about 22 MB) once. |
 | **SVG** | laser cutter and plotter | A clean top view in millimetres, including holes and curved outlines. |
+| **PNG** | forum posts, print sites, questions | A picture of the view as it is, at twice the resolution and without handles, selection frames and dimensions. {{ui:export.png.plate}} and {{ui:export.png.transparent}} are chosen in the window. Turn and zoom first until the picture is right; the selection does not matter here. |
 | **LYL** | layerling itself | The editable design with everything that belongs to it. |
 
 Holes cannot be exported on their own. Group them with a body first, otherwise layerling points it out.

@@ -19,7 +19,7 @@ Einen einzelnen Entwurf sicherst du im Editor: {{ui:editor.export}}, dann das Fo
 
 Klicke auf {{ui:editor.export}} oder drücke [[Strg]]+[[E]].
 
-![Das Exportfenster mit den Formaten STL, 3MF, OBJ, STEP, SVG und LYL.](shot:export-panel)
+![Das Exportfenster mit den Formaten STL, 3MF, OBJ, STEP, SVG, PNG und LYL.](shot:export-panel)
 
 Oben steht der Dateiname, darunter wählst du das Format. Ist etwas markiert, wird nur die Auswahl exportiert, sonst der ganze Entwurf. Lässt die Auswahl sichtbare Teile aus, sagt das ein Hinweis im Fenster deutlich, und {{ui:export.selectAll}} markiert mit einem Klick alles Sichtbare. Ist die Datei geschrieben, schließt sich das Fenster von selbst; schlägt der Export fehl, bleibt es mit der Meldung offen.
 
@@ -30,6 +30,7 @@ Oben steht der Dateiname, darunter wählst du das Format. Ist etwas markiert, wi
 | **OBJ** | Modellierung und Austausch | Ein breit unterstütztes Netzformat. Die Farben stehen als Eckpunktfarben in derselben Datei, ohne zusätzliche `.mtl`. Bambu Studio und OrcaSlicer lesen sie und fragen wie bei 3MF nach der Zuordnung auf die Filamente; andere Programme sehen nur die Form. Überlappende Körper werden wie bei 3MF nur bei gleicher Farbe zusammengefügt. |
 | **STEP** | Ein vollwertiges CAD-Programm | Behält Quader, Zylinder, Kugeln und Kegel als exakte Geometrie, ebenso Formen aus einem Umriss (Stern, Herz, Ellipse, Rohr, Halbkugel, Rundes Dach, Abgerundeter Quader, Schwalbenschwanz, die Bohrungen und mehr), das gebogene Rohr, Gewinde, Federn und Zahnräder, dazu Rundungen und Fasen. Der erste STEP-Export in einer Sitzung lädt den CAD-Kern (etwa 22 MB) einmalig nach. |
 | **SVG** | Lasercutter und Plotter | Eine saubere Draufsicht in Millimetern, samt Löchern und gekrümmten Umrissen. |
+| **PNG** | Forenbeiträge, Druckportale, Rückfragen | Ein Bild der Ansicht, wie sie gerade ist, in doppelter Auflösung und ohne Griffe, Auswahlrahmen und Maße. {{ui:export.png.plate}} und {{ui:export.png.transparent}} wählst du im Fenster. Drehe und zoome vorher, bis der Ausschnitt passt; die Auswahl spielt hier keine Rolle. |
 | **LYL** | layerling selbst | Der bearbeitbare Entwurf mit allem Drum und Dran. |
 
 Aussparungen lassen sich nicht einzeln exportieren. Gruppiere sie zuerst mit einem Körper, sonst weist dich layerling darauf hin.

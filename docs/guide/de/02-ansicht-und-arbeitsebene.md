@@ -10,6 +10,7 @@ Mit der Maus:
 | Was du tust | Was passiert |
 | --- | --- |
 | rechte Maustaste ziehen | die Ansicht drehen |
+| rechte Maustaste kurz klicken | auf einem Körper ein Menü mit den häufigsten Befehlen: duplizieren, Aussparung oder Körper, gruppieren, ausblenden, sperren, löschen und mehr; auf leerer Fläche Einfügen und Alle auswählen |
 | mittlere Maustaste ziehen | die Ansicht verschieben |
 | Mausrad | hinein- und herauszoomen |
 | [[Strg]] halten und mit links ziehen | ebenfalls verschieben |

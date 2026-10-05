@@ -119,7 +119,7 @@ To put a logo, an SVG or lettering onto a cup or tube, create it flat on the pla
 
 To build on a side of a body - a hole in a wall, text on a front - put the workplane there with `layerling_set_workplane({ editorNumber, id, face: "front" })` (top, bottom, left, right, front or back of the object's own box, snapped to the real face). New shapes from `layerling_create_shape` then land on that face, and `layerling_read_scene` reports `workplane.onBase: false`; the user can do the same with W and a click. `layerling_set_workplane({ editorNumber, reset: true })` puts it back on the base plate. `visible: false` hides a face workplane for a clear look or picture while it keeps applying; `visible: true` shows it again.
 
-Use `layerling_capture_image` for viewport PNGs. `face` can be `current`, `home`, `top`, `bottom`, `front`, `back`, `right`, or `left`. These use the same camera/view-cube orientation logic as the editor UI.
+Use `layerling_capture_image` for viewport PNGs. `face` can be `current`, `home`, `top`, `bottom`, `front`, `back`, `right`, or `left`. These use the same camera/view-cube orientation logic as the editor UI. By default the image is the screen as the user sees it, handles and selection frame included. `clean: true` gives the picture the editor's PNG export saves - only the bodies, at twice the resolution - and `plate: false` or `transparent: true` leave out the build plate or the background, for a picture to post or to show the user.
 
 ## Visual Verification
 

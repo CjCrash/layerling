@@ -154,6 +154,7 @@ import { regularPolygonAspect } from "@/lib/regularPolygonFootprint";
 import { DEFAULT_TAPER_DIMENSION_MAX, MAX_HIGH_RESOLUTION_SIDES, MAX_HIGH_RESOLUTION_STEPS, shapeDimensionLimit, snapGridOptionsForUnits } from "@/lib/workplaneSettings";
 import type { BentTubeInnerProfile, BentTubeProfile, GearType, GridSize, MeasurementAccuracy, ThreadHead, ThreadProfile, ThreadRole, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 import { selectWholeValue } from "@/lib/numberField";
+import { useRecentColors } from "@/lib/recentColors";
 
 /**
  * Docked at the right edge, full height. Moved away, it floats: no longer
@@ -1637,6 +1638,7 @@ export function ShapeInspector({
   const [threadOpen, setThreadOpen] = useState(true);
   const [gearHelixOpen, setGearHelixOpen] = useState(true);
   const [colorOpen, setColorOpen] = useState(false);
+  const { colors: recentColors, remember: rememberColor } = useRecentColors(SOLID_COLORS);
   const [minimized, setMinimized] = useState(false);
   // Renaming here works like the pencil in the object list.
   const [nameDraft, setNameDraft] = useState<string | null>(null);
@@ -1788,12 +1790,38 @@ export function ShapeInspector({
               <CustomColorInput
                 color={solidColor}
                 disabled={locked}
-                onCommit={(color) => onUpdate({ color, hole: false })}
+                onCommit={(color) => {
+                  onUpdate({ color, hole: false });
+                  rememberColor(color);
+                }}
                 onInteractionActiveChange={onInteractionActiveChange}
               />
               <span>{t("inspector.custom")}</span>
             </label>
           </div>
+          {recentColors.length > 0 ? (
+            <div className="color-recent">
+              <span className="color-recent-label">{t("inspector.recentColors")}</span>
+              <div className="color-grid">
+                {recentColors.map((color) => (
+                  <button
+                    key={color}
+                    className={solidColor.toLowerCase() === color && !shape.hole ? "selected" : ""}
+                    type="button"
+                    style={{ "--shape-swatch": color } as CSSProperties}
+                    title={color.toUpperCase()}
+                    aria-label={t("aria.setColor", { color })}
+                    disabled={locked}
+                    onClick={() => {
+                      onUpdate({ color, hole: false });
+                      rememberColor(color);
+                      setColorOpen(false);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

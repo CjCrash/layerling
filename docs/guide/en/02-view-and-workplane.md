@@ -10,6 +10,7 @@ With the mouse:
 | What you do | What happens |
 | --- | --- |
 | drag with the right button | rotate the view |
+| click the right button | on a body, a menu with the most used commands: duplicate, hole or solid, group, hide, lock, delete and more; on empty space Paste and Select all |
 | drag with the middle button | move the view |
 | mouse wheel | zoom in and out |
 | hold [[Ctrl]] and drag with the left button | also moves the view |

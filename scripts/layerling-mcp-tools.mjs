@@ -650,12 +650,15 @@ export const tools = [
   },
   {
     name: "layerling_capture_image",
-    description: "Capture a PNG image of the editor viewport from current/home/top/bottom/front/back/right/left view.",
+    description: "Capture a PNG image of the editor viewport from current/home/top/bottom/front/back/right/left view. By default it is the screen as the user sees it, handles and selection frame included. clean: true gives the picture the editor's export saves as \"PNG\": only the bodies, at twice the resolution, without handles, selection frames or guides; plate and transparent then choose whether the build plate shows and whether the background is left out.",
     inputSchema: {
       ...editorTargetSchema,
       properties: {
         ...editorTargetSchema.properties,
         face: { type: "string", enum: ["current", "home", "top", "bottom", "front", "back", "right", "left"] },
+        clean: { type: "boolean", description: "Only the bodies, as the PNG export saves them. Implied by plate or transparent." },
+        plate: { type: "boolean", description: "With clean: show the build plate and grid (default true)." },
+        transparent: { type: "boolean", description: "With clean: leave the background out (default false)." },
       },
     },
   },

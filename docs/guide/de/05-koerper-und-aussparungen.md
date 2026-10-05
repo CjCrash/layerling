@@ -7,7 +7,7 @@ Das ist die wichtigste Idee in layerling, und sie ist schnell gelernt: **Jede Fo
 
 ## Körper oder Aussparung
 
-Wähle eine Form aus und klicke in ihren Einstellungen auf {{ui:inspector.solid}} oder {{ui:inspector.hole}}. Schneller geht es mit der Tastatur: [[H]] macht die Auswahl zur Aussparung, [[S]] wieder zum Körper. Eine Aussparung erscheint durchscheinend, damit du siehst, wo sie sitzt.
+Wähle eine Form aus und klicke in ihren Einstellungen auf {{ui:inspector.solid}} oder {{ui:inspector.hole}}. Schneller geht es mit der Tastatur: [[H]] macht die Auswahl zur Aussparung, [[S]] wieder zum Körper. Beides steht auch im Menü, das ein Rechtsklick auf den Körper öffnet. Eine Aussparung erscheint durchscheinend, damit du siehst, wo sie sitzt.
 
 Solange nichts gruppiert ist, passiert mit einer Aussparung nichts. Sie liegt nur da und zeigt, wo später etwas wegfallen soll.
 

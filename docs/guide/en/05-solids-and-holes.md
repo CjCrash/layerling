@@ -7,7 +7,7 @@ This is the most important idea in layerling, and it is quickly learned: **Every
 
 ## Solid or hole
 
-Select a shape and click {{ui:inspector.solid}} or {{ui:inspector.hole}} in its settings. The keyboard is faster: [[H]] makes the selection a hole, [[S]] makes it a solid again. A hole is shown see-through so you can see where it sits.
+Select a shape and click {{ui:inspector.solid}} or {{ui:inspector.hole}} in its settings. The keyboard is faster: [[H]] makes the selection a hole, [[S]] makes it a solid again. Both are also in the menu a right click on the body opens. A hole is shown see-through so you can see where it sits.
 
 As long as nothing is grouped, nothing happens with a hole. It just lies there and shows where something will disappear later.
 

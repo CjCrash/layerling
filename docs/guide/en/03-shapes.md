@@ -30,7 +30,7 @@ The settings sit docked at the right edge. If they cover something you want to s
 
 ![The settings of a cylinder: solid or hole, diameter and height as a number and as a slider.](shot:editor-overview)
 
-- **{{ui:inspector.solid}} or {{ui:inspector.hole}}:** A solid stays, a hole takes material away. More in [Solids and holes](chapter:solids-and-holes).
+- **{{ui:inspector.solid}} or {{ui:inspector.hole}}:** A solid stays, a hole takes material away. A click on {{ui:inspector.solid}} opens the colours; colours of your own that you mix there wait under {{ui:inspector.recentColors}} afterwards, the last eight. More in [Solids and holes](chapter:solids-and-holes).
 - **{{ui:inspector.transparent}}:** Lets you see through the body, for example to spot a shape behind it.
 - **{{ui:inspector.properties}}:** The dimensions and everything that belongs to this shape. For a cylinder the diameter, the height and the number of sides. For a gear the teeth, for a spring the turns.
 - **{{ui:inspector.taper}}:** Different sizes at the top and bottom, for example for a slope or a funnel.

@@ -6104,6 +6104,92 @@ html[data-theme="dark"]:where([data-palette="graphite"]) .my-shape-tile-actions 
   background: rgba(49, 49, 49, 0.94);
 }
 
+:where(html[data-theme="dark"][data-palette="graphite"]) .export-image-option input {
+  accent-color: #d3710c;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .color-recent {
+  border-top: 1px solid rgba(53, 53, 53, 0.14);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .color-recent-label {
+  color: #636363;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-context-menu {
+  color: #414141;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #cccccc;
+  box-shadow: 0 14px 34px rgba(52, 52, 52, 0.22);
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-context-menu button {
+  color: inherit;
+  background: transparent;
+  border: 0;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-context-menu button.separated::before {
+  background: #dddddd;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-context-menu button:hover,
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-context-menu button:focus-visible {
+  color: #3a3a3a;
+  background: #eaeaea;
+  outline: none;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-context-menu button.danger {
+  color: #b42318;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-context-menu button.danger:hover,
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-context-menu button.danger:focus-visible {
+  color: #8f1a12;
+  background: #fde8e6;
+}
+
+:where(html[data-theme="dark"][data-palette="graphite"]) .shape-context-menu kbd {
+  color: #636363;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-context-menu {
+  color: #e1e1e1;
+  background: rgba(36, 36, 36, 0.97);
+  border-color: #4c4c4c;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.34);
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-context-menu button:hover,
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-context-menu button:focus-visible {
+  color: #f5f5f5;
+  background: #414141;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-context-menu button.separated::before {
+  background: #4c4c4c;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-context-menu button.danger {
+  color: #ff8a80;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-context-menu button.danger:hover,
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-context-menu button.danger:focus-visible {
+  color: #ffd2cc;
+  background: #5a2a22;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .shape-context-menu kbd,
+html[data-theme="dark"]:where([data-palette="graphite"]) .color-recent-label {
+  color: #7f7f7f;
+}
+
+html[data-theme="dark"]:where([data-palette="graphite"]) .color-recent {
+  border-top-color: rgba(225, 225, 225, 0.14);
+}
+
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section-tools,
 :where(html[data-theme="dark"][data-palette="graphite"]) .toolbar-section .action-buttons {
   background: var(--toolbar-tile);

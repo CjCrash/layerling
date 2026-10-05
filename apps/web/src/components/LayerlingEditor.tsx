@@ -88,6 +88,7 @@ import { circleStepDegrees, clampArrayCount, rotateAroundVertical, rowOffset, ty
 import { bedOverhangs, printerPresetById, type BedOverhang } from "@/lib/printBed";
 import { GuideModal } from "./workplane/GuideModal";
 import { ShortcutsModal } from "./workplane/ShortcutsModal";
+import { ShapeContextMenu, type ShapeContextMenuItem } from "./workplane/ShapeContextMenu";
 import {
   canonicalizeShape,
   cloneWorkplaneShapeTreeWithFreshIds,
@@ -216,8 +217,9 @@ import type { AlignAxis, AlignHandleStatus, AlignTarget, GridSize, ParametricSou
 export { importedShapeFromObj, importedShapeFromStl, importedShapeFromSvg };
 
 type TopPanel = "import" | "export" | null;
-type ExportFormat = "stl" | "3mf" | "obj" | "step" | "svg" | "lyl";
-type DirectExportFormat = Exclude<ExportFormat, "step" | "lyl">;
+type ExportFormat = "stl" | "3mf" | "obj" | "step" | "svg" | "png" | "lyl";
+type DirectExportFormat = Exclude<ExportFormat, "step" | "png" | "lyl">;
+type ViewImageOptions = { plate: boolean; transparent: boolean };
 type LylHistoryLimit = EditorHistoryExportLimit;
 type LylExportTarget = "download" | "shared";
 type ToolbarMode = "geometry" | "sketch";
@@ -11369,11 +11371,14 @@ export function LayerlingEditor({
 
       if (command.action === "capture_image") {
         const face = mcpString(params.face, "current") as LayerlingMcpViewFace;
-        const image = await (window.layerlingCaptureView?.(face) ?? window.layerlingCaptureCanvas?.() ?? "");
+        const clean = params.clean === true || typeof params.plate === "boolean" || typeof params.transparent === "boolean";
+        let image = await (window.layerlingCaptureView?.(face) ?? window.layerlingCaptureCanvas?.() ?? "");
+        // The same clean picture the PNG export saves: only the bodies, the camera already turned to `face`.
+        if (clean) image = window.layerlingCaptureImage?.({ plate: params.plate !== false, transparent: params.transparent === true }) ?? "";
         if (!image || image.length < 100) {
           throw new Error("The Layerling viewport did not return an image");
         }
-        return { face, dataUrl: image, bytesApprox: Math.floor(image.length * 0.75) };
+        return { face, clean, dataUrl: image, bytesApprox: Math.floor(image.length * 0.75) };
       }
 
       throw new Error(`Unknown MCP command: ${command.action}`);
@@ -11671,6 +11676,22 @@ export function LayerlingEditor({
 
     void run();
   }, [commitShapes]);
+
+  /** The view as a picture, from the viewport's own clean capture. */
+  const exportViewImage = useCallback(async (exportName: string, options: ViewImageOptions) => {
+    const dataUrl = window.layerlingCaptureImage?.(options) ?? "";
+    const comma = dataUrl.indexOf(",");
+    if (!dataUrl.startsWith("data:image/png") || comma < 0) {
+      setNotice(t("status.imageFailed"), true);
+      return;
+    }
+    const binary = atob(dataUrl.slice(comma + 1));
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+    await downloadBlobFile(projectExportFileName(exportName, "png"), new Blob([bytes], { type: "image/png" }));
+    setTopPanel(null);
+    setNotice(t("status.imageSaved"));
+  }, [setNotice]);
 
   const exportDesign = useCallback((format: DirectExportFormat, exportName: string) => {
     // Ausgeblendetes bleibt draussen, wie bei Tinkercad: ein beiseitegelegtes
@@ -12630,6 +12651,47 @@ export function LayerlingEditor({
     ungroupSelected,
   ]);
 
+  /*
+   * Rechtsklick auf einen Koerper: die Befehle, die man sonst im Menueband
+   * sucht oder nur als Kuerzel kennt, gleich am Objekt. Sie wirken auf die
+   * Auswahl - der Viewport hat den angeklickten Koerper schon ausgewaehlt.
+   */
+  const [shapeContextMenu, setShapeContextMenu] = useState<{ x: number; y: number; onShape: boolean } | null>(null);
+  const closeShapeContextMenu = useCallback(() => setShapeContextMenu(null), []);
+  const openShapeContextMenu = useCallback((request: { shapeId: string | null; clientX: number; clientY: number }) => {
+    setShapeContextMenu({ x: request.clientX, y: request.clientY, onShape: Boolean(request.shapeId) });
+  }, []);
+  const shapeContextMenuItems = (): ShapeContextMenuItem[] => {
+    if (!shapeContextMenu) return [];
+    if (!shapeContextMenu.onShape || !hasSelection) {
+      const items: ShapeContextMenuItem[] = [
+        { key: "paste", label: t("contextMenu.paste"), shortcut: "Ctrl+V", onSelect: () => void pasteShape() },
+        { key: "selectAll", label: t("contextMenu.selectAll"), shortcut: "Ctrl+A", onSelect: selectAllVisible },
+      ];
+      if (shapes.some((shape) => shape.hidden)) items.push({ key: "showHidden", label: t("contextMenu.showHidden"), shortcut: "Ctrl+Shift+H", onSelect: showHidden });
+      return items;
+    }
+    const allHoles = selectedShapes.every((shape) => shape.hole);
+    const allLocked = selectedShapes.every((shape) => shape.locked);
+    const single = selectedShapes.length === 1 ? selectedShapes[0] : null;
+    const items: ShapeContextMenuItem[] = [
+      { key: "duplicate", label: t("common.duplicate"), shortcut: "Ctrl+D", onSelect: duplicateSelected },
+      { key: "copy", label: t("editor.tool.copy"), shortcut: "Ctrl+C", onSelect: copySelected },
+      allHoles
+        ? { key: "solid", label: t("contextMenu.toSolid"), shortcut: "S", separated: true, onSelect: () => setSelectionHoleMode(false) }
+        : { key: "hole", label: t("contextMenu.toHole"), shortcut: "H", separated: true, onSelect: () => setSelectionHoleMode(true) },
+    ];
+    if (selectedShapes.length >= 2) items.push({ key: "group", label: t("contextMenu.group"), shortcut: "Ctrl+G", onSelect: () => void groupSelected() });
+    if (single?.groupedShapes?.length) items.push({ key: "ungroup", label: t("contextMenu.ungroup"), shortcut: "Ctrl+Shift+G", onSelect: ungroupSelected });
+    items.push(
+      { key: "hide", label: t("contextMenu.hide"), shortcut: "Ctrl+H", separated: true, onSelect: toggleHidden },
+      { key: "lock", label: t(allLocked ? "contextMenu.unlock" : "contextMenu.lock"), shortcut: "Ctrl+L", onSelect: toggleLocked },
+      { key: "drop", label: t("contextMenu.drop"), shortcut: "D", onSelect: dropSelectedToWorkplane },
+      { key: "delete", label: t("common.delete"), shortcut: t("contextMenu.deleteKey"), danger: true, separated: true, onSelect: deleteSelected },
+    );
+    return items;
+  };
+
   return (
     <div className="layerling-editor">
       <SecondaryToolbar
@@ -12879,6 +12941,7 @@ export function LayerlingEditor({
           onMirrorPreviewClear={clearMirrorPreview}
           onMirrorSelection={mirrorSelectionAcross}
           onSelectShape={selectShape}
+          onShapeContextMenu={openShapeContextMenu}
           onSetPlacementWorkplane={setViewportPlacementWorkplane}
           onToggleWorkplaneTool={activateWorkplaneTool}
           onInteractionActiveChange={updateProjectInteractionActive}
@@ -12919,6 +12982,15 @@ export function LayerlingEditor({
           />
         )}
       </div>
+      {shapeContextMenu && toolbarMode === "geometry" ? (
+        <ShapeContextMenu
+          x={shapeContextMenu.x}
+          y={shapeContextMenu.y}
+          label={t("contextMenu.label")}
+          items={shapeContextMenuItems()}
+          onClose={closeShapeContextMenu}
+        />
+      ) : null}
       <AppFooter variant="editor" version={LYL_CREATED_WITH_VERSION} onBugReport={() => void saveBugReport()} />
       {openGroup ? (
         <div className="open-group-banner" role="status">
@@ -13037,6 +13109,7 @@ export function LayerlingEditor({
           onExport={exportDesign}
           onExportLyl={exportLylDesign}
           onExportStep={exportStepDesign}
+          onExportImage={exportViewImage}
           sharedProjectsEnabled={sharedProjectsEnabled}
           lylExporting={lylExporting}
           stepExporting={stepExporting}
@@ -14114,6 +14187,7 @@ function TopActionPanel({
   onExport,
   onExportLyl,
   onExportStep,
+  onExportImage,
   sharedProjectsEnabled,
   lylExporting,
   stepExporting,
@@ -14141,6 +14215,7 @@ function TopActionPanel({
   onExport: (format: DirectExportFormat, exportName: string) => void;
   onExportLyl: (exportName: string, historyLimit: LylHistoryLimit, target?: LylExportTarget) => void;
   onExportStep: (exportName: string) => void;
+  onExportImage: (exportName: string, options: ViewImageOptions) => void;
   sharedProjectsEnabled: boolean;
   lylExporting: boolean;
   stepExporting: boolean;
@@ -14180,7 +14255,10 @@ function TopActionPanel({
     }
   });
   const [printVolume, setPrintVolume] = useState<ExportSolidVolume | null>(null);
-  const showPrintEstimate = panel === "export" && exportFormat !== "svg" && exportFormat !== "lyl" && shapeCount > 0;
+  const [imageOptions, setImageOptions] = useState<ViewImageOptions>({ plate: true, transparent: false });
+  const showPrintEstimate = panel === "export" && exportFormat !== "svg" && exportFormat !== "png" && exportFormat !== "lyl" && shapeCount > 0;
+  // A picture shows the view as it is, not the selection, so the notes about what goes along do not apply.
+  const exportsBodies = exportFormat !== "lyl" && exportFormat !== "png";
   useEffect(() => {
     if (!showPrintEstimate) return;
     let cancelled = false;
@@ -14236,6 +14314,11 @@ function TopActionPanel({
       description: t("export.svg.description"),
       note: t("export.svg.note"),
     },
+    png: {
+      label: "PNG",
+      description: t("export.png.description"),
+      note: t("export.png.note"),
+    },
     lyl: {
       label: "LYL",
       description: t("export.lyl.description"),
@@ -14245,6 +14328,7 @@ function TopActionPanel({
   const selectedExport = exportDetails[exportFormat];
   const runSelectedExport = () => {
     if (exportFormat === "step") onExportStep(exportName);
+    else if (exportFormat === "png") onExportImage(exportName, imageOptions);
     else if (exportFormat === "lyl") onExportLyl(exportName, lylHistoryLimit);
     else onExport(exportFormat, exportName);
   };
@@ -14317,7 +14401,7 @@ function TopActionPanel({
                 onChange={(event) => setExportName(event.target.value)}
                 onFocus={(event) => event.currentTarget.select()}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter" && (shapeCount > 0 || exportFormat === "lyl") && !stepExporting && !lylExporting) runSelectedExport();
+                  if (event.key === "Enter" && (shapeCount > 0 || !exportsBodies) && !stepExporting && !lylExporting) runSelectedExport();
                 }}
               />
               <span>.{exportFormat}</span>
@@ -14331,10 +14415,12 @@ function TopActionPanel({
               </div>
               <span className="export-scope-badge">{exportFormat === "lyl"
                   ? t("export.fullProject")
+                  : exportFormat === "png"
+                  ? t("export.png.scope")
                   : t(scopeLabel === "selected" ? "export.scopeSelected" : "export.scopeTotal", { count: shapeCount })}</span>
             </div>
             <div className="export-format-slider" data-format={exportFormat} role="radiogroup" aria-label={t("export.formatLabel")}>
-              {(["stl", "3mf", "obj", "step", "svg", "lyl"] as const).map((format) => (
+              {(["stl", "3mf", "obj", "step", "svg", "png", "lyl"] as const).map((format) => (
                 <button
                   key={format}
                   type="button"
@@ -14349,7 +14435,7 @@ function TopActionPanel({
             </div>
           </section>
 
-          {exportFormat !== "lyl" && selectionLeavesOut ? (
+          {exportsBodies && selectionLeavesOut ? (
             <div className="export-holes-only-warning export-selection-note" role="status">
               <Info size={16} aria-hidden="true" />
               <span>
@@ -14365,14 +14451,14 @@ function TopActionPanel({
             </div>
           ) : null}
 
-          {exportFormat !== "lyl" && hiddenCount > 0 ? (
+          {exportsBodies && hiddenCount > 0 ? (
             <div className="export-holes-only-warning export-hidden-note" role="status">
               <EyeOff size={16} aria-hidden="true" />
               <span>{hiddenCount === 1 ? t("export.hiddenOne") : t("export.hiddenMany", { count: hiddenCount })}</span>
             </div>
           ) : null}
 
-          {exportFormat !== "lyl" && onlyHoles ? (
+          {exportsBodies && onlyHoles ? (
             <div className="export-holes-only-warning" role="status">
               <Info size={16} aria-hidden="true" />
               <span>{t("export.holesOnlyWarning")}</span>
@@ -14419,6 +14505,19 @@ function TopActionPanel({
               {printVolume && printVolume.unionFailed > 0 ? (
                 <span className="print-estimate-note">{t("export.estimateOverlap")}</span>
               ) : null}
+            </section>
+          ) : null}
+
+          {exportFormat === "png" ? (
+            <section className="export-setting-section export-image-section">
+              <label className="export-image-option" htmlFor="export-image-plate">
+                <input id="export-image-plate" type="checkbox" checked={imageOptions.plate} onChange={(event) => { const plate = event.currentTarget.checked; setImageOptions((current) => ({ ...current, plate })); }} />
+                <span>{t("export.png.plate")}</span>
+              </label>
+              <label className="export-image-option" htmlFor="export-image-transparent">
+                <input id="export-image-transparent" type="checkbox" checked={imageOptions.transparent} onChange={(event) => { const transparent = event.currentTarget.checked; setImageOptions((current) => ({ ...current, transparent })); }} />
+                <span>{t("export.png.transparent")}</span>
+              </label>
             </section>
           ) : null}
 
@@ -14474,7 +14573,7 @@ function TopActionPanel({
                   <span>{t("export.saveToShared")}</span>
                 </button>
               ) : null}
-              <button className="export-primary-button" onClick={runSelectedExport} disabled={(shapeCount === 0 && exportFormat !== "lyl") || stepExporting || lylExporting}>
+              <button className="export-primary-button" onClick={runSelectedExport} disabled={(shapeCount === 0 && exportsBodies) || stepExporting || lylExporting}>
                 <Download />
                 {exportFormat === "lyl" ? (lylExporting ? t("export.savingProject") : t("export.saveProject")) : null}
                 <span hidden={exportFormat === "lyl"}>

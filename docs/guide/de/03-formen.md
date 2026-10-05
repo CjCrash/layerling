@@ -30,7 +30,7 @@ Die Einstellungen sind am rechten Rand angedockt. Verdecken sie etwas, ziehst du
 
 ![Die Einstellungen eines Zylinders: Körper oder Aussparung, Durchmesser und Höhe als Zahl und als Schieber.](shot:editor-overview)
 
-- **{{ui:inspector.solid}} oder {{ui:inspector.hole}}:** Ein Körper bleibt stehen, eine Aussparung nimmt Material weg. Mehr im Kapitel [Körper und Aussparungen](chapter:koerper-und-aussparungen).
+- **{{ui:inspector.solid}} oder {{ui:inspector.hole}}:** Ein Körper bleibt stehen, eine Aussparung nimmt Material weg. Ein Klick auf {{ui:inspector.solid}} öffnet die Farben; eigene Farben, die du dort mischst, stehen danach unter {{ui:inspector.recentColors}} bereit, die letzten acht. Mehr im Kapitel [Körper und Aussparungen](chapter:koerper-und-aussparungen).
 - **{{ui:inspector.transparent}}:** Damit siehst du durch den Körper hindurch, zum Beispiel um eine Form dahinter zu erkennen.
 - **{{ui:inspector.properties}}:** Die Maße und alles, was zu dieser Form gehört. Beim Zylinder etwa der Durchmesser, die Höhe und die Zahl der Seiten. Bei einem Zahnrad die Zähne, bei einer Feder die Windungen.
 - **Lage und Drehung** weiter unten im Bereich.
