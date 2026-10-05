@@ -57,11 +57,15 @@ import { createTextGeometry } from "@/lib/textGeometry";
 import { displayStepFromMillimeters, displayToMillimeters, formatLengthMm, lengthDisplayUnit, millimetersToDisplay, parseLengthMm, parseMeasurementInput, resolveLengthMm, setLengthUnit } from "@/lib/measurementUnits";
 import {
   computeCornerRulerRelativeCoordinates,
-  computeCornerRulerShift,
   cornerRulerDimensionMatchesFromCorner,
+  cornerRulerFlatRotation,
+  cornerRulerFrameForWorkplane,
+  cornerRulerShiftVector,
   cornerRulerTicks,
   pointAlongRuler,
+  rotateCornerRulerFrame,
   rulerDimensionMatch,
+  type CornerRulerFrame,
   type CornerRulerMode,
   type RulerDimensionField,
   type RulerDimensionMatch,
@@ -2211,14 +2215,19 @@ function RulerDimensionOverlay({
 /** Ein platziertes Winkellineal - reines Bildschirm-Werkzeug wie das Massband, kein Koerper, nicht gespeichert (siehe layerling-lineal.md). */
 type CornerRulerInstance = {
   id: string;
-  x: number;
-  z: number;
-  elevation: number;
-  rotation: number;
+  /** Die Ecke in Weltkoordinaten, immer in der Ebene von `workplane`. */
+  corner: PlacementPoint;
+  /** Die Arbeitsebene beim Ablegen - auf der Platte die Platte, sonst die Flaeche (#105). Ziehen bleibt in ihr. */
+  workplane: PlacementWorkplane;
+  /** Richtung der beiden Arme und der Hoehe; ein Klick auf den Griff dreht sie um die Normale. */
+  frame: CornerRulerFrame;
   armLengthX: number;
   armLengthZ: number;
   mode?: CornerRulerMode;
 };
+
+/** So nah (in Bildpunkten) muss der Zeiger an einer Koerperecke sein, damit die Ecke des Winkellineals dort einrastet. */
+const CORNER_RULER_SNAP_PX = 12;
 
 type CornerRulerTickScreen = { x1: number; y1: number; x2: number; y2: number };
 type CornerRulerLabelScreen = { x: number; y: number; text: string };
@@ -2299,11 +2308,10 @@ function syncCornerRulerToolOverlay(
     rulers.forEach((ruler) => {
       const armWidth = CORNER_RULER_ARM_WIDTH;
       const mode: CornerRulerMode = ruler.mode ?? "endpoint";
-      const quaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, THREE.MathUtils.degToRad(ruler.rotation), 0, "XYZ"));
-      const xAxis = new THREE.Vector3(1, 0, 0).applyQuaternion(quaternion);
-      const zAxis = new THREE.Vector3(0, 0, 1).applyQuaternion(quaternion);
-      const yAxis = new THREE.Vector3(0, 1, 0);
-      const corner = new THREE.Vector3(ruler.x, ruler.elevation, ruler.z);
+      const xAxis = new THREE.Vector3(ruler.frame.xAxis.x, ruler.frame.xAxis.y, ruler.frame.xAxis.z).normalize();
+      const zAxis = new THREE.Vector3(ruler.frame.zAxis.x, ruler.frame.zAxis.y, ruler.frame.zAxis.z).normalize();
+      const yAxis = new THREE.Vector3(ruler.frame.normal.x, ruler.frame.normal.y, ruler.frame.normal.z).normalize();
+      const corner = new THREE.Vector3(ruler.corner.x, ruler.corner.y, ruler.corner.z);
 
       const handleScreen = projectToScreen(corner, state);
       const armXEndScreen = projectToScreen(corner.clone().addScaledVector(xAxis, ruler.armLengthX), state);
@@ -2334,8 +2342,9 @@ function syncCornerRulerToolOverlay(
       if (selectedShapes.length) {
         const bounds = projectShapesExtent(selectedShapes, xAxis, yAxis, zAxis, corner);
         const coords = computeCornerRulerRelativeCoordinates({
-          rulerCorner: { x: ruler.x, y: ruler.elevation, z: ruler.z },
-          rulerRotation: ruler.rotation,
+          rulerCorner: ruler.corner,
+          rulerRotation: 0,
+          frame: ruler.frame,
           mode,
           bounds,
         });
@@ -2389,12 +2398,16 @@ function syncCornerRulerToolOverlay(
       }
 
       const neighborLabels: CornerRulerNeighborLabel[] = [];
+      // Die Masse der Formen an den Armen gibt es nur auf der Platte; auf einer
+      // Flaeche zeigt das Winkellineal nur die Abstaende der Auswahl (#105).
+      const flatRotation = cornerRulerFlatRotation(ruler.frame);
       shapes.forEach((candidate) => {
+        if (flatRotation === null) return;
         if (isNonSolidShapeKind(candidate.kind) || candidate.hidden) return;
         if (wanted.has(candidate.id)) return;
         const { armX, armZ } = cornerRulerDimensionMatchesFromCorner(
-          { x: ruler.x, z: ruler.z },
-          ruler.rotation,
+          { x: ruler.corner.x, z: ruler.corner.z },
+          flatRotation,
           ruler.armLengthX,
           ruler.armLengthZ,
           armWidth,
@@ -2412,14 +2425,14 @@ function syncCornerRulerToolOverlay(
         if (armX) {
           neighborLabels.push(cornerRulerNeighborLabel(
             `${ruler.id}:${candidate.id}:x`,
-            { x: ruler.x, z: ruler.z, rotation: ruler.rotation, length: ruler.armLengthX, crossWidth: armWidth },
+            { x: ruler.corner.x, z: ruler.corner.z, rotation: flatRotation, length: ruler.armLengthX, crossWidth: armWidth },
             zAxis, armX, topY, state, accuracy,
           ));
         }
         if (armZ) {
           neighborLabels.push(cornerRulerNeighborLabel(
             `${ruler.id}:${candidate.id}:z`,
-            { x: ruler.x, z: ruler.z, rotation: ruler.rotation + 90, length: ruler.armLengthZ, crossWidth: armWidth },
+            { x: ruler.corner.x, z: ruler.corner.z, rotation: flatRotation + 90, length: ruler.armLengthZ, crossWidth: armWidth },
             xAxis, armZ, topY, state, accuracy,
           ));
         }
@@ -2882,6 +2895,22 @@ function syncObjectSnapGuides(state: ThreeState, guides: ObjectSnapGuide[], y: n
 }
 
 /** Bounding-Box einer Form auf drei vorgegebene Achsen projiziert, relativ zu `origin` - Kern sowohl fuer die Zieh-Griff-Rahmen als auch fuer die Abstands-zum-Ursprung-Anzeige. */
+/** Die acht Ecken der Box einer Form in Weltkoordinaten, mit ihrer Drehung - Ankerpunkte fuer das Winkellineal (#105). */
+function shapeBoxCornersWorld(shape: WorkplaneShape): THREE.Vector3[] {
+  const center = shapeCenter(shape);
+  const extents = shapeLocalExtents(shape);
+  const shapeQuaternion = quaternionForShape(shape);
+  const corners: THREE.Vector3[] = [];
+  [-1, 1].forEach((xSign) => {
+    [-1, 1].forEach((ySign) => {
+      [-1, 1].forEach((zSign) => {
+        corners.push(new THREE.Vector3(xSign * extents.x, ySign * extents.y, zSign * extents.z).applyQuaternion(shapeQuaternion).add(center));
+      });
+    });
+  });
+  return corners;
+}
+
 function projectShapeExtent(
   shape: WorkplaneShape,
   xAxis: THREE.Vector3,
@@ -6443,14 +6472,45 @@ export function WorkplaneViewport({
     }
   }, []);
 
-  const placeCornerRuler = useCallback((point: { x: number; z: number }) => {
+  /**
+   * Wohin die Ecke kommt: an eine Koerperecke in der Naehe, sonst ins Raster
+   * der Ebene - immer in der Ebene selbst, auch wenn die Ecke davor oder
+   * dahinter liegt (#105).
+   */
+  const resolveCornerRulerPoint = useCallback((clientX: number, clientY: number, workplane: PlacementWorkplane): PlacementPoint | null => {
+    const state = threeRef.current;
+    if (state) {
+      const rect = state.renderer.domElement.getBoundingClientRect();
+      const pointerX = clientX - rect.left;
+      const pointerY = clientY - rect.top;
+      const visible = shapesRef.current.filter((shape) => !shape.hidden && !isNonSolidShapeKind(shape.kind));
+      // Die Ecken der Koerperboxen - die Kantenlinien, an denen das Massband
+      // einrastet, sind nicht in jeder Ansicht da. Dazu deren echte Eckpunkte.
+      const corners = visible.flatMap((shape) => shapeBoxCornersWorld(shape));
+      const modelVertex = visible.length ? pickModelTapeCandidate(state, visible.map((shape) => shape.id), clientX, clientY) : null;
+      if (modelVertex?.attachment?.kind === "vertex") corners.push(new THREE.Vector3(modelVertex.x, modelVertex.y, modelVertex.z));
+      let nearest: { point: THREE.Vector3; distance: number } | null = null;
+      corners.forEach((corner) => {
+        const screen = projectToScreen(corner, state);
+        const distance = Math.hypot(screen.x - pointerX, screen.y - pointerY);
+        if (distance <= CORNER_RULER_SNAP_PX && (!nearest || distance < nearest.distance)) nearest = { point: corner, distance };
+      });
+      const snapped = nearest as { point: THREE.Vector3; distance: number } | null;
+      if (snapped) {
+        const local = placementWorkplaneCoordinates(workplane, snapped.point);
+        return placementWorkplanePoint(workplane, local.x, local.z);
+      }
+    }
+    return toPlacementWorkplanePoint(clientX, clientY, workplane);
+  }, [toPlacementWorkplanePoint]);
+
+  const placeCornerRuler = useCallback((point: PlacementPoint, workplane: PlacementWorkplane) => {
     const existingMode = cornerRulerModelRef.current[0]?.mode ?? "endpoint";
     const instance: CornerRulerInstance = {
       id: `corner-ruler-${++cornerRulerIdRef.current}`,
-      x: point.x,
-      z: point.z,
-      elevation: 0,
-      rotation: 90,
+      corner: point,
+      workplane,
+      frame: cornerRulerFrameForWorkplane(workplane),
       armLengthX: CORNER_RULER_DEFAULT_ARM_X,
       armLengthZ: CORNER_RULER_DEFAULT_ARM_Z,
       mode: existingMode,
@@ -6496,15 +6556,16 @@ export function WorkplaneViewport({
     const value = parseMeasureMm(edit.value);
     if (!moved.length || !ruler || !Number.isFinite(value)) return;
 
-    const rulerQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, THREE.MathUtils.degToRad(ruler.rotation), 0, "XYZ"));
-    const xAxis = new THREE.Vector3(1, 0, 0).applyQuaternion(rulerQuat);
-    const zAxis = new THREE.Vector3(0, 0, 1).applyQuaternion(rulerQuat);
-    const yAxis = new THREE.Vector3(0, 1, 0);
-    const corner = new THREE.Vector3(ruler.x, ruler.elevation ?? 0, ruler.z);
+    const { frame } = ruler;
+    const xAxis = new THREE.Vector3(frame.xAxis.x, frame.xAxis.y, frame.xAxis.z).normalize();
+    const zAxis = new THREE.Vector3(frame.zAxis.x, frame.zAxis.y, frame.zAxis.z).normalize();
+    const yAxis = new THREE.Vector3(frame.normal.x, frame.normal.y, frame.normal.z).normalize();
+    const corner = new THREE.Vector3(ruler.corner.x, ruler.corner.y, ruler.corner.z);
     const bounds = projectShapesExtent(moved, xAxis, yAxis, zAxis, corner);
     const coords = computeCornerRulerRelativeCoordinates({
-      rulerCorner: { x: ruler.x, y: ruler.elevation, z: ruler.z },
-      rulerRotation: ruler.rotation,
+      rulerCorner: ruler.corner,
+      rulerRotation: 0,
+      frame,
       mode: ruler.mode,
       bounds,
     });
@@ -6514,19 +6575,15 @@ export function WorkplaneViewport({
     // Alle markierten Koerper wandern um denselben Betrag - ihre Lage
     // zueinander bleibt, wie beim gemeinsamen Verschieben mit der Maus. Die
     // Klammer macht daraus einen einzigen Rueckgaengig-Schritt.
-    const shift = edit.axis === "elevation" ? null : computeCornerRulerShift(ruler.rotation, edit.axis, delta);
+    // Entlang der eigenen Richtungen des Lineals - auf einer senkrechten
+    // Flaeche geht "entlang des Arms" auch nach oben oder unten (#105).
+    const shift = cornerRulerShiftVector(frame, edit.axis, delta);
     onInteractionActiveChange?.(true);
     moved.forEach((shape) => {
-      if (!shift) {
-        const targetElevation = (shape.elevation ?? 0) + delta;
-        onUpdateShape(shape.id, {
-          elevation: cleanNearZero(clamp(targetElevation, MIN_ELEVATION, MAX_ELEVATION), 0.0005),
-        });
-        return;
-      }
       onUpdateShape(shape.id, {
-        x: cleanNearZero(shape.x + shift.x, 0.0005),
-        z: cleanNearZero(shape.z + shift.z, 0.0005),
+        ...(Math.abs(shift.x) > 1e-9 ? { x: cleanNearZero(shape.x + shift.x, 0.0005) } : {}),
+        ...(Math.abs(shift.z) > 1e-9 ? { z: cleanNearZero(shape.z + shift.z, 0.0005) } : {}),
+        ...(Math.abs(shift.y) > 1e-9 ? { elevation: cleanNearZero(clamp((shape.elevation ?? 0) + shift.y, MIN_ELEVATION, MAX_ELEVATION), 0.0005) } : {}),
       });
     });
     onInteractionActiveChange?.(false);
@@ -6559,11 +6616,13 @@ export function WorkplaneViewport({
     if (!drag || drag.id !== id || drag.pointerId !== event.pointerId) return;
     event.preventDefault();
     event.stopPropagation();
-    const point = toPlanePoint(event.clientX, event.clientY);
+    const current = cornerRulerModelRef.current.find((ruler) => ruler.id === id);
+    if (!current) return;
+    const point = resolveCornerRulerPoint(event.clientX, event.clientY, current.workplane);
     if (!point) return;
     drag.moved = true;
-    storeCornerRulerModel(cornerRulerModelRef.current.map((ruler) => ruler.id === id ? { ...ruler, x: point.x, z: point.z } : ruler));
-  }, [storeCornerRulerModel, toPlanePoint]);
+    storeCornerRulerModel(cornerRulerModelRef.current.map((ruler) => ruler.id === id ? { ...ruler, corner: point } : ruler));
+  }, [resolveCornerRulerPoint, storeCornerRulerModel]);
 
   const handleCornerRulerHandlePointerUp = useCallback((event: ReactPointerEvent<SVGCircleElement>, id: string) => {
     const drag = cornerRulerDragRef.current;
@@ -6573,7 +6632,7 @@ export function WorkplaneViewport({
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
     if (drag.moved) return;
-    storeCornerRulerModel(cornerRulerModelRef.current.map((ruler) => ruler.id === id ? { ...ruler, rotation: (ruler.rotation + 90) % 360 } : ruler));
+    storeCornerRulerModel(cornerRulerModelRef.current.map((ruler) => ruler.id === id ? { ...ruler, frame: rotateCornerRulerFrame(ruler.frame) } : ruler));
   }, [storeCornerRulerModel]);
 
   const toggleNoteCard = useCallback((noteId: string) => {
@@ -6720,8 +6779,10 @@ export function WorkplaneViewport({
 
       if (cornerRulerModeRef.current) {
         event.preventDefault();
-        const point = toPlanePoint(event.clientX, event.clientY);
-        if (point) placeCornerRuler(point);
+        // Auf der Flaeche, auf der gerade die Arbeitsebene liegt - ist sie ausgeblendet, auf der Platte.
+        const workplane = drawnWorkplane();
+        const point = resolveCornerRulerPoint(event.clientX, event.clientY, workplane);
+        if (point) placeCornerRuler(point, workplane);
         cornerRulerModeRef.current = false;
         setCornerRulerMode(false);
         return;
@@ -7043,6 +7104,7 @@ export function WorkplaneViewport({
       onPivotPick,
       onLayFlatPick,
       placeCornerRuler,
+      resolveCornerRulerPoint,
       onSelectShape,
       onSetPlacementWorkplane,
       onWorkplaneModeChange,

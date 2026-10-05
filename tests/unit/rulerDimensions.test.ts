@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   computeCornerRulerRelativeCoordinates,
   computeCornerRulerShift,
+  cornerRulerFlatRotation,
+  cornerRulerFrameForWorkplane,
+  cornerRulerShiftVector,
+  rotateCornerRulerFrame,
   cornerRulerCorner,
   cornerRulerDimensionMatches,
   cornerRulerDimensionMatchesFromCorner,
@@ -217,6 +221,62 @@ describe("computeCornerRulerRelativeCoordinates", () => {
     expect(coords.axisXDirection.z).toBeCloseTo(-1, 5);
     expect(coords.axisZDirection.x).toBeCloseTo(1, 5);
     expect(coords.axisZDirection.z).toBeCloseTo(0, 5);
+  });
+});
+
+describe("framing square on any workplane (#105)", () => {
+  const plate = { xAxis: { x: 1, y: 0, z: 0 }, zAxis: { x: 0, y: 0, z: 1 }, normal: { x: 0, y: 1, z: 0 } };
+  // A face facing the viewer (+z): x runs right, z runs down the face.
+  const wall = { xAxis: { x: 1, y: 0, z: 0 }, zAxis: { x: 0, y: -1, z: 0 }, normal: { x: 0, y: 0, z: 1 } };
+
+  it("starts on the plate turned to 90 degrees, as it always has", () => {
+    const frame = cornerRulerFrameForWorkplane(plate);
+    expect(frame.xAxis.x).toBeCloseTo(0, 6);
+    expect(frame.xAxis.z).toBeCloseTo(-1, 6);
+    expect(frame.zAxis.x).toBeCloseTo(1, 6);
+    expect(cornerRulerFlatRotation(frame)).toBeCloseTo(90, 6);
+  });
+
+  it("turns a quarter about the normal per click and comes back after four", () => {
+    let frame = cornerRulerFrameForWorkplane(wall);
+    const start = frame;
+    for (let turn = 0; turn < 4; turn += 1) {
+      frame = rotateCornerRulerFrame(frame);
+      expect(frame.normal).toEqual(wall.normal);
+      expect(frame.xAxis.z).toBeCloseTo(0, 6);
+      expect(frame.zAxis.z).toBeCloseTo(0, 6);
+    }
+    expect(frame.xAxis.x).toBeCloseTo(start.xAxis.x, 6);
+    expect(frame.xAxis.y).toBeCloseTo(start.xAxis.y, 6);
+  });
+
+  it("measures on a wall along the wall and its height along the normal", () => {
+    // Corner at the wall's top left; the shape's box in the frame's own axes.
+    const coords = computeCornerRulerRelativeCoordinates({
+      rulerCorner: { x: 0, y: 200, z: 10 },
+      rulerRotation: 0,
+      frame: wall,
+      mode: "midpoint",
+      bounds: { min: { x: 30, y: -5, z: 180 }, max: { x: 50, y: 5, z: 200 } },
+    });
+    expect(coords.x).toBeCloseTo(40, 6);
+    expect(coords.z).toBeCloseTo(190, 6);
+    expect(coords.elevation).toBeCloseTo(0, 6);
+    expect(coords.xEndpointOnAxis).toEqual({ x: 40, y: 200, z: 10 });
+    expect(coords.zEndpointOnAxis.y).toBeCloseTo(10, 6);
+  });
+
+  it("moves shapes along the frame's own directions", () => {
+    expect(cornerRulerShiftVector(wall, "x", 5)).toEqual({ x: 5, y: 0, z: 0 });
+    expect(cornerRulerShiftVector(wall, "z", 5)).toEqual({ x: 0, y: -5, z: 0 });
+    expect(cornerRulerShiftVector(wall, "elevation", 2)).toEqual({ x: 0, y: 0, z: 2 });
+    expect(cornerRulerShiftVector(plate, "elevation", 3)).toEqual({ x: 0, y: 3, z: 0 });
+  });
+
+  it("keeps the arm measurements to the plate", () => {
+    expect(cornerRulerFlatRotation(cornerRulerFrameForWorkplane(wall))).toBeNull();
+    expect(cornerRulerFlatRotation({ ...plate, normal: { x: 0, y: -1, z: 0 } })).toBeNull();
+    expect(cornerRulerFlatRotation(rotateCornerRulerFrame(cornerRulerFrameForWorkplane(plate)))).toBeCloseTo(180, 6);
   });
 });
 

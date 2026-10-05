@@ -23,18 +23,20 @@ You fetch the {{ui:shape.ruler}} from the shape library. It is purely a measurin
 
 ## The framing square
 
-Sometimes you measure better at a right angle. Click {{ui:camera.cornerRulerTool}} in the camera bar and then the workplane. A framing square with two arms at a right angle, with tick marks like a try square, is placed there. It has no body of its own either.
+Sometimes you measure better at a right angle. Click {{ui:camera.cornerRulerTool}} in the camera bar and then the workplane. A framing square with two arms at a right angle, with tick marks like a try square, is placed there. It has no body of its own either. Click close to the corner of a body, and its corner snaps exactly there.
+
+The framing square lies on the workplane. If that sits on the side of a body, the square lies on that side too, see [View and workplane](chapter:view-and-workplane). That is how you dimension on a vertical wall: put the workplane on the wall, place the square at its top left corner and click the handle until the arms point right and down.
 
 - **Dragging the handle** moves it.
 - **A short click on the handle** turns it by 90°.
 - **The ×** beside it removes it.
 - **The small button left of the handle** switches what is measured from: the outside of a body (endpoint, an icon with lines) or its middle (midpoint, a crosshair).
 
-If bodies stand at one of the arms, the framing square shows their dimensions automatically.
+If bodies stand at one of the arms, the framing square shows their dimensions automatically. That works on the base plate only, not on the side of a body.
 
 When you select a body, the framing square shows in green how far it is from the corner, along both arms and in height. Click a green number to type a distance, and the body moves exactly there. With several bodies selected, they count as one: the ruler measures their shared outline, and a typed value moves them all together without changing their positions relative to each other.
 
-With the midpoint, the green numbers count to the middle of the body, in height as well. That way you place a sphere with its centre exactly 15 mm from an edge, without subtracting the radius.
+With the midpoint, the green numbers count to the middle of the body, in height as well. That way you place a sphere with its centre exactly 15 mm from an edge, without subtracting the radius. On a wall you place a hole 40 mm from the left and 190 mm from the top like this: select the hole, switch to midpoint, type 40 and 190. The height there counts outward from the wall.
 
 ## Distances to the origin and while moving
 

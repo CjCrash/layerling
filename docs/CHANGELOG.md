@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## 1.36.0
+
+- **The framing square works on any face:** It used to lie on the base plate only, so on a vertical wall there was no way to say "this hole 40 mm from the left and 190 mm from the top" without working out coordinates. Now it lies on the workplane: put the workplane on a wall, place the square at the wall's corner, and the green distances, typing them and the midpoint switch all work along the wall, with the height counting outward from it. Clicking or dragging close to a corner of a body snaps the square's corner exactly onto it, on the plate as well. The automatic dimensions of shapes at its arms still work on the base plate only. Suggested by @structurednewstore-rgb in #105.
+
 ## 1.35.2
 
 - **The guide goes back instead of opening the editor again:** The guide opens in a tab of its own, and its "Open the editor" button opened layerling in yet another tab. While layerling is open in another tab, the button now reads "Back to the editor" and closes the guide. If the browser does not let the tab close, because you have moved between chapters in it, a note says to switch to the other tab, and a second click opens the editor in the guide's tab after all. Reported by @bernbout in #103.

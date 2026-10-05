@@ -171,9 +171,70 @@ export function cornerRulerTicks(length: number): CornerRulerTick[] {
 
 export type CornerRulerMode = "endpoint" | "midpoint";
 
+type CornerRulerVector = { x: number; y: number; z: number };
+
+/**
+ * The plane a framing square lies in: its two arms and the direction its
+ * height counts in. On the plate that is the plate itself, on a face
+ * workplane the face (#105).
+ */
+export type CornerRulerFrame = {
+  xAxis: CornerRulerVector;
+  zAxis: CornerRulerVector;
+  normal: CornerRulerVector;
+};
+
+const toVector = (value: CornerRulerVector) => new THREE.Vector3(value.x, value.y, value.z);
+const fromVector = (value: THREE.Vector3): CornerRulerVector => ({
+  x: Math.abs(value.x) < 1e-12 ? 0 : value.x,
+  y: Math.abs(value.y) < 1e-12 ? 0 : value.y,
+  z: Math.abs(value.z) < 1e-12 ? 0 : value.z,
+});
+
+/** The frame turned by a quarter turn about its normal, as a click on the handle does. */
+export function rotateCornerRulerFrame(frame: CornerRulerFrame): CornerRulerFrame {
+  const normal = toVector(frame.normal).normalize();
+  return {
+    xAxis: fromVector(toVector(frame.xAxis).applyAxisAngle(normal, Math.PI / 2)),
+    zAxis: fromVector(toVector(frame.zAxis).applyAxisAngle(normal, Math.PI / 2)),
+    normal: fromVector(normal),
+  };
+}
+
+/**
+ * The frame a framing square starts with on a workplane: the workplane's own
+ * axes, turned a quarter as on the plate, where it has always started at 90 degrees.
+ */
+export function cornerRulerFrameForWorkplane(workplane: { xAxis: CornerRulerVector; zAxis: CornerRulerVector; normal: CornerRulerVector }): CornerRulerFrame {
+  return rotateCornerRulerFrame({ xAxis: workplane.xAxis, zAxis: workplane.zAxis, normal: workplane.normal });
+}
+
+/**
+ * The turn about the vertical of a frame that lies flat on the plate the right
+ * way up, in degrees; null for any other frame. The measurements of shapes at
+ * the arms only work on the plate.
+ */
+export function cornerRulerFlatRotation(frame: CornerRulerFrame): number | null {
+  const { xAxis, zAxis, normal } = frame;
+  if (Math.abs(normal.y - 1) > 1e-6 || Math.abs(xAxis.y) > 1e-6 || Math.abs(zAxis.y) > 1e-6) return null;
+  const rotation = THREE.MathUtils.radToDeg(Math.atan2(-xAxis.z, xAxis.x));
+  // z must be x turned a quarter the same way as in quaternionForShape.
+  const expectedZ = { x: Math.sin(THREE.MathUtils.degToRad(rotation)), z: Math.cos(THREE.MathUtils.degToRad(rotation)) };
+  if (Math.abs(zAxis.x - expectedZ.x) > 1e-6 || Math.abs(zAxis.z - expectedZ.z) > 1e-6) return null;
+  return ((rotation % 360) + 360) % 360;
+}
+
+/** How far to move shapes so their distance along one of the frame's directions changes by `delta`. */
+export function cornerRulerShiftVector(frame: CornerRulerFrame, axis: "x" | "z" | "elevation", delta: number): CornerRulerVector {
+  const direction = axis === "x" ? frame.xAxis : axis === "z" ? frame.zAxis : frame.normal;
+  return fromVector(toVector(direction).normalize().multiplyScalar(delta));
+}
+
 export type CornerRulerCoordinateInput = {
   rulerCorner: { x: number; y?: number; z: number };
   rulerRotation: number;
+  /** The plane the square lies in; when given it replaces `rulerRotation`. */
+  frame?: CornerRulerFrame;
   mode?: CornerRulerMode;
   bounds: {
     min: { x: number; y: number; z: number };
@@ -202,9 +263,9 @@ export function computeCornerRulerRelativeCoordinates(
 ): CornerRulerRelativeCoordinates {
   const mode: CornerRulerMode = input.mode === "midpoint" ? "midpoint" : "endpoint";
   const rulerQuat = quaternionForShape({ rotation: input.rulerRotation });
-  const axisX = new THREE.Vector3(1, 0, 0).applyQuaternion(rulerQuat);
-  const axisZ = new THREE.Vector3(0, 0, 1).applyQuaternion(rulerQuat);
-  const axisY = new THREE.Vector3(0, 1, 0);
+  const axisX = input.frame ? toVector(input.frame.xAxis).normalize() : new THREE.Vector3(1, 0, 0).applyQuaternion(rulerQuat);
+  const axisZ = input.frame ? toVector(input.frame.zAxis).normalize() : new THREE.Vector3(0, 0, 1).applyQuaternion(rulerQuat);
+  const axisY = input.frame ? toVector(input.frame.normal).normalize() : new THREE.Vector3(0, 1, 0);
 
   const rulerCorner = new THREE.Vector3(input.rulerCorner.x, input.rulerCorner.y ?? 0, input.rulerCorner.z);
   const { min, max } = input.bounds;

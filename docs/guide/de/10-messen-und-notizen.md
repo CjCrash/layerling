@@ -23,18 +23,20 @@ Aus der Formenbibliothek holst du das {{ui:shape.ruler}}. Es ist ein reines Mess
 
 ## Das Winkellineal
 
-Manchmal misst du besser an einem rechten Winkel. Klicke in der Kameraleiste auf {{ui:camera.cornerRulerTool}} und dann auf die Arbeitsfläche. Dort legt sich ein Winkellineal mit zwei Armen im rechten Winkel ab, mit Teilstrichen, wie ein Anschlagwinkel. Auch das hat keinen eigenen Körper.
+Manchmal misst du besser an einem rechten Winkel. Klicke in der Kameraleiste auf {{ui:camera.cornerRulerTool}} und dann auf die Arbeitsfläche. Dort legt sich ein Winkellineal mit zwei Armen im rechten Winkel ab, mit Teilstrichen, wie ein Anschlagwinkel. Auch das hat keinen eigenen Körper. Klickst du nahe an die Ecke eines Körpers, rastet seine Ecke genau dort ein.
+
+Das Winkellineal legt sich auf die Arbeitsebene. Liegt sie auf der Seite eines Körpers, liegt es also auch auf dieser Seite, siehe [Ansicht und Arbeitsebene](chapter:ansicht-und-arbeitsebene). So bemaßt du auf einer senkrechten Wand: Arbeitsebene auf die Wand legen, Winkellineal an ihre obere linke Ecke setzen und so oft auf den Griff klicken, bis die Arme nach rechts und nach unten zeigen.
 
 - **Am Griff ziehen** verschiebt es.
 - **Ein kurzer Klick auf den Griff** dreht es um 90°.
 - **Das ×** daneben entfernt es.
 - **Der kleine Knopf links am Griff** schaltet um, wovon aus gemessen wird: von der Außenkante eines Körpers (Eckpunkt, Symbol mit Linien) oder von seiner Mitte (Mittelpunkt, Fadenkreuz).
 
-Stehen Körper an einem der Arme, zeigt das Winkellineal automatisch deren Maße an.
+Stehen Körper an einem der Arme, zeigt das Winkellineal automatisch deren Maße an. Das geht nur auf der Grundplatte, nicht auf der Seite eines Körpers.
 
 Markierst du einen Körper, zeigt das Winkellineal in Grün, wie weit er von der Ecke entfernt ist, entlang beider Arme und in der Höhe. Ein Klick auf eine grüne Zahl öffnet ein Eingabefeld: Tippe den gewünschten Abstand ein, und der Körper rückt genau dorthin. Sind mehrere Körper markiert, zählen sie zusammen wie einer. Gemessen wird ihr gemeinsamer Umriss, und ein eingetippter Wert verschiebt alle gemeinsam, ohne dass sich ihre Lage zueinander ändert.
 
-Mit dem Mittelpunkt zählen die grünen Zahlen bis zur Mitte des Körpers, auch in der Höhe. So setzt du etwa eine Kugel mit ihrer Mitte genau 15 mm neben eine Kante, ohne den Radius abzuziehen.
+Mit dem Mittelpunkt zählen die grünen Zahlen bis zur Mitte des Körpers, auch in der Höhe. So setzt du etwa eine Kugel mit ihrer Mitte genau 15 mm neben eine Kante, ohne den Radius abzuziehen. Auf einer Wand setzt du so ein Loch 40 mm von links und 190 mm von oben: Loch markieren, Mittelpunkt einschalten, 40 und 190 eintippen. Die Höhe zählt dort von der Wand aus nach außen.
 
 ## Abstände zum Nullpunkt und beim Verschieben
 

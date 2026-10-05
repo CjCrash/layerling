@@ -387,7 +387,7 @@ export const MESSAGES_EN = {
   "guide.select.notes": "A note holds what the geometry cannot say. Place it on a body and it travels with it; place it beside one and it stays on the workplane. Notes are saved with the design and never reach an export.",
   "guide.group.measure": "Measuring",
   "guide.measure.tape": "The tape measure reads distances between corners, edges and faces - set a point, drag to the next, and the measurement is done.",
-  "guide.measure.cornerRuler": "The framing square drops onto the workplane with one click and shows two ticked arms at a right angle, with no body of its own. Drag the handle to move it, click it to rotate it 90°, and the × beside it removes it again. The small button left of the handle measures to the middle of a body instead of its edge.",
+  "guide.measure.cornerRuler": "The framing square drops onto the workplane with one click and shows two ticked arms at a right angle, with no body of its own. Drag the handle to move it, click it to rotate it 90°, and the × beside it removes it again. The small button left of the handle measures to the middle of a body instead of its edge. With the workplane on a side wall it lies on that wall, and it snaps to a nearby corner of a body.",
   "guide.measure.ruler": "The ruler from the shape list (a pure measuring tool: it never appears in an export and cannot be grouped or cut) shows, for any body that touches or overlaps it, its extent as a floating number right in the view, which can be edited right there. The floating plus symbol creates a copy of the measured shape.",
   "guide.group.solid": "Solids and holes",
   "guide.solid.modes": "Every shape is either a solid or a hole. A hole is a cutting tool: it takes material away.",
