@@ -58,7 +58,13 @@ function attributeValues(source: string, name: string) {
 }
 
 const SVG_DOCUMENT_TYPE_PATTERN = /<!DOCTYPE\b[^>]*>/gi;
-const SVG_11_DOCUMENT_TYPE_PATTERN = /^<!DOCTYPE\s+svg(?:\s+PUBLIC\s+(["'])-\/\/W3C\/\/DTD SVG 1\.1\/\/EN\1\s+(["'])https?:\/\/www\.w3\.org\/Graphics\/SVG\/1\.1\/DTD\/svg11\.dtd\2)?\s*>$/i;
+/**
+ * Any SVG document type that only names a DTD: SVG 1.0 as potrace writes it
+ * (picsvg.com and other tracers, #107), 1.1, or a plain SYSTEM id. The
+ * declaration is removed before parsing and the DTD is never fetched; what is
+ * refused is an internal subset in square brackets, the place where entities live.
+ */
+const SVG_DOCUMENT_TYPE_ONLY_PATTERN = /^<!DOCTYPE\s+svg(?:\s+PUBLIC\s+(["'])[^"'[\]<>]*\1(?:\s+(["'])[^"'[\]<>]*\2)?|\s+SYSTEM\s+(["'])[^"'[\]<>]*\3)?\s*>$/i;
 
 function svgDocumentTypes(source: string) {
   return source.match(SVG_DOCUMENT_TYPE_PATTERN) ?? [];
@@ -79,8 +85,8 @@ export function validateSvgSourcePreflight(source: string) {
 
   const documentTypes = svgDocumentTypes(source);
   const documentTypeStarts = source.match(/<!DOCTYPE\b/gi)?.length ?? 0;
-  if (documentTypes.length !== documentTypeStarts || documentTypes.some((declaration) => !SVG_11_DOCUMENT_TYPE_PATTERN.test(declaration))) {
-    throw new Error("Only the standard SVG 1.1 document type is supported");
+  if (documentTypes.length !== documentTypeStarts || documentTypes.some((declaration) => !SVG_DOCUMENT_TYPE_ONLY_PATTERN.test(declaration))) {
+    throw new Error("Only a plain SVG document type is supported, without a DTD of its own in square brackets");
   }
 
   if (/\b(?:width|height|viewBox|d)\s*=\s*(["'])[^"']*\bNaN\b[^"']*\1/i.test(source)) {

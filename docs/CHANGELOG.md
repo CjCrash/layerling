@@ -6,6 +6,8 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## 1.36.0
 
+- **SVGs from picsvg.com and other tracers import:** Their files carry the document type of SVG 1.0, as potrace writes it, and layerling turned them away with "Only the standard SVG 1.1 document type is supported" although it drops that line before reading anyway. Any plain SVG document type is accepted now; only one with a DTD of its own in square brackets, the place where entities live, is still refused. Reported by @makinglayerschannel in #107.
+
 - **Back to the base plate in one click:** While the workplane lies on a face, a button with a downward arrow below the eye in the camera bar puts it back on the base plate. The eye only hides a workplane and keeps it active, which is where people looked for this. Esc while placing a workplane now also returns it to the base plate, as the guide always said; before, it only stopped placing. Asked by @RobbieKnobbie in #108.
 
 - **The framing square works on any face:** It used to lie on the base plate only, so on a vertical wall there was no way to say "this hole 40 mm from the left and 190 mm from the top" without working out coordinates. Now it lies on the workplane: put the workplane on a wall, place the square at the wall's corner, and the green distances, typing them and the midpoint switch all work along the wall, with the height counting outward from it. Clicking or dragging close to a corner of a body snaps the square's corner exactly onto it, on the plate as well. The automatic dimensions of shapes at its arms still work on the base plate only. Suggested by @structurednewstore-rgb in #105.

@@ -63,9 +63,22 @@ describe("SVG source preflight", () => {
     expect(normalizeSvgDocumentType(source)).not.toMatch(/<!DOCTYPE/i);
   });
 
-  it("continues to reject XML entities, non-SVG doctypes, and external references", () => {
+  it("accepts the SVG 1.0 document type potrace writes, as from picsvg.com (#107)", () => {
+    const source = `<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="100pt" height="100pt" viewBox="0 0 100 100"><g transform="translate(0,100) scale(0.1,-0.1)" fill="#000000" stroke="none"><path d="M100 100 L900 100 L900 900 L100 900 Z"/></g></svg>`;
+    expect(() => validateSvgSourcePreflight(source)).not.toThrow();
+    expect(normalizeSvgDocumentType(source)).not.toMatch(/<!DOCTYPE/i);
+    expect(() => validateSvgSourcePreflight('<!DOCTYPE svg SYSTEM "svg10.dtd"><svg/>')).not.toThrow();
+    expect(() => validateSvgSourcePreflight('<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"><svg/>')).not.toThrow();
+  });
+
+  it("continues to reject XML entities, non-SVG doctypes, internal subsets, and external references", () => {
     expect(() => validateSvgSourcePreflight('<!DOCTYPE svg [<!ENTITY x "bad">]><svg/>')).toThrow(/entities/i);
-    expect(() => validateSvgSourcePreflight('<!DOCTYPE html><svg/>')).toThrow(/only the standard SVG 1\.1 document type/i);
+    expect(() => validateSvgSourcePreflight('<!DOCTYPE html><svg/>')).toThrow(/plain SVG document type/i);
+    expect(() => validateSvgSourcePreflight('<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "svg11.dtd" [<!ATTLIST svg x CDATA "1">]><svg/>')).toThrow(/plain SVG document type/i);
+    expect(() => validateSvgSourcePreflight('<!DOCTYPE svg [ ]><svg/>')).toThrow(/plain SVG document type/i);
     expect(() => validateSvgSourcePreflight('<svg><use href="https://example.com/art.svg#part"/></svg>')).toThrow(/external references/i);
   });
 
