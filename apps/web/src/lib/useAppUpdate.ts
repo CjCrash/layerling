@@ -3,11 +3,16 @@
 import { useEffect, useState } from "react";
 import { checkAppUpdate, dismissUpdate as storeDismissUpdate, isUpdateDismissed, type AppUpdateInfo } from "./appUpdate";
 
-// A static export lives on a web server that is updated when layerling is
-// published there; the service worker tells about a new version. Asking GitHub
-// would only announce a release the server may never get - a script-only fix,
-// say - and the notice would stay for good. Local and Docker installs still ask.
-const ASKS_GITHUB_FOR_UPDATES = process.env.NEXT_PUBLIC_STATIC_EXPORT !== "true";
+// layerling.com and the home test server are updated whenever layerling is
+// published, and the service worker tells about a new version there. Asking
+// GitHub would only announce a release they may never get - a fix to the start
+// scripts, say - and the notice would stay for good. Every other copy, local,
+// Docker or on a web server of its own, still asks.
+const PUBLISHED_HOSTS = new Set(["layerling.com", "www.layerling.com", "layerling.server"]);
+
+function asksGitHubForUpdates() {
+  return typeof window === "undefined" || !PUBLISHED_HOSTS.has(window.location.hostname.toLowerCase());
+}
 
 export function useAppUpdate(currentVersion: string) {
   const [update, setUpdate] = useState<AppUpdateInfo | null>(null);
@@ -15,7 +20,7 @@ export function useAppUpdate(currentVersion: string) {
   const [isChecking, setIsChecking] = useState(false);
 
   useEffect(() => {
-    if (!ASKS_GITHUB_FOR_UPDATES) return;
+    if (!asksGitHubForUpdates()) return;
     let cancelled = false;
     setIsChecking(true);
     checkAppUpdate(currentVersion)
