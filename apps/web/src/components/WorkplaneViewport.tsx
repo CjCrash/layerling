@@ -155,6 +155,34 @@ const CAMERA_MIN_DISTANCE = 3;
 const CAMERA_MAX_DISTANCE = 9000;
 
 /**
+ * The normal view zooms towards its pivot and stops at the closest distance
+ * to it - so with the pivot in the middle of the plate it could not come
+ * close to a part at the edge, nor to one behind the pivot, while the flat
+ * view, which only enlarges, went anywhere. Before a zoom-in, the pivot moves
+ * along the line of sight - forward or back - to the depth of the body under
+ * the pointer (the middle of the screen for the buttons), or of the plate
+ * when no body is there. The picture stays put, and the zoom can go on right
+ * up to what is under the pointer, as close as the flat view enlarges.
+ */
+function movePivotToDepthUnder(state: ThreeState, ndcX: number, ndcY: number) {
+  if (!(state.camera instanceof THREE.PerspectiveCamera)) return;
+  state.pointer.set(ndcX, ndcY);
+  state.raycaster.setFromCamera(state.pointer, state.camera);
+  const layers = state.raycaster.layers.mask;
+  state.raycaster.layers.set(RENDER_LAYER_SHAPES);
+  const hit = state.raycaster.intersectObjects(state.shapeLayer.children, true).find((entry) => (
+    entry.object instanceof THREE.Mesh && entry.object.visible && !(state.sectionPlane && state.sectionPlane.distanceToPoint(entry.point) < -0.001)
+  ));
+  state.raycaster.layers.mask = layers;
+  const point = hit?.point ?? state.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), new THREE.Vector3());
+  if (!point) return;
+  const forward = state.camera.getWorldDirection(new THREE.Vector3());
+  const depth = point.clone().sub(state.camera.position).dot(forward);
+  if (!(depth > 0) || depth > CAMERA_MAX_DISTANCE) return;
+  state.controls.target.copy(state.camera.position).addScaledVector(forward, depth);
+}
+
+/**
  * The flat (orthographic) view's zoom range, so that it frames exactly what
  * the normal view frames between its closest and farthest distance: its zoom
  * divides the frame it was made with, the normal view's frame grows with the
@@ -7716,6 +7744,7 @@ export function WorkplaneViewport({
     }
 
     const scaled = zoomDistanceScale(scale, workspaceRef.current.zoomSpeed);
+    if (scaled < 1) movePivotToDepthUnder(state, 0, 0);
     if (state.camera instanceof THREE.OrthographicCamera) {
       const range = orthographicZoomRange(state.camera);
       state.camera.zoom = clamp(state.camera.zoom / scaled, range.min, range.max);
@@ -8905,30 +8934,10 @@ function createThreeScene(host: HTMLDivElement): ThreeState {
     if (event.cancelable) event.preventDefault();
   };
   const SAFARI_GESTURES = ["gesturestart", "gesturechange", "gestureend"] as const;
-  /**
-   * The normal view zooms towards its pivot and stops at the closest distance
-   * to that pivot - so with the pivot in the middle of the plate it could not
-   * come close to a part at the edge, while the flat view, which only enlarges,
-   * went anywhere. Before the controls take a zoom-in, the pivot moves along
-   * the line of sight to the depth of the body under the pointer: the picture
-   * stays put, and the zoom can go on right up to that body.
-   */
   const pullPivotToSurface = (event: WheelEvent) => {
-    if (!(state.camera instanceof THREE.PerspectiveCamera) || event.deltaY >= 0) return;
+    if (event.deltaY >= 0) return;
     const rect = renderer.domElement.getBoundingClientRect();
-    state.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    state.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    state.raycaster.setFromCamera(state.pointer, state.camera);
-    state.raycaster.layers.set(RENDER_LAYER_SHAPES);
-    const hit = state.raycaster.intersectObjects(state.shapeLayer.children, true).find((entry) => (
-      entry.object instanceof THREE.Mesh && entry.object.visible && !(state.sectionPlane && state.sectionPlane.distanceToPoint(entry.point) < -0.001)
-    ));
-    if (!hit) return;
-    const forward = state.camera.getWorldDirection(new THREE.Vector3());
-    const pivotDepth = state.controls.target.clone().sub(state.camera.position).dot(forward);
-    const hitDepth = hit.point.clone().sub(state.camera.position).dot(forward);
-    if (!(hitDepth > 0) || hitDepth >= pivotDepth) return;
-    state.controls.target.copy(state.camera.position).addScaledVector(forward, hitDepth);
+    movePivotToDepthUnder(state, ((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
   };
   controls.addEventListener("change", requestRender);
   SAFARI_GESTURES.forEach((name) => renderer.domElement.addEventListener(name, preventSafariGesture));
