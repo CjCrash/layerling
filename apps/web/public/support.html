@@ -148,12 +148,13 @@
           root.lang = lang;
           document.title = lang === "de" ? "layerling unterstützen" : "Support layerling";
           buttons.forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-set") === lang)); });
-          try { localStorage.setItem("layerling.supportLang", lang); } catch (e) {}
         }
         buttons.forEach(function (b) { b.addEventListener("click", function () { set(b.getAttribute("data-set")); }); });
-        var saved = null;
-        try { saved = localStorage.getItem("layerling.supportLang"); } catch (e) {}
-        set(saved || ((navigator.language || "").toLowerCase().indexOf("de") === 0 ? "de" : "en"));
+        /* The language of the page that linked here (?lang=), then the app's own setting, then the browser's. */
+        var wanted = (/[?&]lang=(de|en)/.exec(location.search) || [])[1] || null;
+        try { wanted = wanted || localStorage.getItem("layerling.language"); } catch (e) {}
+        if (wanted !== "de" && wanted !== "en") wanted = (navigator.language || "").toLowerCase().indexOf("de") === 0 ? "de" : "en";
+        set(wanted);
       })();
     </script>
   </body>
