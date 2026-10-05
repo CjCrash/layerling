@@ -194,6 +194,7 @@ import {
   type PlacementPoint,
   type PlacementWorkplane,
 } from "@/lib/placementWorkplane";
+import { sketchBodyStretch, stretchedSketchProfile } from "@/lib/sketchResize";
 import { placeSketchExtrusion, placeSketchShape } from "@/lib/sketchPlacement";
 import { BUG_REPORT_FILE, bugReportText, rememberBugReportEvent, type BugReportEvent } from "@/lib/bugReport";
 import { formatLengthMm, lengthDisplayUnit } from "@/lib/measurementUnits";
@@ -9403,6 +9404,33 @@ export function LayerlingEditor({
    * Ergebnis ersetzt den Stand im Verlauf, statt einen eigenen Schritt
    * anzulegen - Rueckgaengig nimmt die Groessenaenderung als Ganzes zurueck.
    */
+  /**
+   * A body rebuilt in the background after a resize takes the place of the
+   * stale one - in the scene and, while the history still shows the resize,
+   * in that history entry, so one undo takes back the resize as a whole. If
+   * the body changed meanwhile, nothing happens: the next round picks it up.
+   */
+  const replaceRebuiltShape = useCallback((staleId: string, fingerprint: string, rebuilt: WorkplaneShape) => {
+    const current = shapesRef.current;
+    if (!current.some((shape) => shape.id === staleId && projectShapesFingerprint([shape]) === fingerprint)) return false;
+    const next = current.map((shape) => shape.id === staleId ? canonicalizeShape(rebuilt) : shape);
+    const scene = editorHistoryEntry(current, selectedIdsRef.current, notesRef.current, placementWorkplaneRef.current);
+    const entryNow = editorHistoryEntry(next, selectedIdsRef.current, notesRef.current, placementWorkplaneRef.current);
+    const index = historyIndexRef.current;
+    shapesRef.current = next;
+    setShapes(next);
+    if (historyRef.current[index]?.fingerprint === scene.fingerprint) {
+      openGroupHistoryRef.current.set(entryNow.fingerprint, openGroupsRef.current);
+      const entries = historyRef.current.map((candidate, candidateIndex) => candidateIndex === index ? entryNow : candidate);
+      historyRef.current = entries;
+      setHistory(entries);
+    } else {
+      appendHistoryEntry(entryNow);
+    }
+    syncProjectShapes(next);
+    return true;
+  }, [appendHistoryEntry, syncProjectShapes]);
+
   const shellRebuildBusyRef = useRef(false);
   const shellRebuildFailedRef = useRef(new Set<string>());
   const [shellRebuildRound, setShellRebuildRound] = useState(0);
@@ -9432,24 +9460,7 @@ export function LayerlingEditor({
       shellRebuildBusyRef.current = true;
       void shellShape(before, amount, openings ?? "none", shellEdges ?? "round", stale)
         .then((rebuilt) => {
-          const current = shapesRef.current;
-          if (!current.some((shape) => shape.id === stale.id && projectShapesFingerprint([shape]) === fingerprint)) return;
-          const next = current.map((shape) => shape.id === stale.id ? canonicalizeShape(rebuilt) : shape);
-          const scene = editorHistoryEntry(current, selectedIdsRef.current, notesRef.current, placementWorkplaneRef.current);
-          const entryNow = editorHistoryEntry(next, selectedIdsRef.current, notesRef.current, placementWorkplaneRef.current);
-          const index = historyIndexRef.current;
-          shapesRef.current = next;
-          setShapes(next);
-          if (historyRef.current[index]?.fingerprint === scene.fingerprint) {
-            openGroupHistoryRef.current.set(entryNow.fingerprint, openGroupsRef.current);
-            const entries = historyRef.current.map((candidate, candidateIndex) => candidateIndex === index ? entryNow : candidate);
-            historyRef.current = entries;
-            setHistory(entries);
-          } else {
-            appendHistoryEntry(entryNow);
-          }
-          syncProjectShapes(next);
-          setNotice(t("status.shellRebuilt", { size: Number(amount.toFixed(2)) }));
+          if (replaceRebuiltShape(stale.id, fingerprint, rebuilt)) setNotice(t("status.shellRebuilt", { size: Number(amount.toFixed(2)) }));
         })
         .catch((error: unknown) => {
           const message = error instanceof Error ? error.message : String(error);
@@ -9464,7 +9475,41 @@ export function LayerlingEditor({
         });
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [appendHistoryEntry, edgeModifier, projectInteractionActive, shapes, shellRebuildRound, shellShape, shellTool, syncProjectShapes]);
+  }, [edgeModifier, projectInteractionActive, replaceRebuiltShape, shapes, shellRebuildRound, shellShape, shellTool]);
+
+  /*
+   * Ein Skizzenkoerper, dessen Groesse geaendert wurde, wird aus seiner Skizze
+   * neu extrudiert - die Skizze auf die neue Groesse gestreckt. Sein gespeicherter
+   * CAD-Koerper passte sonst nicht mehr, und ihn ungleich zu strecken liefert bei
+   * Kurven einen ungueltigen Koerper: Fase und Rundung scheiterten (#115).
+   */
+  const sketchRebuildBusyRef = useRef(false);
+  const sketchRebuildFailedRef = useRef(new Set<string>());
+  const [sketchRebuildRound, setSketchRebuildRound] = useState(0);
+  useEffect(() => {
+    if (projectInteractionActive || edgeModifier || shellTool || sketchActive || sketchRebuildBusyRef.current) return;
+    const stale = shapes.find((shape) => sketchBodyStretch(shape) && !sketchRebuildFailedRef.current.has(projectShapesFingerprint([shape])));
+    if (!stale?.sketchProfile) return;
+    const timer = window.setTimeout(() => {
+      const stretch = sketchBodyStretch(stale);
+      if (!stretch || !stale.sketchProfile) return;
+      const fingerprint = projectShapesFingerprint([stale]);
+      sketchRebuildBusyRef.current = true;
+      void cadShapeFromSketchProfile(stretchedSketchProfile(stale.sketchProfile, stretch.x, stretch.z), stretch.height, stale)
+        .then((extrusion) => {
+          replaceRebuiltShape(stale.id, fingerprint, placeSketchShape(extrusion, placementWorkplaneRef.current, stale));
+        })
+        .catch(() => {
+          sketchRebuildFailedRef.current.add(fingerprint);
+          setNotice(t("status.sketchRebuildFailed"), true);
+        })
+        .finally(() => {
+          sketchRebuildBusyRef.current = false;
+          setSketchRebuildRound((round) => round + 1);
+        });
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [edgeModifier, projectInteractionActive, replaceRebuiltShape, shapes, shellTool, sketchActive, sketchRebuildRound]);
 
   useEffect(() => {
     const base = cadModifierBaseShapeRef.current;

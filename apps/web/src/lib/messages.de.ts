@@ -339,6 +339,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "status.shelledMcp": "MCP hat das Objekt mit {size} mm Wandstärke ausgehöhlt",
   "status.shellRebuilt": "Wände neu berechnet, wieder {size} mm dick",
   "status.shellRebuildFailed": "In dieser Größe ließ sich die Aushöhlung nicht neu berechnen. Die Wände sind mitskaliert.",
+  "status.sketchRebuildFailed": "Der Skizzenkörper ließ sich in dieser Größe nicht neu aufbauen. Fase und Rundung gehen an ihm erst wieder, wenn du die Skizze bearbeitest.",
   "edge.revertShell": "Aushöhlung ({size} mm Wand)",
   "editor.tool.dropToWorkplane": "Auf die Arbeitsebene fallen lassen",
   "editor.tool.layFlat": "Auf Fläche legen",
