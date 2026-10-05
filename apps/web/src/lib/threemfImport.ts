@@ -501,13 +501,17 @@ export function importedShapesFrom3mf(fileName: string, buffer: ArrayBuffer): Th
     return { shapes: [color ? { ...whole, color } : whole], split: false, objects, painted: triangles.painted };
   }
   const colorsIn = (item: number) => order.filter((group) => group.item === item).length;
+  const seenIn = new Map<number, number>();
   const shapes = placeColoredParts(
     whole.name,
     order.map(({ item, key }) => {
       const found = triangles.colors.get(key);
-      // Mehrere Objekte: der Name des Objekts, bei mehreren Farben darin dazu die Farbe.
+      const nth = (seenIn.get(item) ?? 0) + 1;
+      seenIn.set(item, nth);
+      // Mehrere Objekte: der Name des Objekts, bei mehreren Farben darin dazu
+      // die Farbe - oder, wenn sie keinen Namen hat (ein Filament), ihre Nummer.
       const label = objects > 1
-        ? [itemLabel(triangles.itemNames[item]), colorsIn(item) > 1 ? found?.label : undefined].filter(Boolean).join(" ") || undefined
+        ? [itemLabel(triangles.itemNames[item]), colorsIn(item) > 1 ? found?.label || String(nth) : undefined].filter(Boolean).join(" ") || undefined
         : found?.label;
       return { color: found?.color, label, positions: byGroup.get(`${item}|${key}`)! };
     }),

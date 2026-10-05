@@ -129,6 +129,29 @@ describe("importedShapesFrom3mf", () => {
     expect(result.shapes[0].width).toBeCloseTo(10);
   });
 
+  it("numbers the filaments of one object when the build has several", () => {
+    const buffer = package3mf({
+      "3D/3dmodel.model": model(`<resources>
+        <object id="1" type="model">${meshXml(cubeMesh(10))}</object>
+        <object id="2" type="model">${meshXml(cubeMesh(10, 10))}</object>
+        <object id="3" type="model"><components><component objectid="1"/><component objectid="2"/></components></object>
+        <object id="4" type="model">${meshXml(cubeMesh(10))}</object>
+      </resources><build><item objectid="3"/><item objectid="4" transform="1 0 0 0 1 0 0 0 1 50 0 0"/></build>`),
+      "Metadata/model_settings.config": `<?xml version="1.0" encoding="UTF-8"?><config>
+        <object id="3"><metadata key="name" value="base"/><metadata key="extruder" value="1"/>
+          <part id="1"/><part id="2"><metadata key="extruder" value="2"/></part></object>
+        <object id="4"><metadata key="name" value="lid"/><metadata key="extruder" value="1"/></object>
+      </config>`,
+      "Metadata/project_settings.config": JSON.stringify({ filament_colour: ["#E8DBB7", "#7D6556"] }),
+    });
+    const result = importedShapesFrom3mf("box.3mf", buffer);
+    expect(result.shapes.map((shape) => [shape.name, shape.color])).toEqual([
+      ["box base 1", "#e8dbb7"],
+      ["box base 2", "#7d6556"],
+      ["box lid", "#e8dbb7"],
+    ]);
+  });
+
   it("still splits one object by colour", () => {
     const buffer = package3mf({
       "3D/3dmodel.model": model(`<resources>
