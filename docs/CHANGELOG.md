@@ -4,7 +4,7 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
-## Unreleased
+## 1.40.0
 
 - **No endless update loop on a tilted workplane:** A design saved on a tilted workplane could end in "Maximum update depth exceeded". Each time the workplane was read, its axes were rebuilt, and on tilted planes the last digit flipped back and forth, so the project list and the editor kept updating each other. A workplane whose axes are already valid is now kept exactly as stored. By @gogades in #120.
 - **Chamfer, fillet and hollow in the right-click menu:** The menu a right click on a body opens now also starts the chamfer, fillet and hollow tools for that body, so you no longer have to find them in the ribbon. They work as the ribbon buttons do; you pick the edges or set the wall afterwards. Suggested by @darkwingbreydin in the forum.
