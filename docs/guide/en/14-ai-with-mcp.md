@@ -53,7 +53,7 @@ The AI works with the same functions as you, through the same path as your opera
 | `layerling_boolean_cut` | cuts solids with holes |
 | `layerling_intersect_objects` | keeps only what the objects have in common (Intersection) |
 | `layerling_separate_parts` | separates a shape into its loose parts |
-| `layerling_split_objects` | cuts solids in two with a plane |
+| `layerling_split_objects` | cuts solids or holes in two with a plane |
 | `layerling_list_edges` | lists the real CAD edges of an object |
 | `layerling_apply_edge_treatment` | chamfers or fillets chosen edges |
 | `layerling_hollow_object` | hollows a body with an even wall |

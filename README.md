@@ -65,7 +65,7 @@ You will recognise everything: the plate, the shapes, solids and holes, group an
 - **Solids and holes** – turn shapes into cutters and group them into the final geometry. Edit group (**E**) lays a group's parts loose to change them and rebuilds it with Done – also a group inside a group, as deep as the design goes.
 - **Bundle** – Ctrl+B holds parts together like Tinkercad's bundle: they move, turn and scale as one, but keep their colours and stay separate bodies in the export – handy for multicolour prints.
 - **Intersection** – keep only what two or more selected solids have in common, or where solids and holes overlap.
-- **Split** – cut a solid or a hole with a plane and get two closed bodies back. Rotate the plane for an angled cut.
+- **Split** – cut solids or holes in two with a plane; a hollowed body keeps its cavity. Turn the plane for an angled cut.
 
 ### Refining
 

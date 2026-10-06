@@ -399,7 +399,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "guide.solid.group": "Beim Gruppieren wirken die Aussparungen auf die Körper darunter - so entstehen Bohrung, Nut und Tasche.",
   "guide.solid.intersect": "Die Schnittmenge behält nur, was zwei Körper gemeinsam haben.",
   "guide.solid.edit": "„Gruppe bearbeiten“ (E) legt die Teile einer Gruppe einzeln hin, „Fertig“ rechnet sie neu – auch eine Gruppe in einer Gruppe.",
-  "guide.solid.split": "Teilen trennt einen Körper mit einer Ebene in zwei geschlossene Körper. Die Ebene lässt sich für einen schrägen Schnitt drehen.",
+  "guide.solid.split": "Teilen schneidet einen Körper oder eine Aussparung mit einer Ebene in zwei. Gedreht schneidet die Ebene schräg.",
   "guide.group.edges": "Fase und Rundung",
   "guide.edges.pick": "Einen Körper auswählen, Fase oder Rundung wählen und die Kanten anklicken, die es treffen soll.",
   "guide.edges.apply": "Maß eintragen und Enter drücken. Genau dieser Schritt fehlt den meisten Tinkercad-Entwürfen.",

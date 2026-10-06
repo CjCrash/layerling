@@ -400,7 +400,7 @@ export const MESSAGES_EN = {
   "guide.solid.group": "Grouping applies the holes to the solids underneath them - that is how a bore, a slot or a pocket is made.",
   "guide.solid.intersect": "Intersection keeps only what two bodies have in common.",
   "guide.solid.edit": "Edit group (E) lays a group's parts out one by one, and Done rebuilds it - also a group inside a group.",
-  "guide.solid.split": "Split cuts a solid with a plane and makes two closed bodies. Rotate the plane for an angled cut.",
+  "guide.solid.split": "Split cuts a solid or a hole in two with a plane. Turn the plane for an angled cut.",
   "guide.group.edges": "Chamfer and fillet",
   "guide.edges.pick": "Select one body, choose Chamfer or Fillet, then click the edges it should apply to.",
   "guide.edges.apply": "Enter the size and press Enter. This is the step most Tinkercad designs are missing.",
