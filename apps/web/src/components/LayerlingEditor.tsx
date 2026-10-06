@@ -12728,8 +12728,15 @@ export function LayerlingEditor({
     ];
     if (selectedShapes.length >= 2) items.push({ key: "group", label: t("contextMenu.group"), shortcut: "Ctrl+G", onSelect: () => void groupSelected() });
     if (single?.groupedShapes?.length) items.push({ key: "ungroup", label: t("contextMenu.ungroup"), shortcut: "Ctrl+Shift+G", onSelect: ungroupSelected });
+    if (single) {
+      items.push(
+        { key: "chamfer", label: t("editor.tool.chamfer"), separated: true, onSelect: () => startEdgeModifier("chamfer") },
+        { key: "fillet", label: t("editor.tool.fillet"), onSelect: () => startEdgeModifier("fillet") },
+        { key: "hollow", label: t("editor.tool.hollow"), onSelect: startShellTool },
+      );
+    }
     items.push(
-      { key: "hide", label: t("contextMenu.hide"), shortcut: "Ctrl+H", separated: true, onSelect: toggleHidden },
+      { key: "hide", label: t("contextMenu.hide"), shortcut: "Ctrl+H", separated: !single, onSelect: toggleHidden },
       { key: "lock", label: t(allLocked ? "contextMenu.unlock" : "contextMenu.lock"), shortcut: "Ctrl+L", onSelect: toggleLocked },
       { key: "drop", label: t("contextMenu.drop"), shortcut: "D", onSelect: dropSelectedToWorkplane },
       { key: "delete", label: t("common.delete"), shortcut: t("contextMenu.deleteKey"), danger: true, separated: true, onSelect: deleteSelected },

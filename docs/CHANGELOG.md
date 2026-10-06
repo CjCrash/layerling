@@ -4,6 +4,10 @@ layerling started over at 1.0.0 when it was forked from SketchForge-3D 1.0.9.
 Everything from 1.0.9 downwards is SketchForge's history, kept here because the
 code still carries it - so a lower number further down is older, not newer.
 
+## Unreleased
+
+- **Chamfer, fillet and hollow in the right-click menu:** The menu a right click on a body opens now also starts the chamfer, fillet and hollow tools for that body, so you no longer have to find them in the ribbon. They work as the ribbon buttons do; you pick the edges or set the wall afterwards. Suggested by @darkwingbreydin in the forum.
+
 ## 1.39.1
 
 - **A store folder that cannot be made says why:** When the folder set in `LAYERLING_SHARED_PROJECTS_DIR` could not be created, the start page showed only the bare system error, such as "EACCES: permission denied, mkdir '/data'", which left open where that path came from. It now names the folder and the setting, says to mount a writable folder there or point the setting at the mounted one, and that a changed setting in Docker needs `docker compose up -d`, as `restart` keeps the old one. The README says the same in the Docker section. Reported by @mikromcz in #114.
