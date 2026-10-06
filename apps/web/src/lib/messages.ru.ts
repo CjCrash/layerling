@@ -1,8 +1,10 @@
 import type { MessageKey } from "@/lib/messages.en";
 
 /**
- * Russian wording. Typed against the English catalogue, so a key that is added
- * there and forgotten here fails the type check instead of showing up untranslated.
+ * Russian wording. A language is an addition its maintainer keeps up: this
+ * catalogue may trail behind the English one, and a text it does not have yet is
+ * shown in English (see `messageText` in i18n.ts). Typed against the English
+ * catalogue all the same, so a key that does not exist there is a type error.
  *
  * Множественные числа. Русский требует трёх форм («1 деталь», «2 детали»,
  * «5 деталей»), а каталог знает две: \`…One\` и \`…Many\`. Чтобы не выходило
@@ -12,7 +14,7 @@ import type { MessageKey } from "@/lib/messages.en";
  *
  * Кавычки — «ёлочки», поэтому экранировать в значениях нечего.
  */
-export const MESSAGES_RU: Record<MessageKey, string> = {
+export const MESSAGES_RU: Partial<Record<MessageKey, string>> = {
   "common.cancel": "Отмена",
   "common.save": "Сохранить",
   "common.delete": "Удалить",
@@ -1285,6 +1287,12 @@ export const MESSAGES_RU: Record<MessageKey, string> = {
   "workspace.scale": "Масштаб",
   "workspace.accuracy": "Точность",
   "workspace.snapGrid": "Сетка привязки",
+  "workspace.customSnapGrids": "Свои сетки привязки",
+  "workspace.customSnapGridsHint": "Свой размер, например шаг выводов 2,54 мм — у микросхем, штырьковых разъёмов и макетных плат. В меню привязки он предлагается целиком, половинками и четвертями.",
+  "workspace.customSnapGridName": "Название",
+  "workspace.customSnapGridSize": "Размер в миллиметрах",
+  "workspace.customSnapGridAdd": "Добавить сетку привязки",
+  "workspace.customSnapGridRemove": "Удалить эту сетку привязки",
   "workspace.printer": "Принтер",
   "workspace.printerNone": "Без принтера - свободный размер",
   "workspace.printerHint": "Выберите свой принтер, чтобы размер рабочей плоскости совпал с его столом печати. Тела, выходящие за него, отмечаются.",
