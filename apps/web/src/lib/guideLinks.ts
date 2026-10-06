@@ -2,6 +2,18 @@ import type { Language } from "@/lib/i18n";
 import type { ShapeKind } from "@/types/layerling";
 
 /**
+ * One name in the guide. English is the rule; every other language may leave
+ * its own out and be shown the English one, so a language is an addition its
+ * maintainer keeps up rather than a gate every new name has to pass.
+ */
+type GuideText = { en: string; de?: string; ru?: string };
+
+/** The name a language gave it, or the English one when it has none. */
+function nameIn(entry: GuideText, language: Language): string {
+  return entry[language] ?? entry.en;
+}
+
+/**
  * The chapters of the user guide (docs/guide) by what they are about, with the
  * file name each language gave them. The pages are static files next to the
  * program, so a link is a plain path. A test compares this table with the
@@ -24,7 +36,7 @@ export const GUIDE_CHAPTERS = {
   shortcuts: { de: "tastenkuerzel", en: "shortcuts", ru: "shortcuts" },
   ai: { de: "ki-mit-mcp", en: "ai-with-mcp", ru: "ai-with-mcp" },
   offline: { de: "offline-und-installieren", en: "offline-and-install", ru: "offline-and-install" },
-} as const satisfies Record<string, Record<Language, string>>;
+} as const satisfies Record<string, GuideText>;
 
 export type GuideChapter = keyof typeof GUIDE_CHAPTERS;
 
@@ -66,17 +78,38 @@ export const GUIDE_SECTIONS = {
   notes: { chapter: "measuring", de: "notizen", en: "notes", ru: "zametki" },
   sketchCorners: { chapter: "sketches", de: "ecken-runden-oder-fasen", en: "rounding-or-chamfering-corners", ru: "skruglenie-i-faska-na-uglakh" },
   sketchImage: { chapter: "sketches", de: "ein-bild-als-vorlage", en: "a-picture-as-template", ru: "kartinka-kak-podlozhka" },
-} as const satisfies Record<string, { chapter: GuideChapter } & Record<Language, string>>;
+} as const satisfies Record<string, { chapter: GuideChapter } & GuideText>;
 
 export type GuideSection = keyof typeof GUIDE_SECTIONS;
 
+/** The file name a chapter has in one language, or the English one when it has none. */
+export function chapterFile(language: Language, chapter: GuideChapter): string {
+  return nameIn(GUIDE_CHAPTERS[chapter], language);
+}
+
+/** The heading id a section has in one language, or the English one when it has none. */
+export function sectionId(language: Language, section: GuideSection): string {
+  return nameIn(GUIDE_SECTIONS[section], language);
+}
+
+/**
+ * The folder each language guide is written to by scripts/build-guide.mjs
+ * (GUIDE_LANGUAGES there is the same table, a test keeps the two in step). The
+ * pages are static, so a folder is all a link needs.
+ */
+export const GUIDE_DIRECTORIES: Record<Language, string> = {
+  en: "guide",
+  de: "anleitung",
+  ru: "ru",
+};
+
 /** The address of a chapter or one of its sections, or of the guide's overview when neither is named. */
 export function guideHref(language: Language, chapter?: GuideChapter, section?: GuideSection): string {
-  const directory = language === "de" ? "anleitung" : "guide";
-  const target = section ? GUIDE_SECTIONS[section] : null;
-  const page = target?.chapter ?? chapter;
+  const directory = GUIDE_DIRECTORIES[language];
+  const page = section ? GUIDE_SECTIONS[section].chapter : chapter;
   if (!page) return `/${directory}/index.html`;
-  return `/${directory}/${GUIDE_CHAPTERS[page][language]}.html${target ? `#${target[language]}` : ""}`;
+  const anchor = section ? `#${sectionId(language, section)}` : "";
+  return `/${directory}/${chapterFile(language, page)}.html${anchor}`;
 }
 
 /**
