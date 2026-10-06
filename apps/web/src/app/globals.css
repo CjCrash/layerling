@@ -8761,7 +8761,10 @@ html[data-theme="dark"] .inspector-bundle-note {
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  width: 75px;
+  gap: 6px;
+  /* The fixed steps all fit the 75px; a measure with a name of its own may take more. */
+  min-width: 75px;
+  max-width: 190px;
   height: 22px;
   padding: 0 5px 0 9px;
   color: #867869;
@@ -8772,6 +8775,17 @@ html[data-theme="dark"] .inspector-bundle-note {
   border: 1px solid #eae3d6;
   border-radius: 2px;
   cursor: pointer;
+}
+
+.snap-select-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.snap-select svg {
+  flex-shrink: 0;
 }
 
 .snap-menu {
@@ -9325,6 +9339,119 @@ html[data-theme="dark"] .inspector-bundle-note {
   border: 1px solid #dacfc2;
   border-radius: 2px;
   font-weight: 700;
+}
+
+/* Custom snap grids: a short list of name, size and what steps that gives. */
+.workspace-custom-snap {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #f0eae0;
+}
+
+.workspace-custom-snap-heading {
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+}
+
+.workspace-custom-snap-heading strong {
+  font-weight: 700;
+}
+
+.workspace-custom-snap-heading span {
+  color: #756656;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.workspace-custom-snap-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, auto) 26px;
+  align-items: center;
+  gap: 8px;
+}
+
+.workspace-custom-snap-row label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.workspace-custom-snap-row input {
+  width: 100%;
+  height: 26px;
+  padding: 0 8px;
+  color: #61482f;
+  background: #fff;
+  border: 1px solid #dacfc2;
+  border-radius: 2px;
+  font-weight: 700;
+}
+
+.workspace-custom-snap-row label input {
+  width: 70px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.workspace-custom-snap-steps {
+  color: #756656;
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.workspace-custom-snap-row button,
+.workspace-custom-snap-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 26px;
+  color: #61482f;
+  background: #fff;
+  border: 1px solid #dacfc2;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.workspace-custom-snap-add {
+  justify-self: start;
+  padding: 0 10px;
+}
+
+.workspace-custom-snap-row button:hover,
+.workspace-custom-snap-add:hover {
+  background: #f8f4ed;
+  border-color: #d1995e;
+}
+
+html[data-theme="dark"] .workspace-custom-snap {
+  border-color: #4a3a2a;
+}
+
+html[data-theme="dark"] .workspace-custom-snap-heading span,
+html[data-theme="dark"] .workspace-custom-snap-steps {
+  color: #b9a58f;
+}
+
+html[data-theme="dark"] .workspace-custom-snap-row input,
+html[data-theme="dark"] .workspace-custom-snap-row button,
+html[data-theme="dark"] .workspace-custom-snap-add {
+  color: #ddccb9;
+  background: #35281b;
+  border-color: #5e4c3a;
+}
+
+html[data-theme="dark"] .workspace-custom-snap-row button:hover,
+html[data-theme="dark"] .workspace-custom-snap-add:hover {
+  background: #403021;
 }
 
 .workspace-global-note {

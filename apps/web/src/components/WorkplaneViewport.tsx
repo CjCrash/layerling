@@ -8994,6 +8994,7 @@ export function WorkplaneViewport({
         <div className="grid-settings">
           <SnapGridControl
             units={workspace.units}
+            customGrids={workspace.customSnapGrids}
             snap={snap}
             snapOpen={snapOpen}
             onSnapChange={chooseSnapGrid}

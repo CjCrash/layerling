@@ -151,8 +151,8 @@ import {
   springWireLimits,
 } from "@/lib/springGeometry";
 import { regularPolygonAspect } from "@/lib/regularPolygonFootprint";
-import { DEFAULT_TAPER_DIMENSION_MAX, MAX_HIGH_RESOLUTION_SIDES, MAX_HIGH_RESOLUTION_STEPS, shapeDimensionLimit, snapGridOptionsForUnits } from "@/lib/workplaneSettings";
-import type { BentTubeInnerProfile, BentTubeProfile, GearType, GridSize, MeasurementAccuracy, ThreadHead, ThreadProfile, ThreadRole, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
+import { DEFAULT_TAPER_DIMENSION_MAX, MAX_HIGH_RESOLUTION_SIDES, MAX_HIGH_RESOLUTION_STEPS, customSnapGridLabel, shapeDimensionLimit, snapGridOptions } from "@/lib/workplaneSettings";
+import type { BentTubeInnerProfile, BentTubeProfile, CustomSnapGrid, GearType, GridSize, MeasurementAccuracy, ThreadHead, ThreadProfile, ThreadRole, WorkplaneShape, WorkplaneWorkspaceSettings } from "@/types/layerling";
 import { selectWholeValue } from "@/lib/numberField";
 import { useRecentColors } from "@/lib/recentColors";
 
@@ -2030,7 +2030,7 @@ export function ShapeInspector({
       ) : null}
       {!movable.moved ? (
         <div className="inspector-snap-dock">
-          <SnapGridControl units={workspace.units} snap={snap} snapOpen={snapOpen} onSnapChange={onSnapChange} onSnapOpenChange={onSnapOpenChange} objectSnap={workspace.objectSnap} onObjectSnapChange={onObjectSnapChange} />
+          <SnapGridControl units={workspace.units} customGrids={workspace.customSnapGrids} snap={snap} snapOpen={snapOpen} onSnapChange={onSnapChange} onSnapOpenChange={onSnapOpenChange} objectSnap={workspace.objectSnap} onObjectSnapChange={onObjectSnapChange} />
         </div>
       ) : null}
         </>
@@ -2261,6 +2261,7 @@ function ShapePropertyRows({
 
 export function SnapGridControl({
   units,
+  customGrids,
   snap,
   snapOpen,
   onSnapChange,
@@ -2269,6 +2270,8 @@ export function SnapGridControl({
   onObjectSnapChange,
 }: {
   units: string;
+  /** The user's own snap measures, listed after the fixed steps. */
+  customGrids?: CustomSnapGrid[];
   snap: GridSize;
   snapOpen: boolean;
   onSnapChange: Dispatch<SetStateAction<GridSize>>;
@@ -2277,16 +2280,17 @@ export function SnapGridControl({
   objectSnap?: boolean;
   onObjectSnapChange?: (enabled: boolean) => void;
 }) {
+  const label = (size: GridSize) => customSnapGridLabel(size, customGrids) ?? measurementOptionLabel(size);
   return (
     <div className="snap-row">
       <span>{t("inspector.snapGrid")}</span>
       <button className="snap-select" onClick={() => onSnapOpenChange((value) => !value)}>
-        {measurementOptionLabel(snap)}
+        <span className="snap-select-label">{label(snap)}</span>
         <ChevronDown size={12} fill="currentColor" />
       </button>
       {snapOpen ? (
         <div className="snap-menu">
-          {snapGridOptionsForUnits(units).map((size) => (
+          {snapGridOptions(units, customGrids).map((size) => (
             <button
               key={size}
               className={size === snap ? "selected" : ""}
@@ -2295,7 +2299,7 @@ export function SnapGridControl({
                 onSnapOpenChange(false);
               }}
             >
-              {measurementOptionLabel(size)}
+              {label(size)}
             </button>
           ))}
           {onObjectSnapChange ? (
