@@ -3,7 +3,7 @@
 import { Check, LoaderCircle, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { displayStepFromMillimeters, displayToMillimeters, formatMeasurementNumber, lengthDisplayUnit, millimetersToDisplay, parseMeasurementInput } from "@/lib/measurementUnits";
-import { SPLIT_AXIS_DISPLAY_ORDER, splitAxisLabel, splitRotationAxis } from "@/lib/modelSplit";
+import { SPLIT_AXIS_DISPLAY_ORDER, splitAxisLabel, splitRotationAxes, type SplitRotation } from "@/lib/modelSplit";
 import { t } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
 import { selectWholeValue } from "@/lib/numberField";
@@ -26,7 +26,7 @@ export function SplitPanel({
   onCancel,
 }: {
   axis: AlignAxis;
-  rotation: number;
+  rotation: SplitRotation;
   position: number;
   min: number;
   max: number;
@@ -35,7 +35,7 @@ export function SplitPanel({
   busy: boolean;
   error: string | null;
   onAxisChange: (axis: AlignAxis) => void;
-  onRotationChange: (rotation: number) => void;
+  onRotationChange: (index: 0 | 1, rotation: number) => void;
   onPositionChange: (position: number) => void;
   onApply: () => void;
   onCancel: () => void;
@@ -48,21 +48,15 @@ export function SplitPanel({
   const displayStep = displayStepFromMillimeters(0.1, workspace);
   const unit = lengthDisplayUnit(workspace).label;
   const formattedPosition = formatMeasurementNumber(displayPosition, workspace.accuracy, displayStep);
-  const formattedRotation = String(Number(rotation.toFixed(2)));
-  const rotationAxis = splitAxisLabel(splitRotationAxis(axis));
+  const rotationAxes = splitRotationAxes(axis);
   const [positionEditing, setPositionEditing] = useState(false);
   const [positionDraft, setPositionDraft] = useState(formattedPosition);
-  const [rotationEditing, setRotationEditing] = useState(false);
-  const [rotationDraft, setRotationDraft] = useState(formattedRotation);
   const applyDisplayPosition = (value: number) => {
     if (Number.isFinite(value)) onPositionChange(displayToMillimeters(value, workspace));
   };
   useEffect(() => {
     if (!positionEditing) setPositionDraft(formattedPosition);
   }, [formattedPosition, positionEditing]);
-  useEffect(() => {
-    if (!rotationEditing) setRotationDraft(formattedRotation);
-  }, [formattedRotation, rotationEditing]);
   useEffect(() => {
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     panelRef.current?.focus({ preventScroll: true });
@@ -74,11 +68,6 @@ export function SplitPanel({
     const value = parseMeasurementInput(positionDraft);
     if (Number.isFinite(value)) applyDisplayPosition(value);
     setPositionEditing(false);
-  };
-  const commitRotationDraft = () => {
-    const value = parseMeasurementInput(rotationDraft);
-    if (Number.isFinite(value)) onRotationChange(value);
-    setRotationEditing(false);
   };
 
   return (
@@ -160,52 +149,15 @@ export function SplitPanel({
         />
       </div>
 
-      <div className="split-position-control split-rotation-control">
-        <span>
-          <strong>{t("split.rotation", { axis: rotationAxis })}</strong>
-          <span className="split-position-value">
-            <input
-              type="text"
-              inputMode="decimal"
-              value={rotationEditing ? rotationDraft : formattedRotation}
-              aria-label={t("split.rotationAria", { axis: rotationAxis })}
-              aria-describedby="split-rotation-unit"
-              disabled={busy}
-              onFocus={(event) => {
-                setRotationDraft(formattedRotation);
-                setRotationEditing(true);
-                selectWholeValue(event.currentTarget);
-              }}
-              onChange={(event) => setRotationDraft(event.currentTarget.value)}
-              onBlur={commitRotationDraft}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  event.currentTarget.blur();
-                } else if (event.key === "Escape") {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setRotationDraft(formattedRotation);
-                  setRotationEditing(false);
-                }
-              }}
-            />
-            <small id="split-rotation-unit">{t("split.degrees")}</small>
-          </span>
-        </span>
-        <input
-          type="range"
-          min={-180}
-          max={180}
-          step={1}
-          value={rotation}
-          aria-label={t("split.rotationSliderAria", { axis: rotationAxis })}
-          aria-valuetext={t("split.rotationValue", { value: formattedRotation, axis: rotationAxis })}
-          disabled={busy}
-          onChange={(event) => onRotationChange(event.currentTarget.valueAsNumber)}
+      {rotationAxes.map((rotationAxis, index) => (
+        <SplitRotationControl
+          key={rotationAxis}
+          axisLabel={splitAxisLabel(rotationAxis)}
+          rotation={rotation[index]}
+          busy={busy}
+          onChange={(value) => onRotationChange(index as 0 | 1, value)}
         />
-      </div>
+      ))}
 
       <p className="split-panel-help">{t("split.help")}</p>
       {error ? <div className="split-panel-error" role="alert">{error}</div> : null}
@@ -218,5 +170,79 @@ export function SplitPanel({
         </button>
       </div>
     </aside>
+  );
+}
+
+function SplitRotationControl({
+  axisLabel,
+  rotation,
+  busy,
+  onChange,
+}: {
+  axisLabel: "X" | "Y" | "Z";
+  rotation: number;
+  busy: boolean;
+  onChange: (rotation: number) => void;
+}) {
+  const formatted = String(Number(rotation.toFixed(2)));
+  const unitId = `split-rotation-${axisLabel.toLowerCase()}-unit`;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(formatted);
+  useEffect(() => {
+    if (!editing) setDraft(formatted);
+  }, [formatted, editing]);
+  const commitDraft = () => {
+    const value = parseMeasurementInput(draft);
+    if (Number.isFinite(value)) onChange(value);
+    setEditing(false);
+  };
+
+  return (
+    <div className="split-position-control split-rotation-control">
+      <span>
+        <strong>{t("split.rotation", { axis: axisLabel })}</strong>
+        <span className="split-position-value">
+          <input
+            type="text"
+            inputMode="decimal"
+            value={editing ? draft : formatted}
+            aria-label={t("split.rotationAria", { axis: axisLabel })}
+            aria-describedby={unitId}
+            disabled={busy}
+            onFocus={(event) => {
+              setDraft(formatted);
+              setEditing(true);
+              selectWholeValue(event.currentTarget);
+            }}
+            onChange={(event) => setDraft(event.currentTarget.value)}
+            onBlur={commitDraft}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                event.stopPropagation();
+                event.currentTarget.blur();
+              } else if (event.key === "Escape") {
+                event.preventDefault();
+                event.stopPropagation();
+                setDraft(formatted);
+                setEditing(false);
+              }
+            }}
+          />
+          <small id={unitId}>{t("split.degrees")}</small>
+        </span>
+      </span>
+      <input
+        type="range"
+        min={-180}
+        max={180}
+        step={1}
+        value={rotation}
+        aria-label={t("split.rotationSliderAria", { axis: axisLabel })}
+        aria-valuetext={t("split.rotationValue", { value: formatted, axis: axisLabel })}
+        disabled={busy}
+        onChange={(event) => onChange(event.currentTarget.valueAsNumber)}
+      />
+    </div>
   );
 }

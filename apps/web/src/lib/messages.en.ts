@@ -1500,7 +1500,7 @@ export const MESSAGES_EN = {
   "split.positionAria": "Split plane position",
   "split.positionSliderAria": "Split plane position slider",
   "split.positionValue": "{value} {unit}",
-  "split.help": "The translucent plane previews the exact cut. Set Rotation to 45° for an angled cut.",
+  "split.help": "The translucent plane previews the exact cut. Turn it about one or both axes for an angled cut.",
   "split.apply": "Split model",
   "split.applying": "Splitting",
   "split.error.notClosed": "The source mesh could not form a closed solid ({status}).",

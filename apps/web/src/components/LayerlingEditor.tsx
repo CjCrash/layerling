@@ -89,7 +89,7 @@ import { circleStepDegrees, clampArrayCount, rotateAroundVertical, rowOffset, ty
 import { bedOverhangs, printerPresetById, type BedOverhang } from "@/lib/printBed";
 import { SplitPanel } from "./workplane/SplitPanel";
 import { unionSplitManifoldComponents } from "@/lib/manifoldSplit";
-import { modelSplitPlane, splitAxisFromLabel, splitAxisLabel, splitPlaneIntersectsPoints, splitShapeFromWorldPositions, type ModelSplitPlane } from "@/lib/modelSplit";
+import { NO_SPLIT_ROTATION, modelSplitPlane, splitAxisFromLabel, splitAxisLabel, splitPlaneIntersectsPoints, splitRotationAxes, splitShapeFromWorldPositions, type ModelSplitPlane, type SplitRotation } from "@/lib/modelSplit";
 import { GuideModal } from "./workplane/GuideModal";
 import { ShortcutsModal } from "./workplane/ShortcutsModal";
 import { ShapeContextMenu, type ShapeContextMenuItem } from "./workplane/ShapeContextMenu";
@@ -262,7 +262,7 @@ type EdgeModifierSession = {
 type SplitSession = {
   targetIds: string[];
   axis: AlignAxis;
-  rotation: number;
+  rotation: SplitRotation;
   position: number;
   pivot: [number, number, number];
   sourceFingerprint: string;
@@ -7160,7 +7160,7 @@ export function LayerlingEditor({
   const splitTargetPoints = useMemo(() => splitTargetShapes.flatMap((shape) => meshForShape(shape).vertices), [splitTargetShapes]);
   const splitPlane = useMemo(
     () => splitSession ? modelSplitPlane(splitTargetPoints, splitSession.axis, splitSession.position, splitSession.rotation) : null,
-    [splitSession?.axis, splitSession?.position, splitSession?.rotation, splitTargetPoints],
+    [splitSession?.axis, splitSession?.position, splitSession?.rotation[0], splitSession?.rotation[1], splitTargetPoints],
   );
   // Another tool opening ends a split in progress, without a notice of its own.
   const closeSplit = useCallback(() => {
@@ -9086,7 +9086,7 @@ export function LayerlingEditor({
     setSplitSession({
       targetIds: selectedShapes.map((shape) => shape.id),
       axis: plane.axis,
-      rotation: 0,
+      rotation: NO_SPLIT_ROTATION,
       position: plane.position,
       pivot: plane.origin,
       sourceFingerprint: projectShapesFingerprint(shapesRef.current),
@@ -9102,7 +9102,7 @@ export function LayerlingEditor({
     setSplitSession((current) => current && !current.busy ? {
       ...current,
       axis,
-      rotation: 0,
+      rotation: NO_SPLIT_ROTATION,
       position: plane.position,
       pivot: plane.origin,
       error: null,
@@ -9117,10 +9117,11 @@ export function LayerlingEditor({
     });
   }, [splitTargetPoints]);
 
-  const changeSplitRotation = useCallback((rotation: number) => {
-    const nextRotation = Math.max(-180, Math.min(180, rotation));
+  const changeSplitRotation = useCallback((index: 0 | 1, rotation: number) => {
+    const angle = Math.max(-180, Math.min(180, rotation));
     setSplitSession((current) => {
       if (!current || current.busy) return current;
+      const nextRotation: SplitRotation = index === 0 ? [angle, current.rotation[1]] : [current.rotation[0], angle];
       const centeredPlane = modelSplitPlane(splitTargetPoints, current.axis, undefined, nextRotation);
       if (!centeredPlane) return current;
       const position = centeredPlane.normal[0] * current.pivot[0]
@@ -11439,7 +11440,11 @@ export function LayerlingEditor({
         if (targets.some((shape) => isNonSolidShapeKind(shape.kind))) throw new Error("A ruler isn't a solid and can't be split");
         const axis = params.axis === undefined ? "y" : splitAxisFromLabel(mcpString(params.axis, ""));
         if (!axis) throw new Error("axis must be x, y or z");
-        const rotation = Math.max(-180, Math.min(180, mcpNumber(params.rotation, 0)));
+        // Angles come named in the panel's axes (Z up); the one the plane cuts across has nothing to turn.
+        if (params[`rotation${splitAxisLabel(axis)}`] !== undefined) throw new Error(`rotation${splitAxisLabel(axis)} turns the plane in place - use the other two axes for an angled ${splitAxisLabel(axis).toLowerCase()} cut`);
+        const rotationAxes = splitRotationAxes(axis);
+        const rotationAbout = (rotationAxis: AlignAxis) => Math.max(-180, Math.min(180, mcpNumber(params[`rotation${splitAxisLabel(rotationAxis)}`], 0)));
+        const rotation: SplitRotation = [rotationAbout(rotationAxes[0]), rotationAbout(rotationAxes[1])];
         const points = targets.flatMap((shape) => meshForShape(shape).vertices);
         const range = modelSplitPlane(points, axis, undefined, rotation);
         if (!range) throw new Error("The objects have no printable geometry to split");
@@ -11468,7 +11473,7 @@ export function LayerlingEditor({
         );
         return {
           axis: splitAxisLabel(axis).toLowerCase(),
-          rotation,
+          ...Object.fromEntries(rotationAxes.map((rotationAxis, index) => [`rotation${splitAxisLabel(rotationAxis)}`, rotation[index]])),
           position: plane.position,
           min: plane.min,
           max: plane.max,

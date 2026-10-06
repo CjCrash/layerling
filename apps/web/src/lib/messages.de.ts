@@ -1499,7 +1499,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "split.positionAria": "Lage der Teilungsebene",
   "split.positionSliderAria": "Schieberegler für die Lage der Teilungsebene",
   "split.positionValue": "{value} {unit}",
-  "split.help": "Die durchscheinende Ebene zeigt den Schnitt. 45° ergeben einen schrägen Schnitt.",
+  "split.help": "Die durchscheinende Ebene zeigt den Schnitt. Um eine oder beide Achsen gedreht schneidet sie schräg.",
   "split.apply": "Modell teilen",
   "split.applying": "Teilt",
   "split.error.notClosed": "Das Ausgangsnetz konnte keinen geschlossenen Körper bilden ({status}).",
