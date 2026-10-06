@@ -1,6 +1,6 @@
 ---
 name: layerling-mcp-skill
-description: Control a live local layerling editor through its MCP server. Use when the assistant needs to list currently open layerling editor tabs, target a tab by editorNumber/projectName, read the current scene, list or select objects, create any of the editor's shapes including threads, springs, gears and raised text, update dimensions/position/rotation, align objects, group/ungroup/cut/separate parts, list exact CAD edge ids, apply chamfer/fillet to specific edges, hollow bodies into walls, repeat objects in rows or circles (hole rows, bolt circles, teeth), cut the view open with the section view to look inside, inspect editor errors, or capture viewport images from view-cube angles.
+description: Control a live local layerling editor through its MCP server. Use when the assistant needs to list currently open layerling editor tabs, target a tab by editorNumber/projectName, read the current scene, list or select objects, create any of the editor's shapes including threads, springs, gears and raised text, update dimensions/position/rotation, align objects, group/ungroup/cut/separate parts, split solids or holes in two with a plane, list exact CAD edge ids, apply chamfer/fillet to specific edges, hollow bodies into walls, repeat objects in rows or circles (hole rows, bolt circles, teeth), cut the view open with the section view to look inside, inspect editor errors, or capture viewport images from view-cube angles.
 ---
 
 # layerling MCP
@@ -70,7 +70,8 @@ Useful tools:
 - `layerling_boolean_cut`: pass `solidIds` and `holeIds`; the result replaces the operands.
 - `layerling_intersect_objects`: keep only what the `ids` have in common - two or more solids (a group counts as it looks), or solids against holes. The result replaces the operands; no overlap reports `empty`.
 - `layerling_ungroup_objects`: restore grouped children while preserving edited child geometry.
-- `layerling_separate_parts`: split disconnected parts in one object.
+- `layerling_separate_parts`: separate the disconnected parts of one object.
+- `layerling_split_objects`: cut solids or holes in two with a plane, like the editor's Split tool. `axis` as in a slicer (`x`, `y` front-back, `z` up, the default), `position` in the numbers `layerling_read_scene` reports (position.x, position.z or elevation; the middle when omitted), `rotationX`/`rotationY`/`rotationZ` in degrees for an angled cut, about either or both of the two axes it does not cut across. Each object the plane crosses becomes two mesh bodies (two holes for a hole; a hollow keeps its cavity), one undo step.
 - `layerling_hollow_object`: hollow a solid into walls of equal thickness, open on top, bottom, both, or closed.
 - `layerling_array_objects`: repeat objects n times in a row or around a circle (hole rows, bolt circles, teeth) as one undo step.
 - `layerling_show_overhangs`: overhangs that would need supports, like "Show overhangs" in the visibility menu. `enabled` switches the red-and-white hatching in the view, `angle` (30-70, default 45, degrees from vertical) is kept in the design's settings. Returns `overhangAreaMm2` and `lowestOverhangHeight` for each visible solid (or `ids`); 0 means it prints without supports at that angle. Faces on the plate do not count, a face resting on another body does. Call it again after `layerling_lay_flat` or a rotation to compare print orientations.

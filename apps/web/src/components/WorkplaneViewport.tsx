@@ -28,6 +28,7 @@ import { WorkspaceSettingsModal } from "@/components/workplane/WorkspaceSettings
 import { appThemePalette, type AppThemePalette, type AppThemePreference, type ResolvedAppTheme } from "@/lib/appTheme";
 import { cadModifierPrimitiveForBakedShape, cadTransformFromMatrix, cadTransformToMatrix } from "@/lib/cadBakeMetadata";
 import { t } from "@/lib/i18n";
+import type { ModelSplitPlane } from "@/lib/modelSplit";
 import { useLanguage } from "@/lib/useLanguage";
 import { orthographicFramingZoom, perspectiveFramingDistance } from "@/lib/cameraFraming";
 import {
@@ -268,6 +269,8 @@ type WorkplaneViewportProps = {
   alignReferenceShapes: WorkplaneShape[];
   mirrorMode: boolean;
   mirrorReferenceShapes: WorkplaneShape[];
+  splitActive?: boolean;
+  splitPlane?: ModelSplitPlane | null;
   placementWorkplane: PlacementWorkplane;
   /** Die gesetzte Arbeitsebene gilt weiter, wird aber nicht gezeichnet. */
   workplaneHidden?: boolean;
@@ -342,6 +345,9 @@ type WorkplaneViewportProps = {
 };
 
 type WorkspaceSettings = WorkplaneWorkspaceSettings;
+/** Keys a focused slider moves itself with; every other key may still reach the view. */
+const SLIDER_KEYS: ReadonlySet<string> = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
+
 function readSavedWorkspaceDefault(key: string | null) {
   if (!key || typeof window === "undefined") {
     return null;
@@ -413,6 +419,7 @@ type ThreeState = {
   workplanePreviewLayer: THREE.Group;
   shapeLayer: THREE.Group;
   helperLayer: THREE.Group;
+  splitLayer: THREE.Group;
   transformGuideLayer: THREE.Group;
   moveDimensionLayer: THREE.Group;
   originDimensionLayer: THREE.Group;
@@ -3980,6 +3987,8 @@ export function WorkplaneViewport({
   alignReferenceShapes,
   mirrorMode,
   mirrorReferenceShapes,
+  splitActive = false,
+  splitPlane = null,
   placementWorkplane,
   workplaneHidden = false,
   onToggleWorkplaneHidden,
@@ -4195,6 +4204,8 @@ export function WorkplaneViewport({
   cruiseAssetRef.current = cruiseAsset;
   const projectNameRef = useRef(projectName);
   const workplaneModeRef = useRef(workplaneMode);
+  const splitActiveRef = useRef(splitActive);
+  const splitPlaneRef = useRef(splitPlane);
   placementWorkplaneRef.current = placementWorkplane;
   const workplaneHiddenRef = useRef(workplaneHidden);
   workplaneHiddenRef.current = workplaneHidden;
@@ -4202,6 +4213,8 @@ export function WorkplaneViewport({
   // und Verschieben richten sich weiter nach der gesetzten Ebene.
   const drawnWorkplane = () => (workplaneHiddenRef.current ? horizontalPlacementWorkplane() : placementWorkplaneRef.current);
   workplaneModeRef.current = workplaneMode;
+  splitActiveRef.current = splitActive;
+  splitPlaneRef.current = splitPlane;
   const perfRef = useRef({
     fps: 0,
     frameMs: 0,
@@ -4213,7 +4226,7 @@ export function WorkplaneViewport({
   const selectedShape = useMemo(() => (selectedIds.length === 1 ? shapes.find((shape) => shape.id === selectedIds[0]) ?? null : null), [selectedIds, shapes]);
   const renderSelectionIds = useCallback(
     (ids = selectedIdsRef.current) => (
-      workplaneModeRef.current || (modifierActiveRef.current && !modifierPreviewActiveRef.current) ? [] : ids
+      workplaneModeRef.current || splitActiveRef.current || (modifierActiveRef.current && !modifierPreviewActiveRef.current) ? [] : ids
     ),
     [],
   );
@@ -4802,14 +4815,14 @@ export function WorkplaneViewport({
         workspaceRef.current.dimensionsAlwaysVisible,
       );
     }
-    setSelectionHelpersVisible(state, !workplaneMode && transformRef.current?.kind !== "rotate");
+    setSelectionHelpersVisible(state, !splitActive && !workplaneMode && transformRef.current?.kind !== "rotate");
     if (state) {
-      state.modifierLayer.visible = !workplaneMode;
-      state.moveDimensionLayer.visible = !workplaneMode;
-      state.originDimensionLayer.visible = !workplaneMode;
+      state.modifierLayer.visible = !workplaneMode && !splitActive;
+      state.moveDimensionLayer.visible = !workplaneMode && !splitActive;
+      state.originDimensionLayer.visible = !workplaneMode && !splitActive;
       state.needsRender = true;
     }
-    if (workplaneMode) {
+    if (splitActive || workplaneMode) {
       clearMoveDimensions();
       setMarqueeRect(null);
       setHoverMeasureKey(null);
@@ -4825,7 +4838,11 @@ export function WorkplaneViewport({
     if (!workplaneMode) {
       syncWorkplaneHoverPreview(threeRef.current, null, workspaceRef.current, resolvedThemeRef.current);
     }
-  }, [clearMoveDimensions, renderSelectionIds, workplaneMode]);
+  }, [clearMoveDimensions, renderSelectionIds, splitActive, workplaneMode]);
+
+  useEffect(() => {
+    syncSplitPlane(threeRef.current, splitPlane);
+  }, [splitPlane]);
 
   useLayoutEffect(() => {
     // The plane label carries the project name, so a rename has to redraw it.
@@ -4928,8 +4945,8 @@ export function WorkplaneViewport({
   }, []);
 
   useEffect(() => {
-    setSelectionHelpersVisible(threeRef.current, !workplaneMode && activeTransformKind !== "rotate");
-  }, [activeTransformKind, workplaneMode]);
+    setSelectionHelpersVisible(threeRef.current, !splitActive && !workplaneMode && activeTransformKind !== "rotate");
+  }, [activeTransformKind, splitActive, workplaneMode]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -5043,6 +5060,7 @@ export function WorkplaneViewport({
     perfRef.current.lastSample = performance.now();
     resetCamera(state);
     rebuildShapes(state, shapesRef.current, renderSelectionIds(), true, false, placementWorkplaneRef.current);
+    syncSplitPlane(state, splitPlaneRef.current);
 
     const animate = () => {
       state.animationId = window.requestAnimationFrame(animate);
@@ -5137,6 +5155,7 @@ export function WorkplaneViewport({
       disposeChildren(state.shapeLayer);
       state.shapeRecords.clear();
       disposeChildren(state.helperLayer);
+      disposeChildren(state.splitLayer);
       disposeChildren(state.transformGuideLayer);
       disposeChildren(state.moveDimensionLayer);
       disposeChildren(state.originDimensionLayer);
@@ -5188,6 +5207,7 @@ export function WorkplaneViewport({
       return;
     }
     const visible = !workplaneMode
+      && !splitActive
       && !alignMode
       && !mirrorMode
       && !tapeMode
@@ -5199,7 +5219,7 @@ export function WorkplaneViewport({
       state.transformGuideLayer.visible = visible;
       state.needsRender = true;
     }
-  }, [activeTransformKind, alignMode, mirrorMode, modifierActive, tapeDeleteMode, tapeMode, tapeMoveMode, workplaneMode]);
+  }, [activeTransformKind, alignMode, mirrorMode, modifierActive, splitActive, tapeDeleteMode, tapeMode, tapeMoveMode, workplaneMode]);
 
   useEffect(() => {
     window.layerlingPerf = {
@@ -6879,6 +6899,7 @@ export function WorkplaneViewport({
   }, [storeCornerRulerModel]);
 
   const toggleCornerRulerTool = useCallback(() => {
+    if (splitActiveRef.current) return;
     const next = !cornerRulerModeRef.current;
     cornerRulerModeRef.current = next;
     setCornerRulerMode(next);
@@ -7006,6 +7027,7 @@ export function WorkplaneViewport({
       if (event.button !== 0 || event.ctrlKey || event.metaKey) {
         return;
       }
+      if (splitActiveRef.current) return;
       clearMoveDimensions();
       const rect = state.renderer.domElement.getBoundingClientRect();
 
@@ -7416,6 +7438,7 @@ export function WorkplaneViewport({
       // schweben oder zu ziehen - die Finger bewegen die Ansicht.
       if (cameraTouchRef.current) return;
       if (cruiseAssetRef.current) moveCruiseGhost(event.clientX, event.clientY);
+      if (splitActiveRef.current) return;
       if (workplaneModeRef.current) {
         const surface = pickPlacementSurface(event.clientX, event.clientY, event.shiftKey);
         let preview = surface?.workplane ?? null;
@@ -7826,7 +7849,7 @@ export function WorkplaneViewport({
   const handleDrop = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
       event.preventDefault();
-      if (tapeMoveModeRef.current) return;
+      if (splitActiveRef.current || tapeMoveModeRef.current) return;
       const myShapeId = event.dataTransfer.getData("application/x-layerling-my-shape");
       if (myShapeId) {
         const point = toPlacementWorkplanePoint(event.clientX, event.clientY);
@@ -7998,6 +8021,7 @@ export function WorkplaneViewport({
   }, []);
 
   const togglePlacementWorkplane = useCallback(() => {
+    if (splitActiveRef.current) return;
     setTapeToolsOpen(false);
     setTapeActive(false);
     tapeDeleteModeRef.current = false;
@@ -8028,6 +8052,7 @@ export function WorkplaneViewport({
   }, [onSetPlacementWorkplane, onWorkplaneModeChange]);
 
   const toggleTapeTools = useCallback(() => {
+    if (splitActiveRef.current) return;
     const next = !tapeToolsOpen;
     setTapeToolsOpen(next);
     if (next) {
@@ -8044,6 +8069,7 @@ export function WorkplaneViewport({
   }, [onWorkplaneModeChange, tapeToolsOpen, setTapeActive]);
 
   const activateTapeAdd = useCallback(() => {
+    if (splitActiveRef.current) return;
     tapeDeleteModeRef.current = false;
     setTapeDeleteMode(false);
     tapeMoveModeRef.current = false;
@@ -8053,6 +8079,7 @@ export function WorkplaneViewport({
   }, [onWorkplaneModeChange, setTapeActive]);
 
   const activateTapeDelete = useCallback(() => {
+    if (splitActiveRef.current) return;
     setTapeActive(false);
     tapeMoveModeRef.current = false;
     setTapeMoveMode(false);
@@ -8062,6 +8089,7 @@ export function WorkplaneViewport({
   }, [onWorkplaneModeChange, setTapeActive]);
 
   const activateTapeMove = useCallback(() => {
+    if (splitActiveRef.current) return;
     setTapeActive(false);
     tapeDeleteModeRef.current = false;
     setTapeDeleteMode(false);
@@ -8327,16 +8355,19 @@ export function WorkplaneViewport({
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isTypingTarget(event.target)) {
-        return;
-      }
-
-      const key = event.key.toLowerCase();
       // Shift turns the digit into "!" and the like on most layouts, so the
       // view comes from the key's position then.
       const shortcutView = !event.ctrlKey && !event.metaKey && !event.altKey
         ? viewFaceForKey(event.key, event.code, event.shiftKey)
         : undefined;
+      // A slider keeps the focus after it was dragged, as in the split panel,
+      // but only needs its own keys - the view shortcuts still apply.
+      const sliderTarget = event.target instanceof HTMLInputElement && event.target.type === "range";
+      if (sliderTarget ? SLIDER_KEYS.has(event.key) : isTypingTarget(event.target)) {
+        return;
+      }
+
+      const key = event.key.toLowerCase();
       if (event.key === "Escape" && workplaneModeRef.current) {
         event.preventDefault();
         // Wie ein Klick ins Leere: zurueck auf die Grundplatte, so steht es in der Anleitung (#108).
@@ -8488,6 +8519,7 @@ export function WorkplaneViewport({
                 aria-label={t("camera.placeWorkplane")}
                 title={t("camera.shortcut", { label: t("camera.placeWorkplane"), keys: "W" })}
                 aria-pressed={workplaneMode}
+                disabled={splitActive}
                 onClick={togglePlacementWorkplane}
               >
                 <PanelsTopLeft size={25} strokeWidth={2.1} aria-hidden="true" />
@@ -8525,6 +8557,7 @@ export function WorkplaneViewport({
                 title={t("camera.tapeTools")}
                 aria-expanded={tapeToolsOpen}
                 aria-controls="tape-tool-popover"
+                disabled={splitActive}
                 onClick={toggleTapeTools}
               >
                 <RulerDimensionLine size={26} strokeWidth={2.2} aria-hidden="true" />
@@ -8550,6 +8583,7 @@ export function WorkplaneViewport({
                 aria-label={t("camera.cornerRulerTool")}
                 title={t("camera.cornerRulerTool")}
                 aria-pressed={cornerRulerMode}
+                disabled={splitActive}
                 onClick={toggleCornerRulerTool}
               >
                 <FramingSquareIcon size={24} strokeWidth={2.15} aria-hidden="true" />
@@ -8756,7 +8790,7 @@ export function WorkplaneViewport({
         )}
       </div>
 
-      <section className={`workplane-wrap ${noteMode ? "note-mode" : ""} ${workplaneMode ? "placing-workplane" : ""} ${cruiseAsset ? "cruising" : ""} ${tapeMode ? "tape-mode" : ""} ${tapeDeleteMode ? "tape-delete-mode" : ""} ${tapeMoveMode ? "tape-move-mode" : ""} ${cornerRulerMode ? "corner-ruler-mode" : ""} ${pivotPickMode || layFlatPickMode ? "pivot-pick-mode" : ""} ${modifierActive ? "modifier-edge-pick" : ""} ${sectionMeasureMode && sectionSettings.enabled ? "section-measure-mode" : ""}`} aria-label={t("aria.workplane")}>
+      <section className={`workplane-wrap ${noteMode ? "note-mode" : ""} ${workplaneMode ? "placing-workplane" : ""} ${splitActive ? "split-mode" : ""} ${cruiseAsset ? "cruising" : ""} ${tapeMode ? "tape-mode" : ""} ${tapeDeleteMode ? "tape-delete-mode" : ""} ${tapeMoveMode ? "tape-move-mode" : ""} ${cornerRulerMode ? "corner-ruler-mode" : ""} ${pivotPickMode || layFlatPickMode ? "pivot-pick-mode" : ""} ${modifierActive ? "modifier-edge-pick" : ""} ${sectionMeasureMode && sectionSettings.enabled ? "section-measure-mode" : ""}`} aria-label={t("aria.workplane")}>
         <div className="workplane-plane">
           <div
             className="three-workplane-host"
@@ -8772,18 +8806,18 @@ export function WorkplaneViewport({
             onPointerCancel={finishDrag}
             onPointerLeave={handlePointerLeave}
           />
-          {!workplaneMode && marqueeRect ? <div className="selection-marquee" style={marqueeRect} /> : null}
-          {!workplaneMode && moveDimensionsEnabled && moveDimensionOverlay ? (
+          {!workplaneMode && !splitActive && marqueeRect ? <div className="selection-marquee" style={marqueeRect} /> : null}
+          {!workplaneMode && !splitActive && moveDimensionsEnabled && moveDimensionOverlay ? (
             <MoveDimensionOverlay
               overlay={moveDimensionOverlay}
               active={moveDimensionOverlay.active}
               onCommit={commitMoveDimension}
             />
           ) : null}
-          {!workplaneMode && originDimensionsEnabled && originDimensionOverlay ? (
+          {!workplaneMode && !splitActive && originDimensionsEnabled && originDimensionOverlay ? (
             <OriginDimensionOverlay overlay={originDimensionOverlay} />
           ) : null}
-          {!workplaneMode && !pivotPickMode && !layFlatPickMode && transformOverlay && !alignMode && !mirrorMode && !tapeMode && !tapeDeleteMode && !tapeMoveMode && !modifierActive ? (
+          {!workplaneMode && !splitActive && !pivotPickMode && !layFlatPickMode && transformOverlay && !alignMode && !mirrorMode && !tapeMode && !tapeDeleteMode && !tapeMoveMode && !modifierActive ? (
             <TransformOverlay
               box={transformOverlay}
               measureKey={pinnedMeasureKey ?? hoverMeasureKey}
@@ -8835,10 +8869,10 @@ export function WorkplaneViewport({
               onEditingIdChange={setEditingNoteId}
             />
           ) : null}
-          {!workplaneMode && alignOverlay ? <AlignOverlay overlay={alignOverlay} onAlign={onAlignSelection} onPreview={onAlignPreview} onPreviewClear={onAlignPreviewClear} /> : null}
-          {!workplaneMode && mirrorOverlay ? <MirrorOverlay overlay={mirrorOverlay} onMirror={onMirrorSelection} onPreview={onMirrorPreview} onPreviewClear={onMirrorPreviewClear} /> : null}
-          {sectionMeasureOverlay ? <SectionMeasureOverlay overlay={sectionMeasureOverlay} /> : null}
-          {!workplaneMode && tapeOverlay && (tapeOverlay.points.length > 0 || tapeOverlay.hover) ? (
+          {!workplaneMode && !splitActive && alignOverlay ? <AlignOverlay overlay={alignOverlay} onAlign={onAlignSelection} onPreview={onAlignPreview} onPreviewClear={onAlignPreviewClear} /> : null}
+          {!workplaneMode && !splitActive && mirrorOverlay ? <MirrorOverlay overlay={mirrorOverlay} onMirror={onMirrorSelection} onPreview={onMirrorPreview} onPreviewClear={onMirrorPreviewClear} /> : null}
+          {!splitActive && sectionMeasureOverlay ? <SectionMeasureOverlay overlay={sectionMeasureOverlay} /> : null}
+          {!workplaneMode && !splitActive && tapeOverlay && (tapeOverlay.points.length > 0 || tapeOverlay.hover) ? (
             <TapeOverlay
               overlay={tapeOverlay}
               startPointId={tapeModel.startPointId}
@@ -8851,7 +8885,7 @@ export function WorkplaneViewport({
               onSegmentPointerDown={handleTapeSegmentPointerDown}
             />
           ) : null}
-          {!workplaneMode && rulerDimensionOverlay && rulerDimensionOverlay.items.length > 0 ? (
+          {!workplaneMode && !splitActive && rulerDimensionOverlay && rulerDimensionOverlay.items.length > 0 ? (
             <RulerDimensionOverlay
               overlay={rulerDimensionOverlay}
               onLabelClick={beginRulerDimensionEdit}
@@ -8860,7 +8894,7 @@ export function WorkplaneViewport({
               onHandlePointerUp={handleRulerDuplicatePointerUp}
             />
           ) : null}
-          {!workplaneMode && cornerRulerOverlay && cornerRulerOverlay.items.length > 0 ? (
+          {!workplaneMode && !splitActive && cornerRulerOverlay && cornerRulerOverlay.items.length > 0 ? (
             <CornerRulerToolOverlay
               overlay={cornerRulerOverlay}
               onHandlePointerDown={handleCornerRulerHandlePointerDown}
@@ -8930,7 +8964,7 @@ export function WorkplaneViewport({
         </div>
       </section>
 
-      {selectedShape && !modifierActive && !tapeMode && !tapeDeleteMode && !tapeMoveMode ? (
+      {selectedShape && !splitActive && !modifierActive && !tapeMode && !tapeDeleteMode && !tapeMoveMode ? (
         <ShapeInspector
           shape={shapeWithParametricSource(selectedShape)}
           snap={snap}
@@ -9063,6 +9097,9 @@ function createThreeScene(host: HTMLDivElement): ThreeState {
   const helperLayer = new THREE.Group();
   helperLayer.name = "SelectionHelpers";
   helperLayer.layers.set(RENDER_LAYER_HELPERS);
+  const splitLayer = new THREE.Group();
+  splitLayer.name = "SplitPlane";
+  splitLayer.layers.set(RENDER_LAYER_PREVIEWS);
   const transformGuideLayer = new THREE.Group();
   transformGuideLayer.name = "TransformGuides";
   transformGuideLayer.layers.set(RENDER_LAYER_HELPERS);
@@ -9075,7 +9112,7 @@ function createThreeScene(host: HTMLDivElement): ThreeState {
   const modifierLayer = new THREE.Group();
   modifierLayer.name = "EdgeModifier";
   modifierLayer.layers.set(RENDER_LAYER_MODIFIERS);
-  scene.add(workplaneLayer, workplanePreviewLayer, shapeLayer, helperLayer, transformGuideLayer, moveDimensionLayer, originDimensionLayer, modifierLayer);
+  scene.add(workplaneLayer, workplanePreviewLayer, shapeLayer, helperLayer, splitLayer, transformGuideLayer, moveDimensionLayer, originDimensionLayer, modifierLayer);
 
   const raycaster = new THREE.Raycaster();
   raycaster.params.Line = { threshold: 1.15 };
@@ -9111,6 +9148,7 @@ function createThreeScene(host: HTMLDivElement): ThreeState {
     workplanePreviewLayer,
     shapeLayer,
     helperLayer,
+    splitLayer,
     transformGuideLayer,
     moveDimensionLayer,
     originDimensionLayer,
@@ -12438,6 +12476,75 @@ function createHalfSphereGeometry(width: number, height: number, depth: number, 
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
   return geometry;
+}
+
+function syncSplitPlane(state: ThreeState | null, plane: ModelSplitPlane | null) {
+  if (!state) return;
+  disposeChildren(state.splitLayer);
+  if (!plane) {
+    state.splitLayer.visible = false;
+    state.needsRender = true;
+    return;
+  }
+
+  const size = Math.max(10, plane.size);
+  const root = new THREE.Group();
+  root.position.set(...plane.origin);
+  root.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(...plane.normal).normalize());
+
+  const surface = new THREE.Mesh(
+    new THREE.PlaneGeometry(size, size),
+    new THREE.MeshBasicMaterial({
+      color: "#d07313",
+      transparent: true,
+      opacity: 0.24,
+      side: THREE.DoubleSide,
+      depthTest: false,
+      depthWrite: false,
+    }),
+  );
+  surface.renderOrder = 900;
+  root.add(surface);
+
+  const border = new THREE.LineSegments(
+    new THREE.EdgesGeometry(surface.geometry),
+    new THREE.LineBasicMaterial({ color: "#b35f07", transparent: true, opacity: 0.95, depthTest: false }),
+  );
+  border.renderOrder = 901;
+  root.add(border);
+
+  const crossGeometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-size / 2, 0, 0), new THREE.Vector3(size / 2, 0, 0),
+    new THREE.Vector3(0, -size / 2, 0), new THREE.Vector3(0, size / 2, 0),
+  ]);
+  const cross = new THREE.LineSegments(
+    crossGeometry,
+    new THREE.LineBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0.8, depthTest: false }),
+  );
+  cross.renderOrder = 902;
+  root.add(cross);
+
+  const normalLength = Math.max(8, size * 0.18);
+  const normalGuide = new THREE.ArrowHelper(
+    new THREE.Vector3(0, 0, 1),
+    new THREE.Vector3(0, 0, -normalLength / 2),
+    normalLength,
+    0xb35f07,
+    Math.max(2.5, normalLength * 0.18),
+    Math.max(1.5, normalLength * 0.1),
+  );
+  [normalGuide.line.material, normalGuide.cone.material].forEach((material) => {
+    (Array.isArray(material) ? material : [material]).forEach((entry) => {
+      entry.depthTest = false;
+    });
+  });
+  normalGuide.renderOrder = 903;
+  root.add(normalGuide);
+
+  root.traverse((child) => child.layers.set(RENDER_LAYER_PREVIEWS));
+  state.splitLayer.add(root);
+  state.splitLayer.visible = true;
+  state.needsRender = true;
 }
 
 function disposeChildren(group: THREE.Group) {

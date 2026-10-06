@@ -8,6 +8,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 - **3MF objects come in apart:** A 3MF with several objects in one colour - a Bambu Studio project with one tray per plate, say - came in as one body, because the import only split by colour. Now each object of the build comes in as its own body, in its place and named after the object, and is split by colour within it as before.
 - **Slicer modifiers no longer turn solid:** Modifier parts of a Bambu Studio, OrcaSlicer or PrusaSlicer project - the boxes that only change walls or infill somewhere - came in as solid geometry, as did negative volumes and support blockers. They are now left out.
+- **Split:** A new tool in the Modify area cuts the selection in two with a plane. Select one or more solids or holes; a translucent plane previews the cut, and you move it and turn it about the two other axes for a cut at any angle. Every object the plane crosses becomes two closed bodies, a hole two holes, and a hollowed body keeps its cavity. The halves are meshes, so their shape settings are gone. The axes are named as on the Position card, with Z up. An AI can split too, with `layerling_split_objects`; `rotationX`, `rotationY` and `rotationZ` turn its plane. Adapted from the SketchForge-3D fork by WC3D.
 
 ## 1.39.1
 
