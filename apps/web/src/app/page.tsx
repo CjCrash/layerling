@@ -748,7 +748,7 @@ export default function Home() {
       const landed = typeof payload.path === "string" ? payload.path : "";
       sharedPathRef.current = response.ok ? landed : parentStorePath(wanted);
       setSharedPath(sharedPathRef.current);
-      if (!response.ok && payload.enabled) setDashboardNotice(payload.error ?? t("notice.sharedLoadFailed"));
+      if (!response.ok && payload.enabled) setDashboardNotice(payload.error ? localizedError(payload.error) : t("notice.sharedLoadFailed"));
     } catch {
       setSharedProjectsEnabled(false);
       setSharedProjects([]);

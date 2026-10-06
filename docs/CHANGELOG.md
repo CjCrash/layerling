@@ -8,7 +8,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 - **Chamfer, fillet and hollow in the right-click menu:** The menu a right click on a body opens now also starts the chamfer, fillet and hollow tools for that body, so you no longer have to find them in the ribbon. They work as the ribbon buttons do; you pick the edges or set the wall afterwards. Suggested by @darkwingbreydin in the forum.
 - **A fillet that leaves no body is refused:** On a body with chamfered edges, a fillet past a certain size made the CAD kernel return a result that counts as valid but holds no solid. layerling accepted it, and the next step - hollowing, for one - failed with "The stored CAD feature could not be restored as a valid solid". Now chamfer and fillet check that a solid is left and say that the value is too large, so the body stays as it was.
-- **Error messages in the language of the interface:** Texts such as that one, and many from importing SVG, OBJ, 3MF, STL and STEP files, from the shape library and from building threads, gears and springs, appeared in English even in the German interface. They are now shown in the chosen language, and an unknown technical text gets a sentence in that language around it.
+- **Error messages in the language of the interface:** Texts such as that one, and many from importing SVG, OBJ, 3MF, STL and STEP files, from the shape library, from the shared project store on the server and from building threads, gears and springs, appeared in English even in the German interface. They are now shown in the chosen language, and an unknown technical text gets a sentence in that language around it.
 
 ## 1.39.1
 
