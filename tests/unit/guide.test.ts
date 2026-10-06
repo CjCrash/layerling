@@ -18,9 +18,9 @@ import { tools } from "../../scripts/layerling-mcp-tools.mjs";
 import { GUIDE_CHAPTERS, GUIDE_SECTIONS, guideChapterForShape, guideHref, guideSectionForShape } from "@/lib/guideLinks";
 
 const root = join(__dirname, "..", "..");
-const LANGUAGES = ["de", "en"] as const;
+const LANGUAGES = ["de", "en", "ru"] as const;
 
-async function contextFor(language: "de" | "en") {
+async function contextFor(language: "de" | "en" | "ru") {
   return {
     language,
     messages: await loadMessages(language),

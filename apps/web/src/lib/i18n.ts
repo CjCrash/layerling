@@ -1,7 +1,8 @@
 import { MESSAGES_DE } from "@/lib/messages.de";
 import { MESSAGES_EN, type MessageKey } from "@/lib/messages.en";
+import { MESSAGES_RU } from "@/lib/messages.ru";
 
-export const LANGUAGES = ["en", "de"] as const;
+export const LANGUAGES = ["en", "de", "ru"] as const;
 export type Language = (typeof LANGUAGES)[number];
 export const DEFAULT_LANGUAGE: Language = "en";
 export const LANGUAGE_STORAGE_KEY = "layerling.language";
@@ -9,12 +10,29 @@ export const LANGUAGE_STORAGE_KEY = "layerling.language";
 const CATALOGUE: Record<Language, Record<MessageKey, string>> = {
   en: MESSAGES_EN,
   de: MESSAGES_DE,
+  ru: MESSAGES_RU,
 };
 
 export const LANGUAGE_NAMES: Record<Language, string> = {
   en: "English",
   de: "Deutsch",
+  ru: "Русский",
 };
+
+/**
+ * How a language writes numbers and dates. A new language that is missing here
+ * would silently format as American English, so this table is typed by Language.
+ */
+export const LANGUAGE_LOCALES: Record<Language, string> = {
+  en: "en-US",
+  de: "de-DE",
+  ru: "ru-RU",
+};
+
+/** The locale of the language that is current right now. */
+export function currentLocale(): string {
+  return LANGUAGE_LOCALES[current];
+}
 
 export function isLanguage(value: unknown): value is Language {
   return typeof value === "string" && (LANGUAGES as readonly string[]).includes(value);

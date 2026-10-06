@@ -58,6 +58,26 @@ export const GUIDE_LANGUAGES = {
     forum: "discussions",
     forumUrl: "https://github.com/henmedia/layerling/discussions",
   },
+  ru: {
+    dir: "ru",
+    htmlLang: "ru",
+    quotes: ["«", "»"],
+    site: "Руководство layerling",
+    home: "Руководство",
+    openEditor: "Открыть редактор",
+    backToEditor: "Вернуться в редактор",
+    editorElsewhere: "Редактор уже открыт в другой вкладке — просто переключитесь туда.",
+    chapters: "Главы",
+    onThisPage: "На этой странице",
+    previous: "Предыдущая глава",
+    next: "Следующая глава",
+    switchLanguage: "English",
+    switchTitle: "Read this in English",
+    overviewLead: "Всё, что умеет layerling, шаг за шагом. Картинки сняты с работающей программы и обновляются с каждой версией.",
+    sourceNote: "Это руководство растёт вместе с программой. Если чего-то не хватает или что-то не так — напишите в",
+    forum: "обсуждениях",
+    forumUrl: "https://github.com/henmedia/layerling/discussions",
+  },
 };
 
 /** KEY=VALUE lines of an env file; comments and empty lines are skipped. */
@@ -112,10 +132,19 @@ export function escapeHtml(text) {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+const CYRILLIC_TRANSLITERATION = {
+  а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z", и: "i",
+  й: "y", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t",
+  у: "u", ф: "f", х: "kh", ц: "ts", ч: "ch", ш: "sh", щ: "shch", ъ: "", ы: "y",
+  ь: "", э: "e", ю: "yu", я: "ya",
+};
+
+
 export function slugify(text) {
   return text
     .toLowerCase()
     .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .replace(/[а-яё]/g, (letter) => CYRILLIC_TRANSLITERATION[letter] ?? letter)
     .replace(/<[^>]*>/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
@@ -495,7 +524,7 @@ export async function loadValues() {
 
 export async function loadMessages(language) {
   const module = await import(pathToFileURL(join(root, "apps", "web", "src", "lib", `messages.${language}.ts`)).href);
-  return language === "de" ? module.MESSAGES_DE : module.MESSAGES_EN;
+  return module[`MESSAGES_${language.toUpperCase()}`];
 }
 
 export async function buildGuide({ log = console.log } = {}) {
@@ -508,7 +537,9 @@ export async function buildGuide({ log = console.log } = {}) {
 
   for (const [language, strings] of Object.entries(GUIDE_LANGUAGES)) {
     const chapters = chaptersByLanguage[language];
-    const otherLanguage = language === "de" ? "en" : "de";
+    // Every chapter exists in English, so Russian points there; German and English
+    // are each other's other language.
+    const otherLanguage = language === "en" ? "de" : "en";
     const otherStrings = GUIDE_LANGUAGES[otherLanguage];
     const messages = await loadMessages(language);
     const values = await loadValues();

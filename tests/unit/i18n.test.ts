@@ -12,8 +12,9 @@ import {
 } from "@/lib/i18n";
 import { MESSAGES_DE } from "@/lib/messages.de";
 import { MESSAGES_EN } from "@/lib/messages.en";
+import { MESSAGES_RU } from "@/lib/messages.ru";
 
-const CATALOGUES = { en: MESSAGES_EN, de: MESSAGES_DE } as const;
+const CATALOGUES = { en: MESSAGES_EN, de: MESSAGES_DE, ru: MESSAGES_RU } as const;
 
 function placeholders(value: string) {
   return [...value.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
