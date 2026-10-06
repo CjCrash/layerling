@@ -1291,7 +1291,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "workspace.accuracy": "Genauigkeit",
   "workspace.snapGrid": "Einrastraster",
   "workspace.customSnapGrids": "Eigene Einrastraster",
-  "workspace.customSnapGridsHint": "Ein eigenes Maß, etwa die 19,05 mm einer Tastaturtaste. Das Rastermenü bietet es ganz, halbiert und geviertelt an.",
+  "workspace.customSnapGridsHint": "Ein eigenes Maß, etwa das Rastermaß von 2,54 mm bei Chips, Stiftleisten und Lochrasterplatinen. Das Rastermenü bietet es ganz, halbiert und geviertelt an.",
   "workspace.customSnapGridName": "Name",
   "workspace.customSnapGridSize": "Größe in Millimetern",
   "workspace.customSnapGridAdd": "Einrastraster hinzufügen",

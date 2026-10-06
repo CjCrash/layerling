@@ -1292,7 +1292,7 @@ export const MESSAGES_EN = {
   "workspace.accuracy": "Accuracy",
   "workspace.snapGrid": "Snap Grid",
   "workspace.customSnapGrids": "Custom snap grids",
-  "workspace.customSnapGridsHint": "A measure of your own, such as the 19.05 mm of a keyboard key. The snap menu offers it whole, halved and quartered.",
+  "workspace.customSnapGridsHint": "A measure of your own, such as the 2.54 mm pin pitch of chips, pin headers and perfboard. The snap menu offers it whole, halved and quartered.",
   "workspace.customSnapGridName": "Name",
   "workspace.customSnapGridSize": "Size in millimetres",
   "workspace.customSnapGridAdd": "Add a snap grid",
