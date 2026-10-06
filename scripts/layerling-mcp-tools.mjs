@@ -464,6 +464,22 @@ export const tools = [
     },
   },
   {
+    name: "layerling_split_objects",
+    description: "Cut solids or holes in two with a plane, like the editor's Split tool. Each object the plane crosses is replaced by two closed mesh bodies - two holes for a hole - and a hollowed body keeps its cavity; named with the side they lie on, e.g. \"Box (Z+)\" and \"Box (Z-)\"; objects the plane misses stay as they are. Axes as in a slicer: `axis` x cuts across left-right, y across front-back, z horizontally (default). `position` is where the plane crosses, in millimetres, in the numbers layerling_read_scene reports: position.x for x, position.z for y, elevation for z; it defaults to the middle and must lie inside the objects. `rotationX`, `rotationY` and `rotationZ` tilt the plane in degrees (-180 to 180, default 0) for an angled cut, about the two axes it does not cut across: an x cut turns about y and z, a y cut about z and x, a z cut about x and y; the angle about the cut axis itself is refused. With both set, the plane turns about the first of the pair (y for x, z for y, x for z) and then about the other. With a tilt, `position` is measured along the tilted plane's normal. The result returns the angles used, the new objects, the ids that were split and the plane's range (`min`, `max`). One undo step; the parts lose their editable shape settings.",
+    inputSchema: {
+      ...editorTargetSchema,
+      properties: {
+        ...editorTargetSchema.properties,
+        ids: { type: "array", items: { type: "string" }, description: "Solids or holes to split; the current selection when omitted." },
+        axis: { type: "string", enum: ["x", "y", "z"], description: "Direction the plane cuts across (z is up), default z." },
+        position: { type: "number", description: "Where the plane crosses in millimetres; the middle when omitted." },
+        rotationX: { type: "number", description: "Tilt about the left-right axis in degrees, -180 to 180, default 0. Not for an x cut." },
+        rotationY: { type: "number", description: "Tilt about the front-back axis in degrees, -180 to 180, default 0. Not for a y cut." },
+        rotationZ: { type: "number", description: "Tilt about the vertical axis in degrees, -180 to 180, default 0. Not for a z cut." },
+      },
+    },
+  },
+  {
     name: "layerling_list_edges",
     description: "List real CAD edge ids for one object so a later chamfer/fillet can target specific edges.",
     inputSchema: {
