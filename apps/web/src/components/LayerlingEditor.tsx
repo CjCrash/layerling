@@ -194,6 +194,7 @@ import {
   type PlacementPoint,
   type PlacementWorkplane,
 } from "@/lib/placementWorkplane";
+import { localizedError } from "@/lib/userErrors";
 import { sketchBodyStretch, stretchedSketchProfile } from "@/lib/sketchResize";
 import { placeSketchExtrusion, placeSketchShape } from "@/lib/sketchPlacement";
 import { BUG_REPORT_FILE, bugReportText, rememberBugReportEvent, type BugReportEvent } from "@/lib/bugReport";
@@ -8155,7 +8156,7 @@ export function LayerlingEditor({
       setSketchSelection({ kind: "image", id: image.id });
       setSketchActivePointId(null);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : t("status.imageNotAdded"));
+      setNotice(error instanceof Error ? localizedError(error.message) : t("status.imageNotAdded"));
     }
   }, [commitSketchProfile, sketchActive, sketchProfile, sketchTool]);
 
@@ -8362,7 +8363,7 @@ export function LayerlingEditor({
         resolved = placeSketchShape(extrusion, activeSketchWorkplane, existing);
       }
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : t(sketchOperation === "revolve" ? "status.sketchCannotRevolve" : "status.sketchCannotExtrude"));
+      setNotice(error instanceof Error ? localizedError(error.message) : t(sketchOperation === "revolve" ? "status.sketchCannotRevolve" : "status.sketchCannotExtrude"));
       return;
     }
     if (!resolved) {
@@ -8536,7 +8537,7 @@ export function LayerlingEditor({
         })
         .catch((error) => {
           if (sketchRevolveUpdateRequestRef.current.get(id) === requestId) {
-            setNotice(error instanceof Error ? error.message : t("status.revolveSettingsFailed"));
+            setNotice(error instanceof Error ? localizedError(error.message) : t("status.revolveSettingsFailed"));
           }
         });
     }, 120);
@@ -9387,7 +9388,7 @@ export function LayerlingEditor({
         setShellTool(null);
       })
       .catch((error: unknown) => {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = error instanceof Error ? localizedError(error.message) : String(error);
         setShellTool((current) => current ? { ...current, busy: false, error: message } : current);
       });
   }, [commitShapes, selectedShape, selectedShapes.length, shellShape, shellTool]);
@@ -9463,7 +9464,7 @@ export function LayerlingEditor({
           if (replaceRebuiltShape(stale.id, fingerprint, rebuilt)) setNotice(t("status.shellRebuilt", { size: Number(amount.toFixed(2)) }));
         })
         .catch((error: unknown) => {
-          const message = error instanceof Error ? error.message : String(error);
+          const message = error instanceof Error ? localizedError(error.message) : String(error);
           // Changed in the meantime: the next round picks up the newer state.
           if (/changed while/.test(message)) return;
           shellRebuildFailedRef.current.add(fingerprint);
@@ -10330,7 +10331,7 @@ export function LayerlingEditor({
       if (unionFailed) parts.push(t("status.sectionSvgOverlap"));
       setNotice(parts.join(" ") + hiddenNote, result.openCount > 0 || unionFailed);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : t("status.sectionSvgFailed"), true);
+      setNotice(error instanceof Error ? localizedError(error.message) : t("status.sectionSvgFailed"), true);
     }
   }, [buildSectionSvg, projectName]);
 
@@ -11428,7 +11429,7 @@ export function LayerlingEditor({
 
       throw new Error(`Unknown MCP command: ${command.action}`);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = error instanceof Error ? localizedError(error.message) : String(error);
       lastMcpErrorRef.current = message;
       reportErrorsRef.current = rememberBugReportEvent(reportErrorsRef.current, `MCP ${command.action}: ${message}`);
       setNotice(message);
@@ -11531,7 +11532,7 @@ export function LayerlingEditor({
             const data = await executeMcpCommandRef.current?.(command);
             submitResult(command.id, true, data);
           } catch (error) {
-            submitResult(command.id, false, undefined, error instanceof Error ? error.message : String(error));
+            submitResult(command.id, false, undefined, error instanceof Error ? localizedError(error.message) : String(error));
           }
         }
       } catch (error) {
@@ -11762,7 +11763,7 @@ export function LayerlingEditor({
         : t("status.exportedAs", { label })) + hiddenNote);
     };
     const failNotice = (label: string, error: unknown) => {
-      setNotice(error instanceof Error ? error.message : t("status.exportFailed", { label }));
+      setNotice(error instanceof Error ? localizedError(error.message) : t("status.exportFailed", { label }));
     };
     if (format === "svg") {
       setNotice(t("status.buildingSvg"), true);
@@ -11836,7 +11837,7 @@ export function LayerlingEditor({
         setNotice(t("status.exportStepNothing"), true);
         return;
       }
-      setNotice(error instanceof Error ? error.message : t("status.exportStepFailed"));
+      setNotice(error instanceof Error ? localizedError(error.message) : t("status.exportStepFailed"));
     } finally {
       setStepExporting(false);
     }
@@ -11887,7 +11888,7 @@ export function LayerlingEditor({
       }
       setTopPanel(null);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : t("status.saveProjectFailed"));
+      setNotice(error instanceof Error ? localizedError(error.message) : t("status.saveProjectFailed"));
     } finally {
       setLylExporting(false);
     }
@@ -11963,7 +11964,7 @@ export function LayerlingEditor({
       await downloadBlobFile(projectExportFileName(`${projectName}-${t("bugReport.fileSuffix")}`, "lyl"), new Blob([buffer], { type: LYL_MEDIA_TYPE }));
       setNotice(t("status.bugReportSaved"), true);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : t("status.saveProjectFailed"));
+      setNotice(error instanceof Error ? localizedError(error.message) : t("status.saveProjectFailed"));
     }
   }, [editorLanguage, placementElevation, placementWorkplane, projectCreatedAt, projectModifiedAt, projectName, setNotice, sketchActive, snapGrid]);
 
@@ -12056,7 +12057,7 @@ export function LayerlingEditor({
         // plainly what the server answered instead of falling silent.
         serverSavePendingRef.current = true;
         scheduleServerSaveRetry(SERVER_SAVE_IDLE_MS);
-        setNotice(error instanceof Error ? error.message : t("status.serverSaveRetry"));
+        setNotice(error instanceof Error ? localizedError(error.message) : t("status.serverSaveRetry"));
       }
     } finally {
       serverSaveRunningRef.current = false;
@@ -12239,7 +12240,7 @@ export function LayerlingEditor({
       );
       setTopPanel(null);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : t("status.insertDesignFailed", { name: file.name }));
+      setNotice(error instanceof Error ? localizedError(error.message) : t("status.insertDesignFailed", { name: file.name }));
     }
   }, [commitShapes]);
 
@@ -12856,21 +12857,21 @@ export function LayerlingEditor({
             defaultName={selectedShapes.length === 1 ? displayShapeName(selectedShapes[0]) : t("myShapes.defaultName")}
             onInsert={(id) => {
               close();
-              void insertMyShape(id).catch((error) => setNotice(error instanceof Error ? error.message : String(error)));
+              void insertMyShape(id).catch((error) => setNotice(error instanceof Error ? localizedError(error.message) : String(error)));
             }}
             onSave={async (name, location) => {
               try {
                 await saveSelectionAsMyShape(name, undefined, location);
                 return true;
               } catch (error) {
-                setNotice(error instanceof Error ? error.message : String(error));
+                setNotice(error instanceof Error ? localizedError(error.message) : String(error));
                 return false;
               }
             }}
-            onRename={(id, name) => void renameMyShapeEntry(id, name).catch((error) => setNotice(error instanceof Error ? error.message : String(error)))}
-            onDelete={(id) => void deleteMyShapeEntry(id).catch((error) => setNotice(error instanceof Error ? error.message : String(error)))}
-            onBackup={() => void backUpMyShapes().catch((error) => setNotice(error instanceof Error ? error.message : String(error)))}
-            onMoveToServer={(id) => void moveMyShapeToServer(id).catch((error) => setNotice(error instanceof Error ? error.message : String(error)))}
+            onRename={(id, name) => void renameMyShapeEntry(id, name).catch((error) => setNotice(error instanceof Error ? localizedError(error.message) : String(error)))}
+            onDelete={(id) => void deleteMyShapeEntry(id).catch((error) => setNotice(error instanceof Error ? localizedError(error.message) : String(error)))}
+            onBackup={() => void backUpMyShapes().catch((error) => setNotice(error instanceof Error ? localizedError(error.message) : String(error)))}
+            onMoveToServer={(id) => void moveMyShapeToServer(id).catch((error) => setNotice(error instanceof Error ? localizedError(error.message) : String(error)))}
             onLoad={() => myShapesFileInputRef.current?.click()}
             onShown={() => void refreshServerShapes()}
             onDragDone={close}
@@ -12984,7 +12985,7 @@ export function LayerlingEditor({
           workspaceSettingsKey={projectId ?? "local-workplane"}
           cruiseAsset={cruiseAsset}
           onAddShape={addShape}
-          onDropMyShape={(id, point) => void insertMyShape(id, point).catch((error) => setNotice(error instanceof Error ? error.message : String(error)))}
+          onDropMyShape={(id, point) => void insertMyShape(id, point).catch((error) => setNotice(error instanceof Error ? localizedError(error.message) : String(error)))}
           onAlignAnchorChange={chooseAlignAnchor}
           onAlignPreview={previewAlignSelection}
           onAlignPreviewClear={clearAlignPreview}
