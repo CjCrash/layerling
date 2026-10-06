@@ -106,6 +106,8 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "welcome.moreTitle": "Was layerling außerdem kann",
   "welcome.moreHollowTitle": "Aushöhlen",
   "welcome.moreHollowBody": "Körper mit gleichmäßiger Wandstärke, oben, unten oder ganz geschlossen - Innenkanten gerundet oder scharf.",
+  "welcome.moreSplitTitle": "Teilen",
+  "welcome.moreSplitBody": "einen Körper oder eine Aussparung mit einer Ebene in zwei schneiden, die sich verschieben und für einen Schrägschnitt kippen lässt - praktisch für Teile, die nicht auf die Druckplatte passen.",
   "welcome.moreSketchTitle": "Skizzen",
   "welcome.moreSketchBody": "Umrisse zeichnen, Linien auf genaue Länge tippen, Ecken verrunden oder fasen und zu Körpern extrudieren oder um eine Achse drehen.",
   "welcome.moreLibraryTitle": "Formenbibliothek",

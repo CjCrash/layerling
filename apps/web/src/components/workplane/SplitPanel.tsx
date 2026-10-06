@@ -4,6 +4,7 @@ import { Check, LoaderCircle, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { displayStepFromMillimeters, displayToMillimeters, formatMeasurementNumber, lengthDisplayUnit, millimetersToDisplay, parseMeasurementInput } from "@/lib/measurementUnits";
 import { SPLIT_AXIS_DISPLAY_ORDER, splitAxisLabel, splitRotationAxes, type SplitRotation } from "@/lib/modelSplit";
+import { GuideHelpLink } from "@/components/GuideHelpLink";
 import { t } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
 import { selectWholeValue } from "@/lib/numberField";
@@ -77,7 +78,10 @@ export function SplitPanel({
           <strong id="split-panel-title">{t("split.title")}</strong>
           <span>{t("split.subtitle")}</span>
         </div>
-        <button type="button" aria-label={t("split.cancelAria")} onClick={onCancel}><X size={20} /></button>
+        <div className="panel-header-actions">
+          <GuideHelpLink section="splitting" />
+          <button type="button" aria-label={t("split.cancelAria")} onClick={onCancel}><X size={20} /></button>
+        </div>
       </div>
 
       <div className="split-panel-target">

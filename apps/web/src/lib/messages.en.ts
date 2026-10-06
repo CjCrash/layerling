@@ -107,6 +107,8 @@ export const MESSAGES_EN = {
   "welcome.moreTitle": "What else layerling does",
   "welcome.moreHollowTitle": "Hollow",
   "welcome.moreHollowBody": "bodies with an even wall, open at the top, bottom or fully closed - inner edges rounded or sharp.",
+  "welcome.moreSplitTitle": "Split",
+  "welcome.moreSplitBody": "cut a body or a hole in two with a plane you move and tilt for an angled cut - handy for parts too big for the print bed.",
   "welcome.moreSketchTitle": "Sketches",
   "welcome.moreSketchBody": "draw outlines, type lines to an exact length, fillet or chamfer corners, and extrude them or revolve them around an axis.",
   "welcome.moreLibraryTitle": "Shape library",
