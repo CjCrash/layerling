@@ -6,7 +6,7 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
-- **Split:** Select one or more solids and cut them with a previewed plane. The plane can be moved and turned about both of the other axes, for a cut at any angle; each intersected body becomes two closed meshes. The axes are named as on the Position card, with Z up. An AI can split too, with `layerling_split_objects` and its `rotationX`, `rotationY` and `rotationZ`. Adapted from the SketchForge-3D fork by WC3D.
+- **Split:** Select one or more solids or holes and cut them with a previewed plane. The plane can be moved and turned about both of the other axes, for a cut at any angle; each intersected body becomes two closed meshes, a hole two holes, and a hollowed body keeps its cavity. The axes are named as on the Position card, with Z up. An AI can split too, with `layerling_split_objects` and its `rotationX`, `rotationY` and `rotationZ`. Adapted from the SketchForge-3D fork by WC3D.
 
 ## 1.39.1
 

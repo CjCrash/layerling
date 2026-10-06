@@ -1516,7 +1516,7 @@ export const MESSAGES_EN = {
   "status.splitCancelled": "Split cancelled",
   "status.splitCancelledChanged": "Split cancelled because the selection or model changed",
   "status.splitCancelledProcessing": "Split cancelled because the project, selection, or model changed while processing",
-  "status.splitSelectSolids": "Select one or more visible, unlocked solid objects to split",
+  "status.splitSelectSolids": "Select one or more visible, unlocked solids or holes to split",
   "status.splitNoGeometry": "The selection has no printable geometry to split",
   "status.splitFailed": "Could not split {name}",
   "status.splitMissed": "The split plane does not cross the selection",

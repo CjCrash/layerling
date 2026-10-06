@@ -7149,7 +7149,7 @@ export function LayerlingEditor({
   const selectedShape = selectedShapes.at(-1) ?? null;
   const hasSelection = selectedShapes.length > 0;
   const canSplitSelection = useMemo(
-    () => selectedShapes.length > 0 && selectedShapes.every((shape) => !shape.locked && !shape.hole && !shape.hidden && !isNonSolidShapeKind(shape.kind)),
+    () => selectedShapes.length > 0 && selectedShapes.every((shape) => !shape.locked && !shape.hidden && !isNonSolidShapeKind(shape.kind)),
     [selectedShapes],
   );
   const splitTargetKey = splitSession?.targetIds.join("\0") ?? "";
@@ -11435,7 +11435,6 @@ export function LayerlingEditor({
         const targets = ids.map((id) => findShape(id)).filter((shape): shape is WorkplaneShape => Boolean(shape));
         if (targets.length === 0) throw new Error("No objects to split - pass ids or select solids first");
         if (targets.some((shape) => shape.locked)) throw new Error("A locked object cannot be split - unlock it first");
-        if (targets.some((shape) => shape.hole)) throw new Error("A hole cannot be split - only solids");
         if (targets.some((shape) => shape.hidden)) throw new Error("A hidden object cannot be split - show it first");
         if (targets.some((shape) => isNonSolidShapeKind(shape.kind))) throw new Error("A ruler isn't a solid and can't be split");
         const axis = params.axis === undefined ? "y" : splitAxisFromLabel(mcpString(params.axis, ""));

@@ -83,4 +83,43 @@ describe("model split topology (real Manifold kernel)", () => {
     expect(back?.volume()).toBeCloseTo(3_000, 5);
     dispose(created);
   });
+
+  it("keeps the cavity of a closed hollow body", async () => {
+    const runtime = await Module();
+    runtime.setup();
+    const outer = runtime.Manifold.cube([20, 20, 20], true);
+    const inner = runtime.Manifold.cube([16, 16, 16], true);
+    const hollow = outer.subtract(inner);
+    const created: ManifoldSolid[] = [outer, inner, hollow];
+    expect(hollow.volume()).toBeCloseTo(8_000 - 4_096, 5);
+
+    const normalized = unionSplitManifoldComponents(runtime, hollow);
+    created.push(...normalized.created);
+    expect(normalized.solid?.volume()).toBeCloseTo(3_904, 5);
+    const [top, bottom] = normalized.solid?.splitByPlane([0, 1, 0], 3) ?? [];
+    if (top) created.push(top);
+    if (bottom) created.push(bottom);
+    // Wall above the cut: 20x20x7 minus the 16x16x5 of cavity it encloses.
+    expect(top?.volume()).toBeCloseTo(2_800 - 1_280, 5);
+    expect(bottom?.volume()).toBeCloseTo(5_200 - 2_816, 5);
+    dispose(created);
+  });
+
+  it("keeps a cavity when overlapping bodies are united", async () => {
+    const runtime = await Module();
+    runtime.setup();
+    const outer = runtime.Manifold.cube([20, 20, 20], true);
+    const inner = runtime.Manifold.cube([16, 16, 16], true);
+    const hollow = outer.subtract(inner);
+    // A post sunk 1 mm into one wall, not reaching the cavity.
+    const post = runtime.Manifold.cube([4, 4, 8], true).translate([0, 0, 13]);
+    const both = runtime.Manifold.compose([hollow, post]);
+    const created: ManifoldSolid[] = [outer, inner, hollow, post, both];
+
+    const normalized = unionSplitManifoldComponents(runtime, both);
+    created.push(...normalized.created);
+    // The post adds the 7 mm outside the wall; a filled cavity would add 4096 more.
+    expect(normalized.solid?.volume()).toBeCloseTo(3_904 + 4 * 4 * 7, 5);
+    dispose(created);
+  });
 });

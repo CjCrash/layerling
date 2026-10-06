@@ -98,6 +98,12 @@ describe("model split helpers", () => {
     expect(part?.importedMesh?.positions).toEqual([-2, 0, -4, 2, 0, -4, -2, 6, 4]);
   });
 
+  it("keeps a split hole a hole", () => {
+    const triangle = [0, 0, 0, 4, 0, 0, 0, 4, 4];
+    expect(splitShapeFromWorldPositions({ ...source, hole: true }, triangle, "part", "Hole A")?.hole).toBe(true);
+    expect(splitShapeFromWorldPositions(source, triangle, "part", "Solid A")?.hole).toBeUndefined();
+  });
+
   it("names the axes as the Position card does, with Z up", () => {
     expect(SPLIT_AXIS_DISPLAY_ORDER.map(splitAxisLabel)).toEqual(["X", "Y", "Z"]);
     expect(splitAxisLabel("y")).toBe("Z");

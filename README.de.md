@@ -66,7 +66,7 @@ Du wirst alles wiedererkennen: die Platte, die Formen, Körper und Aussparung (d
 - **Körper und Aussparungen** – Formen zu Schneidwerkzeugen erklären und zur fertigen Geometrie gruppieren. „Gruppe bearbeiten“ (**E**) legt die Teile einer Gruppe einzeln hin und rechnet sie mit „Fertig“ neu – auch eine Gruppe in einer Gruppe, so tief der Entwurf geht.
 - **Bündeln** – Strg+B hält Teile zusammen wie das Bündel in Tinkercad: Sie bewegen, drehen und skalieren sich gemeinsam, behalten aber ihre Farben und bleiben im Export getrennte Körper – praktisch für den Mehrfarbdruck.
 - **Schnittmenge** – nur das behalten, wo sich die ausgewählten Körper und Aussparungen überlappen.
-- **Teilen** – einen Körper mit einer Ebene durchschneiden und zwei geschlossene Körper zurückbekommen. Die Ebene lässt sich für einen schrägen Schnitt drehen.
+- **Teilen** – einen Körper oder eine Aussparung mit einer Ebene durchschneiden und zwei geschlossene Körper zurückbekommen. Die Ebene lässt sich für einen schrägen Schnitt drehen.
 
 ### Bearbeiten
 

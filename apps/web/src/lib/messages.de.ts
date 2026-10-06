@@ -1515,7 +1515,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
   "status.splitCancelled": "Teilen abgebrochen",
   "status.splitCancelledChanged": "Teilen abgebrochen, weil sich Auswahl oder Modell geändert haben",
   "status.splitCancelledProcessing": "Teilen abgebrochen, weil sich Projekt, Auswahl oder Modell während der Berechnung geändert haben",
-  "status.splitSelectSolids": "Ein oder mehrere sichtbare, ungesperrte Körper zum Teilen auswählen",
+  "status.splitSelectSolids": "Einen oder mehrere sichtbare, ungesperrte Körper oder Aussparungen zum Teilen auswählen",
   "status.splitNoGeometry": "Die Auswahl hat keine druckbare Geometrie zum Teilen",
   "status.splitFailed": "{name} ließ sich nicht teilen",
   "status.splitMissed": "Die Teilungsebene schneidet die Auswahl nicht",

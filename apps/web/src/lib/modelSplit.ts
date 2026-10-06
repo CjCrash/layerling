@@ -181,5 +181,7 @@ export function splitShapeFromWorldPositions(source: WorkplaneShape, positions: 
     },
     locked: false,
     hidden: source.hidden,
+    // A split hole leaves two holes, so both halves still cut once grouped.
+    ...(source.hole ? { hole: true } : {}),
   };
 }
