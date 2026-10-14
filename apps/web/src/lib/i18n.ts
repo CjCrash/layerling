@@ -82,6 +82,8 @@ const LOADERS: Partial<Record<Language, CatalogueLoader>> = {
   nl: () => import("@/lib/messages.nl").then((module) => module.MESSAGES_NL),
   // Polish is a separate chunk: only browsers that pick Polish download it.
   pl: () => import("@/lib/messages.pl").then((module) => module.MESSAGES_PL),
+  // Russian is a separate chunk as well: the fork adds it, the author has no Russian.
+  ru: () => import("@/lib/messages.ru").then((module) => module.MESSAGES_RU),
 };
 
 const catalogues = createCatalogueStore({ en: MESSAGES_EN, de: MESSAGES_DE }, LOADERS);

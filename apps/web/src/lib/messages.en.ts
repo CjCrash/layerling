@@ -245,6 +245,7 @@ export const MESSAGES_EN = {
 
   "shared.title": "Designs on the server",
   "shared.refresh": "Refresh",
+  "shared.backToLocal": "Back to designs in this browser",
   "shared.trailLabel": "Path inside the server folder",
   "shared.trailRoot": "Server",
   "shared.newFolder": "New folder",

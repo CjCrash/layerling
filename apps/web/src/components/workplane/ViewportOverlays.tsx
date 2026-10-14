@@ -233,6 +233,33 @@ export function projectToScreen(point: THREE.Vector3, state: ThreeState) {
   };
 }
 
+/** How far in front of a perspective camera a point is (negative: behind it); an orthographic camera has no behind. */
+function depthInFrontOfCamera(point: THREE.Vector3, state: ThreeState) {
+  if (!(state.camera instanceof THREE.PerspectiveCamera)) return Number.POSITIVE_INFINITY;
+  state.camera.updateMatrixWorld();
+  return -point.clone().applyMatrix4(state.camera.matrixWorldInverse).z;
+}
+
+/**
+ * The screen line of the world segment a-b, cut off where it passes behind a perspective camera, or
+ * null when all of it is behind. A point behind the camera projects to a mirrored place on the screen,
+ * so drawing it as it is makes a fan of lines (a ruler arm that reaches past a camera hovering above it).
+ * The cut is made 1 mm in front of the camera, so what is drawn stays within a few ten thousand pixels.
+ */
+export function projectSegmentToScreen(a: THREE.Vector3, b: THREE.Vector3, state: ThreeState) {
+  const near = state.camera instanceof THREE.PerspectiveCamera ? Math.max(state.camera.near, 1) : 0;
+  const depthA = depthInFrontOfCamera(a, state);
+  const depthB = depthInFrontOfCamera(b, state);
+  if (depthA < near && depthB < near) return null;
+  let from = a;
+  let to = b;
+  if (depthA < near) from = a.clone().lerp(b, (near - depthA) / (depthB - depthA));
+  else if (depthB < near) to = b.clone().lerp(a, (near - depthB) / (depthA - depthB));
+  const start = projectToScreen(from, state);
+  const end = projectToScreen(to, state);
+  return { x1: start.x, y1: start.y, x2: end.x, y2: end.y };
+}
+
 export function syncMoveDimensionWorldLines(
   state: ThreeState,
   session: MoveDimensionSession | null,
@@ -1230,8 +1257,10 @@ export function syncCornerRulerToolOverlay(
       const corner = new THREE.Vector3(ruler.corner.x, ruler.corner.y, ruler.corner.z);
 
       const handleScreen = projectToScreen(corner, state);
-      const armXEndScreen = projectToScreen(corner.clone().addScaledVector(xAxis, ruler.armLengthX), state);
-      const armZEndScreen = projectToScreen(corner.clone().addScaledVector(zAxis, ruler.armLengthZ), state);
+      // A line that is wholly behind the camera has nothing to draw: it collapses onto the handle.
+      const noLine = { x1: handleScreen.x, y1: handleScreen.y, x2: handleScreen.x, y2: handleScreen.y };
+      const armXLine = projectSegmentToScreen(corner, corner.clone().addScaledVector(xAxis, ruler.armLengthX), state) ?? noLine;
+      const armZLine = projectSegmentToScreen(corner, corner.clone().addScaledVector(zAxis, ruler.armLengthZ), state) ?? noLine;
 
       const ticks: CornerRulerTickScreen[] = [];
       const labels: CornerRulerLabelScreen[] = [];
@@ -1239,12 +1268,14 @@ export function syncCornerRulerToolOverlay(
         cornerRulerTicks(length).forEach((tick) => {
           const base = corner.clone().addScaledVector(axisDir, tick.offset);
           const tickHeight = armWidth * (tick.isTen ? 0.62 : tick.isFive ? 0.42 : 0.26);
-          const baseScreen = projectToScreen(base, state);
-          const tipScreen = projectToScreen(base.clone().addScaledVector(acrossDir, tickHeight), state);
-          ticks.push({ x1: baseScreen.x, y1: baseScreen.y, x2: tipScreen.x, y2: tipScreen.y });
+          const tickLine = projectSegmentToScreen(base, base.clone().addScaledVector(acrossDir, tickHeight), state);
+          if (tickLine) ticks.push(tickLine);
           if (tick.isTen && tick.offset > 0) {
-            const labelScreen = projectToScreen(base.clone().addScaledVector(acrossDir, armWidth * 0.95), state);
-            labels.push({ x: labelScreen.x, y: labelScreen.y, text: String(tick.offset) });
+            const labelWorld = base.clone().addScaledVector(acrossDir, armWidth * 0.95);
+            if (depthInFrontOfCamera(labelWorld, state) > 0) {
+              const labelScreen = projectToScreen(labelWorld, state);
+              labels.push({ x: labelScreen.x, y: labelScreen.y, text: String(tick.offset) });
+            }
           }
         });
       };
@@ -1265,12 +1296,15 @@ export function syncCornerRulerToolOverlay(
           bounds,
         });
 
-        const xEndScreen = projectToScreen(new THREE.Vector3(coords.xEndpointOnAxis.x, coords.xEndpointOnAxis.y, coords.xEndpointOnAxis.z), state);
-        const zEndScreen = projectToScreen(new THREE.Vector3(coords.zEndpointOnAxis.x, coords.zEndpointOnAxis.y, coords.zEndpointOnAxis.z), state);
-        const xTargetScreen = projectToScreen(new THREE.Vector3(coords.xTargetPoint.x, coords.xTargetPoint.y, coords.xTargetPoint.z), state);
-        const zTargetScreen = projectToScreen(new THREE.Vector3(coords.zTargetPoint.x, coords.zTargetPoint.y, coords.zTargetPoint.z), state);
-        const elevBaseScreen = projectToScreen(new THREE.Vector3(coords.elevationBasePoint.x, coords.elevationBasePoint.y, coords.elevationBasePoint.z), state);
-        const elevTargetScreen = projectToScreen(new THREE.Vector3(coords.elevationTargetPoint.x, coords.elevationTargetPoint.y, coords.elevationTargetPoint.z), state);
+        const world = (point: { x: number; y: number; z: number }) => new THREE.Vector3(point.x, point.y, point.z);
+        const xEndWorld = world(coords.xEndpointOnAxis);
+        const zEndWorld = world(coords.zEndpointOnAxis);
+        const xEndScreen = projectToScreen(xEndWorld, state);
+        const zEndScreen = projectToScreen(zEndWorld, state);
+        const elevBaseWorld = world(coords.elevationBasePoint);
+        const elevTargetWorld = world(coords.elevationTargetPoint);
+        const elevBaseScreen = projectToScreen(elevBaseWorld, state);
+        const elevTargetScreen = projectToScreen(elevTargetWorld, state);
 
         const dxX = xEndScreen.x - handleScreen.x;
         const dyX = xEndScreen.y - handleScreen.y;
@@ -1305,11 +1339,11 @@ export function syncCornerRulerToolOverlay(
           xLabel: { x: xLabelPos.x, y: xLabelPos.y, text: formatMeasure(coords.x, accuracy) },
           zLabel: { x: zLabelPos.x, y: zLabelPos.y, text: formatMeasure(coords.z, accuracy) },
           elevationLabel: { x: elevationLabelPos.x, y: elevationLabelPos.y, text: formatMeasure(coords.elevation, accuracy) },
-          xArrowLine: { x1: handleScreen.x, y1: handleScreen.y, x2: xEndScreen.x, y2: xEndScreen.y },
-          zArrowLine: { x1: handleScreen.x, y1: handleScreen.y, x2: zEndScreen.x, y2: zEndScreen.y },
-          elevationArrowLine: { x1: elevBaseScreen.x, y1: elevBaseScreen.y, x2: elevTargetScreen.x, y2: elevTargetScreen.y },
-          xGuideLine: { x1: xEndScreen.x, y1: xEndScreen.y, x2: xTargetScreen.x, y2: xTargetScreen.y },
-          zGuideLine: { x1: zEndScreen.x, y1: zEndScreen.y, x2: zTargetScreen.x, y2: zTargetScreen.y },
+          xArrowLine: projectSegmentToScreen(corner, xEndWorld, state) ?? noLine,
+          zArrowLine: projectSegmentToScreen(corner, zEndWorld, state) ?? noLine,
+          elevationArrowLine: projectSegmentToScreen(elevBaseWorld, elevTargetWorld, state) ?? noLine,
+          xGuideLine: projectSegmentToScreen(xEndWorld, world(coords.xTargetPoint), state) ?? noLine,
+          zGuideLine: projectSegmentToScreen(zEndWorld, world(coords.zTargetPoint), state) ?? noLine,
         };
       }
 
@@ -1359,8 +1393,8 @@ export function syncCornerRulerToolOverlay(
         mode,
         handleX: handleScreen.x,
         handleY: handleScreen.y,
-        armXLine: { x1: handleScreen.x, y1: handleScreen.y, x2: armXEndScreen.x, y2: armXEndScreen.y },
-        armZLine: { x1: handleScreen.x, y1: handleScreen.y, x2: armZEndScreen.x, y2: armZEndScreen.y },
+        armXLine,
+        armZLine,
         ticks,
         labels,
         neighborLabels,

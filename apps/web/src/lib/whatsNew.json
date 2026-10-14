@@ -1,5 +1,50 @@
 [
   {
+    "version": "1.73.0",
+    "items": [
+      {
+        "title": {
+          "de": "Maßband rastet an Bezugspunkten ein",
+          "en": "The tape measure snaps to reference points"
+        },
+        "body": {
+          "de": "Markiere die Mitte eines Kreises oder die Mitte einer Linie als Bezugspunkt (Fadenkreuz-Knopf unter einer Messung oder Rechtsklickmenü) und klicke diesen Punkt dann mit dem Maßband an: Du misst von dort aus. Das Maßband rastet an Bezugspunkten ein wie an Ecken.",
+          "en": "Mark the centre of a circle or the middle of a line as a reference point (the crosshair button under a measurement, or the right-click menu) and then click that point with the tape measure: you measure from there. The tape measure snaps to reference points like to corners."
+        }
+      },
+      {
+        "title": {
+          "de": "Touch: ein Finger greift weiter",
+          "en": "Touch screens: a finger reaches further"
+        },
+        "body": {
+          "de": "Auf einem Touchscreen trifft ein Finger kleine Ziele jetzt leichter. In der Skizze geht ein Druck neben einen Punkt, einen Griff oder eine dünne Linie an dieses Teil. Maßband, Schnittmessung und die Kanten bei Fase und Verrundung greifen für einen Finger aus größerer Entfernung. Maus und Stift behalten ihre bisherige Reichweite. Auf einem Tablet bleibt ein Stift die genauere Wahl.",
+          "en": "On a touch screen a finger now hits small targets more easily. In the sketch, a press beside a point, a handle or a thin line goes to that part. The tape measure, the section measure and the edges of the chamfer and fillet tools catch a finger from a larger distance. A mouse and a stylus keep the reach they had. On a tablet a stylus remains the more precise choice."
+        }
+      },
+      {
+        "title": {
+          "de": "Detailreiche SVG-Dateien lassen sich wieder importieren",
+          "en": "Detailed SVG files import again"
+        },
+        "body": {
+          "de": "Eine SVG mit einer sehr detailreichen Kontur, etwa eine nachgezeichnete Grafik, brach mit „Maximum call stack size exceeded“ ab und kam nicht herein. Beim Bau des Körpers wurden alle Dreiecke in einem einzigen Aufruf übergeben, und der hat eine Größengrenze, die tausende Punkte überschreiten. Jetzt werden sie einzeln angefügt, und die Datei importiert.",
+          "en": "An SVG with one very detailed outline, such as a traced drawing, stopped with \"Maximum call stack size exceeded\" and did not come in. Building the body handed all its triangles over in one call, which has a size limit that thousands of points overrun. They are now added one at a time, and the file imports."
+        }
+      },
+      {
+        "title": {
+          "de": "Winkellineal: kein Linienfächer mehr",
+          "en": "Corner ruler: no more fan of lines"
+        },
+        "body": {
+          "de": "Schwebt die Kamera dicht über dem Winkellineal, wurde der Teil eines Arms hinter der Kamera gespiegelt gezeichnet und ergab einen Fächer feiner Linien quer über das Bild. Linien, Teilstriche, Zahlen und Maßpfeile des Lineals werden jetzt an der Kamera abgeschnitten, gezeichnet wird nur, was davor liegt.",
+          "en": "With the camera hovering close above the corner ruler, the part of an arm behind the camera was drawn mirrored and made a fan of fine lines across the picture. The ruler's lines, ticks, numbers and distance arrows are now cut off at the camera, and only what is in front of it is drawn."
+        }
+      }
+    ]
+  },
+  {
     "version": "1.72.3",
     "items": [
       {

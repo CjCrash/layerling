@@ -244,6 +244,7 @@ export const MESSAGES_NL: Record<MessageKey, string> = {
 
   "shared.title": "Ontwerpen op de server",
   "shared.refresh": "Vernieuwen",
+  "shared.backToLocal": "Terug naar de ontwerpen in deze browser",
   "shared.trailLabel": "Pad binnen de servermap",
   "shared.trailRoot": "Server",
   "shared.newFolder": "Nieuwe map",

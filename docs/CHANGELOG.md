@@ -6,6 +6,14 @@ code still carries it - so a lower number further down is older, not newer.
 
 ## Unreleased
 
+## 1.73.0
+
+- **The corner ruler no longer draws a fan of lines:** With the camera close above the ruler, looking along one of its arms, the part of the arm that lay behind the camera was drawn mirrored on the screen: a fan of fine lines that crossed the picture. Lines, ticks and numbers of the ruler (and the arrows and guide lines of its distances) are now cut off where they pass the camera, so only what is in front of it is drawn. Reported in the forum.
+- **Video list:** The second entry, a single video by HL ModTech, is now their whole playlist "Layerling Tutorials", so new videos in it appear without a release.
+- **A detailed SVG imports again (#340):** An SVG with one very detailed outline, such as a traced drawing, stopped with "Maximum call stack size exceeded" and did not come in. Building the body handed all its triangles over in one call, which has a size limit that thousands of points overrun; they are now added one at a time. Reported by @shanni1783.
+- **Touch screens: a finger reaches further:** On a touch screen, a press on the sketch plate or on a line that lands beside a point, a handle or another line goes to that part, so small points and thin lines can be grabbed with a fingertip. The tape measure (points, lines and reference points), the section measure and the edges in the chamfer and fillet tool catch the pointer from a larger distance when it is a finger. A mouse and a stylus keep the reach they had. The guide now recommends a stylus on a tablet. Suggested by @cyryllo (#337).
+- **The tape measure snaps to reference points:** Mark the centre of a circle or the middle of a line as a reference point (the crosshair button under a measurement, or the right-click menu of a body), then click that point with the tape measure to measure from it. Suggested by @RobbieKnobbie (#334).
+- **A way back from the server folder:** Inside "Designs on the server" the only way back to the designs of the browser was the logo. A button **Back to designs in this browser** stands at the left of the row with New design, New folder and Refresh. Suggested by @foofoodog (#333).
 ## 1.72.3
 
 - **Reference points: delete them all, and cards that behave:** Marking the centre, corners or edge middles of a body leaves several points, and deleting them one by one was cumbersome. **Delete all** in a point card, and "Delete all reference points" in the right-click menu, take them all away in one step (it can be undone). The cards no longer move as a group: each is dragged away on its own, and the card you touched last stands in front, so a card can no longer end up behind another. A point whose card was never moved keeps the place the shared offset had before. Reported by @rondlh (#329).

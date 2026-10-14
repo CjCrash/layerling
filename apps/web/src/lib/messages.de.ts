@@ -244,6 +244,7 @@ export const MESSAGES_DE: Record<MessageKey, string> = {
 
   "shared.title": "Entwürfe auf dem Server",
   "shared.refresh": "Aktualisieren",
+  "shared.backToLocal": "Zurück zu den Entwürfen in diesem Browser",
   "shared.trailLabel": "Pfad im Serverordner",
   "shared.trailRoot": "Server",
   "shared.newFolder": "Neuer Ordner",
